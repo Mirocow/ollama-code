@@ -3,21 +3,22 @@ package com.alibaba.qwen.code.cli.protocol.message.assistant;
 import com.alibaba.fastjson2.annotation.JSONField;
 import com.alibaba.fastjson2.annotation.JSONType;
 import com.alibaba.qwen.code.cli.protocol.message.MessageBase;
+import com.alibaba.qwen.code.cli.protocol.message.assistant.event.StreamEvent;
 
-@JSONType(typeKey = "type", typeName = "assistant")
-public class SDKAssistantMessage extends MessageBase {
+@JSONType(typeKey = "type", typeName = "stream_event")
+public class SDKPartialAssistantMessage extends MessageBase {
     private String uuid;
 
     @JSONField(name = "session_id")
     private String sessionId;
-    private APIAssistantMessage message;
+    private StreamEvent event;
 
     @JSONField(name = "parent_tool_use_id")
     private String parentToolUseId;
 
-    public SDKAssistantMessage() {
+    public SDKPartialAssistantMessage() {
         super();
-        this.type = "assistant";
+        this.type = "stream_event";
     }
 
     public String getUuid() {
@@ -36,12 +37,12 @@ public class SDKAssistantMessage extends MessageBase {
         this.sessionId = sessionId;
     }
 
-    public APIAssistantMessage getMessage() {
-        return message;
+    public StreamEvent getEvent() {
+        return event;
     }
 
-    public void setMessage(APIAssistantMessage message) {
-        this.message = message;
+    public void setEvent(StreamEvent event) {
+        this.event = event;
     }
 
     public String getParentToolUseId() {
