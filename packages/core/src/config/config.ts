@@ -26,7 +26,7 @@ import type { AnyToolInvocation } from '../tools/tools.js';
 import { BaseLlmClient } from '../core/baseLlmClient.js';
 import { GeminiClient } from '../core/client.js';
 import {
-  AuthType,
+  type AuthType,
   createContentGenerator,
   resolveContentGeneratorConfigWithSources,
 } from '../core/contentGenerator.js';

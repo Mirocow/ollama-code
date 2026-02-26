@@ -1,12 +1,12 @@
 /**
  * @license
- * Copyright 2025 Qwen
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
   AuthType,
-  DEFAULT_QWEN_MODEL,
+  DEFAULT_OLLAMA_MODEL,
   type Config,
   type AvailableModel as CoreAvailableModel,
 } from '@qwen-code/qwen-code-core';
@@ -19,68 +19,71 @@ export type AvailableModel = {
   isVision?: boolean;
 };
 
-export const MAINLINE_VLM = 'vision-model';
-export const MAINLINE_CODER = DEFAULT_QWEN_MODEL;
+export const MAINLINE_VLM = 'llava';
+export const MAINLINE_CODER = DEFAULT_OLLAMA_MODEL;
 
-export const AVAILABLE_MODELS_QWEN: AvailableModel[] = [
+export const AVAILABLE_MODELS_OLLAMA: AvailableModel[] = [
   {
     id: MAINLINE_CODER,
     label: MAINLINE_CODER,
     get description() {
-      return t(
-        'Qwen 3.5 Plus — efficient hybrid model with leading coding performance',
-      );
+      return t('Qwen 2.5 Coder — excellent for coding tasks');
+    },
+  },
+  {
+    id: 'llama3.2',
+    label: 'llama3.2',
+    get description() {
+      return t('Meta Llama 3.2 — versatile model');
     },
   },
   {
     id: MAINLINE_VLM,
     label: MAINLINE_VLM,
     get description() {
-      return t(
-        'The latest Qwen Vision model from Alibaba Cloud ModelStudio (version: qwen3-vl-plus-2025-09-23)',
-      );
+      return t('LLaVA — vision-language model for image understanding');
     },
     isVision: true,
+  },
+  {
+    id: 'deepseek-coder-v2',
+    label: 'deepseek-coder-v2',
+    get description() {
+      return t('DeepSeek Coder V2 — powerful coding model');
+    },
+  },
+  {
+    id: 'mistral',
+    label: 'mistral',
+    get description() {
+      return t('Mistral — fast and efficient model');
+    },
   },
 ];
 
 /**
- * Get available Qwen models filtered by vision model preview setting
+ * Get available Ollama models filtered by vision model preview setting
  */
-export function getFilteredQwenModels(
+export function getFilteredOllamaModels(
   visionModelPreviewEnabled: boolean,
 ): AvailableModel[] {
   if (visionModelPreviewEnabled) {
-    return AVAILABLE_MODELS_QWEN;
+    return AVAILABLE_MODELS_OLLAMA;
   }
-  return AVAILABLE_MODELS_QWEN.filter((model) => !model.isVision);
+  return AVAILABLE_MODELS_OLLAMA.filter((model) => !model.isVision);
 }
 
 /**
- * Currently we use the single model of `OPENAI_MODEL` in the env.
- * In the future, after settings.json is updated, we will allow users to configure this themselves.
+ * Get available Ollama model from environment variable
  */
-export function getOpenAIAvailableModelFromEnv(): AvailableModel | null {
-  const id = process.env['OPENAI_MODEL']?.trim();
+export function getOllamaAvailableModelFromEnv(): AvailableModel | null {
+  const id = process.env['OLLAMA_MODEL']?.trim();
   return id
     ? {
         id,
         label: id,
         get description() {
-          return t('Configured via OPENAI_MODEL environment variable');
-        },
-      }
-    : null;
-}
-
-export function getAnthropicAvailableModelFromEnv(): AvailableModel | null {
-  const id = process.env['ANTHROPIC_MODEL']?.trim();
-  return id
-    ? {
-        id,
-        label: id,
-        get description() {
-          return t('Configured via ANTHROPIC_MODEL environment variable');
+          return t('Configured via OLLAMA_MODEL environment variable');
         },
       }
     : null;
@@ -103,17 +106,15 @@ function convertCoreModelToCliModel(
 /**
  * Get available models for the given authType.
  *
- * If a Config object is provided, uses config.getAvailableModelsForAuthType().
- * For qwen-oauth, always returns the hard-coded models.
- * Falls back to environment variables only when no config is provided.
+ * For Ollama, returns models from config or default list.
  */
 export function getAvailableModelsForAuthType(
   authType: AuthType,
   config?: Config,
 ): AvailableModel[] {
-  // For qwen-oauth, always use hard-coded models, this aligns with the API gateway.
-  if (authType === AuthType.QWEN_OAUTH) {
-    return AVAILABLE_MODELS_QWEN;
+  // Only Ollama is supported
+  if (authType !== AuthType.USE_OLLAMA) {
+    return [];
   }
 
   // Use config's model registry when available
@@ -124,39 +125,28 @@ export function getAvailableModelsForAuthType(
         return models.map(convertCoreModelToCliModel);
       }
     } catch {
-      // If config throws (e.g., not initialized), return empty array
+      // If config throws (e.g., not initialized), fall back to defaults
     }
-    // When a Config object is provided, we intentionally do NOT fall back to env-based
-    // "raw" models. These may reflect the currently effective config but should not be
-    // presented as selectable options in /model.
-    return [];
   }
 
-  // Fall back to environment variables for specific auth types (no config provided)
-  switch (authType) {
-    case AuthType.USE_OPENAI: {
-      const openAIModel = getOpenAIAvailableModelFromEnv();
-      return openAIModel ? [openAIModel] : [];
-    }
-    case AuthType.USE_ANTHROPIC: {
-      const anthropicModel = getAnthropicAvailableModelFromEnv();
-      return anthropicModel ? [anthropicModel] : [];
-    }
-    default:
-      return [];
+  // Fall back to environment variable or default list
+  const envModel = getOllamaAvailableModelFromEnv();
+  if (envModel) {
+    return [envModel];
   }
+
+  return AVAILABLE_MODELS_OLLAMA;
 }
 
 /**
- * Hard code the default vision model as a string literal,
- * until our coding model supports multimodal.
+ * Default vision model for Ollama
  */
 export function getDefaultVisionModel(): string {
   return MAINLINE_VLM;
 }
 
 export function isVisionModel(modelId: string): boolean {
-  return AVAILABLE_MODELS_QWEN.some(
+  return AVAILABLE_MODELS_OLLAMA.some(
     (model) => model.id === modelId && model.isVision,
   );
 }

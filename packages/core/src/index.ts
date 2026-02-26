@@ -56,7 +56,45 @@ export * from './core/nonInteractiveToolExecutor.js';
 export * from './core/prompts.js';
 export * from './core/tokenLimits.js';
 export * from './core/turn.js';
+export { GeminiChat, type StreamEvent } from './core/geminiChat.js';
 export * from './tools/tool-names.js';
+
+// Native Ollama API Client
+export {
+  OllamaNativeClient,
+  createOllamaNativeClient,
+  DEFAULT_OLLAMA_NATIVE_URL,
+  DEFAULT_OLLAMA_TIMEOUT,
+  type OllamaModel,
+  type OllamaModelDetails,
+  type OllamaTagsResponse,
+  type OllamaRunningModel,
+  type OllamaPsResponse,
+  type OllamaGenerateRequest,
+  type OllamaGenerateResponse,
+  type OllamaChatMessage,
+  type OllamaChatRequest,
+  type OllamaChatResponse,
+  type OllamaEmbedRequest,
+  type OllamaEmbedResponse,
+  type OllamaEmbeddingsRequest,
+  type OllamaEmbeddingsResponse,
+  type OllamaPullRequest,
+  type OllamaPullResponse,
+  type OllamaPushRequest,
+  type OllamaPushResponse,
+  type OllamaCopyRequest,
+  type OllamaDeleteRequest,
+  type OllamaShowRequest,
+  type OllamaShowResponse,
+  type OllamaVersionResponse,
+  type OllamaModelOptions,
+  type OllamaTool,
+  type OllamaToolCall,
+  type OllamaProgressEvent,
+  type StreamCallback,
+  type ProgressCallback,
+} from './core/ollamaNativeClient.js';
 
 // ============================================================================
 // Tools

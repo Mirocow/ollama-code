@@ -208,13 +208,9 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       modelsByAuthTypeMap.get(authType)!.push(model);
     }
 
-    // Fixed order: qwen-oauth first, then others in a stable order
+    // Fixed order: Ollama only
     const authTypeOrder: AuthType[] = [
-      AuthType.QWEN_OAUTH,
-      AuthType.USE_OPENAI,
-      AuthType.USE_ANTHROPIC,
-      AuthType.USE_GEMINI,
-      AuthType.USE_VERTEX_AI,
+      AuthType.USE_OLLAMA,
     ];
 
     // Filter to only include authTypes that have registry models and maintain order
@@ -363,10 +359,6 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
         await config.switchModel(
           selectedAuthType,
           modelId,
-          selectedAuthType !== authType &&
-            selectedAuthType === AuthType.QWEN_OAUTH
-            ? { requireCachedCredentials: true }
-            : undefined,
         );
 
         if (!isRuntime) {
@@ -425,16 +417,16 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
             badge={formatSourceBadge(sources['model'])}
           />
 
-          {authType !== AuthType.QWEN_OAUTH && (
+          {authType === AuthType.USE_OLLAMA && (
             <>
               <ConfigRow
                 label="Base URL"
-                value={effectiveConfig?.baseUrl ?? t('(default)')}
+                value={effectiveConfig?.baseUrl ?? t('(default: http://localhost:11434)')}
                 badge={formatSourceBadge(sources['baseUrl'])}
               />
               <ConfigRow
                 label="API Key"
-                value={effectiveConfig?.apiKey ? t('(set)') : t('(not set)')}
+                value={effectiveConfig?.apiKey ? t('(set)') : t('(optional)')}
                 badge={formatSourceBadge(sources['apiKey'])}
               />
             </>

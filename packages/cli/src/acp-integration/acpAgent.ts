@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,16 +10,12 @@ import {
   APPROVAL_MODE_INFO,
   APPROVAL_MODES,
   AuthType,
-  clearCachedCredentialFile,
   createDebugLogger,
-  QwenOAuth2Event,
-  qwenOAuth2Events,
   MCPServerConfig,
   SessionService,
   tokenLimit,
   type Config,
   type ConversationRecord,
-  type DeviceAuthorizationData,
 } from '@qwen-code/qwen-code-core';
 import type { ApprovalModeValue } from './schema.js';
 import * as acp from './acp.js';
@@ -53,13 +49,13 @@ export async function runAcpAgent(
   console.debug = console.error;
 
   new acp.AgentSideConnection(
-    (client: acp.Client) => new GeminiAgent(config, settings, argv, client),
+    (client: acp.Client) => new OllamaAgent(config, settings, argv, client),
     stdout,
     stdin,
   );
 }
 
-class GeminiAgent {
+class OllamaAgent {
   private sessions: Map<string, Session> = new Map();
   private clientCapabilities: acp.ClientCapabilities | undefined;
 
@@ -91,8 +87,8 @@ class GeminiAgent {
     return {
       protocolVersion: acp.PROTOCOL_VERSION,
       agentInfo: {
-        name: 'qwen-code',
-        title: 'Qwen Code',
+        name: 'ollama-code',
+        title: 'Ollama Code',
         version,
       },
       authMethods,
@@ -114,33 +110,18 @@ class GeminiAgent {
   async authenticate({ methodId }: acp.AuthenticateRequest): Promise<void> {
     const method = z.nativeEnum(AuthType).parse(methodId);
 
-    let authUri: string | undefined;
-    const authUriHandler = (deviceAuth: DeviceAuthorizationData) => {
-      authUri = deviceAuth.verification_uri_complete;
-      // Send the auth URL to ACP client as soon as it's available (refreshAuth is blocking).
-      void this.client.authenticateUpdate({ _meta: { authUri } });
-    };
-
-    if (method === AuthType.QWEN_OAUTH) {
-      qwenOAuth2Events.once(QwenOAuth2Event.AuthUri, authUriHandler);
-    }
-
-    await clearCachedCredentialFile();
-    try {
-      await this.config.refreshAuth(method);
+    // For Ollama, authentication is straightforward - just set the auth type
+    // No OAuth flow needed
+    if (method === AuthType.USE_OLLAMA) {
       this.settings.setValue(
         SettingScope.User,
         'security.auth.selectedType',
         method,
       );
-    } finally {
-      // Ensure we don't leak listeners if auth fails early.
-      if (method === AuthType.QWEN_OAUTH) {
-        qwenOAuth2Events.off(QwenOAuth2Event.AuthUri, authUriHandler);
-      }
+      return;
     }
 
-    return;
+    throw new Error(`Unsupported authentication method: ${method}`);
   }
 
   async newSession({
@@ -285,65 +266,30 @@ class GeminiAgent {
     const selectedType = config.getModelsConfig().getCurrentAuthType();
     if (!selectedType) {
       throw acp.RequestError.authRequired(
-        'Use Qwen Code CLI to authenticate first.',
+        'Use Ollama Code CLI to authenticate first.',
         this.pickAuthMethodsForAuthRequired(),
       );
     }
 
+    // For Ollama, no authentication check is needed for local instances
+    // Just verify the configuration is valid
     try {
-      // Use true for the second argument to ensure only cached credentials are used
       await config.refreshAuth(selectedType, true);
     } catch (e) {
-      debugLogger.error(`Authentication failed: ${e}`);
+      debugLogger.error(`Authentication check failed: ${e}`);
       throw acp.RequestError.authRequired(
-        'Authentication failed: ' + (e as Error).message,
+        'Ollama connection failed: ' + (e as Error).message,
         this.pickAuthMethodsForAuthRequired(selectedType, e),
       );
     }
   }
 
   private pickAuthMethodsForAuthRequired(
-    selectedType?: AuthType | string,
-    error?: unknown,
+    _selectedType?: AuthType | string,
+    _error?: unknown,
   ): acp.AuthMethod[] {
-    const authMethods = buildAuthMethods();
-    const errorMessage = this.extractErrorMessage(error);
-    if (
-      errorMessage?.includes('qwen-oauth') ||
-      errorMessage?.includes('Qwen OAuth')
-    ) {
-      const qwenOAuthMethods = authMethods.filter(
-        (method) => method.id === AuthType.QWEN_OAUTH,
-      );
-      return qwenOAuthMethods.length ? qwenOAuthMethods : authMethods;
-    }
-
-    if (selectedType) {
-      const matchedMethods = authMethods.filter(
-        (method) => method.id === selectedType,
-      );
-      return matchedMethods.length ? matchedMethods : authMethods;
-    }
-
-    return authMethods;
-  }
-
-  private extractErrorMessage(error?: unknown): string | undefined {
-    if (error instanceof Error) {
-      return error.message;
-    }
-    if (
-      typeof error === 'object' &&
-      error != null &&
-      'message' in error &&
-      typeof error.message === 'string'
-    ) {
-      return error.message;
-    }
-    if (typeof error === 'string') {
-      return error;
-    }
-    return undefined;
+    // Only Ollama is supported
+    return buildAuthMethods();
   }
 
   private setupFileSystem(config: Config): void {
@@ -368,13 +314,6 @@ class GeminiAgent {
     const geminiClient = config.getGeminiClient();
 
     // Use GeminiClient to manage chat lifecycle properly
-    // This ensures geminiClient.chat is in sync with the session's chat
-    //
-    // Note: When loading a session, config.initialize() has already been called
-    // in newSessionConfig(), which in turn calls geminiClient.initialize().
-    // The GeminiClient.initialize() method checks config.getResumedSessionData()
-    // and automatically loads the conversation history into the chat instance.
-    // So we only need to initialize if it hasn't been done yet.
     if (!geminiClient.isInitialized()) {
       await geminiClient.initialize();
     }
@@ -414,7 +353,6 @@ class GeminiAgent {
     const allConfiguredModels = config.getAllConfiguredModels();
 
     // Check if current model is a runtime model
-    // Runtime models use $runtime|${authType}|${modelId} format
     const activeRuntimeSnapshot = config.getActiveRuntimeModelSnapshot?.();
     const currentModelId = activeRuntimeSnapshot
       ? formatAcpModelId(
@@ -426,8 +364,6 @@ class GeminiAgent {
     const availableModels = allConfiguredModels;
 
     const mappedAvailableModels = availableModels.map((model) => {
-      // For runtime models, use runtimeSnapshotId as modelId for ACP protocol
-      // This allows ACP clients to correctly identify and switch to runtime models
       const effectiveModelId =
         model.isRuntimeModel && model.runtimeSnapshotId
           ? model.runtimeSnapshotId

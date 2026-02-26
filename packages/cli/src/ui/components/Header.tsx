@@ -41,16 +41,8 @@ function formatAuthType(authType?: AuthType): string {
   }
 
   switch (authType) {
-    case AuthType.QWEN_OAUTH:
-      return 'Qwen OAuth';
-    case AuthType.USE_OPENAI:
-      return 'OpenAI';
-    case AuthType.USE_GEMINI:
-      return 'Gemini';
-    case AuthType.USE_VERTEX_AI:
-      return 'Vertex AI';
-    case AuthType.USE_ANTHROPIC:
-      return 'Anthropic';
+    case AuthType.USE_OLLAMA:
+      return 'Ollama';
     default:
       return titleizeAuthType(String(authType));
   }

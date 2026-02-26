@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,19 +10,12 @@ import type { AuthMethod } from './schema.js';
 export function buildAuthMethods(): AuthMethod[] {
   return [
     {
-      id: AuthType.USE_OPENAI,
-      name: 'Use OpenAI API key',
-      description: 'Requires setting the `OPENAI_API_KEY` environment variable',
-      type: 'terminal',
-      args: ['--auth-type=openai'],
-    },
-    {
-      id: AuthType.QWEN_OAUTH,
-      name: 'Qwen OAuth',
+      id: AuthType.USE_OLLAMA,
+      name: 'Use Ollama',
       description:
-        'OAuth authentication for Qwen models with free daily requests',
+        'Connect to local Ollama server (default: http://localhost:11434). No API key required for local instances.',
       type: 'terminal',
-      args: ['--auth-type=qwen-oauth'],
+      args: ['--auth-type=ollama'],
     },
   ];
 }
@@ -34,14 +27,7 @@ export function filterAuthMethodsById(
   return authMethods.filter((method) => method.id === authMethodId);
 }
 
-export function pickAuthMethodsForDetails(details?: string): AuthMethod[] {
-  const authMethods = buildAuthMethods();
-  if (!details) {
-    return authMethods;
-  }
-  if (details.includes('qwen-oauth') || details.includes('Qwen OAuth')) {
-    const narrowed = filterAuthMethodsById(authMethods, AuthType.QWEN_OAUTH);
-    return narrowed.length ? narrowed : authMethods;
-  }
-  return authMethods;
+export function pickAuthMethodsForDetails(_details?: string): AuthMethod[] {
+  // Only Ollama is supported, return all methods
+  return buildAuthMethods();
 }

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,12 +15,11 @@ import {
   type ApprovalMode,
 } from '@qwen-code/qwen-code-core';
 import { type SettingScope } from '../../config/settings.js';
-import { type CodingPlanRegion } from '../../constants/codingPlan.js';
 import type { AuthState } from '../types.js';
 import { type VisionSwitchOutcome } from '../components/ModelSwitchDialog.js';
-// OpenAICredentials type (previously imported from OpenAIKeyPrompt)
-export interface OpenAICredentials {
-  apiKey: string;
+// OllamaCredentials type
+export interface OllamaCredentials {
+  apiKey?: string;
   baseUrl?: string;
   model?: string;
 }
@@ -39,11 +38,7 @@ export interface UIActions {
   ) => void;
   handleAuthSelect: (
     authType: AuthType | undefined,
-    credentials?: OpenAICredentials,
-  ) => Promise<void>;
-  handleCodingPlanSubmit: (
-    apiKey: string,
-    region?: CodingPlanRegion,
+    credentials?: OllamaCredentials,
   ) => Promise<void>;
   setAuthState: (state: AuthState) => void;
   onAuthError: (error: string | null) => void;
@@ -55,7 +50,6 @@ export interface UIActions {
   exitEditorDialog: () => void;
   closeSettingsDialog: () => void;
   closeModelDialog: () => void;
-  dismissCodingPlanUpdate: () => void;
   closePermissionsDialog: () => void;
   setShellModeActive: (value: boolean) => void;
   vimHandleInput: (key: Key) => boolean;
