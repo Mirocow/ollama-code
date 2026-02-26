@@ -1,15 +1,15 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import OpenAI from 'openai';
+import type { GenerateContentConfig } from '@google/genai';
 import type { Config } from '../../../config/config.js';
 import type { ContentGeneratorConfig } from '../../contentGenerator.js';
-import { DefaultOpenAICompatibleProvider } from './default.js';
 import type { OpenAICompatibleProvider } from './types.js';
-import { DEFAULT_OLLAMA_BASE_URL } from '../constants.js';
+import { DEFAULT_OLLAMA_BASE_URL, DEFAULT_MAX_RETRIES } from '../constants.js';
 import { buildRuntimeFetchOptions } from '../../../utils/runtimeFetchOptions.js';
 
 /**
@@ -17,10 +17,10 @@ import { buildRuntimeFetchOptions } from '../../../utils/runtimeFetchOptions.js'
  * Ollama provides an OpenAI-compatible API at http://localhost:11434/v1
  * and does not require an API key for local instances.
  */
-export class OllamaOpenAICompatibleProvider
-  extends DefaultOpenAICompatibleProvider
-  implements OpenAICompatibleProvider
-{
+export class OllamaOpenAICompatibleProvider implements OpenAICompatibleProvider {
+  protected contentGeneratorConfig: ContentGeneratorConfig;
+  protected cliConfig: Config;
+
   // Ollama may be slower on local machines, so we use a longer timeout
   private static readonly OLLAMA_DEFAULT_TIMEOUT = 300000; // 5 minutes
 
@@ -28,12 +28,12 @@ export class OllamaOpenAICompatibleProvider
     contentGeneratorConfig: ContentGeneratorConfig,
     cliConfig: Config,
   ) {
-    super(contentGeneratorConfig, cliConfig);
+    this.cliConfig = cliConfig;
+    this.contentGeneratorConfig = contentGeneratorConfig;
   }
 
   /**
    * Check if the configuration is for an Ollama provider.
-   * Detects Ollama by baseUrl containing localhost:11434 or ollama in the URL.
    */
   static isOllamaProvider(
     contentGeneratorConfig: ContentGeneratorConfig,
@@ -59,16 +59,25 @@ export class OllamaOpenAICompatibleProvider
     return false;
   }
 
-  /**
-   * Override buildClient to provide Ollama-specific configuration.
-   * Ollama doesn't require a real API key, so we use 'ollama' as a placeholder.
-   */
-  override buildClient(): OpenAI {
+  buildHeaders(): Record<string, string | undefined> {
+    const version = this.cliConfig.getCliVersion() || 'unknown';
+    const userAgent = `OllamaCode/${version} (${process.platform}; ${process.arch})`;
+    const { customHeaders } = this.contentGeneratorConfig;
+    const defaultHeaders = {
+      'User-Agent': userAgent,
+    };
+
+    return customHeaders
+      ? { ...defaultHeaders, ...customHeaders }
+      : defaultHeaders;
+  }
+
+  buildClient(): OpenAI {
     const {
       apiKey = 'ollama', // Ollama doesn't require a real API key
       baseUrl = DEFAULT_OLLAMA_BASE_URL,
       timeout = OllamaOpenAICompatibleProvider.OLLAMA_DEFAULT_TIMEOUT,
-      maxRetries = 1, // Fewer retries for local instance
+      maxRetries = DEFAULT_MAX_RETRIES,
     } = this.contentGeneratorConfig;
 
     const defaultHeaders = this.buildHeaders();
@@ -87,19 +96,18 @@ export class OllamaOpenAICompatibleProvider
     });
   }
 
-  /**
-   * Override buildHeaders to add Ollama-specific headers if needed.
-   */
-  override buildHeaders(): Record<string, string | undefined> {
-    const version = this.cliConfig.getCliVersion() || 'unknown';
-    const userAgent = `QwenCode-Ollama/${version} (${process.platform}; ${process.arch})`;
-    const { customHeaders } = this.contentGeneratorConfig;
-    const defaultHeaders = {
-      'User-Agent': userAgent,
+  buildRequest(
+    request: OpenAI.Chat.ChatCompletionCreateParams,
+    _userPromptId: string,
+  ): OpenAI.Chat.ChatCompletionCreateParams {
+    const extraBody = this.contentGeneratorConfig.extra_body;
+    return {
+      ...request,
+      ...(extraBody ? extraBody : {}),
     };
+  }
 
-    return customHeaders
-      ? { ...defaultHeaders, ...customHeaders }
-      : defaultHeaders;
+  getDefaultGenerationConfig(): GenerateContentConfig {
+    return {};
   }
 }

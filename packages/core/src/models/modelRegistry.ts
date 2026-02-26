@@ -1,27 +1,23 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { AuthType } from '../core/contentGenerator.js';
-import {
-  DEFAULT_OPENAI_BASE_URL,
-  DEFAULT_OLLAMA_BASE_URL,
-} from '../core/openaiContentGenerator/constants.js';
+import { DEFAULT_OLLAMA_BASE_URL } from '../core/openaiContentGenerator/constants.js';
 import {
   type ModelConfig,
   type ModelProvidersConfig,
   type ResolvedModelConfig,
   type AvailableModel,
 } from './types.js';
-import { DEFAULT_QWEN_MODEL } from '../config/models.js';
-import { QWEN_OAUTH_MODELS, OLLAMA_MODELS } from './constants.js';
+import { DEFAULT_OLLAMA_MODEL, OLLAMA_MODELS } from './constants.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('MODEL_REGISTRY');
 
-export { QWEN_OAUTH_MODELS, OLLAMA_MODELS } from './constants.js';
+export { OLLAMA_MODELS } from './constants.js';
 
 /**
  * Validates if a string key is a valid AuthType enum value.
@@ -45,42 +41,25 @@ function validateAuthTypeKey(key: string): AuthType | undefined {
 export class ModelRegistry {
   private modelsByAuthType: Map<AuthType, Map<string, ResolvedModelConfig>>;
 
-  private getDefaultBaseUrl(authType: AuthType): string {
-    switch (authType) {
-      case AuthType.QWEN_OAUTH:
-        return 'DYNAMIC_QWEN_OAUTH_BASE_URL';
-      case AuthType.USE_OPENAI:
-        return DEFAULT_OPENAI_BASE_URL;
-      case AuthType.USE_OLLAMA:
-        return DEFAULT_OLLAMA_BASE_URL;
-      default:
-        return '';
-    }
+  private getDefaultBaseUrl(_authType: AuthType): string {
+    return DEFAULT_OLLAMA_BASE_URL;
   }
 
   constructor(modelProvidersConfig?: ModelProvidersConfig) {
     this.modelsByAuthType = new Map();
 
-    // Always register qwen-oauth models (hard-coded, cannot be overridden)
-    this.registerAuthTypeModels(AuthType.QWEN_OAUTH, QWEN_OAUTH_MODELS);
-
     // Always register Ollama models (hard-coded defaults for local LLM)
     this.registerAuthTypeModels(AuthType.USE_OLLAMA, OLLAMA_MODELS);
 
-    // Register user-configured models for other authTypes
+    // Register user-configured models
     if (modelProvidersConfig) {
       for (const [rawKey, models] of Object.entries(modelProvidersConfig)) {
         const authType = validateAuthTypeKey(rawKey);
 
         if (!authType) {
           debugLogger.warn(
-            `Invalid authType key "${rawKey}" in modelProviders config. Expected one of: ${Object.values(AuthType).join(', ')}. Skipping.`,
+            `Invalid authType key "${rawKey}" in modelProviders config. Expected: ollama. Skipping.`,
           );
-          continue;
-        }
-
-        // Skip qwen-oauth as it uses hard-coded models
-        if (authType === AuthType.QWEN_OAUTH) {
           continue;
         }
 
@@ -116,7 +95,6 @@ export class ModelRegistry {
 
   /**
    * Get all models for a specific authType.
-   * This is used by /model command to show only relevant models.
    */
   getModelsForAuthType(authType: AuthType): AvailableModel[] {
     const models = this.modelsByAuthType.get(authType);
@@ -154,14 +132,12 @@ export class ModelRegistry {
 
   /**
    * Get default model for an authType.
-   * For qwen-oauth, returns the coder model.
-   * For others, returns the first configured model.
    */
   getDefaultModelForAuthType(
     authType: AuthType,
   ): ResolvedModelConfig | undefined {
-    if (authType === AuthType.QWEN_OAUTH) {
-      return this.getModel(authType, DEFAULT_QWEN_MODEL);
+    if (authType === AuthType.USE_OLLAMA) {
+      return this.getModel(authType, DEFAULT_OLLAMA_MODEL);
     }
     const models = this.modelsByAuthType.get(authType);
     if (!models || models.size === 0) return undefined;
@@ -200,37 +176,29 @@ export class ModelRegistry {
 
   /**
    * Reload models from updated configuration.
-   * Clears existing user-configured models and re-registers from new config.
-   * Preserves hard-coded qwen-oauth and ollama models.
    */
   reloadModels(modelProvidersConfig?: ModelProvidersConfig): void {
-    // Clear existing user-configured models (preserve qwen-oauth and ollama)
+    // Clear existing models except Ollama
     for (const authType of this.modelsByAuthType.keys()) {
-      if (
-        authType !== AuthType.QWEN_OAUTH &&
-        authType !== AuthType.USE_OLLAMA
-      ) {
+      if (authType !== AuthType.USE_OLLAMA) {
         this.modelsByAuthType.delete(authType);
       }
     }
 
-    // Re-register user-configured models for other authTypes
+    // Re-register user-configured models
     if (modelProvidersConfig) {
       for (const [rawKey, models] of Object.entries(modelProvidersConfig)) {
         const authType = validateAuthTypeKey(rawKey);
 
         if (!authType) {
           debugLogger.warn(
-            `Invalid authType key "${rawKey}" in modelProviders config. Expected one of: ${Object.values(AuthType).join(', ')}. Skipping.`,
+            `Invalid authType key "${rawKey}" in modelProviders config. Expected: ollama. Skipping.`,
           );
           continue;
         }
 
-        // Skip qwen-oauth and ollama as they use hard-coded models
-        if (
-          authType === AuthType.QWEN_OAUTH ||
-          authType === AuthType.USE_OLLAMA
-        ) {
+        // Skip Ollama as it uses hard-coded models
+        if (authType === AuthType.USE_OLLAMA) {
           continue;
         }
 

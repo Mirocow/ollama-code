@@ -20,13 +20,8 @@ import type {
   ConfigSources,
 } from '../utils/configResolver.js';
 import {
-  getDefaultApiKeyEnvVar,
   getDefaultModelEnvVar,
-  MissingAnthropicBaseUrlEnvError,
-  MissingApiKeyError,
-  MissingBaseUrlError,
   MissingModelError,
-  StrictMissingCredentialsError,
   StrictMissingModelIdError,
 } from '../models/modelConfigErrors.js';
 import { PROVIDER_SOURCED_FIELDS } from '../models/modelsConfig.js';
@@ -53,11 +48,6 @@ export interface ContentGenerator {
 }
 
 export enum AuthType {
-  USE_OPENAI = 'openai',
-  QWEN_OAUTH = 'qwen-oauth',
-  USE_GEMINI = 'gemini',
-  USE_VERTEX_AI = 'vertex-ai',
-  USE_ANTHROPIC = 'anthropic',
   USE_OLLAMA = 'ollama',
 }
 
@@ -66,13 +56,11 @@ export type ContentGeneratorConfig = {
   apiKey?: string;
   apiKeyEnvKey?: string;
   baseUrl?: string;
-  vertexai?: boolean;
   authType?: AuthType | undefined;
   enableOpenAILogging?: boolean;
   openAILoggingDir?: string;
   timeout?: number; // Timeout configuration in milliseconds
   maxRetries?: number; // Maximum retries for failed requests
-  enableCacheControl?: boolean; // Enable cache control for DashScope providers
   samplingParams?: {
     top_p?: number;
     top_k?: number;
@@ -129,13 +117,6 @@ function getSeedSource(
 
 /**
  * Resolve ContentGeneratorConfig while tracking the source of each effective field.
- *
- * This function now primarily validates and finalizes the configuration that has
- * already been resolved by ModelConfigResolver. The env fallback logic has been
- * moved to the unified resolver to eliminate duplication.
- *
- * Note: The generationConfig passed here should already be fully resolved with
- * proper source tracking from the caller (CLI/SDK layer).
  */
 export function resolveContentGeneratorConfigWithSources(
   config: Config,
@@ -176,8 +157,7 @@ export function resolveContentGeneratorConfigWithSources(
     }
   }
 
-  // Validate required fields based on authType. This does not perform any
-  // fallback resolution (resolution is handled by ModelConfigResolver).
+  // Validate required fields
   const validation = validateModelConfig(
     newContentGeneratorConfig as ContentGeneratorConfig,
     strictModelProvider,
@@ -199,7 +179,7 @@ export interface ModelConfigValidationResult {
 
 /**
  * Validate a resolved model configuration.
- * This is the single validation entry point used across Core.
+ * Ollama doesn't require an API key for local instances.
  */
 export function validateModelConfig(
   config: ContentGeneratorConfig,
@@ -207,52 +187,10 @@ export function validateModelConfig(
 ): ModelConfigValidationResult {
   const errors: Error[] = [];
 
-  // Qwen OAuth doesn't need validation - it uses dynamic tokens
-  if (config.authType === AuthType.QWEN_OAUTH) {
-    return { valid: true, errors: [] };
-  }
-
   // Ollama doesn't require an API key for local instances
   // Set a placeholder API key if not provided
-  if (config.authType === AuthType.USE_OLLAMA) {
-    if (!config.apiKey) {
-      // Ollama doesn't require a real API key, use placeholder
-      (config as { apiKey?: string }).apiKey = 'ollama';
-    }
-    // Model is still required for Ollama
-    if (!config.model) {
-      if (isStrictModelProvider) {
-        errors.push(new StrictMissingModelIdError(config.authType));
-      } else {
-        const envKey = getDefaultModelEnvVar(config.authType);
-        errors.push(new MissingModelError({ authType: config.authType, envKey }));
-      }
-    }
-    return { valid: errors.length === 0, errors };
-  }
-
-  // API key is required for all other auth types
   if (!config.apiKey) {
-    if (isStrictModelProvider) {
-      errors.push(
-        new StrictMissingCredentialsError(
-          config.authType,
-          config.model,
-          config.apiKeyEnvKey,
-        ),
-      );
-    } else {
-      const envKey =
-        config.apiKeyEnvKey || getDefaultApiKeyEnvVar(config.authType);
-      errors.push(
-        new MissingApiKeyError({
-          authType: config.authType,
-          model: config.model,
-          baseUrl: config.baseUrl,
-          envKey,
-        }),
-      );
-    }
+    (config as { apiKey?: string }).apiKey = 'ollama';
   }
 
   // Model is required
@@ -262,20 +200,6 @@ export function validateModelConfig(
     } else {
       const envKey = getDefaultModelEnvVar(config.authType);
       errors.push(new MissingModelError({ authType: config.authType, envKey }));
-    }
-  }
-
-  // Explicit baseUrl is required for Anthropic; Migrated from existing code.
-  if (config.authType === AuthType.USE_ANTHROPIC && !config.baseUrl) {
-    if (isStrictModelProvider) {
-      errors.push(
-        new MissingBaseUrlError({
-          authType: config.authType,
-          model: config.model,
-        }),
-      );
-    } else if (config.authType === AuthType.USE_ANTHROPIC) {
-      errors.push(new MissingAnthropicBaseUrlEnvError());
     }
   }
 
@@ -297,7 +221,7 @@ export function createContentGeneratorConfig(
 export async function createContentGenerator(
   generatorConfig: ContentGeneratorConfig,
   config: Config,
-  isInitialAuth?: boolean,
+  _isInitialAuth?: boolean,
 ): Promise<ContentGenerator> {
   const validation = validateModelConfig(generatorConfig, false);
   if (!validation.valid) {
@@ -309,60 +233,18 @@ export async function createContentGenerator(
     throw new Error('ContentGeneratorConfig must have an authType');
   }
 
-  let baseGenerator: ContentGenerator;
-
-  if (authType === AuthType.USE_OPENAI) {
-    const { createOpenAIContentGenerator } = await import(
-      './openaiContentGenerator/index.js'
-    );
-    baseGenerator = createOpenAIContentGenerator(generatorConfig, config);
-  } else if (authType === AuthType.QWEN_OAUTH) {
-    const { getQwenOAuthClient: getQwenOauthClient } = await import(
-      '../qwen/qwenOAuth2.js'
-    );
-    const { QwenContentGenerator } = await import(
-      '../qwen/qwenContentGenerator.js'
-    );
-
-    try {
-      const qwenClient = await getQwenOauthClient(
-        config,
-        isInitialAuth ? { requireCachedCredentials: true } : undefined,
-      );
-      baseGenerator = new QwenContentGenerator(
-        qwenClient,
-        generatorConfig,
-        config,
-      );
-    } catch (error) {
-      throw new Error(
-        `${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  } else if (authType === AuthType.USE_ANTHROPIC) {
-    const { createAnthropicContentGenerator } = await import(
-      './anthropicContentGenerator/index.js'
-    );
-    baseGenerator = createAnthropicContentGenerator(generatorConfig, config);
-  } else if (authType === AuthType.USE_OLLAMA) {
-    // Ollama uses OpenAI-compatible API
-    const { createOpenAIContentGenerator } = await import(
-      './openaiContentGenerator/index.js'
-    );
-    baseGenerator = createOpenAIContentGenerator(generatorConfig, config);
-  } else if (
-    authType === AuthType.USE_GEMINI ||
-    authType === AuthType.USE_VERTEX_AI
-  ) {
-    const { createGeminiContentGenerator } = await import(
-      './geminiContentGenerator/index.js'
-    );
-    baseGenerator = createGeminiContentGenerator(generatorConfig, config);
-  } else {
+  // Only Ollama is supported
+  if (authType !== AuthType.USE_OLLAMA) {
     throw new Error(
-      `Error creating contentGenerator: Unsupported authType: ${authType}`,
+      `Error creating contentGenerator: Unsupported authType: ${authType}. Only 'ollama' is supported.`,
     );
   }
+
+  // Ollama uses OpenAI-compatible API
+  const { createOpenAIContentGenerator } = await import(
+    './openaiContentGenerator/index.js'
+  );
+  const baseGenerator = createOpenAIContentGenerator(generatorConfig, config);
 
   return new LoggingContentGenerator(baseGenerator, config, generatorConfig);
 }

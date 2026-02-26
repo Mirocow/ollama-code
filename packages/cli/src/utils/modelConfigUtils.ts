@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -18,10 +18,8 @@ import { writeStderrLine } from './stdioHelpers.js';
 export interface CliGenerationConfigInputs {
   argv: {
     model?: string | undefined;
-    openaiApiKey?: string | undefined;
-    openaiBaseUrl?: string | undefined;
-    openaiLogging?: boolean | undefined;
-    openaiLoggingDir?: string | undefined;
+    ollamaApiKey?: string | undefined;
+    ollamaBaseUrl?: string | undefined;
   };
   settings: Settings;
   selectedAuthType: AuthType | undefined;
@@ -34,9 +32,9 @@ export interface CliGenerationConfigInputs {
 export interface ResolvedCliGenerationConfig {
   /** The resolved model id (may be empty string if not resolvable at CLI layer) */
   model: string;
-  /** API key for OpenAI-compatible auth */
+  /** API key for Ollama auth (optional for local instances) */
   apiKey: string;
-  /** Base URL for OpenAI-compatible auth */
+  /** Base URL for Ollama API */
   baseUrl: string;
   /** The full generation config to pass to core Config */
   generationConfig: Partial<ContentGeneratorConfig>;
@@ -45,46 +43,23 @@ export interface ResolvedCliGenerationConfig {
 }
 
 export function getAuthTypeFromEnv(): AuthType | undefined {
-  if (process.env['QWEN_OAUTH']) {
-    return AuthType.QWEN_OAUTH;
+  // Ollama is the only supported auth type
+  // Check for Ollama environment variables
+  if (process.env['OLLAMA_BASE_URL'] || process.env['OLLAMA_HOST']) {
+    return AuthType.USE_OLLAMA;
   }
 
-  if (
-    process.env['OPENAI_API_KEY'] &&
-    process.env['OPENAI_MODEL'] &&
-    process.env['OPENAI_BASE_URL']
-  ) {
-    return AuthType.USE_OPENAI;
-  }
-
-  if (process.env['GEMINI_API_KEY'] && process.env['GEMINI_MODEL']) {
-    return AuthType.USE_GEMINI;
-  }
-
-  if (process.env['GOOGLE_API_KEY'] && process.env['GOOGLE_MODEL']) {
-    return AuthType.USE_VERTEX_AI;
-  }
-
-  if (
-    process.env['ANTHROPIC_API_KEY'] &&
-    process.env['ANTHROPIC_MODEL'] &&
-    process.env['ANTHROPIC_BASE_URL']
-  ) {
-    return AuthType.USE_ANTHROPIC;
-  }
-
-  return undefined;
+  // Default to Ollama
+  return AuthType.USE_OLLAMA;
 }
 
 /**
  * Unified resolver for CLI generation config.
  *
- * Precedence (for OpenAI auth):
- * - model: argv.model > OPENAI_MODEL > QWEN_MODEL > settings.model.name
- * - apiKey: argv.openaiApiKey > OPENAI_API_KEY > settings.security.auth.apiKey
- * - baseUrl: argv.openaiBaseUrl > OPENAI_BASE_URL > settings.security.auth.baseUrl
- *
- * For non-OpenAI auth, only argv.model override is respected at CLI layer.
+ * Precedence (for Ollama auth):
+ * - model: argv.model > OLLAMA_MODEL > settings.model.name
+ * - apiKey: argv.ollamaApiKey > OLLAMA_API_KEY > settings.security.auth.apiKey
+ * - baseUrl: argv.ollamaBaseUrl > OLLAMA_BASE_URL > settings.security.auth.baseUrl
  */
 export function resolveCliGenerationConfig(
   inputs: CliGenerationConfigInputs,
@@ -92,7 +67,7 @@ export function resolveCliGenerationConfig(
   const { argv, settings, selectedAuthType } = inputs;
   const env = inputs.env ?? (process.env as Record<string, string | undefined>);
 
-  const authType = selectedAuthType;
+  const authType = selectedAuthType || AuthType.USE_OLLAMA;
 
   // Find modelProvider from settings.modelProviders based on authType and model
   let modelProvider: ProviderModelConfig | undefined;
@@ -113,8 +88,8 @@ export function resolveCliGenerationConfig(
     authType,
     cli: {
       model: argv.model,
-      apiKey: argv.openaiApiKey,
-      baseUrl: argv.openaiBaseUrl,
+      apiKey: argv.ollamaApiKey,
+      baseUrl: argv.ollamaBaseUrl,
     },
     settings: {
       model: settings.model?.name,
@@ -135,21 +110,9 @@ export function resolveCliGenerationConfig(
     writeStderrLine(warning);
   }
 
-  // Resolve OpenAI logging config (CLI-specific, not part of core resolver)
-  const enableOpenAILogging =
-    (typeof argv.openaiLogging === 'undefined'
-      ? settings.model?.enableOpenAILogging
-      : argv.openaiLogging) ?? false;
-
-  const openAILoggingDir =
-    argv.openaiLoggingDir || settings.model?.openAILoggingDir;
-
   // Build the full generation config
-  // Note: we merge the resolved config with logging settings
   const generationConfig: Partial<ContentGeneratorConfig> = {
     ...resolved.config,
-    enableOpenAILogging,
-    openAILoggingDir,
   };
 
   return {

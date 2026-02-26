@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,9 +15,8 @@ export * from './utils/configResolver.js';
 
 // Model configuration
 export {
-  DEFAULT_QWEN_MODEL,
-  DEFAULT_QWEN_FLASH_MODEL,
-  DEFAULT_QWEN_EMBEDDING_MODEL,
+  DEFAULT_OLLAMA_MODEL,
+  DEFAULT_OLLAMA_EMBEDDING_MODEL,
 } from './config/models.js';
 export {
   type AvailableModel,
@@ -35,7 +34,7 @@ export {
   type ModelProvidersConfig,
   type ModelSwitchMetadata,
   type OnModelChangeCallback,
-  QWEN_OAUTH_MODELS,
+  OLLAMA_MODELS,
   resolveModelConfig,
   type ResolvedModelConfig,
   validateModelConfig,
@@ -52,16 +51,11 @@ export * from './output/types.js';
 export * from './core/client.js';
 export * from './core/contentGenerator.js';
 export * from './core/coreToolScheduler.js';
-export * from './core/geminiChat.js';
-export * from './core/geminiRequest.js';
 export * from './core/logger.js';
 export * from './core/nonInteractiveToolExecutor.js';
 export * from './core/prompts.js';
 export * from './core/tokenLimits.js';
 export * from './core/turn.js';
-export * from './core/geminiRequest.js';
-export * from './core/coreToolScheduler.js';
-export * from './core/nonInteractiveToolExecutor.js';
 export * from './tools/tool-names.js';
 
 // ============================================================================
@@ -147,24 +141,16 @@ export * from './tools/ripGrep.js';
 export * from './tools/glob.js';
 export * from './tools/edit.js';
 export * from './tools/exitPlanMode.js';
-export * from './tools/glob.js';
-export * from './tools/grep.js';
-export * from './tools/ls.js';
 export * from './tools/lsp.js';
 export * from './tools/memoryTool.js';
 export * from './tools/mcp-client.js';
 export * from './tools/mcp-client-manager.js';
 export * from './tools/mcp-tool.js';
-export * from './tools/read-file.js';
-export * from './tools/ripGrep.js';
 export * from './tools/sdk-control-client-transport.js';
 export * from './tools/shell.js';
 export * from './tools/skill.js';
 export * from './tools/task.js';
 export * from './tools/todoWrite.js';
-export * from './tools/tool-error.js';
-export * from './tools/tool-registry.js';
-export * from './tools/tools.js';
 export * from './tools/web-fetch.js';
 export * from './tools/web-search/index.js';
 export * from './tools/write-file.js';
@@ -217,7 +203,6 @@ export type {
 // Telemetry
 // ============================================================================
 
-export { QwenLogger } from './telemetry/qwen-logger/qwen-logger.js';
 export * from './telemetry/index.js';
 export {
   logAuth,
@@ -285,12 +270,6 @@ export * from './utils/toml-to-markdown-converter.js';
 export * from './utils/tool-utils.js';
 export * from './utils/workspaceContext.js';
 export * from './utils/yaml-parser.js';
-
-// ============================================================================
-// OAuth & Authentication
-// ============================================================================
-
-export * from './qwen/qwenOAuth2.js';
 
 // ============================================================================
 // Testing Utilities

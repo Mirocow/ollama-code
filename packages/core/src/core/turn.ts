@@ -241,7 +241,7 @@ export class Turn {
       const responseStream = await this.chat.sendMessageStream(
         model,
         {
-          message: req,
+          message: req as Part[],
           config: {
             abortSignal: signal,
           },

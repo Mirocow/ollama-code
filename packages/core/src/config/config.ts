@@ -98,7 +98,7 @@ import {
   DEFAULT_FILE_FILTERING_OPTIONS,
   DEFAULT_MEMORY_FILE_FILTERING_OPTIONS,
 } from './constants.js';
-import { DEFAULT_QWEN_EMBEDDING_MODEL } from './models.js';
+import { DEFAULT_OLLAMA_EMBEDDING_MODEL } from './models.js';
 import { Storage } from './storage.js';
 import { ChatRecordingService } from '../services/chatRecordingService.js';
 import {
@@ -524,7 +524,7 @@ export class Config {
     this.sessionData = params.sessionData;
     setDebugLogSession(this);
     this.debugLogger = createDebugLogger();
-    this.embeddingModel = params.embeddingModel ?? DEFAULT_QWEN_EMBEDDING_MODEL;
+    this.embeddingModel = params.embeddingModel ?? DEFAULT_OLLAMA_EMBEDDING_MODEL;
     this.fileSystemService = new StandardFileSystemService();
     this.sandbox = params.sandbox;
     this.targetDir = path.resolve(params.targetDir);
@@ -922,57 +922,13 @@ export class Config {
    */
   private async handleModelChange(
     authType: AuthType,
-    requiresRefresh: boolean,
+    _requiresRefresh: boolean,
   ): Promise<void> {
     if (!this.contentGeneratorConfig) {
       return;
     }
 
-    // Hot update path: only supported for qwen-oauth.
-    // For other auth types we always refresh to recreate the ContentGenerator.
-    //
-    // Rationale:
-    // - Non-qwen providers may need to re-validate credentials / baseUrl / envKey.
-    // - ModelsConfig.applyResolvedModelDefaults can clear or change credentials sources.
-    // - Refresh keeps runtime behavior consistent and centralized.
-    if (authType === AuthType.QWEN_OAUTH && !requiresRefresh) {
-      const { config, sources } = resolveContentGeneratorConfigWithSources(
-        this,
-        authType,
-        this.modelsConfig.getGenerationConfig(),
-        this.modelsConfig.getGenerationConfigSources(),
-        {
-          strictModelProvider:
-            this.modelsConfig.isStrictModelProviderSelection(),
-        },
-      );
-
-      // Hot-update fields (qwen-oauth models share the same auth + client).
-      this.contentGeneratorConfig.model = config.model;
-      this.contentGeneratorConfig.samplingParams = config.samplingParams;
-      this.contentGeneratorConfig.contextWindowSize = config.contextWindowSize;
-      this.contentGeneratorConfig.enableCacheControl =
-        config.enableCacheControl;
-
-      if ('model' in sources) {
-        this.contentGeneratorConfigSources['model'] = sources['model'];
-      }
-      if ('samplingParams' in sources) {
-        this.contentGeneratorConfigSources['samplingParams'] =
-          sources['samplingParams'];
-      }
-      if ('enableCacheControl' in sources) {
-        this.contentGeneratorConfigSources['enableCacheControl'] =
-          sources['enableCacheControl'];
-      }
-      if ('contextWindowSize' in sources) {
-        this.contentGeneratorConfigSources['contextWindowSize'] =
-          sources['contextWindowSize'];
-      }
-      return;
-    }
-
-    // Full refresh path
+    // Full refresh path - always refresh for Ollama
     await this.refreshAuth(authType);
   }
 

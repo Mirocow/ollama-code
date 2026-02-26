@@ -10,7 +10,6 @@ import type { ApprovalMode } from '../config/config.js';
 import type { CompletedToolCall } from '../core/coreToolScheduler.js';
 import { DiscoveredMCPTool } from '../tools/mcp-tool.js';
 import type { FileDiff } from '../tools/tools.js';
-import { AuthType } from '../core/contentGenerator.js';
 import {
   getDecisionFromOutcome,
   ToolCallDecision,
@@ -58,12 +57,8 @@ export class StartSessionEvent implements BaseTelemetryEvent {
     const mcpServers = config.getMcpServers();
     const toolRegistry = config.getToolRegistry();
 
-    let useGemini = false;
-    let useVertex = false;
-    if (generatorConfig && generatorConfig.authType) {
-      useGemini = generatorConfig.authType === AuthType.USE_GEMINI;
-      useVertex = generatorConfig.authType === AuthType.USE_VERTEX_AI;
-    }
+    // Check if API key is configured
+    const hasApiKey = !!(generatorConfig && generatorConfig.apiKey);
 
     this['event.name'] = 'cli_config';
     this.session_id = config.getSessionId();
@@ -73,8 +68,8 @@ export class StartSessionEvent implements BaseTelemetryEvent {
       typeof config.getSandbox() === 'string' || !!config.getSandbox();
     this.core_tools_enabled = (config.getCoreTools() ?? []).join(',');
     this.approval_mode = config.getApprovalMode();
-    this.api_key_enabled = useGemini || useVertex;
-    this.vertex_ai_enabled = useVertex;
+    this.api_key_enabled = hasApiKey;
+    this.vertex_ai_enabled = false;
     this.debug_enabled = config.getDebugMode();
     this.mcp_servers = mcpServers ? Object.keys(mcpServers).join(',') : '';
     this.telemetry_enabled = config.getTelemetryEnabled();
@@ -762,13 +757,13 @@ export class SubagentExecutionEvent implements BaseTelemetryEvent {
 export class AuthEvent implements BaseTelemetryEvent {
   'event.name': 'auth';
   'event.timestamp': string;
-  auth_type: AuthType;
+  auth_type: string;
   action_type: 'auto' | 'manual' | 'coding-plan';
   status: 'success' | 'error' | 'cancelled';
   error_message?: string;
 
   constructor(
-    auth_type: AuthType,
+    auth_type: string,
     action_type: 'auto' | 'manual' | 'coding-plan',
     status: 'success' | 'error' | 'cancelled',
     error_message?: string,

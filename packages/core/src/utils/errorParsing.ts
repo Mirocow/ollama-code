@@ -1,39 +1,22 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { isApiError, isStructuredError } from './quotaErrorDetection.js';
-import { AuthType } from '../core/contentGenerator.js';
 
-// Free Tier message functions
-const RATE_LIMIT_ERROR_MESSAGE_USE_GEMINI =
-  '\nPlease wait and try again later. To increase your limits, request a quota increase through AI Studio, or switch to another /auth method';
-const RATE_LIMIT_ERROR_MESSAGE_VERTEX =
-  '\nPlease wait and try again later. To increase your limits, request a quota increase through Vertex, or switch to another /auth method';
 const RATE_LIMIT_ERROR_MESSAGE_DEFAULT =
   '\nPossible quota limitations in place or slow response times detected. Please wait and try again later.';
 
-function getRateLimitMessage(authType?: AuthType): string {
-  switch (authType) {
-    case AuthType.USE_GEMINI:
-      return RATE_LIMIT_ERROR_MESSAGE_USE_GEMINI;
-    case AuthType.USE_VERTEX_AI:
-      return RATE_LIMIT_ERROR_MESSAGE_VERTEX;
-    default:
-      return RATE_LIMIT_ERROR_MESSAGE_DEFAULT;
-  }
-}
-
 export function parseAndFormatApiError(
   error: unknown,
-  authType?: AuthType,
+  _authType?: string,
 ): string {
   if (isStructuredError(error)) {
     let text = `[API Error: ${error.message}]`;
     if (error.status === 429) {
-      text += getRateLimitMessage(authType);
+      text += RATE_LIMIT_ERROR_MESSAGE_DEFAULT;
     }
     return text;
   }
@@ -65,7 +48,7 @@ export function parseAndFormatApiError(
           : '';
         let text = `[API Error: ${finalMessage}${statusText}]`;
         if (parsedError.error.code === 429) {
-          text += getRateLimitMessage(authType);
+          text += RATE_LIMIT_ERROR_MESSAGE_DEFAULT;
         }
         return text;
       }
