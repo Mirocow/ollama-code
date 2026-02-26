@@ -1,8 +1,8 @@
 /**
  * Terminal-Bench Integration Tests
  *
- * Tests qwen-code integration with terminal-bench tasks
- * using both oracle (for debugging) and qwen-code agents
+ * Tests ollama-code integration with terminal-bench tasks
+ * using both oracle (for debugging) and ollama-code agents
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -211,7 +211,7 @@ describe('terminal-bench integration', () => {
     );
 
     it(
-      `should complete ${taskId} task with qwen-code agent`,
+      `should complete ${taskId} task with ollama-code agent`,
       async () => {
         rig.setup(`terminal-bench-qwen-${taskId}`);
 
@@ -221,11 +221,11 @@ describe('terminal-bench integration', () => {
         const apiKey = process.env['OPENAI_API_KEY'];
         if (!apiKey) {
           throw new Error(
-            'OPENAI_API_KEY environment variable is not set. This test requires an API key to run the qwen-code agent.',
+            'OPENAI_API_KEY environment variable is not set. This test requires an API key to run the ollama-code agent.',
           );
         }
 
-        // Run qwen-code agent using spawn to avoid blocking event loop
+        // Run ollama-code agent using spawn to avoid blocking event loop
         const args = [
           'run',
           '--agent-import-path',
@@ -271,7 +271,7 @@ describe('terminal-bench integration', () => {
           child.on('close', (code) => {
             if (code !== 0) {
               console.error(
-                `qwen-code agent failed for ${taskId} with stderr:`,
+                `ollama-code agent failed for ${taskId} with stderr:`,
                 stderr,
               );
               reject(new Error(`Process exited with code ${code}: ${stderr}`));

@@ -19,7 +19,7 @@ import {
 } from '../i18n/index.js';
 
 const LLM_OUTPUT_LANGUAGE_RULE_FILENAME = 'output-language.md';
-const LLM_OUTPUT_LANGUAGE_MARKER_PREFIX = 'qwen-code:llm-output-language:';
+const LLM_OUTPUT_LANGUAGE_MARKER_PREFIX = 'ollama-code:llm-output-language:';
 
 /** Special value meaning "detect from system settings" */
 export const OUTPUT_LANGUAGE_AUTO = 'auto';
@@ -110,7 +110,7 @@ Raw tool/system outputs may contain fixed-format English. Preserve them verbatim
  * Supports both the new marker format and legacy heading format.
  */
 function parseOutputLanguageFromContent(content: string): string | null {
-  // Primary: machine-readable marker (e.g., <!-- qwen-code:llm-output-language: 中文 -->)
+  // Primary: machine-readable marker (e.g., <!-- ollama-code:llm-output-language: 中文 -->)
   const markerRegex = new RegExp(
     String.raw`<!--\s*${LLM_OUTPUT_LANGUAGE_MARKER_PREFIX}\s*(.*?)\s*-->`,
     'i',
