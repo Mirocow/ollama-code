@@ -23,7 +23,7 @@ import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('SKILL_MANAGER');
 
-const QWEN_CONFIG_DIR = '.qwen';
+const OLLAMA_CODE_CONFIG_DIR = '.ollama-code';
 const SKILLS_CONFIG_DIR = 'skills';
 const SKILL_MANIFEST_FILE = 'SKILL.md';
 
@@ -418,10 +418,10 @@ export class SkillManager {
       level === 'project'
         ? path.join(
             this.config.getProjectRoot(),
-            QWEN_CONFIG_DIR,
+            OLLAMA_CODE_CONFIG_DIR,
             SKILLS_CONFIG_DIR,
           )
-        : path.join(os.homedir(), QWEN_CONFIG_DIR, SKILLS_CONFIG_DIR);
+        : path.join(os.homedir(), OLLAMA_CODE_CONFIG_DIR, SKILLS_CONFIG_DIR);
 
     return baseDir;
   }

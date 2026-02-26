@@ -143,11 +143,11 @@ qwen extensions update --all
 
 ## How it works
 
-On startup, Ollama Code looks for extensions in `<home>/.qwen/extensions`
+On startup, Ollama Code looks for extensions in `<home>/.ollama-code/extensions`
 
 Extensions exist as a directory that contains a `qwen-extension.json` file. For example:
 
-`<home>/.qwen/extensions/my-extension/qwen-extension.json`
+`<home>/.ollama-code/extensions/my-extension/qwen-extension.json`
 
 ### `qwen-extension.json`
 
@@ -162,7 +162,7 @@ The `qwen-extension.json` file contains the configuration for the extension. The
       "command": "node my-server.js"
     }
   },
-  "contextFileName": "QWEN.md",
+  "contextFileName": "OLLAMA_CODE.md",
   "commands": "commands",
   "skills": "skills",
   "agents": "agents",
@@ -181,7 +181,7 @@ The `qwen-extension.json` file contains the configuration for the extension. The
 - `version`: The version of the extension.
 - `mcpServers`: A map of MCP servers to configure. The key is the name of the server, and the value is the server configuration. These servers will be loaded on startup just like MCP servers configured in a [`settings.json` file](./cli/configuration.md). If both an extension and a `settings.json` file configure an MCP server with the same name, the server defined in the `settings.json` file takes precedence.
   - Note that all MCP server configuration options are supported except for `trust`.
-- `contextFileName`: The name of the file that contains the context for the extension. This will be used to load the context from the extension directory. If this property is not used but a `QWEN.md` file is present in your extension directory, then that file will be loaded.
+- `contextFileName`: The name of the file that contains the context for the extension. This will be used to load the context from the extension directory. If this property is not used but a `OLLAMA_CODE.md` file is present in your extension directory, then that file will be loaded.
 - `commands`: The directory containing custom commands (default: `commands`). Commands are `.md` files that define prompts.
 - `skills`: The directory containing custom skills (default: `skills`). Skills are discovered automatically and become available via the `/skills` command.
 - `agents`: The directory containing custom subagents (default: `agents`). Subagents are `.yaml` or `.md` files that define specialized AI assistants.
@@ -222,8 +222,8 @@ qwen extensions settings unset <extension-name> <setting-name> [--scope user|wor
 
 Settings can be configured at two levels:
 
-- **User level** (default): Settings apply across all projects (`~/.qwen/.env`)
-- **Workspace level**: Settings apply only to the current project (`.qwen/.env`)
+- **User level** (default): Settings apply across all projects (`~/.ollama-code/.env`)
+- **Workspace level**: Settings apply only to the current project (`.ollama-code/.env`)
 
 Workspace settings take precedence over user settings. Sensitive settings are stored securely and never displayed in plain text.
 
@@ -240,7 +240,7 @@ Extensions can provide [custom commands](./cli/commands.md#custom-commands) by p
 An extension named `gcp` with the following structure:
 
 ```
-.qwen/extensions/gcp/
+.ollama-code/extensions/gcp/
 ├── qwen-extension.json
 └── commands/
     ├── deploy.md
@@ -260,7 +260,7 @@ Extensions can provide custom skills by placing skill files in a `skills/` subdi
 **Example**
 
 ```
-.qwen/extensions/my-extension/
+.ollama-code/extensions/my-extension/
 ├── qwen-extension.json
 └── skills/
     └── pdf-processor/
@@ -276,7 +276,7 @@ Extensions can provide custom subagents by placing agent configuration files in 
 **Example**
 
 ```
-.qwen/extensions/my-extension/
+.ollama-code/extensions/my-extension/
 ├── qwen-extension.json
 └── agents/
     └── testing-expert.yaml
@@ -304,6 +304,6 @@ Ollama Code extensions allow variable substitution in `qwen-extension.json`. Thi
 
 | variable                   | description                                                                                                                                                   |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `${extensionPath}`         | The fully-qualified path of the extension in the user's filesystem e.g., '/Users/username/.qwen/extensions/example-extension'. This will not unwrap symlinks. |
+| `${extensionPath}`         | The fully-qualified path of the extension in the user's filesystem e.g., '/Users/username/.ollama-code/extensions/example-extension'. This will not unwrap symlinks. |
 | `${workspacePath}`         | The fully-qualified path of the current workspace.                                                                                                            |
 | `${/} or ${pathSeparator}` | The path separator (differs per OS).                                                                                                                          |

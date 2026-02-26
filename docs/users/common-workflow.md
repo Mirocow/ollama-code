@@ -186,7 +186,7 @@ Then select "create" and follow the prompts to define:
 
 > [!tip]
 >
-> - Create project-specific subagents in `.qwen/agents/` for team sharing
+> - Create project-specific subagents in `.ollama-code/agents/` for team sharing
 > - Use descriptive `description` fields to enable automatic delegation
 > - Limit tool access to what each subagent actually needs
 > - Know more about [Sub Agents](./features/sub-agents)
@@ -323,7 +323,7 @@ This fetches data from connected MCP servers using the format @server: resource.
 > [!tip]
 >
 > - File paths can be relative or absolute
-> - @ file references add `QWEN.md` in the file's directory and parent directories to context
+> - @ file references add `OLLAMA_CODE.md` in the file's directory and parent directories to context
 > - Directory references show file listings, not contents
 > - You can reference multiple files in a single message (for example, "`@file 1.js` and `@file 2.js`")
 

@@ -42,7 +42,7 @@ qwen -v
 
 #### 3、Create your sandbox Dockerfile under the root directory of your own project
 
-- Path: `.qwen/sandbox.Dockerfile`
+- Path: `.ollama-code/sandbox.Dockerfile`
 
 - Official mirror image address:https://github.com/QwenLM/ollama-code/pkgs/container/ollama-code
 

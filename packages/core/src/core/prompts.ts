@@ -10,7 +10,7 @@ import os from 'node:os';
 import { ToolNames } from '../tools/tool-names.js';
 import process from 'node:process';
 import { isGitRepository } from '../utils/gitUtils.js';
-import { QWEN_CONFIG_DIR } from '../tools/memoryTool.js';
+import { OLLAMA_CODE_CONFIG_DIR } from '../tools/memoryTool.js';
 import type { GenerateContentConfig } from '@google/genai';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
@@ -112,13 +112,13 @@ export function getCoreSystemPrompt(
   userMemory?: string,
   model?: string,
 ): string {
-  // if QWEN_SYSTEM_MD is set (and not 0|false), override system prompt from file
-  // default path is .qwen/system.md but can be modified via custom path in QWEN_SYSTEM_MD
+  // if OLLAMA_CODE_SYSTEM_MD is set (and not 0|false), override system prompt from file
+  // default path is .ollama-code/system.md but can be modified via custom path in OLLAMA_CODE_SYSTEM_MD
   let systemMdEnabled = false;
   // The default path for the system prompt file. This can be overridden.
-  let systemMdPath = path.resolve(path.join(QWEN_CONFIG_DIR, 'system.md'));
+  let systemMdPath = path.resolve(path.join(OLLAMA_CODE_CONFIG_DIR, 'system.md'));
   // Resolve the environment variable to get either a path or a switch value.
-  const systemMdResolution = resolvePathFromEnv(process.env['QWEN_SYSTEM_MD']);
+  const systemMdResolution = resolvePathFromEnv(process.env['OLLAMA_CODE_SYSTEM_MD']);
 
   // Proceed only if the environment variable is set and is not disabled.
   if (systemMdResolution.value && !systemMdResolution.isDisabled) {
@@ -317,9 +317,9 @@ ${getToolCallExamples(model || '')}
 Your core function is efficient and safe assistance. Balance extreme conciseness with the crucial need for clarity, especially regarding safety and potential system modifications. Always prioritize user control and project conventions. Never make assumptions about the contents of files; instead use '${ToolNames.READ_FILE}' to ensure you aren't making broad assumptions. Finally, you are an agent - please keep going until the user's query is completely resolved.
 `.trim();
 
-  // if QWEN_WRITE_SYSTEM_MD is set (and not 0|false), write base system prompt to file
+  // if OLLAMA_CODE_WRITE_SYSTEM_MD is set (and not 0|false), write base system prompt to file
   const writeSystemMdResolution = resolvePathFromEnv(
-    process.env['QWEN_WRITE_SYSTEM_MD'],
+    process.env['OLLAMA_CODE_WRITE_SYSTEM_MD'],
   );
 
   // Check if the feature is enabled. This proceeds only if the environment

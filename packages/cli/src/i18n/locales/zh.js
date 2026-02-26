@@ -112,8 +112,8 @@ export default {
   // ============================================================================
   // Commands - General
   // ============================================================================
-  'Analyzes the project and creates a tailored QWEN.md file.':
-    '分析项目并创建定制的 QWEN.md 文件',
+  'Analyzes the project and creates a tailored OLLAMA_CODE.md file.':
+    '分析项目并创建定制的 OLLAMA_CODE.md 文件',
   'list available Ollama Code tools. Usage: /tools [desc]':
     '列出可用的 Ollama Code 工具。用法：/tools [desc]',
   'Available Ollama Code CLI tools:': '可用的 Ollama Code CLI 工具：',
@@ -203,8 +203,8 @@ export default {
   // ============================================================================
   // Agents - Creation Wizard
   // ============================================================================
-  'Project Level (.qwen/agents/)': '项目级 (.qwen/agents/)',
-  'User Level (~/.qwen/agents/)': '用户级 (~/.qwen/agents/)',
+  'Project Level (.ollama-code/agents/)': '项目级 (.ollama-code/agents/)',
+  'User Level (~/.ollama-code/agents/)': '用户级 (~/.ollama-code/agents/)',
   '✅ Subagent Created Successfully!': '✅ 子智能体创建成功！',
   'Subagent "{{name}}" has been saved to {{level}} level.':
     '子智能体 "{{name}}" 已保存到 {{level}} 级别。',
@@ -332,7 +332,7 @@ export default {
   'Memory Discovery Max Dirs': '内存发现最大目录数',
   'Load Memory From Include Directories': '从包含目录加载内存',
   'Respect .gitignore': '遵守 .gitignore',
-  'Respect .qwenignore': '遵守 .qwenignore',
+  'Respect .ollama-codeignore': '遵守 .ollama-codeignore',
   'Enable Recursive File Search': '启用递归文件搜索',
   'Disable Fuzzy Search': '禁用模糊搜索',
   'Interactive Shell (PTY)': '交互式 Shell (PTY)',
@@ -418,8 +418,8 @@ export default {
   remote: '远程',
   'This extension will add the following commands: {{commands}}.':
     '此扩展将添加以下命令：{{commands}}。',
-  'This extension will append info to your QWEN.md context using {{fileName}}':
-    '此扩展将使用 {{fileName}} 向您的 QWEN.md 上下文追加信息',
+  'This extension will append info to your OLLAMA_CODE.md context using {{fileName}}':
+    '此扩展将使用 {{fileName}} 向您的 OLLAMA_CODE.md 上下文追加信息',
   'This extension will exclude the following core tools: {{tools}}':
     '此扩展将排除以下核心工具：{{tools}}',
   'This extension will install the following skills:': '此扩展将安装以下技能：',
@@ -744,8 +744,8 @@ export default {
   // ============================================================================
   // Commands - Summary
   // ============================================================================
-  'Generate a project summary and save it to .qwen/PROJECT_SUMMARY.md':
-    '生成项目摘要并保存到 .qwen/PROJECT_SUMMARY.md',
+  'Generate a project summary and save it to .ollama-code/PROJECT_SUMMARY.md':
+    '生成项目摘要并保存到 .ollama-code/PROJECT_SUMMARY.md',
   'No chat client available to generate summary.':
     '没有可用的聊天客户端来生成摘要',
   'Already generating summary, wait for previous request to complete':
@@ -802,8 +802,8 @@ export default {
   'The /directory add command is not supported in restrictive sandbox profiles. Please use --include-directories when starting the session instead.':
     '/directory add 命令在限制性沙箱配置文件中不受支持。请改为在启动会话时使用 --include-directories。',
   "Error adding '{{path}}': {{error}}": "添加 '{{path}}' 时出错：{{error}}",
-  'Successfully added QWEN.md files from the following directories if there are:\n- {{directories}}':
-    '如果存在，已成功从以下目录添加 QWEN.md 文件：\n- {{directories}}',
+  'Successfully added OLLAMA_CODE.md files from the following directories if there are:\n- {{directories}}':
+    '如果存在，已成功从以下目录添加 OLLAMA_CODE.md 文件：\n- {{directories}}',
   'Error refreshing memory: {{error}}': '刷新内存时出错：{{error}}',
   'Successfully added directories:\n- {{directories}}':
     '成功添加目录：\n- {{directories}}',
@@ -938,8 +938,8 @@ export default {
   'Failed to authenticate. Message: {{message}}': '认证失败。消息：{{message}}',
   'Authenticated successfully with {{authType}} credentials.':
     '使用 {{authType}} 凭据成功认证。',
-  'Invalid QWEN_DEFAULT_AUTH_TYPE value: "{{value}}". Valid values are: {{validValues}}':
-    '无效的 QWEN_DEFAULT_AUTH_TYPE 值："{{value}}"。有效值为：{{validValues}}',
+  'Invalid OLLAMA_CODE_DEFAULT_AUTH_TYPE value: "{{value}}". Valid values are: {{validValues}}':
+    '无效的 OLLAMA_CODE_DEFAULT_AUTH_TYPE 值："{{value}}"。有效值为：{{validValues}}',
   'OpenAI Configuration Required': '需要配置 OpenAI',
   'Please enter your OpenAI configuration. You can get an API key from':
     '请输入您的 OpenAI 配置。您可以从以下地址获取 API 密钥：',

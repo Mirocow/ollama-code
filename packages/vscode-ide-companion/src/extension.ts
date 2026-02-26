@@ -106,7 +106,7 @@ async function checkForUpdates(
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-  logger = vscode.window.createOutputChannel('Qwen Code Companion');
+  logger = vscode.window.createOutputChannel('Ollama Code Companion');
   log = createLogger(context, logger);
   log('Extension activated');
 

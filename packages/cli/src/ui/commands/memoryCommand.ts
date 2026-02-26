@@ -8,7 +8,7 @@ import {
   getErrorMessage,
   getCurrentOllamaMdFilename,
   loadServerHierarchicalMemory,
-  QWEN_DIR,
+  OLLAMA_DIR,
 } from '@ollama-code/ollama-code-core';
 import path from 'node:path';
 import os from 'node:os';
@@ -109,7 +109,7 @@ export const memoryCommand: SlashCommand = {
             try {
               const globalMemoryPath = path.join(
                 os.homedir(),
-                QWEN_DIR,
+                OLLAMA_DIR,
                 getCurrentOllamaMdFilename(),
               );
               const globalMemoryContent = await fs.readFile(

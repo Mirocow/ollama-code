@@ -128,8 +128,8 @@ Save frequently used prompts as shortcut commands to improve work efficiency and
 | Function         | Description                                | Advantages                             | Priority | Applicable Scenarios                                 |
 | ---------------- | ------------------------------------------ | -------------------------------------- | -------- | ---------------------------------------------------- |
 | Namespace        | Subdirectory creates colon-named commands  | Better command organization            |          |                                                      |
-| Global Commands  | `~/.qwen/commands/`                        | Available in all projects              | Low      | Personal frequently used commands, cross-project use |
-| Project Commands | `<project root directory>/.qwen/commands/` | Project-specific, version-controllable | High     | Team sharing, project-specific commands              |
+| Global Commands  | `~/.ollama-code/commands/`                        | Available in all projects              | Low      | Personal frequently used commands, cross-project use |
+| Project Commands | `<project root directory>/.ollama-code/commands/` | Project-specific, version-controllable | High     | Team sharing, project-specific commands              |
 
 Priority Rules: Project commands > User commands (project command used when names are same)
 
@@ -139,7 +139,7 @@ Priority Rules: Project commands > User commands (project command used when name
 
 | File Location              | Generated Command | Example Call          |
 | -------------------------- | ----------------- | --------------------- |
-| `~/.qwen/commands/test.md` | `/test`           | `/test Parameter`     |
+| `~/.ollama-code/commands/test.md` | `/test`           | `/test Parameter`     |
 | `<project>/git/commit.md`  | `/git:commit`     | `/git:commit Message` |
 
 Naming Rules: Path separator (`/` or `\`) converted to colon (`:`)
@@ -254,8 +254,8 @@ Review {{args}}, reference standards:
 
 | Operation                     | Command/Code                              |
 | ----------------------------- | ----------------------------------------- |
-| 1. Create directory structure | `mkdir -p ~/.qwen/commands/refactor`      |
-| 2. Create command file        | `touch ~/.qwen/commands/refactor/pure.md` |
+| 1. Create directory structure | `mkdir -p ~/.ollama-code/commands/refactor`      |
+| 2. Create command file        | `touch ~/.ollama-code/commands/refactor/pure.md` |
 | 3. Edit command content       | Refer to the complete code below.         |
 | 4. Test command               | `@file.js` → `/refactor:pure`             |
 

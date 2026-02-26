@@ -32,10 +32,10 @@ describe('debugLogger', () => {
     getSessionId: () => 'test-session-123',
   };
 
-  const previousDebugLogFileEnv = process.env['QWEN_DEBUG_LOG_FILE'];
+  const previousDebugLogFileEnv = process.env['OLLAMA_CODE_DEBUG_LOG_FILE'];
 
   beforeEach(() => {
-    process.env['QWEN_DEBUG_LOG_FILE'] = '1';
+    process.env['OLLAMA_CODE_DEBUG_LOG_FILE'] = '1';
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-01-24T10:30:00.000Z'));
@@ -47,9 +47,9 @@ describe('debugLogger', () => {
     vi.useRealTimers();
     setDebugLogSession(null);
     if (previousDebugLogFileEnv === undefined) {
-      delete process.env['QWEN_DEBUG_LOG_FILE'];
+      delete process.env['OLLAMA_CODE_DEBUG_LOG_FILE'];
     } else {
-      process.env['QWEN_DEBUG_LOG_FILE'] = previousDebugLogFileEnv;
+      process.env['OLLAMA_CODE_DEBUG_LOG_FILE'] = previousDebugLogFileEnv;
     }
   });
 

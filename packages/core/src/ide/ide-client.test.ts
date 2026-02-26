@@ -56,10 +56,10 @@ describe('IdeClient', () => {
       undefined;
 
     // Mock environment variables
-    process.env['QWEN_CODE_IDE_WORKSPACE_PATH'] = '/test/workspace';
-    delete process.env['QWEN_CODE_IDE_SERVER_PORT'];
-    delete process.env['QWEN_CODE_IDE_SERVER_STDIO_COMMAND'];
-    delete process.env['QWEN_CODE_IDE_SERVER_STDIO_ARGS'];
+    process.env['OLLAMA_CODE_IDE_WORKSPACE_PATH'] = '/test/workspace';
+    delete process.env['OLLAMA_CODE_IDE_SERVER_PORT'];
+    delete process.env['OLLAMA_CODE_IDE_SERVER_STDIO_COMMAND'];
+    delete process.env['OLLAMA_CODE_IDE_SERVER_STDIO_ARGS'];
 
     // Mock dependencies
     vi.spyOn(process, 'cwd').mockReturnValue('/test/workspace/sub-dir');
@@ -99,7 +99,7 @@ describe('IdeClient', () => {
 
   describe('connect', () => {
     it('should connect using HTTP when port is provided in config file', async () => {
-      process.env['QWEN_CODE_IDE_SERVER_PORT'] = '8080';
+      process.env['OLLAMA_CODE_IDE_SERVER_PORT'] = '8080';
       const config = { port: '8080' };
       vi.mocked(fs.promises.readFile).mockResolvedValue(JSON.stringify(config));
 
@@ -107,7 +107,7 @@ describe('IdeClient', () => {
       await ideClient.connect();
 
       expect(fs.promises.readFile).toHaveBeenCalledWith(
-        path.join('/home/test', '.qwen', 'ide', '8080.lock'),
+        path.join('/home/test', '.ollama-code', 'ide', '8080.lock'),
         'utf8',
       );
       expect(StreamableHTTPClientTransport).toHaveBeenCalledWith(
@@ -118,11 +118,11 @@ describe('IdeClient', () => {
       expect(ideClient.getConnectionStatus().status).toBe(
         IDEConnectionStatus.Connected,
       );
-      delete process.env['QWEN_CODE_IDE_SERVER_PORT'];
+      delete process.env['OLLAMA_CODE_IDE_SERVER_PORT'];
     });
 
     it('should connect using stdio when stdio config is provided in file', async () => {
-      process.env['QWEN_CODE_IDE_SERVER_PORT'] = '8080';
+      process.env['OLLAMA_CODE_IDE_SERVER_PORT'] = '8080';
       const config = { stdio: { command: 'test-cmd', args: ['--foo'] } };
       vi.mocked(fs.promises.readFile).mockResolvedValue(JSON.stringify(config));
 
@@ -137,11 +137,11 @@ describe('IdeClient', () => {
       expect(ideClient.getConnectionStatus().status).toBe(
         IDEConnectionStatus.Connected,
       );
-      delete process.env['QWEN_CODE_IDE_SERVER_PORT'];
+      delete process.env['OLLAMA_CODE_IDE_SERVER_PORT'];
     });
 
     it('should prioritize port over stdio when both are in config file', async () => {
-      process.env['QWEN_CODE_IDE_SERVER_PORT'] = '8080';
+      process.env['OLLAMA_CODE_IDE_SERVER_PORT'] = '8080';
       const config = {
         port: '8080',
         stdio: { command: 'test-cmd', args: ['--foo'] },
@@ -156,7 +156,7 @@ describe('IdeClient', () => {
       expect(ideClient.getConnectionStatus().status).toBe(
         IDEConnectionStatus.Connected,
       );
-      delete process.env['QWEN_CODE_IDE_SERVER_PORT'];
+      delete process.env['OLLAMA_CODE_IDE_SERVER_PORT'];
     });
 
     it('should connect using HTTP when port is provided in environment variables', async () => {
@@ -168,7 +168,7 @@ describe('IdeClient', () => {
           (path: fs.PathLike) => Promise<string[]>
         >
       ).mockResolvedValue([]);
-      process.env['QWEN_CODE_IDE_SERVER_PORT'] = '9090';
+      process.env['OLLAMA_CODE_IDE_SERVER_PORT'] = '9090';
 
       const ideClient = await IdeClient.getInstance();
       await ideClient.connect();
@@ -193,8 +193,8 @@ describe('IdeClient', () => {
           (path: fs.PathLike) => Promise<string[]>
         >
       ).mockResolvedValue([]);
-      process.env['QWEN_CODE_IDE_SERVER_STDIO_COMMAND'] = 'env-cmd';
-      process.env['QWEN_CODE_IDE_SERVER_STDIO_ARGS'] = '["--bar"]';
+      process.env['OLLAMA_CODE_IDE_SERVER_STDIO_COMMAND'] = 'env-cmd';
+      process.env['OLLAMA_CODE_IDE_SERVER_STDIO_ARGS'] = '["--bar"]';
 
       const ideClient = await IdeClient.getInstance();
       await ideClient.connect();
@@ -217,7 +217,7 @@ describe('IdeClient', () => {
           (path: fs.PathLike) => Promise<string[]>
         >
       ).mockResolvedValue([]);
-      process.env['QWEN_CODE_IDE_SERVER_PORT'] = '9090';
+      process.env['OLLAMA_CODE_IDE_SERVER_PORT'] = '9090';
 
       const ideClient = await IdeClient.getInstance();
       await ideClient.connect();
@@ -257,7 +257,7 @@ describe('IdeClient', () => {
 
   describe('getConnectionConfigFromFile', () => {
     it('should return config from the env port lock file if it exists', async () => {
-      process.env['QWEN_CODE_IDE_SERVER_PORT'] = '1234';
+      process.env['OLLAMA_CODE_IDE_SERVER_PORT'] = '1234';
       const config = { port: '1234', workspacePath: '/test/workspace' };
       vi.mocked(fs.promises.readFile).mockResolvedValue(JSON.stringify(config));
 
@@ -271,10 +271,10 @@ describe('IdeClient', () => {
 
       expect(result).toEqual(config);
       expect(fs.promises.readFile).toHaveBeenCalledWith(
-        path.join('/home/test', '.qwen', 'ide', '1234.lock'),
+        path.join('/home/test', '.ollama-code', 'ide', '1234.lock'),
         'utf8',
       );
-      delete process.env['QWEN_CODE_IDE_SERVER_PORT'];
+      delete process.env['OLLAMA_CODE_IDE_SERVER_PORT'];
     });
 
     it('should return undefined if no config files are found', async () => {
@@ -315,10 +315,10 @@ describe('IdeClient', () => {
     });
 
     it('should fall back to legacy port file when pid file is missing', async () => {
-      process.env['QWEN_CODE_IDE_SERVER_PORT'] = '2222';
+      process.env['OLLAMA_CODE_IDE_SERVER_PORT'] = '2222';
       const config2 = { port: '2222', workspacePath: '/test/workspace2' };
       vi.mocked(fs.promises.readFile)
-        .mockRejectedValueOnce(new Error('not found')) // ~/.qwen/ide/<port>.lock
+        .mockRejectedValueOnce(new Error('not found')) // ~/.ollama-code/ide/<port>.lock
         .mockRejectedValueOnce(new Error('not found')) // legacy pid file
         .mockResolvedValueOnce(JSON.stringify(config2));
 
@@ -338,11 +338,11 @@ describe('IdeClient', () => {
         path.join('/tmp', 'ollama-code-ide-server-2222.json'),
         'utf8',
       );
-      delete process.env['QWEN_CODE_IDE_SERVER_PORT'];
+      delete process.env['OLLAMA_CODE_IDE_SERVER_PORT'];
     });
 
     it('should fall back to legacy config when env lock file has invalid JSON', async () => {
-      process.env['QWEN_CODE_IDE_SERVER_PORT'] = '3333';
+      process.env['OLLAMA_CODE_IDE_SERVER_PORT'] = '3333';
       const config = { port: '1111', workspacePath: '/test/workspace' };
       vi.mocked(fs.promises.readFile)
         .mockResolvedValueOnce('invalid json')
@@ -356,7 +356,7 @@ describe('IdeClient', () => {
       ).getConnectionConfigFromFile();
 
       expect(result).toEqual(config);
-      delete process.env['QWEN_CODE_IDE_SERVER_PORT'];
+      delete process.env['OLLAMA_CODE_IDE_SERVER_PORT'];
     });
   });
 

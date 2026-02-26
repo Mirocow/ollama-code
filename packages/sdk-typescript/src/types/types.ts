@@ -192,7 +192,7 @@ export interface QueryOptions {
 
   /**
    * The AI model to use for the query session.
-   * This takes precedence over the environment variables `OPENAI_MODEL` and `QWEN_MODEL`
+   * This takes precedence over the environment variables `OPENAI_MODEL` and `OLLAMA_MODEL`
    * @example 'qwen-max', 'qwen-plus', 'qwen-turbo'
    */
   model?: string;
@@ -401,7 +401,7 @@ export interface QueryOptions {
    * - 'qwen-oauth': Use Qwen OAuth authentication
    *
    * Though we support 'qwen-oauth', it's not recommended to use it in the SDK.
-   * Because the credentials are stored in `~/.qwen` and may need to refresh periodically.
+   * Because the credentials are stored in `~/.ollama-code` and may need to refresh periodically.
    */
   authType?: AuthType;
 
