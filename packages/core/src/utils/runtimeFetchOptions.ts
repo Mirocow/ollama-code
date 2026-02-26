@@ -31,7 +31,6 @@ export type OpenAIRuntimeFetchOptions =
   | {
       fetchOptions?: {
         dispatcher?: Dispatcher;
-        timeout?: false;
       };
     }
   | undefined;
@@ -88,13 +87,9 @@ export function buildRuntimeFetchOptions(
   switch (runtime) {
     case 'bun': {
       if (sdkType === 'openai') {
-        // Bun: Disable built-in 300s timeout to let OpenAI SDK timeout control
-        // This ensures user-configured timeout works as expected without interference
-        return {
-          fetchOptions: {
-            timeout: false,
-          },
-        };
+        // Bun: Return empty options for OpenAI SDK
+        // OpenAI SDK doesn't accept timeout: false in fetchOptions
+        return undefined;
       } else {
         // Bun: Use custom fetch to disable built-in 300s timeout
         // This allows Anthropic SDK timeout to control the request
