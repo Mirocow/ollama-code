@@ -106,23 +106,23 @@ if (!argv.s) {
   }
 }
 
-console.log('packing @qwen-code/qwen-code ...');
+console.log('packing @ollama-code/ollama-code ...');
 const cliPackageDir = join('packages', 'cli');
-rmSync(join(cliPackageDir, 'dist', 'qwen-code-*.tgz'), { force: true });
+rmSync(join(cliPackageDir, 'dist', 'ollama-code-*.tgz'), { force: true });
 execSync(
-  `npm pack -w @qwen-code/qwen-code --pack-destination ./packages/cli/dist`,
+  `npm pack -w @ollama-code/ollama-code --pack-destination ./packages/cli/dist`,
   {
     stdio: 'ignore',
   },
 );
 
-console.log('packing @qwen-code/qwen-code-core ...');
+console.log('packing @ollama-code/ollama-code-core ...');
 const corePackageDir = join('packages', 'core');
-rmSync(join(corePackageDir, 'dist', 'qwen-code-core-*.tgz'), {
+rmSync(join(corePackageDir, 'dist', 'ollama-code-core-*.tgz'), {
   force: true,
 });
 execSync(
-  `npm pack -w @qwen-code/qwen-code-core --pack-destination ./packages/core/dist`,
+  `npm pack -w @ollama-code/ollama-code-core --pack-destination ./packages/core/dist`,
   { stdio: 'ignore' },
 );
 
@@ -131,14 +131,14 @@ const packageVersion = JSON.parse(
 ).version;
 
 chmodSync(
-  join(cliPackageDir, 'dist', `qwen-code-qwen-code-${packageVersion}.tgz`),
+  join(cliPackageDir, 'dist', `ollama-code-ollama-code-${packageVersion}.tgz`),
   0o755,
 );
 chmodSync(
   join(
     corePackageDir,
     'dist',
-    `qwen-code-qwen-code-core-${packageVersion}.tgz`,
+    `ollama-code-ollama-code-core-${packageVersion}.tgz`,
   ),
   0o755,
 );
