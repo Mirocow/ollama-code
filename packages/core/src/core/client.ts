@@ -195,7 +195,6 @@ export class GeminiClient {
           tools,
         },
         history,
-        this.config.getChatRecordingService(),
       );
     } catch (error) {
       await reportError(
@@ -603,9 +602,7 @@ export class GeminiClient {
           this.lastPromptId!,
         );
       };
-      const result = await retryWithBackoff(apiCall, {
-        authType: this.config.getContentGeneratorConfig()?.authType,
-      });
+      const result = await retryWithBackoff(apiCall, {});
       return result;
     } catch (error: unknown) {
       if (abortSignal.aborted) {

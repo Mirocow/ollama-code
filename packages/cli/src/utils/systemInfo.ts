@@ -9,7 +9,7 @@ import os from 'node:os';
 import { execSync } from 'node:child_process';
 import type { CommandContext } from '../ui/commands/types.js';
 import { getCliVersion } from './version.js';
-import { IdeClient, AuthType } from '@qwen-code/qwen-code-core';
+import { IdeClient } from '@qwen-code/qwen-code-core';
 import { formatMemoryUsage } from '../ui/utils/formatters.js';
 import { GIT_COMMIT_INFO } from '../generated/git-commit.js';
 
@@ -154,12 +154,9 @@ export async function getExtendedSystemInfo(
   // For bug reports, use sandbox name without prefix
   const sandboxEnv = getSandboxEnv(true);
 
-  // Get base URL if using OpenAI auth
+  // Get base URL if configured
   const baseUrl =
-    baseInfo.selectedAuthType === AuthType.USE_OPENAI ||
-    baseInfo.selectedAuthType === AuthType.USE_ANTHROPIC
-      ? context.services.config?.getContentGeneratorConfig()?.baseUrl
-      : undefined;
+    context.services.config?.getContentGeneratorConfig()?.baseUrl;
 
   // Get git commit info
   const gitCommit =

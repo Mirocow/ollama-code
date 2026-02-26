@@ -1,9 +1,8 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const DEFAULT_QWEN_MODEL = 'coder-model';
-export const DEFAULT_QWEN_FLASH_MODEL = 'coder-model';
-export const DEFAULT_QWEN_EMBEDDING_MODEL = 'text-embedding-v4';
+export const DEFAULT_OLLAMA_MODEL = 'qwen2.5-coder';
+export const DEFAULT_OLLAMA_EMBEDDING_MODEL = 'nomic-embed-text';

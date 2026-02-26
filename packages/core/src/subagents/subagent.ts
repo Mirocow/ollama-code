@@ -28,7 +28,7 @@ import type {
   FunctionDeclaration,
   GenerateContentResponseUsageMetadata,
 } from '@google/genai';
-import { GeminiChat } from '../core/geminiChat.js';
+import { GeminiChat, type GeminiChatOptions } from '../core/geminiChat.js';
 import type {
   PromptConfig,
   ModelConfig,
@@ -57,7 +57,7 @@ import type { SubagentHooks } from './subagent-hooks.js';
 import { logSubagentExecution } from '../telemetry/loggers.js';
 import { SubagentExecutionEvent } from '../telemetry/types.js';
 import { TaskTool } from '../tools/task.js';
-import { DEFAULT_QWEN_MODEL } from '../config/models.js';
+import { DEFAULT_OLLAMA_MODEL } from '../config/models.js';
 
 /**
  * @fileoverview Defines the configuration interfaces for a subagent.
@@ -334,7 +334,7 @@ export class SubAgentScope {
         model:
           this.modelConfig.model ||
           this.runtimeContext.getModel() ||
-          DEFAULT_QWEN_MODEL,
+          DEFAULT_OLLAMA_MODEL,
         tools: (this.toolConfig?.tools || ['*']).map((t) =>
           typeof t === 'string' ? t : t.name,
         ),
@@ -385,7 +385,7 @@ export class SubAgentScope {
         const responseStream = await chat.sendMessageStream(
           this.modelConfig.model ||
             this.runtimeContext.getModel() ||
-            DEFAULT_QWEN_MODEL,
+            DEFAULT_OLLAMA_MODEL,
           messageParams,
           promptId,
         );
@@ -415,6 +415,7 @@ export class SubAgentScope {
           // Handle chunk events
           if (streamEvent.type === 'chunk') {
             const resp = streamEvent.value;
+            if (!resp) continue;
             // Track the response ID for tool call correlation
             if (resp.responseId) {
               currentResponseId = resp.responseId;
@@ -890,12 +891,12 @@ export class SubAgentScope {
       };
 
       if (systemInstruction) {
-        generationConfig.systemInstruction = systemInstruction;
+        generationConfig.systemInstruction = systemInstruction as string | Part | Part[];
       }
 
       return new GeminiChat(
         this.runtimeContext,
-        generationConfig,
+        generationConfig as GeminiChatOptions,
         start_history,
       );
     } catch (error) {

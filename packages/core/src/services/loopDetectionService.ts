@@ -22,7 +22,7 @@ import {
   isFunctionCall,
   isFunctionResponse,
 } from '../utils/messageInspectors.js';
-import { DEFAULT_QWEN_MODEL } from '../config/models.js';
+import { DEFAULT_OLLAMA_MODEL } from '../config/models.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('LOOP_DETECTION');
@@ -427,7 +427,7 @@ export class LoopDetectionService {
       result = await this.config.getBaseLlmClient().generateJson({
         contents,
         schema,
-        model: this.config.getModel() || DEFAULT_QWEN_MODEL,
+        model: this.config.getModel() || DEFAULT_OLLAMA_MODEL,
         systemInstruction: LOOP_DETECTION_SYSTEM_PROMPT,
         abortSignal: signal,
         promptId: this.promptId,

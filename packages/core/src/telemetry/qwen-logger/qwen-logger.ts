@@ -63,7 +63,6 @@ import {
 import { safeJsonStringify } from '../../utils/safeJsonStringify.js';
 import { InstallationManager } from '../../utils/installationManager.js';
 import { FixedDeque } from 'mnemonist';
-import { AuthType } from '../../core/contentGenerator.js';
 
 // Usage statistics collection endpoint
 const USAGE_STATS_HOSTNAME = 'gb4w8c3ygj-default-sea.rum.aliyuncs.com';
@@ -274,10 +273,7 @@ export class QwenLogger {
       properties: {
         auth_type: authType,
         model: this.config?.getModel(),
-        base_url:
-          authType === AuthType.USE_OPENAI
-            ? this.config?.getContentGeneratorConfig().baseUrl || ''
-            : '',
+        base_url: this.config?.getContentGeneratorConfig().baseUrl || '',
         ...(this.config?.getChannel?.()
           ? { channel: this.config.getChannel() }
           : {}),

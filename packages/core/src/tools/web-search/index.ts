@@ -22,14 +22,12 @@ import { createDebugLogger } from '../../utils/debugLogger.js';
 import { buildContentWithSources } from './utils.js';
 import { TavilyProvider } from './providers/tavily-provider.js';
 import { GoogleProvider } from './providers/google-provider.js';
-import { DashScopeProvider } from './providers/dashscope-provider.js';
 import type {
   WebSearchToolParams,
   WebSearchToolResult,
   WebSearchProvider,
   WebSearchResultItem,
   WebSearchProviderConfig,
-  DashScopeProviderConfig,
 } from './types.js';
 import { ToolNames, ToolDisplayNames } from '../tool-names.js';
 
@@ -88,15 +86,6 @@ class WebSearchToolInvocation extends BaseToolInvocation<
         return new TavilyProvider(config);
       case 'google':
         return new GoogleProvider(config);
-      case 'dashscope': {
-        // Pass auth type to DashScope provider for availability check
-        const authType = this.config.getAuthType();
-        const dashscopeConfig: DashScopeProviderConfig = {
-          ...config,
-          authType: authType as string | undefined,
-        };
-        return new DashScopeProvider(dashscopeConfig);
-      }
       default:
         throw new Error('Unknown provider type');
     }

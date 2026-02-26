@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -27,10 +27,10 @@ export {
   AUTH_ENV_MAPPINGS,
   CREDENTIAL_FIELDS,
   DEFAULT_MODELS,
+  DEFAULT_OLLAMA_MODEL,
   MODEL_GENERATION_CONFIG_FIELDS,
+  OLLAMA_MODELS,
   PROVIDER_SOURCED_FIELDS,
-  QWEN_OAUTH_ALLOWED_MODELS,
-  QWEN_OAUTH_MODELS,
 } from './constants.js';
 
 // Model configuration resolver
