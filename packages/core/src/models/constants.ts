@@ -71,6 +71,59 @@ export const DEFAULT_MODELS = {
 export const DEFAULT_OLLAMA_MODEL = 'qwen2.5-coder';
 
 /**
+ * Default Ollama embedding model
+ */
+export const DEFAULT_OLLAMA_EMBEDDING_MODEL = 'nomic-embed-text';
+
+/**
+ * Popular Ollama embedding models.
+ */
+export const OLLAMA_EMBEDDING_MODELS: ModelConfig[] = [
+  {
+    id: 'nomic-embed-text',
+    name: 'Nomic Embed Text',
+    description: 'Nomic Embed Text - high quality embedding model',
+    capabilities: { vision: false },
+  },
+  {
+    id: 'mxbai-embed-large',
+    name: 'MXBai Embed Large',
+    description: 'MXBai Embed Large - large embedding model',
+    capabilities: { vision: false },
+  },
+];
+
+/**
+ * Popular Ollama vision models.
+ */
+export const OLLAMA_VISION_MODELS: ModelConfig[] = [
+  {
+    id: 'llava',
+    name: 'LLaVA',
+    description: 'LLaVA - vision-language model',
+    capabilities: { vision: true },
+  },
+  {
+    id: 'llava:13b',
+    name: 'LLaVA 13B',
+    description: 'LLaVA 13B - larger vision-language model',
+    capabilities: { vision: true },
+  },
+  {
+    id: 'bakllava',
+    name: 'BakLLaVA',
+    description: 'BakLLaVA - vision-language model',
+    capabilities: { vision: true },
+  },
+  {
+    id: 'moondream',
+    name: 'Moondream',
+    description: 'Moondream - lightweight vision model',
+    capabilities: { vision: true },
+  },
+];
+
+/**
  * Popular Ollama models for local LLM inference.
  */
 export const OLLAMA_MODELS: ModelConfig[] = [
@@ -78,6 +131,12 @@ export const OLLAMA_MODELS: ModelConfig[] = [
     id: 'qwen2.5-coder',
     name: 'Qwen 2.5 Coder',
     description: 'Qwen 2.5 Coder - excellent for coding tasks',
+    capabilities: { vision: false },
+  },
+  {
+    id: 'qwen2.5',
+    name: 'Qwen 2.5',
+    description: 'Qwen 2.5 - versatile model from Alibaba',
     capabilities: { vision: false },
   },
   {
@@ -93,6 +152,12 @@ export const OLLAMA_MODELS: ModelConfig[] = [
     capabilities: { vision: false },
   },
   {
+    id: 'llama3.3',
+    name: 'Llama 3.3',
+    description: 'Meta Llama 3.3 - latest Llama model',
+    capabilities: { vision: false },
+  },
+  {
     id: 'codellama',
     name: 'Code Llama',
     description: 'Code Llama - specialized for code generation',
@@ -102,6 +167,12 @@ export const OLLAMA_MODELS: ModelConfig[] = [
     id: 'deepseek-coder-v2',
     name: 'DeepSeek Coder V2',
     description: 'DeepSeek Coder V2 - powerful coding model',
+    capabilities: { vision: false },
+  },
+  {
+    id: 'deepseek-r1',
+    name: 'DeepSeek R1',
+    description: 'DeepSeek R1 - reasoning model',
     capabilities: { vision: false },
   },
   {
@@ -120,6 +191,24 @@ export const OLLAMA_MODELS: ModelConfig[] = [
     id: 'phi3',
     name: 'Phi-3',
     description: 'Microsoft Phi-3 - small but capable model',
+    capabilities: { vision: false },
+  },
+  {
+    id: 'phi4',
+    name: 'Phi-4',
+    description: 'Microsoft Phi-4 - latest small model',
+    capabilities: { vision: false },
+  },
+  {
+    id: 'gemma2',
+    name: 'Gemma 2',
+    description: 'Google Gemma 2 - open model',
+    capabilities: { vision: false },
+  },
+  {
+    id: 'mixtral',
+    name: 'Mixtral',
+    description: 'Mixtral 8x7B - mixture of experts model',
     capabilities: { vision: false },
   },
 ];
