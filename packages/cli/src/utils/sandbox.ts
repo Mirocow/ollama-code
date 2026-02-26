@@ -35,9 +35,9 @@ function getContainerPath(hostPath: string): string {
   return hostPath;
 }
 
-const LOCAL_DEV_SANDBOX_IMAGE_NAME = 'qwen-code-sandbox';
-const SANDBOX_NETWORK_NAME = 'qwen-code-sandbox';
-const SANDBOX_PROXY_NAME = 'qwen-code-sandbox-proxy';
+const LOCAL_DEV_SANDBOX_IMAGE_NAME = 'ollama-code-sandbox';
+const SANDBOX_NETWORK_NAME = 'ollama-code-sandbox';
+const SANDBOX_PROXY_NAME = 'ollama-code-sandbox-proxy';
 const BUILTIN_SEATBELT_PROFILES = [
   'permissive-open',
   'permissive-closed',
@@ -165,8 +165,8 @@ function entrypoint(workdir: string, cliArgs: string[]): string[] {
         ? 'npm run debug --'
         : 'npm rebuild && npm run start --'
       : process.env['DEBUG']
-        ? `node --inspect-brk=0.0.0.0:${process.env['DEBUG_PORT'] || '9229'} $(which qwen)`
-        : 'qwen';
+        ? `node --inspect-brk=0.0.0.0:${process.env['DEBUG_PORT'] || '9229'} $(which ollama-code)`
+        : 'ollama-code';
 
   const args = [...shellCmds, cliCmd, ...quotedCliArgs];
   return ['bash', '-c', args.join(' ')];
@@ -264,7 +264,8 @@ export async function start_sandbox(
       ].join(' '),
     );
     // start and set up proxy if OLLAMA_SANDBOX_PROXY_COMMAND or GEMINI_SANDBOX_PROXY_COMMAND is set
-    const proxyCommand = process.env['OLLAMA_SANDBOX_PROXY_COMMAND'] ??
+    const proxyCommand =
+      process.env['OLLAMA_SANDBOX_PROXY_COMMAND'] ??
       process.env['GEMINI_SANDBOX_PROXY_COMMAND']; // Legacy support
     let proxyProcess: ChildProcess | undefined = undefined;
     let sandboxProcess: ChildProcess | undefined = undefined;
@@ -338,7 +339,7 @@ export async function start_sandbox(
 
   writeStderrLine(`hopping into sandbox (command: ${config.command}) ...`);
 
-  // determine full path for qwen-code to distinguish linked vs installed setting
+  // determine full path for ollama-code to distinguish linked vs installed setting
   const gcPath = fs.realpathSync(process.argv[1]);
 
   const projectSandboxDockerfile = path.join(
@@ -351,14 +352,14 @@ export async function start_sandbox(
   const workdir = path.resolve(process.cwd());
   const containerWorkdir = getContainerPath(workdir);
 
-  // if BUILD_SANDBOX is set, then call scripts/build_sandbox.js under qwen-code repo
+  // if BUILD_SANDBOX is set, then call scripts/build_sandbox.js under ollama-code repo
   //
-  // note this can only be done with binary linked from qwen-code repo
+  // note this can only be done with binary linked from ollama-code repo
   if (process.env['BUILD_SANDBOX']) {
-    if (!gcPath.includes('qwen-code/packages/')) {
+    if (!gcPath.includes('ollama-code/packages/')) {
       throw new FatalSandboxError(
-        'Cannot build sandbox using installed Qwen Code binary; ' +
-          'run `npm link ./packages/cli` under QwenCode-cli repo to switch to linked binary.',
+        'Cannot build sandbox using installed Ollama Code binary; ' +
+          'run `npm link ./packages/cli` under ollama-code repo to switch to linked binary.',
       );
     } else {
       writeStderrLine('building sandbox ...');
@@ -391,8 +392,8 @@ export async function start_sandbox(
   if (!(await ensureSandboxImageIsPresent(config.command, image))) {
     const remedy =
       image === LOCAL_DEV_SANDBOX_IMAGE_NAME
-        ? 'Try running `npm run build:all` or `npm run build:sandbox` under the qwen-code repo to build it locally, or check the image name and your network connection.'
-        : 'Please check the image name, your network connection, or notify qwen-code-dev@service.alibaba.com if the issue persists.';
+        ? 'Try running `npm run build:all` or `npm run build:sandbox` under the ollama-code repo to build it locally, or check the image name and your network connection.'
+        : 'Please check the image name, your network connection, or open an issue at the ollama-code repository if the issue persists.';
     throw new FatalSandboxError(
       `Sandbox image '${image}' is missing or could not be pulled. ${remedy}`,
     );
@@ -501,7 +502,8 @@ export async function start_sandbox(
   // copy proxy environment variables, replacing localhost with SANDBOX_PROXY_NAME
   // copy as both upper-case and lower-case as is required by some utilities
   // OLLAMA_SANDBOX_PROXY_COMMAND or GEMINI_SANDBOX_PROXY_COMMAND implies HTTPS_PROXY unless HTTP_PROXY is set
-  const proxyCommand = process.env['OLLAMA_SANDBOX_PROXY_COMMAND'] ??
+  const proxyCommand =
+    process.env['OLLAMA_SANDBOX_PROXY_COMMAND'] ??
     process.env['GEMINI_SANDBOX_PROXY_COMMAND']; // Legacy support
 
   if (proxyCommand) {
@@ -548,7 +550,7 @@ export async function start_sandbox(
     process.env['GEMINI_CLI_INTEGRATION_TEST'] === 'true'; // Legacy support
   let containerName;
   if (isIntegrationTest) {
-    containerName = `qwen-code-integration-test-${randomBytes(4).toString(
+    containerName = `ollama-code-integration-test-${randomBytes(4).toString(
       'hex',
     )}`;
     writeStderrLine(`ContainerName: ${containerName}`);
@@ -587,7 +589,7 @@ export async function start_sandbox(
     args.push('--env', `GOOGLE_API_KEY=${process.env['GOOGLE_API_KEY']}`);
   }
 
-  // copy OPENAI_API_KEY and related env vars for Qwen
+  // copy OPENAI_API_KEY and related env vars for Ollama
   if (process.env['OPENAI_API_KEY']) {
     args.push('--env', `OPENAI_API_KEY=${process.env['OPENAI_API_KEY']}`);
   }
@@ -730,7 +732,7 @@ export async function start_sandbox(
 
   // Check if we should use current user's UID/GID in sandbox
   // In integration test mode, we still respect SANDBOX_SET_UID_GID to allow
-  // tests that need to access host's ~/.qwen (e.g., --resume functionality)
+  // tests that need to access host's ~/.ollama-code (e.g., --resume functionality)
   const useCurrentUser = await shouldUseCurrentUserInSandbox();
 
   if (!useCurrentUser) {

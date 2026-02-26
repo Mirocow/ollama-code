@@ -569,8 +569,8 @@ export class Config {
     };
     this.gitCoAuthor = {
       enabled: params.gitCoAuthor ?? true,
-      name: 'Qwen-Coder',
-      email: 'qwen-coder@alibabacloud.com',
+      name: 'Ollama-Code',
+      email: 'ollama-code@ollama.ai',
     };
     this.usageStatisticsEnabled = params.usageStatisticsEnabled ?? true;
     this.outputLanguageFilePath = params.outputLanguageFilePath;

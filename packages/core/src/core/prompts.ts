@@ -770,7 +770,7 @@ To help you check their settings, I can read their contents. Which one would you
 
 function getToolCallExamples(model?: string): string {
   // Check for environment variable override first
-  const toolCallStyle = process.env['QWEN_CODE_TOOL_CALL_STYLE'];
+  const toolCallStyle = process.env['OLLAMA_CODE_TOOL_CALL_STYLE'];
   if (toolCallStyle) {
     switch (toolCallStyle.toLowerCase()) {
       case 'qwen-coder':
@@ -781,7 +781,7 @@ function getToolCallExamples(model?: string): string {
         return generalToolCallExamples;
       default:
         debugLogger.warn(
-          `Unknown QWEN_CODE_TOOL_CALL_STYLE value: ${toolCallStyle}. Using model-based detection.`,
+          `Unknown OLLAMA_CODE_TOOL_CALL_STYLE value: ${toolCallStyle}. Using model-based detection.`,
         );
         break;
     }

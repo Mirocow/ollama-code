@@ -24,8 +24,9 @@ const debugLogger = createDebugLogger('MODIFIABLE_TOOL');
 /**
  * A declarative tool that supports a modify operation.
  */
-export interface ModifiableDeclarativeTool<TParams extends object>
-  extends DeclarativeTool<TParams, ToolResult> {
+export interface ModifiableDeclarativeTool<
+  TParams extends object,
+> extends DeclarativeTool<TParams, ToolResult> {
   getModifyContext(abortSignal: AbortSignal): ModifyContext<TParams>;
 }
 
@@ -63,7 +64,7 @@ function createTempFilesForModify(
   file_path: string,
 ): { oldPath: string; newPath: string } {
   const tempDir = os.tmpdir();
-  const diffDir = path.join(tempDir, 'qwen-code-tool-modify-diffs');
+  const diffDir = path.join(tempDir, 'ollama-code-tool-modify-diffs');
 
   if (!fs.existsSync(diffDir)) {
     fs.mkdirSync(diffDir, { recursive: true });
@@ -74,11 +75,11 @@ function createTempFilesForModify(
   const timestamp = Date.now();
   const tempOldPath = path.join(
     diffDir,
-    `qwen-code-modify-${fileName}-old-${timestamp}${ext}`,
+    `ollama-code-modify-${fileName}-old-${timestamp}${ext}`,
   );
   const tempNewPath = path.join(
     diffDir,
-    `qwen-code-modify-${fileName}-new-${timestamp}${ext}`,
+    `ollama-code-modify-${fileName}-new-${timestamp}${ext}`,
   );
 
   fs.writeFileSync(tempOldPath, currentContent, 'utf8');
