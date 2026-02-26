@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  *
  * Main ToolCall component - uses factory pattern to route to specialized components
@@ -10,7 +10,7 @@
  */
 
 import type { FC } from 'react';
-import type { ToolCallData } from '@qwen-code/webui';
+import type { ToolCallData } from '@ollama-code/webui';
 import { ToolCallRouter } from './index.js';
 
 // Re-export types from webui for backward compatibility
@@ -18,7 +18,7 @@ export type {
   ToolCallData,
   BaseToolCallProps as ToolCallProps,
   ToolCallContent,
-} from '@qwen-code/webui';
+} from '@ollama-code/webui';
 
 export const ToolCall: FC<{
   toolCall: ToolCallData;

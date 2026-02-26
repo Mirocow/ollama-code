@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import { AcpConnection } from './acpConnection.js';
@@ -12,20 +12,23 @@ import type {
   AvailableCommand,
 } from '../types/acpTypes.js';
 import type { ApprovalModeValue } from '../types/approvalModeValueTypes.js';
-import { QwenSessionReader, type QwenSession } from './qwenSessionReader.js';
-import { QwenSessionManager } from './qwenSessionManager.js';
+import {
+  OllamaSessionReader,
+  type OllamaSession,
+} from './ollamaSessionReader.js';
+import { OllamaSessionManager } from './ollamaSessionManager.js';
 import type {
   ChatMessage,
   PlanEntry,
   ToolCallUpdateData,
-  QwenAgentCallbacks,
+  OllamaAgentCallbacks,
   UsageStatsPayload,
 } from '../types/chatTypes.js';
 import {
-  QwenConnectionHandler,
-  type QwenConnectionResult,
-} from '../services/qwenConnectionHandler.js';
-import { QwenSessionUpdateHandler } from './qwenSessionUpdateHandler.js';
+  OllamaConnectionHandler,
+  type OllamaConnectionResult,
+} from './ollamaConnectionHandler.js';
+import { OllamaSessionUpdateHandler } from './ollamaSessionUpdateHandler.js';
 import { authMethod } from '../types/acpTypes.js';
 import {
   extractModelInfoFromNewSessionResult,
@@ -48,12 +51,12 @@ interface AgentSessionOptions {
   autoAuthenticate?: boolean;
 }
 
-export class QwenAgentManager {
+export class OllamaAgentManager {
   private connection: AcpConnection;
-  private sessionReader: QwenSessionReader;
-  private sessionManager: QwenSessionManager;
-  private connectionHandler: QwenConnectionHandler;
-  private sessionUpdateHandler: QwenSessionUpdateHandler;
+  private sessionReader: OllamaSessionReader;
+  private sessionManager: OllamaSessionManager;
+  private connectionHandler: OllamaConnectionHandler;
+  private sessionUpdateHandler: OllamaSessionUpdateHandler;
   private currentWorkingDir: string = process.cwd();
   // When loading a past session via ACP, the CLI replays history through
   // session/update notifications. We set this flag to route message chunks
@@ -64,14 +67,14 @@ export class QwenAgentManager {
   private sessionCreateInFlight: Promise<string | null> | null = null;
 
   // Callback storage
-  private callbacks: QwenAgentCallbacks = {};
+  private callbacks: OllamaAgentCallbacks = {};
 
   constructor() {
     this.connection = new AcpConnection();
-    this.sessionReader = new QwenSessionReader();
-    this.sessionManager = new QwenSessionManager();
-    this.connectionHandler = new QwenConnectionHandler();
-    this.sessionUpdateHandler = new QwenSessionUpdateHandler({});
+    this.sessionReader = new OllamaSessionReader();
+    this.sessionManager = new OllamaSessionManager();
+    this.connectionHandler = new OllamaConnectionHandler();
+    this.sessionUpdateHandler = new OllamaSessionUpdateHandler({});
 
     // Set ACP connection callbacks
     this.connection.onSessionUpdate = (data: AcpSessionUpdate) => {
@@ -102,7 +105,7 @@ export class QwenAgentManager {
               : Date.now();
           if (update?.sessionUpdate === 'user_message_chunk' && text) {
             console.log(
-              '[QwenAgentManager] Rehydration: routing user message chunk',
+              '[OllamaAgentManager] Rehydration: routing user message chunk',
             );
             this.callbacks.onMessage?.({
               role: 'user',
@@ -113,7 +116,7 @@ export class QwenAgentManager {
           }
           if (update?.sessionUpdate === 'agent_message_chunk' && text) {
             console.log(
-              '[QwenAgentManager] Rehydration: routing agent message chunk',
+              '[OllamaAgentManager] Rehydration: routing agent message chunk',
             );
             this.callbacks.onMessage?.({
               role: 'assistant',
@@ -124,11 +127,11 @@ export class QwenAgentManager {
           }
           // For other types during rehydration, fall through to normal handler
           console.log(
-            '[QwenAgentManager] Rehydration: non-text update, forwarding to handler',
+            '[OllamaAgentManager] Rehydration: non-text update, forwarding to handler',
           );
         }
       } catch (err) {
-        console.warn('[QwenAgentManager] Rehydration routing failed:', err);
+        console.warn('[OllamaAgentManager] Rehydration routing failed:', err);
       }
 
       // Default handling path
@@ -154,7 +157,7 @@ export class QwenAgentManager {
           this.callbacks.onStreamChunk('');
         }
       } catch (err) {
-        console.warn('[QwenAgentManager] onEndTurn callback error:', err);
+        console.warn('[OllamaAgentManager] onEndTurn callback error:', err);
       }
     };
 
@@ -166,7 +169,7 @@ export class QwenAgentManager {
         handleAuthenticateUpdate(data);
       } catch (err) {
         console.warn(
-          '[QwenAgentManager] onAuthenticateUpdate callback error:',
+          '[OllamaAgentManager] onAuthenticateUpdate callback error:',
           err,
         );
       }
@@ -193,13 +196,13 @@ export class QwenAgentManager {
           });
         }
       } catch (err) {
-        console.warn('[QwenAgentManager] onInitialized parse error:', err);
+        console.warn('[OllamaAgentManager] onInitialized parse error:', err);
       }
     };
   }
 
   /**
-   * Connect to Qwen service
+   * Connect to Ollama service
    *
    * @param workingDir - Working directory
    * @param cliEntryPath - Path to bundled CLI entrypoint (cli.js)
@@ -208,7 +211,7 @@ export class QwenAgentManager {
     workingDir: string,
     cliEntryPath: string,
     options?: AgentConnectOptions,
-  ): Promise<QwenConnectionResult> {
+  ): Promise<OllamaConnectionResult> {
     this.currentWorkingDir = workingDir;
     const res = await this.connectionHandler.connect(
       this.connection,
@@ -222,7 +225,7 @@ export class QwenAgentManager {
     // Emit available models from connect result
     if (res.availableModels && res.availableModels.length > 0) {
       console.log(
-        '[QwenAgentManager] Emitting availableModels from connect():',
+        '[OllamaAgentManager] Emitting availableModels from connect():',
         res.availableModels.map((m) => m.modelId),
       );
       if (this.callbacks.onAvailableModels) {
@@ -262,7 +265,7 @@ export class QwenAgentManager {
       this.callbacks.onModeChanged?.(confirmed);
       return confirmed;
     } catch (err) {
-      console.error('[QwenAgentManager] Failed to set mode:', err);
+      console.error('[OllamaAgentManager] Failed to set mode:', err);
       throw err;
     }
   }
@@ -283,7 +286,7 @@ export class QwenAgentManager {
       this.callbacks.onModelChanged?.(modelInfo);
       return modelInfo;
     } catch (err) {
-      console.error('[QwenAgentManager] Failed to set model:', err);
+      console.error('[OllamaAgentManager] Failed to set model:', err);
       throw err;
     }
   }
@@ -314,7 +317,7 @@ export class QwenAgentManager {
 
       return sessionExists;
     } catch (error) {
-      console.warn('[QwenAgentManager] Session validation failed:', error);
+      console.warn('[OllamaAgentManager] Session validation failed:', error);
       // If we can't validate, assume session is invalid
       return false;
     }
@@ -328,15 +331,15 @@ export class QwenAgentManager {
    */
   async getSessionList(): Promise<Array<Record<string, unknown>>> {
     console.log(
-      '[QwenAgentManager] Getting session list with version-aware strategy',
+      '[OllamaAgentManager] Getting session list with version-aware strategy',
     );
 
     try {
       console.log(
-        '[QwenAgentManager] Attempting to get session list via ACP method',
+        '[OllamaAgentManager] Attempting to get session list via ACP method',
       );
       const response = await this.connection.listSessions();
-      console.log('[QwenAgentManager] ACP session list response:', response);
+      console.log('[OllamaAgentManager] ACP session list response:', response);
 
       // sendRequest resolves with the JSON-RPC "result" directly
       // Newer CLI returns an object: { items: [...], nextCursor?, hasMore }
@@ -355,7 +358,7 @@ export class QwenAgentManager {
       }
 
       console.log(
-        '[QwenAgentManager] Sessions retrieved via ACP:',
+        '[OllamaAgentManager] Sessions retrieved via ACP:',
         res,
         items.length,
       );
@@ -374,29 +377,29 @@ export class QwenAgentManager {
         }));
 
         console.log(
-          '[QwenAgentManager] Sessions retrieved via ACP:',
+          '[OllamaAgentManager] Sessions retrieved via ACP:',
           sessions.length,
         );
         return sessions;
       }
     } catch (error) {
       console.warn(
-        '[QwenAgentManager] ACP session list failed, falling back to file system method:',
+        '[OllamaAgentManager] ACP session list failed, falling back to file system method:',
         error,
       );
     }
 
     // Always fall back to file system method
     try {
-      console.log('[QwenAgentManager] Getting session list from file system');
+      console.log('[OllamaAgentManager] Getting session list from file system');
       const sessions = await this.sessionReader.getAllSessions(undefined, true);
       console.log(
-        '[QwenAgentManager] Session list from file system (all projects):',
+        '[OllamaAgentManager] Session list from file system (all projects):',
         sessions.length,
       );
 
       const result = sessions.map(
-        (session: QwenSession): Record<string, unknown> => ({
+        (session: OllamaSession): Record<string, unknown> => ({
           id: session.sessionId,
           sessionId: session.sessionId,
           title: this.sessionReader.getSessionTitle(session),
@@ -411,13 +414,13 @@ export class QwenAgentManager {
       );
 
       console.log(
-        '[QwenAgentManager] Sessions retrieved from file system:',
+        '[OllamaAgentManager] Sessions retrieved from file system:',
         result.length,
       );
       return result;
     } catch (error) {
       console.error(
-        '[QwenAgentManager] Failed to get session list from file system:',
+        '[OllamaAgentManager] Failed to get session list from file system:',
         error,
       );
       return [];
@@ -484,7 +487,10 @@ export class QwenAgentManager {
 
       return { sessions: mapped, nextCursor, hasMore };
     } catch (error) {
-      console.warn('[QwenAgentManager] Paged ACP session list failed:', error);
+      console.warn(
+        '[OllamaAgentManager] Paged ACP session list failed:',
+        error,
+      );
       // fall through to file system
     }
 
@@ -521,7 +527,10 @@ export class QwenAgentManager {
       const hasMore = filtered.length > size;
       return { sessions, nextCursor: nextCursorVal, hasMore };
     } catch (error) {
-      console.error('[QwenAgentManager] File system paged list failed:', error);
+      console.error(
+        '[OllamaAgentManager] File system paged list failed:',
+        error,
+      );
       return { sessions: [], hasMore: false };
     }
   }
@@ -540,7 +549,7 @@ export class QwenAgentManager {
           (s) => s.sessionId === sessionId || s.id === sessionId,
         );
         console.log(
-          '[QwenAgentManager] Session list item for filePath lookup:',
+          '[OllamaAgentManager] Session list item for filePath lookup:',
           item,
         );
         if (
@@ -555,7 +564,7 @@ export class QwenAgentManager {
           return messages;
         }
       } catch (e) {
-        console.warn('[QwenAgentManager] JSONL read path lookup failed:', e);
+        console.warn('[OllamaAgentManager] JSONL read path lookup failed:', e);
       }
 
       // Fallback: legacy JSON session files
@@ -575,7 +584,7 @@ export class QwenAgentManager {
       );
     } catch (error) {
       console.error(
-        '[QwenAgentManager] Failed to get session messages:',
+        '[OllamaAgentManager] Failed to get session messages:',
         error,
       );
       return [];
@@ -610,7 +619,7 @@ export class QwenAgentManager {
       }
       // Simple linear reconstruction: filter user/assistant and sort by timestamp
       console.log(
-        '[QwenAgentManager] JSONL records read:',
+        '[OllamaAgentManager] JSONL records read:',
         records.length,
         filePath,
       );
@@ -769,12 +778,12 @@ export class QwenAgentManager {
       }
 
       console.log(
-        '[QwenAgentManager] JSONL messages reconstructed:',
+        '[OllamaAgentManager] JSONL messages reconstructed:',
         msgs.length,
       );
       return msgs;
     } catch (err) {
-      console.warn('[QwenAgentManager] Failed to read JSONL messages:', err);
+      console.warn('[OllamaAgentManager] Failed to read JSONL messages:', err);
       return [];
     }
   }
@@ -907,7 +916,7 @@ export class QwenAgentManager {
   ): Promise<{ success: boolean; message?: string }> {
     try {
       console.log(
-        '[QwenAgentManager] Saving session via /chat save command:',
+        '[OllamaAgentManager] Saving session via /chat save command:',
         sessionId,
         'with tag:',
         tag,
@@ -917,13 +926,13 @@ export class QwenAgentManager {
       // The CLI will handle this as a special command
       await this.connection.sendPrompt(`/chat save "${tag}"`);
 
-      console.log('[QwenAgentManager] /chat save command sent successfully');
+      console.log('[OllamaAgentManager] /chat save command sent successfully');
       return {
         success: true,
         message: `Session saved with tag: ${tag}`,
       };
     } catch (error) {
-      console.error('[QwenAgentManager] /chat save command failed:', error);
+      console.error('[OllamaAgentManager] /chat save command failed:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : String(error),
@@ -945,7 +954,7 @@ export class QwenAgentManager {
   ): Promise<{ success: boolean; message?: string }> {
     // Fallback to command-based save since CLI doesn't support session/save ACP method
     console.warn(
-      '[QwenAgentManager] saveSessionViaAcp is deprecated, using command-based save instead',
+      '[OllamaAgentManager] saveSessionViaAcp is deprecated, using command-based save instead',
     );
     return this.saveSessionViaCommand(sessionId, tag);
   }
@@ -965,11 +974,11 @@ export class QwenAgentManager {
       // Route upcoming session/update messages as discrete messages for replay
       this.rehydratingSessionId = sessionId;
       console.log(
-        '[QwenAgentManager] Rehydration start for session:',
+        '[OllamaAgentManager] Rehydration start for session:',
         sessionId,
       );
       console.log(
-        '[QwenAgentManager] Attempting session/load via ACP for session:',
+        '[OllamaAgentManager] Attempting session/load via ACP for session:',
         sessionId,
       );
       const response = await this.connection.loadSession(
@@ -977,7 +986,7 @@ export class QwenAgentManager {
         cwdOverride,
       );
       console.log(
-        '[QwenAgentManager] Session load succeeded. Response:',
+        '[OllamaAgentManager] Session load succeeded. Response:',
         JSON.stringify(response).substring(0, 200),
       );
       return response;
@@ -985,11 +994,14 @@ export class QwenAgentManager {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       console.error(
-        '[QwenAgentManager] Session load via ACP failed for session:',
+        '[OllamaAgentManager] Session load via ACP failed for session:',
         sessionId,
       );
-      console.error('[QwenAgentManager] Error type:', error?.constructor?.name);
-      console.error('[QwenAgentManager] Error message:', errorMessage);
+      console.error(
+        '[OllamaAgentManager] Error type:',
+        error?.constructor?.name,
+      );
+      console.error('[OllamaAgentManager] Error message:', errorMessage);
 
       // Check if error is from ACP response
       if (error && typeof error === 'object') {
@@ -1000,23 +1012,26 @@ export class QwenAgentManager {
           };
           if (acpError.error) {
             console.error(
-              '[QwenAgentManager] ACP error code:',
+              '[OllamaAgentManager] ACP error code:',
               acpError.error.code,
             );
             console.error(
-              '[QwenAgentManager] ACP error message:',
+              '[OllamaAgentManager] ACP error message:',
               acpError.error.message,
             );
           }
         } else {
-          console.error('[QwenAgentManager] Non-ACPIf error details:', error);
+          console.error('[OllamaAgentManager] Non-ACPIf error details:', error);
         }
       }
 
       throw error;
     } finally {
       // End rehydration routing regardless of outcome
-      console.log('[QwenAgentManager] Rehydration end for session:', sessionId);
+      console.log(
+        '[OllamaAgentManager] Rehydration end for session:',
+        sessionId,
+      );
       this.rehydratingSessionId = null;
     }
   }
@@ -1030,22 +1045,22 @@ export class QwenAgentManager {
    */
   async loadSession(sessionId: string): Promise<ChatMessage[] | null> {
     console.log(
-      '[QwenAgentManager] Loading session with version-aware strategy:',
+      '[OllamaAgentManager] Loading session with version-aware strategy:',
       sessionId,
     );
 
     try {
       console.log(
-        '[QwenAgentManager] Attempting to load session via ACP method',
+        '[OllamaAgentManager] Attempting to load session via ACP method',
       );
       await this.loadSessionViaAcp(sessionId);
-      console.log('[QwenAgentManager] Session loaded successfully via ACP');
+      console.log('[OllamaAgentManager] Session loaded successfully via ACP');
 
       // After loading via ACP, we still need to get messages from file system
       // In future, we might get them directly from the ACP response
     } catch (error) {
       console.warn(
-        '[QwenAgentManager] ACP session load failed, falling back to file system method:',
+        '[OllamaAgentManager] ACP session load failed, falling back to file system method:',
         error,
       );
     }
@@ -1053,16 +1068,16 @@ export class QwenAgentManager {
     // Always fall back to file system method
     try {
       console.log(
-        '[QwenAgentManager] Loading session messages from file system',
+        '[OllamaAgentManager] Loading session messages from file system',
       );
       const messages = await this.loadSessionMessagesFromFile(sessionId);
       console.log(
-        '[QwenAgentManager] Session messages loaded successfully from file system',
+        '[OllamaAgentManager] Session messages loaded successfully from file system',
       );
       return messages;
     } catch (error) {
       console.error(
-        '[QwenAgentManager] Failed to load session messages from file system:',
+        '[OllamaAgentManager] Failed to load session messages from file system:',
         error,
       );
       return null;
@@ -1080,7 +1095,7 @@ export class QwenAgentManager {
   ): Promise<ChatMessage[] | null> {
     try {
       console.log(
-        '[QwenAgentManager] Loading session from file system:',
+        '[OllamaAgentManager] Loading session from file system:',
         sessionId,
       );
 
@@ -1092,7 +1107,7 @@ export class QwenAgentManager {
 
       if (!session) {
         console.log(
-          '[QwenAgentManager] Session not found in file system:',
+          '[OllamaAgentManager] Session not found in file system:',
           sessionId,
         );
         return null;
@@ -1108,7 +1123,7 @@ export class QwenAgentManager {
       return messages;
     } catch (error) {
       console.error(
-        '[QwenAgentManager] Session load from file system failed:',
+        '[OllamaAgentManager] Session load from file system failed:',
         error,
       );
       throw error;
@@ -1131,7 +1146,7 @@ export class QwenAgentManager {
     // Reuse existing session if present
     if (this.connection.currentSessionId) {
       console.log(
-        '[QwenAgentManager] createNewSession: reusing existing session',
+        '[OllamaAgentManager] createNewSession: reusing existing session',
         this.connection.currentSessionId,
       );
       return this.connection.currentSessionId;
@@ -1139,12 +1154,12 @@ export class QwenAgentManager {
     // Deduplicate concurrent session/new attempts
     if (this.sessionCreateInFlight) {
       console.log(
-        '[QwenAgentManager] createNewSession: session creation already in flight',
+        '[OllamaAgentManager] createNewSession: session creation already in flight',
       );
       return this.sessionCreateInFlight;
     }
 
-    console.log('[QwenAgentManager] Creating new session...');
+    console.log('[OllamaAgentManager] Creating new session...');
 
     this.sessionCreateInFlight = (async () => {
       try {
@@ -1153,7 +1168,7 @@ export class QwenAgentManager {
         try {
           newSessionResult = await this.connection.newSession(workingDir);
           console.log(
-            '[QwenAgentManager] newSession returned:',
+            '[OllamaAgentManager] newSession returned:',
             JSON.stringify(newSessionResult, null, 2),
           );
         } catch (err) {
@@ -1162,25 +1177,25 @@ export class QwenAgentManager {
           if (requiresAuth) {
             if (!autoAuthenticate) {
               console.warn(
-                '[QwenAgentManager] session/new requires authentication but auto-auth is disabled. Deferring until user logs in.',
+                '[OllamaAgentManager] session/new requires authentication but auto-auth is disabled. Deferring until user logs in.',
               );
               throw err;
             }
             console.warn(
-              '[QwenAgentManager] session/new requires authentication. Retrying with authenticate...',
+              '[OllamaAgentManager] session/new requires authentication. Retrying with authenticate...',
             );
             try {
               // Let CLI handle authentication - it's the single source of truth
               await this.connection.authenticate(authMethod);
               console.log(
-                '[QwenAgentManager] createNewSession Authentication successful. Retrying session/new...',
+                '[OllamaAgentManager] createNewSession Authentication successful. Retrying session/new...',
               );
               // Add a slight delay to ensure auth state is settled
               await new Promise((resolve) => setTimeout(resolve, 300));
               newSessionResult = await this.connection.newSession(workingDir);
             } catch (reauthErr) {
               console.error(
-                '[QwenAgentManager] Re-authentication failed:',
+                '[OllamaAgentManager] Re-authentication failed:',
                 reauthErr,
               );
               throw reauthErr;
@@ -1199,7 +1214,7 @@ export class QwenAgentManager {
         // Extract and emit available models
         const modelState = extractSessionModelState(newSessionResult);
         console.log(
-          '[QwenAgentManager] Extracted model state from session/new:',
+          '[OllamaAgentManager] Extracted model state from session/new:',
           modelState,
         );
         if (
@@ -1207,7 +1222,7 @@ export class QwenAgentManager {
           modelState.availableModels.length > 0
         ) {
           console.log(
-            '[QwenAgentManager] Emitting availableModels:',
+            '[OllamaAgentManager] Emitting availableModels:',
             modelState.availableModels,
           );
           if (this.callbacks.onAvailableModels) {
@@ -1215,14 +1230,14 @@ export class QwenAgentManager {
           }
         } else {
           console.warn(
-            '[QwenAgentManager] No availableModels found in session/new response. Raw models field:',
+            '[OllamaAgentManager] No availableModels found in session/new response. Raw models field:',
             (newSessionResult as Record<string, unknown>)?.models,
           );
         }
 
         const newSessionId = this.connection.currentSessionId;
         console.log(
-          '[QwenAgentManager] New session created with ID:',
+          '[OllamaAgentManager] New session created with ID:',
           newSessionId,
         );
         return newSessionId;
@@ -1247,7 +1262,7 @@ export class QwenAgentManager {
    * Cancel current prompt
    */
   async cancelCurrentPrompt(): Promise<void> {
-    console.log('[QwenAgentManager] Cancelling current prompt');
+    console.log('[OllamaAgentManager] Cancelling current prompt');
     await this.connection.cancelSession();
   }
 

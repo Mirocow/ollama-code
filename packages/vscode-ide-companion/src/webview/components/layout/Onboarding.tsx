@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  *
  * VSCode-specific Onboarding adapter
@@ -8,7 +8,7 @@
  */
 
 import type { FC } from 'react';
-import { Onboarding as BaseOnboarding } from '@qwen-code/webui';
+import { Onboarding as BaseOnboarding } from '@ollama-code/webui';
 import { generateIconUrl } from '../../utils/resourceUrl.js';
 
 interface OnboardingPageProps {

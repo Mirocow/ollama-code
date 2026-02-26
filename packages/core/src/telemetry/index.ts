@@ -105,4 +105,4 @@ export {
   ApiRequestPhase,
   FileOperation,
 } from './metrics.js';
-export { OllamaLogger } from './qwen-logger/qwen-logger.js';
+export { OllamaLogger } from './ollama-logger/ollama-logger.js';

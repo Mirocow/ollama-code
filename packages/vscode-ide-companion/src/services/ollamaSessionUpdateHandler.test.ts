@@ -1,18 +1,18 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { QwenSessionUpdateHandler } from './qwenSessionUpdateHandler.js';
+import { OllamaSessionUpdateHandler } from './ollamaSessionUpdateHandler.js';
 import type { AcpSessionUpdate } from '../types/acpTypes.js';
 import type { ApprovalModeValue } from '../types/approvalModeValueTypes.js';
-import type { QwenAgentCallbacks } from '../types/chatTypes.js';
+import type { OllamaAgentCallbacks } from '../types/chatTypes.js';
 
-describe('QwenSessionUpdateHandler', () => {
-  let handler: QwenSessionUpdateHandler;
-  let mockCallbacks: QwenAgentCallbacks;
+describe('OllamaSessionUpdateHandler', () => {
+  let handler: OllamaSessionUpdateHandler;
+  let mockCallbacks: OllamaAgentCallbacks;
 
   beforeEach(() => {
     mockCallbacks = {
@@ -25,7 +25,7 @@ describe('QwenSessionUpdateHandler', () => {
       onUsageUpdate: vi.fn(),
       onAvailableCommands: vi.fn(),
     };
-    handler = new QwenSessionUpdateHandler(mockCallbacks);
+    handler = new OllamaSessionUpdateHandler(mockCallbacks);
   });
 
   describe('current_model_update handling', () => {
@@ -74,7 +74,7 @@ describe('QwenSessionUpdateHandler', () => {
     });
 
     it('does not call callback when onModelChanged is not set', () => {
-      const handlerWithoutCallback = new QwenSessionUpdateHandler({});
+      const handlerWithoutCallback = new OllamaSessionUpdateHandler({});
 
       const modelUpdate: AcpSessionUpdate = {
         sessionId: 'test-session',
@@ -211,7 +211,7 @@ describe('QwenSessionUpdateHandler', () => {
     });
 
     it('falls back to stream chunk when onPlan is not set', () => {
-      const handlerWithStream = new QwenSessionUpdateHandler({
+      const handlerWithStream = new OllamaSessionUpdateHandler({
         onStreamChunk: vi.fn(),
       });
 
@@ -295,7 +295,7 @@ describe('QwenSessionUpdateHandler', () => {
     });
 
     it('does not call callback when onAvailableCommands is not set', () => {
-      const handlerWithoutCallback = new QwenSessionUpdateHandler({});
+      const handlerWithoutCallback = new OllamaSessionUpdateHandler({});
 
       const commandsUpdate: AcpSessionUpdate = {
         sessionId: 'test-session',

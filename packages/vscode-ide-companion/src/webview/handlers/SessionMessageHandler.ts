@@ -1,12 +1,12 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as vscode from 'vscode';
 import { BaseMessageHandler } from './BaseMessageHandler.js';
-import type { ChatMessage } from '../../services/qwenAgentManager.js';
+import type { ChatMessage } from '../../services/ollamaAgentManager.js';
 import type { ApprovalModeValue } from '../../types/approvalModeValueTypes.js';
 import { ACP_ERROR_CODES } from '../../constants/acpSchema.js';
 

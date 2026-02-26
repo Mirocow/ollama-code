@@ -5,9 +5,9 @@
  */
 
 import type { GitIgnoreFilter } from '../utils/gitIgnoreParser.js';
-import type { QwenIgnoreFilter } from '../utils/qwenIgnoreParser.js';
+import type { QwenIgnoreFilter } from '../utils/ollamaIgnoreParser.js';
 import { GitIgnoreParser } from '../utils/gitIgnoreParser.js';
-import { QwenIgnoreParser } from '../utils/qwenIgnoreParser.js';
+import { QwenIgnoreParser } from '../utils/ollamaIgnoreParser.js';
 import { isGitRepository } from '../utils/gitUtils.js';
 import * as path from 'node:path';
 

@@ -9,7 +9,7 @@ import { appEvents } from './../../utils/events.js';
 import { Box, Text } from 'ink';
 import { useConfig } from '../contexts/ConfigContext.js';
 import { type McpClient, MCPServerStatus } from '@ollama-code/ollama-code-core';
-import { GeminiSpinner } from './GeminiRespondingSpinner.js';
+import { OllamaSpinner } from './OllamaRespondingSpinner.js';
 import { theme } from '../semantic-colors.js';
 import { t } from '../../i18n/index.js';
 
@@ -46,7 +46,7 @@ export const ConfigInitDisplay = () => {
   return (
     <Box marginTop={1}>
       <Text>
-        <GeminiSpinner /> <Text color={theme.text.primary}>{message}</Text>
+        <OllamaSpinner /> <Text color={theme.text.primary}>{message}</Text>
       </Text>
     </Box>
   );

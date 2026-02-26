@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -56,7 +56,7 @@ export class AcpConnection {
   }
 
   /**
-   * Connect to Qwen ACP
+   * Connect to Ollama ACP
    *
    * @param cliEntryPath - Path to the bundled CLI entrypoint (cli.js)
    * @param workingDir - Working directory
@@ -103,7 +103,7 @@ export class AcpConnection {
 
     if (!fs.existsSync(cliEntryPath)) {
       throw new Error(
-        `Bundled Qwen CLI entry not found at ${cliEntryPath}. The extension may not have been packaged correctly.`,
+        `Bundled Ollama CLI entry not found at ${cliEntryPath}. The extension may not have been packaged correctly.`,
       );
     }
 
@@ -133,9 +133,9 @@ export class AcpConnection {
         message.toLowerCase().includes('error') &&
         !message.includes('Loaded cached')
       ) {
-        console.error(`[ACP qwen]:`, message);
+        console.error(`[ACP ollama]:`, message);
       } else {
-        console.log(`[ACP qwen]:`, message);
+        console.log(`[ACP ollama]:`, message);
       }
     });
 
@@ -145,7 +145,7 @@ export class AcpConnection {
 
     this.child!.on('exit', (code, signal) => {
       console.error(
-        `[ACP qwen] Process exited with code: ${code}, signal: ${signal}`,
+        `[ACP ollama] Process exited with code: ${code}, signal: ${signal}`,
       );
       // Clear pending requests when process exits
       this.pendingRequests.clear();
@@ -159,7 +159,7 @@ export class AcpConnection {
     }
 
     if (!this.child || this.child.killed) {
-      throw new Error(`Qwen ACP process failed to start`);
+      throw new Error(`Ollama ACP process failed to start`);
     }
 
     // Handle messages from ACP server

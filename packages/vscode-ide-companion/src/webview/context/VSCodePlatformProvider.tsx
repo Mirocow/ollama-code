@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  *
  * VSCode Platform Provider - Adapts VSCode API to PlatformContext
@@ -9,8 +9,8 @@
 
 import { useMemo, useCallback, useEffect, useRef } from 'react';
 import type { FC, ReactNode } from 'react';
-import { PlatformProvider } from '@qwen-code/webui';
-import type { PlatformContextValue } from '@qwen-code/webui';
+import { PlatformProvider } from '@ollama-code/webui';
+import type { PlatformContextValue } from '@ollama-code/webui';
 import { useVSCode } from '../hooks/useVSCode.js';
 import { generateIconUrl } from '../utils/resourceUrl.js';
 

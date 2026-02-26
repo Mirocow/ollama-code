@@ -196,7 +196,7 @@ const SETTINGS_SCHEMA = {
         requiresRestart: false,
         default: true,
         description:
-          'Automatically add a Co-authored-by trailer to git commit messages when commits are made through Qwen Code.',
+          'Automatically add a Co-authored-by trailer to git commit messages when commits are made through Ollama Code.',
         showInDialog: true,
       },
       checkpointing: {
@@ -237,7 +237,7 @@ const SETTINGS_SCHEMA = {
         description:
           'The language for the user interface. Use "auto" to detect from system settings. ' +
           'You can also use custom language codes (e.g., "es", "fr") by placing JS language files ' +
-          'in ~/.qwen/locales/ (e.g., ~/.qwen/locales/es.js).',
+          'in ~/.ollama/locales/ (e.g., ~/.ollama/locales/es.js).',
         showInDialog: true,
         options: [] as readonly SettingEnumOption[],
       },
@@ -356,7 +356,7 @@ const SETTINGS_SCHEMA = {
         requiresRestart: false,
         default: false,
         description:
-          'Show Qwen Code status and thoughts in the terminal window title',
+          'Show Ollama Code status and thoughts in the terminal window title',
         showInDialog: false,
       },
       hideTips: {
@@ -683,7 +683,7 @@ const SETTINGS_SCHEMA = {
             requiresRestart: false,
             default: undefined,
             description:
-              "Overrides the default context window size for the selected model. Use this setting when a provider's effective context limit differs from Qwen Code's default. This value defines the model's assumed maximum context capacity, not a per-request token limit.",
+              "Overrides the default context window size for the selected model. Use this setting when a provider's effective context limit differs from Ollama Code's default. This value defines the model's assumed maximum context capacity, not a per-request token limit.",
             parentKey: 'generationConfig',
             showInDialog: false,
           },
@@ -759,11 +759,11 @@ const SETTINGS_SCHEMA = {
           },
           respectQwenIgnore: {
             type: 'boolean',
-            label: 'Respect .qwenignore',
+            label: 'Respect .ollamaignore',
             category: 'Context',
             requiresRestart: true,
             default: true,
-            description: 'Respect .qwenignore files when searching',
+            description: 'Respect .ollamaignore files when searching',
             showInDialog: true,
           },
           enableRecursiveFileSearch: {

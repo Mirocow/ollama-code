@@ -93,23 +93,23 @@ export type HistoryItemUser = HistoryItemBase & {
   text: string;
 };
 
-export type HistoryItemGemini = HistoryItemBase & {
-  type: 'gemini';
+export type HistoryItemOllama = HistoryItemBase & {
+  type: 'ollama';
   text: string;
 };
 
-export type HistoryItemGeminiContent = HistoryItemBase & {
-  type: 'gemini_content';
+export type HistoryItemOllamaContent = HistoryItemBase & {
+  type: 'ollama_content';
   text: string;
 };
 
-export type HistoryItemGeminiThought = HistoryItemBase & {
-  type: 'gemini_thought';
+export type HistoryItemOllamaThought = HistoryItemBase & {
+  type: 'ollama_thought';
   text: string;
 };
 
-export type HistoryItemGeminiThoughtContent = HistoryItemBase & {
-  type: 'gemini_thought_content';
+export type HistoryItemOllamaThoughtContent = HistoryItemBase & {
+  type: 'ollama_thought_content';
   text: string;
 };
 
@@ -263,10 +263,10 @@ export type HistoryItemMcpStatus = HistoryItemBase & {
 export type HistoryItemWithoutId =
   | HistoryItemUser
   | HistoryItemUserShell
-  | HistoryItemGemini
-  | HistoryItemGeminiContent
-  | HistoryItemGeminiThought
-  | HistoryItemGeminiThoughtContent
+  | HistoryItemOllama
+  | HistoryItemOllamaContent
+  | HistoryItemOllamaThought
+  | HistoryItemOllamaThoughtContent
   | HistoryItemInfo
   | HistoryItemError
   | HistoryItemWarning
@@ -300,7 +300,7 @@ export enum MessageType {
   MODEL_STATS = 'model_stats',
   TOOL_STATS = 'tool_stats',
   QUIT = 'quit',
-  GEMINI = 'gemini',
+  OLLAMA = 'ollama',
   COMPRESSION = 'compression',
   SUMMARY = 'summary',
   EXTENSIONS_LIST = 'extensions_list',
@@ -383,7 +383,7 @@ export interface ConsoleMessageItem {
 
 /**
  * Result type for a slash command that should immediately result in a prompt
- * being submitted to the Gemini model.
+ * being submitted to the Ollama model.
  */
 export interface SubmitPromptResult {
   type: 'submit_prompt';
@@ -391,7 +391,7 @@ export interface SubmitPromptResult {
 }
 
 /**
- * Defines the result of the slash command processor for its consumer (useGeminiStream).
+ * Defines the result of the slash command processor for its consumer (useOllamaStream).
  */
 export type SlashCommandProcessorResult =
   | {

@@ -38,7 +38,7 @@ vi.mock('node:os', async (importOriginal) => {
   };
 });
 
-vi.mock('@qwen-code/qwen-code-core/src/ide/detect-ide.js', () => ({
+vi.mock('@ollama-code/ollama-code-core/src/ide/detect-ide.js', () => ({
   detectIdeFromEnv: vi.fn(() => ({ name: 'vscode', displayName: 'VS Code' })),
 }));
 
@@ -62,7 +62,7 @@ const vscodeMock = vi.hoisted(() => ({
 
 vi.mock('vscode', () => vscodeMock);
 
-vi.mock('@qwen-code/qwen-code-core/src/ide/detect-ide.js', () => ({
+vi.mock('@ollama-code/ollama-code-core/src/ide/detect-ide.js', () => ({
   detectIdeFromEnv: vi.fn(() => ({
     name: 'vscode',
     displayName: 'VS Code',
@@ -142,7 +142,7 @@ describe('IDEServer', () => {
     const port = getPortFromMock(replaceMock);
     const expectedLockFile = path.join(
       '/home/test',
-      '.qwen',
+      '.ollama',
       'ide',
       `${port}.lock`,
     );
@@ -174,7 +174,7 @@ describe('IDEServer', () => {
     const port = getPortFromMock(replaceMock);
     const expectedLockFile = path.join(
       '/home/test',
-      '.qwen',
+      '.ollama',
       'ide',
       `${port}.lock`,
     );
@@ -206,7 +206,7 @@ describe('IDEServer', () => {
     const port = getPortFromMock(replaceMock);
     const expectedLockFile = path.join(
       '/home/test',
-      '.qwen',
+      '.ollama',
       'ide',
       `${port}.lock`,
     );
@@ -252,7 +252,7 @@ describe('IDEServer', () => {
     const port = getPortFromMock(replaceMock);
     const expectedLockFile = path.join(
       '/home/test',
-      '.qwen',
+      '.ollama',
       'ide',
       `${port}.lock`,
     );
@@ -295,7 +295,7 @@ describe('IDEServer', () => {
     await ideServer.start(mockContext);
     const replaceMock = mockContext.environmentVariableCollection.replace;
     const port = getPortFromMock(replaceMock);
-    const lockFile = path.join('/home/test', '.qwen', 'ide', `${port}.lock`);
+    const lockFile = path.join('/home/test', '.ollama', 'ide', `${port}.lock`);
     expect(fs.writeFile).toHaveBeenCalledWith(lockFile, expect.any(String));
 
     await ideServer.stop();
@@ -324,7 +324,7 @@ describe('IDEServer', () => {
       const port = getPortFromMock(replaceMock);
       const expectedLockFile = path.join(
         '/home/test',
-        '.qwen',
+        '.ollama',
         'ide',
         `${port}.lock`,
       );

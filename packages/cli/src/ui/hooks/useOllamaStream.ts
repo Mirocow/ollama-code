@@ -66,7 +66,7 @@ import { useSessionStats } from '../contexts/SessionContext.js';
 import type { LoadedSettings } from '../../config/settings.js';
 import { t } from '../../i18n/index.js';
 
-const debugLogger = createDebugLogger('GEMINI_STREAM');
+const debugLogger = createDebugLogger('OLLAMA_STREAM');
 
 enum StreamProcessingStatus {
   Completed,
@@ -88,8 +88,8 @@ function showCitations(settings: LoadedSettings): boolean {
  * Manages the Gemini stream, including user input, command processing,
  * API interaction, and tool call lifecycle.
  */
-export const useGeminiStream = (
-  geminiClient: OllamaClient,
+export const useOllamaStream = (
+  ollamaClient: OllamaClient,
   history: HistoryItem[],
   addItem: UseHistoryManagerReturn['addItem'],
   config: Config,
@@ -272,7 +272,7 @@ export const useGeminiStream = (
     onExec,
     onDebugMessage,
     config,
-    geminiClient,
+    ollamaClient,
     setShellInputFocused,
     terminalWidth,
     terminalHeight,
@@ -383,7 +383,7 @@ export const useGeminiStream = (
     getPromptCount,
   ]);
 
-  const prepareQueryForGemini = useCallback(
+  const prepareQueryForOllama = useCallback(
     async (
       query: PartListUnion,
       userMessageTimestamp: number,
@@ -400,7 +400,7 @@ export const useGeminiStream = (
         return { queryToSend: null, shouldProceed: false };
       }
 
-      let localQueryToSendToGemini: PartListUnion | null = null;
+      let localQueryToSendToOllama: PartListUnion | null = null;
 
       if (typeof query === 'string') {
         const trimmedQuery = query.trim();
@@ -427,10 +427,10 @@ export const useGeminiStream = (
               return { queryToSend: null, shouldProceed: false };
             }
             case 'submit_prompt': {
-              localQueryToSendToGemini = slashCommandResult.content;
+              localQueryToSendToOllama = slashCommandResult.content;
 
               return {
-                queryToSend: localQueryToSendToGemini,
+                queryToSend: localQueryToSendToOllama,
                 shouldProceed: true,
               };
             }
@@ -450,7 +450,7 @@ export const useGeminiStream = (
           return { queryToSend: null, shouldProceed: false };
         }
 
-        localQueryToSendToGemini = trimmedQuery;
+        localQueryToSendToOllama = trimmedQuery;
 
         addItem(
           { type: MessageType.USER, text: trimmedQuery },
@@ -471,20 +471,20 @@ export const useGeminiStream = (
           if (!atCommandResult.shouldProceed) {
             return { queryToSend: null, shouldProceed: false };
           }
-          localQueryToSendToGemini = atCommandResult.processedQuery;
+          localQueryToSendToOllama = atCommandResult.processedQuery;
         }
       } else {
         // It's a function response (PartListUnion that isn't a string)
-        localQueryToSendToGemini = query;
+        localQueryToSendToOllama = query;
       }
 
-      if (localQueryToSendToGemini === null) {
+      if (localQueryToSendToOllama === null) {
         onDebugMessage(
-          'Query processing resulted in null, not sending to Gemini.',
+          'Query processing resulted in null, not sending to Ollama.',
         );
         return { queryToSend: null, shouldProceed: false };
       }
-      return { queryToSend: localQueryToSendToGemini, shouldProceed: true };
+      return { queryToSend: localQueryToSendToOllama, shouldProceed: true };
     },
     [
       config,
@@ -503,32 +503,32 @@ export const useGeminiStream = (
   const handleContentEvent = useCallback(
     (
       eventValue: ContentEvent['value'],
-      currentGeminiMessageBuffer: string,
+      currentOllamaMessageBuffer: string,
       userMessageTimestamp: number,
     ): string => {
       if (turnCancelledRef.current) {
         // Prevents additional output after a user initiated cancel.
         return '';
       }
-      let newGeminiMessageBuffer = currentGeminiMessageBuffer + eventValue;
+      let newOllamaMessageBuffer = currentOllamaMessageBuffer + eventValue;
       if (
-        pendingHistoryItemRef.current?.type !== 'gemini' &&
-        pendingHistoryItemRef.current?.type !== 'gemini_content'
+        pendingHistoryItemRef.current?.type !== 'ollama' &&
+        pendingHistoryItemRef.current?.type !== 'ollama_content'
       ) {
         if (pendingHistoryItemRef.current) {
           addItem(pendingHistoryItemRef.current, userMessageTimestamp);
         }
-        setPendingHistoryItem({ type: 'gemini', text: '' });
-        newGeminiMessageBuffer = eventValue;
+        setPendingHistoryItem({ type: 'ollama', text: '' });
+        newOllamaMessageBuffer = eventValue;
       }
       // Split large messages for better rendering performance. Ideally,
       // we should maximize the amount of output sent to <Static />.
-      const splitPoint = findLastSafeSplitPoint(newGeminiMessageBuffer);
-      if (splitPoint === newGeminiMessageBuffer.length) {
+      const splitPoint = findLastSafeSplitPoint(newOllamaMessageBuffer);
+      if (splitPoint === newOllamaMessageBuffer.length) {
         // Update the existing message with accumulated content
         setPendingHistoryItem((item) => ({
-          type: item?.type as 'gemini' | 'gemini_content',
-          text: newGeminiMessageBuffer,
+          type: item?.type as 'ollama' | 'ollama_content',
+          text: newOllamaMessageBuffer,
         }));
       } else {
         // This indicates that we need to split up this Gemini Message.
@@ -539,21 +539,21 @@ export const useGeminiStream = (
         // multiple times per-second (as streaming occurs). Prior to this change you'd
         // see heavy flickering of the terminal. This ensures that larger messages get
         // broken up so that there are more "statically" rendered.
-        const beforeText = newGeminiMessageBuffer.substring(0, splitPoint);
-        const afterText = newGeminiMessageBuffer.substring(splitPoint);
+        const beforeText = newOllamaMessageBuffer.substring(0, splitPoint);
+        const afterText = newOllamaMessageBuffer.substring(splitPoint);
         addItem(
           {
             type: pendingHistoryItemRef.current?.type as
-              | 'gemini'
-              | 'gemini_content',
+              | 'ollama'
+              | 'ollama_content',
             text: beforeText,
           },
           userMessageTimestamp,
         );
-        setPendingHistoryItem({ type: 'gemini_content', text: afterText });
-        newGeminiMessageBuffer = afterText;
+        setPendingHistoryItem({ type: 'ollama_content', text: afterText });
+        newOllamaMessageBuffer = afterText;
       }
-      return newGeminiMessageBuffer;
+      return newOllamaMessageBuffer;
     },
     [addItem, pendingHistoryItemRef, setPendingHistoryItem],
   );
@@ -592,8 +592,8 @@ export const useGeminiStream = (
 
       const pendingType = pendingHistoryItemRef.current?.type;
       const isPendingThought =
-        pendingType === 'gemini_thought' ||
-        pendingType === 'gemini_thought_content';
+        pendingType === 'ollama_thought' ||
+        pendingType === 'ollama_thought_content';
 
       // If we're not already showing a thought, start a new one
       if (!isPendingThought) {
@@ -601,17 +601,17 @@ export const useGeminiStream = (
         if (pendingHistoryItemRef.current) {
           addItem(pendingHistoryItemRef.current, userMessageTimestamp);
         }
-        setPendingHistoryItem({ type: 'gemini_thought', text: '' });
+        setPendingHistoryItem({ type: 'ollama_thought', text: '' });
       }
 
       // Split large thought messages for better rendering performance (same rationale
       // as regular content streaming). This helps avoid terminal flicker caused by
       // constantly re-rendering an ever-growing "pending" block.
       const splitPoint = findLastSafeSplitPoint(newThoughtBuffer);
-      const nextPendingType: 'gemini_thought' | 'gemini_thought_content' =
-        isPendingThought && pendingType === 'gemini_thought_content'
-          ? 'gemini_thought_content'
-          : 'gemini_thought';
+      const nextPendingType: 'ollama_thought' | 'ollama_thought_content' =
+        isPendingThought && pendingType === 'ollama_thought_content'
+          ? 'ollama_thought_content'
+          : 'ollama_thought';
 
       if (splitPoint === newThoughtBuffer.length) {
         // Update the existing thought message with accumulated content
@@ -630,7 +630,7 @@ export const useGeminiStream = (
           userMessageTimestamp,
         );
         setPendingHistoryItem({
-          type: 'gemini_thought_content',
+          type: 'ollama_thought_content',
           text: afterText,
         });
         newThoughtBuffer = afterText;
@@ -866,13 +866,13 @@ export const useGeminiStream = (
     });
   }, [handleLoopDetectionConfirmation]);
 
-  const processGeminiStreamEvents = useCallback(
+  const processOllamaStreamEvents = useCallback(
     async (
       stream: AsyncIterable<GeminiEvent>,
       userMessageTimestamp: number,
       signal: AbortSignal,
     ): Promise<StreamProcessingStatus> => {
-      let geminiMessageBuffer = '';
+      let ollamaMessageBuffer = '';
       let thoughtBuffer = '';
       const toolCallRequests: ToolCallRequestInfo[] = [];
       for await (const event of stream) {
@@ -891,9 +891,9 @@ export const useGeminiStream = (
             }
             break;
           case ServerOllamaEventType.Content:
-            geminiMessageBuffer = handleContentEvent(
+            ollamaMessageBuffer = handleContentEvent(
               event.value,
-              geminiMessageBuffer,
+              ollamaMessageBuffer,
               userMessageTimestamp,
             );
             break;
@@ -1016,7 +1016,7 @@ export const useGeminiStream = (
       }
 
       return promptIdContext.run(prompt_id, async () => {
-        const { queryToSend, shouldProceed } = await prepareQueryForGemini(
+        const { queryToSend, shouldProceed } = await prepareQueryForOllama(
           query,
           userMessageTimestamp,
           abortSignal,
@@ -1067,14 +1067,14 @@ export const useGeminiStream = (
         setInitError(null);
 
         try {
-          const stream = geminiClient.sendMessageStream(
+          const stream = ollamaClient.sendMessageStream(
             finalQueryToSend,
             abortSignal,
             prompt_id!,
             options,
           );
 
-          const processingStatus = await processGeminiStreamEvents(
+          const processingStatus = await processOllamaStreamEvents(
             stream,
             userMessageTimestamp,
             abortSignal,
@@ -1131,13 +1131,13 @@ export const useGeminiStream = (
     [
       streamingState,
       setModelSwitchedFromQuotaError,
-      prepareQueryForGemini,
-      processGeminiStreamEvents,
+      prepareQueryForOllama,
+      processOllamaStreamEvents,
       pendingHistoryItemRef,
       addItem,
       setPendingHistoryItem,
       setInitError,
-      geminiClient,
+      ollamaClient,
       onAuthError,
       config,
       startNewPrompt,
@@ -1248,19 +1248,19 @@ export const useGeminiStream = (
         return;
       }
 
-      // If all the tools were cancelled, don't submit a response to Gemini.
+      // If all the tools were cancelled, don't submit a response to Ollama.
       const allToolsCancelled = geminiTools.every(
         (tc) => tc.status === 'cancelled',
       );
 
       if (allToolsCancelled) {
-        if (geminiClient) {
+        if (ollamaClient) {
           // We need to manually add the function responses to the history
           // so the model knows the tools were cancelled.
           const combinedParts = geminiTools.flatMap(
             (toolCall) => toolCall.response.responseParts,
           );
-          geminiClient.addHistory({
+          ollamaClient.addHistory({
             role: 'user',
             parts: combinedParts,
           });
@@ -1303,7 +1303,7 @@ export const useGeminiStream = (
       isResponding,
       submitQuery,
       markToolsAsSubmitted,
-      geminiClient,
+      ollamaClient,
       performMemoryRefresh,
       modelSwitchedFromQuotaError,
     ],
@@ -1400,7 +1400,7 @@ export const useGeminiStream = (
             const toolName = toolCall.request.name;
             const fileName = path.basename(filePath);
             const toolCallWithSnapshotFileName = `${timestamp}-${fileName}-${toolName}.json`;
-            const clientHistory = await geminiClient?.getHistory();
+            const clientHistory = await ollamaClient?.getHistory();
             const toolCallWithSnapshotFilePath = path.join(
               checkpointDir,
               toolCallWithSnapshotFileName,
@@ -1440,7 +1440,7 @@ export const useGeminiStream = (
     onDebugMessage,
     gitService,
     history,
-    geminiClient,
+    ollamaClient,
     storage,
   ]);
 

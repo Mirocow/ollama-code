@@ -1,13 +1,13 @@
 # Agent Skills
 
-> Create, manage, and share Skills to extend Qwen Code's capabilities.
+> Create, manage, and share Skills to extend Ollama Code's capabilities.
 
-This guide shows you how to create, use, and manage Agent Skills in **Qwen Code**. Skills are modular capabilities that extend the model's effectiveness through organized folders containing instructions (and optionally scripts/resources).
+This guide shows you how to create, use, and manage Agent Skills in **Ollama Code**. Skills are modular capabilities that extend the model's effectiveness through organized folders containing instructions (and optionally scripts/resources).
 
 ## Prerequisites
 
-- Qwen Code (recent version)
-- Basic familiarity with Qwen Code ([Quickstart](../quickstart.md))
+- Ollama Code (recent version)
+- Basic familiarity with Ollama Code ([Quickstart](../quickstart.md))
 
 ## What are Agent Skills?
 
@@ -27,7 +27,7 @@ Use autocomplete to browse available Skills and descriptions.
 
 ### Benefits
 
-- Extend Qwen Code for your workflows
+- Extend Ollama Code for your workflows
 - Share expertise across your team via git
 - Reduce repetitive prompting
 - Compose multiple Skills for complex tasks
@@ -79,7 +79,7 @@ description: Brief description of what this Skill does and when to use it
 # Your Skill Name
 
 ## Instructions
-Provide clear, step-by-step guidance for Qwen Code.
+Provide clear, step-by-step guidance for Ollama Code.
 
 ## Examples
 Show concrete examples of using this Skill.
@@ -87,7 +87,7 @@ Show concrete examples of using this Skill.
 
 ### Field requirements
 
-Qwen Code currently validates that:
+Ollama Code currently validates that:
 
 - `name` is a non-empty string
 - `description` is a non-empty string
@@ -126,7 +126,7 @@ python scripts/helper.py input.txt
 
 ## View available Skills
 
-Qwen Code discovers Skills from:
+Ollama Code discovers Skills from:
 
 - Personal Skills: `~/.qwen/skills/`
 - Project Skills: `.qwen/skills/`
@@ -140,7 +140,7 @@ Extension skills are automatically discovered and loaded when the extension is i
 
 To see which extensions provide skills, check the extension's `qwen-extension.json` file for a `skills` field.
 
-To view available Skills, ask Qwen Code directly:
+To view available Skills, ask Ollama Code directly:
 
 ```text
 What Skills are available?
@@ -173,7 +173,7 @@ The model autonomously decides to use your Skill if it matches the request — y
 
 ## Debug a Skill
 
-If Qwen Code doesn't use your Skill, check these common issues:
+If Ollama Code doesn't use your Skill, check these common issues:
 
 ### Make the description specific
 
@@ -218,7 +218,7 @@ Ensure:
 
 ### View errors
 
-Run Qwen Code with debug mode to see Skill loading errors:
+Run Ollama Code with debug mode to see Skill loading errors:
 
 ```bash
 qwen --debug
@@ -250,7 +250,7 @@ code ~/.qwen/skills/my-skill/SKILL.md
 code .qwen/skills/my-skill/SKILL.md
 ```
 
-Changes take effect the next time you start Qwen Code. If Qwen Code is already running, restart it to load the updates.
+Changes take effect the next time you start Ollama Code. If Ollama Code is already running, restart it to load the updates.
 
 ## Remove a Skill
 

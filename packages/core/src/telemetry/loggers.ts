@@ -54,7 +54,7 @@ import {
   recordTokenUsageMetrics,
   recordToolCallMetrics,
 } from './metrics.js';
-import { OllamaLogger } from './qwen-logger/qwen-logger.js';
+import { OllamaLogger } from './ollama-logger/ollama-logger.js';
 import { isTelemetrySdkInitialized } from './sdk.js';
 import type {
   ApiErrorEvent,

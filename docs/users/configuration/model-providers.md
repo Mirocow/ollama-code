@@ -1,6 +1,6 @@
 # Model Providers
 
-Qwen Code allows you to configure multiple model providers through the `modelProviders` setting in your `settings.json`. This enables you to switch between different AI models and providers using the `/model` command.
+Ollama Code allows you to configure multiple model providers through the `modelProviders` setting in your `settings.json`. This enables you to switch between different AI models and providers using the `/model` command.
 
 ## Overview
 
@@ -33,7 +33,7 @@ The `modelProviders` object keys must be valid `authType` values. Currently supp
 
 ### SDKs Used for API Requests
 
-Qwen Code uses the following official SDKs to send requests to each provider:
+Ollama Code uses the following official SDKs to send requests to each provider:
 
 | Auth Type              | SDK Package                                                                                     |
 | ---------------------- | ----------------------------------------------------------------------------------------------- |
@@ -281,7 +281,7 @@ Bailian Coding Plan provides a pre-configured set of Qwen models optimized for c
 
 ### Overview
 
-When you authenticate with a Bailian Coding Plan API key using the `/auth` command, Qwen Code automatically configures the following models:
+When you authenticate with a Bailian Coding Plan API key using the `/auth` command, Ollama Code automatically configures the following models:
 
 | Model ID               | Name                 | Description                            |
 | ---------------------- | -------------------- | -------------------------------------- |
@@ -294,7 +294,7 @@ When you authenticate with a Bailian Coding Plan API key using the `/auth` comma
 1. Obtain a Bailian Coding Plan API key:
    - **China**: <https://bailian.console.aliyun.com/?tab=model#/efm/coding_plan>
    - **International**: <https://modelstudio.console.alibabacloud.com/?tab=dashboard#/efm/coding_plan>
-2. Run the `/auth` command in Qwen Code
+2. Run the `/auth` command in Ollama Code
 3. Select the API-KEY authentication method
 4. Select your region (China or Global/International)
 5. Enter your API key when prompted
@@ -328,7 +328,7 @@ When you configure Coding Plan through the `/auth` command, the API key is store
 
 ### Automatic Updates
 
-Coding Plan model configurations are versioned. When Qwen Code detects a newer version of the model template, you will be prompted to update. Accepting the update will:
+Coding Plan model configurations are versioned. When Ollama Code detects a newer version of the model template, you will be prompted to update. Accepting the update will:
 
 - Replace the existing Coding Plan model configurations with the latest versions
 - Preserve any custom model configurations you've added manually
@@ -463,7 +463,7 @@ The merge strategy for `modelProviders` itself is REPLACE: the entire `modelProv
 
 ## Provider Models vs Runtime Models
 
-Qwen Code distinguishes between two types of model configurations:
+Ollama Code distinguishes between two types of model configurations:
 
 ### Provider Model
 
@@ -483,7 +483,7 @@ Qwen Code distinguishes between two types of model configurations:
 
 ### RuntimeModelSnapshot lifecycle
 
-When you configure a model without using `modelProviders`, Qwen Code automatically creates a RuntimeModelSnapshot to preserve your configuration:
+When you configure a model without using `modelProviders`, Ollama Code automatically creates a RuntimeModelSnapshot to preserve your configuration:
 
 ```bash
 # This creates a RuntimeModelSnapshot with ID: $runtime|openai|my-custom-model

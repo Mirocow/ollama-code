@@ -9,8 +9,8 @@ import {
   CloseDiffRequestSchema,
   IdeContextNotificationSchema,
   OpenDiffRequestSchema,
-} from '@qwen-code/qwen-code-core/src/ide/types.js';
-import { detectIdeFromEnv } from '@qwen-code/qwen-code-core/src/ide/detect-ide.js';
+} from '@ollama-code/ollama-code-core/src/ide/types.js';
+import { detectIdeFromEnv } from '@ollama-code/ollama-code-core/src/ide/detect-ide.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -40,7 +40,7 @@ class CORSError extends Error {
 const MCP_SESSION_ID_HEADER = 'mcp-session-id';
 const IDE_SERVER_PORT_ENV_VAR = 'QWEN_CODE_IDE_SERVER_PORT';
 const IDE_WORKSPACE_PATH_ENV_VAR = 'QWEN_CODE_IDE_WORKSPACE_PATH';
-const QWEN_DIR = '.qwen';
+const QWEN_DIR = '.ollama';
 const IDE_DIR = 'ide';
 
 async function getGlobalIdeDir(): Promise<string> {

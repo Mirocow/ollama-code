@@ -1,6 +1,6 @@
-# Qwen Code file system tools
+# Ollama Code file system tools
 
-Qwen Code provides a comprehensive suite of tools for interacting with the local file system. These tools allow the model to read from, write to, list, search, and modify files and directories, all under your control and typically with confirmation for sensitive operations.
+Ollama Code provides a comprehensive suite of tools for interacting with the local file system. These tools allow the model to read from, write to, list, search, and modify files and directories, all under your control and typically with confirmation for sensitive operations.
 
 **Note:** All file system tools operate within a `rootDirectory` (usually the current working directory where you launched the CLI) for security. Paths that you provide to these tools are generally expected to be absolute or are resolved relative to this root directory.
 
@@ -72,7 +72,7 @@ Qwen Code provides a comprehensive suite of tools for interacting with the local
 - **Behavior:**
   - Searches for files matching the glob pattern within the specified directory.
   - Returns a list of absolute paths, sorted with the most recently modified files first.
-  - Respects .gitignore and .qwenignore patterns by default.
+  - Respects .gitignore and .ollamaignore patterns by default.
   - Limits results to 100 files to prevent context overflow.
 - **Output (`llmContent`):** A message like: `Found 5 file(s) matching "*.ts" within /path/to/search/dir, sorted by modification time (newest first):\n---\n/path/to/file1.ts\n/path/to/subdir/file2.ts\n---\n[95 files truncated] ...`
 - **Confirmation:** No.
@@ -93,7 +93,7 @@ Qwen Code provides a comprehensive suite of tools for interacting with the local
   - Uses ripgrep for fast search when available; otherwise falls back to a JavaScript-based search implementation.
   - Returns matching lines with file paths and line numbers.
   - Case-insensitive by default.
-  - Respects .gitignore and .qwenignore patterns.
+  - Respects .gitignore and .ollamaignore patterns.
   - Limits output to prevent context overflow.
 - **Output (`llmContent`):** A formatted string of matches, e.g.:
 
@@ -164,4 +164,4 @@ grep_search(pattern="function", glob="*.js", limit=10)
   - On failure: An error message explaining the reason (e.g., `Failed to edit, 0 occurrences found...`, `Failed to edit because the text matches multiple locations...`).
 - **Confirmation:** Yes. Shows a diff of the proposed changes and asks for user approval before writing to the file.
 
-These file system tools provide a foundation for Qwen Code to understand and interact with your local project context.
+These file system tools provide a foundation for Ollama Code to understand and interact with your local project context.

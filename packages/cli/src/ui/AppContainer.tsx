@@ -66,7 +66,7 @@ import { computeWindowTitle } from '../utils/windowTitle.js';
 import { clearScreen } from '../utils/stdioHelpers.js';
 import { useTextBuffer } from './components/shared/text-buffer.js';
 import { useLogger } from './hooks/useLogger.js';
-import { useGeminiStream } from './hooks/useGeminiStream.js';
+import { useOllamaStream } from './hooks/useOllamaStream.js';
 import { useVim } from './hooks/vim.js';
 import { type LoadedSettings, SettingScope } from '../config/settings.js';
 import { type InitializationResult } from '../core/initializer.js';
@@ -669,7 +669,7 @@ export const AppContainer = (props: AppContainerProps) => {
     handleApprovalModeChange,
     activePtyId,
     loopDetectionConfirmationRequest,
-  } = useGeminiStream(
+  } = useOllamaStream(
     config.getOllamaClient(),
     historyManager.history,
     historyManager.addItem,
@@ -878,9 +878,9 @@ export const AppContainer = (props: AppContainerProps) => {
   }, []);
   const shouldShowIdePrompt = Boolean(
     currentIDE &&
-      !config.getIdeMode() &&
-      !settings.merged.ide?.hasSeenNudge &&
-      !idePromptAnswered,
+    !config.getIdeMode() &&
+    !settings.merged.ide?.hasSeenNudge &&
+    !idePromptAnswered,
   );
 
   // Command migration nudge

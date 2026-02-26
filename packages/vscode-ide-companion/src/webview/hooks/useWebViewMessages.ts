@@ -1,13 +1,13 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useVSCode } from './useVSCode.js';
 import type { Conversation } from '../../services/conversationStore.js';
-import type { PermissionOption, PermissionToolCall } from '@qwen-code/webui';
+import type { PermissionOption, PermissionToolCall } from '@ollama-code/webui';
 import type {
   ToolCallUpdate,
   UsageStatsPayload,

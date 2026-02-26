@@ -31,7 +31,7 @@ const debugLogger = createDebugLogger('FEEDBACK_DIALOG');
  * Check if the last message in the conversation history is an AI response
  */
 const lastMessageIsAIResponse = (history: HistoryItem[]): boolean =>
-  history.length > 0 && history[history.length - 1].type === MessageType.GEMINI;
+  history.length > 0 && history[history.length - 1].type === MessageType.OLLAMA;
 
 /**
  * Read feedbackLastShownTimestamp directly from the user settings file

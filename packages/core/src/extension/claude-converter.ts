@@ -160,23 +160,23 @@ export function convertClaudeAgentConfig(
   claudeAgent: ClaudeAgentConfig,
 ): Record<string, unknown> {
   // Base config with required fields
-  const qwenAgent: Record<string, unknown> = {
+  const ollamaAgent: Record<string, unknown> = {
     name: claudeAgent.name,
     description: claudeAgent.description,
   };
 
   if (claudeAgent.color) {
-    qwenAgent['color'] = claudeAgent.color;
+    ollamaAgent['color'] = claudeAgent.color;
   }
 
   // Convert system prompt if present
   if (claudeAgent.systemPrompt) {
-    qwenAgent['systemPrompt'] = claudeAgent.systemPrompt;
+    ollamaAgent['systemPrompt'] = claudeAgent.systemPrompt;
   }
 
   // Convert tools using claudeBuildInToolsTransform
   if (claudeAgent.tools && claudeAgent.tools.length > 0) {
-    qwenAgent['tools'] = claudeBuildInToolsTransform(claudeAgent.tools);
+    ollamaAgent['tools'] = claudeBuildInToolsTransform(claudeAgent.tools);
   }
 
   // Convert model to modelConfig
@@ -184,7 +184,7 @@ export function convertClaudeAgentConfig(
     // Map Claude model names to Qwen model config
     // Claude uses: sonnet, opus, haiku, inherit
     // We preserve the model name for now, the actual mapping will be handled at runtime
-    qwenAgent['modelConfig'] = {
+    ollamaAgent['modelConfig'] = {
       model: claudeAgent.model === 'inherit' ? undefined : claudeAgent.model,
     };
   }
@@ -192,23 +192,23 @@ export function convertClaudeAgentConfig(
   // Preserve unsupported fields as-is for potential future compatibility
   // These fields are not supported by Qwen Code SubagentConfig but we keep them
   if (claudeAgent.permissionMode) {
-    qwenAgent['permissionMode'] = claudeAgent.permissionMode;
+    ollamaAgent['permissionMode'] = claudeAgent.permissionMode;
   }
   if (claudeAgent.hooks) {
-    qwenAgent['hooks'] = claudeAgent.hooks;
+    ollamaAgent['hooks'] = claudeAgent.hooks;
   }
   if (claudeAgent.skills && claudeAgent.skills.length > 0) {
-    qwenAgent['skills'] = claudeAgent.skills;
+    ollamaAgent['skills'] = claudeAgent.skills;
   }
   if (claudeAgent.disallowedTools && claudeAgent.disallowedTools.length > 0) {
-    qwenAgent['disallowedTools'] = claudeAgent.disallowedTools;
+    ollamaAgent['disallowedTools'] = claudeAgent.disallowedTools;
   }
 
-  return qwenAgent;
+  return ollamaAgent;
 }
 
 /**
- * Converts all agent files in a directory from Claude format to Qwen format.
+ * Converts all agent files in a directory from Claude format to Ollama format.
  * Parses the YAML frontmatter, converts the configuration, and writes back.
  * @param agentsDir Directory containing agent markdown files
  */
@@ -254,12 +254,12 @@ async function convertAgentFiles(agentsDir: string): Promise<void> {
         systemPrompt: body.trim(),
       };
 
-      // Convert to Qwen format
-      const qwenAgent = convertClaudeAgentConfig(claudeAgent);
+      // Convert to Ollama format
+      const ollamaAgent = convertClaudeAgentConfig(claudeAgent);
 
       // Build new frontmatter (excluding systemPrompt as it goes in body)
       const newFrontmatter: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(qwenAgent)) {
+      for (const [key, value] of Object.entries(ollamaAgent)) {
         if (key !== 'systemPrompt' && value !== undefined) {
           newFrontmatter[key] = value;
         }
@@ -267,7 +267,8 @@ async function convertAgentFiles(agentsDir: string): Promise<void> {
 
       // Write converted content back
       const newYaml = stringifyYaml(newFrontmatter);
-      const systemPrompt = (qwenAgent['systemPrompt'] as string) || body.trim();
+      const systemPrompt =
+        (ollamaAgent['systemPrompt'] as string) || body.trim();
       const newContent = `---
 ${newYaml}
 ---
@@ -287,9 +288,9 @@ ${systemPrompt}
 /**
  * Converts a Claude plugin config to Qwen Code format.
  * @param claudeConfig Claude plugin configuration
- * @returns Qwen ExtensionConfig
+ * @returns Ollama ExtensionConfig
  */
-export function convertClaudeToQwenConfig(
+export function convertClaudeToOllamaConfig(
   claudeConfig: ClaudePluginConfig,
 ): ExtensionConfig {
   // Validate required fields
@@ -333,7 +334,7 @@ export function convertClaudeToQwenConfig(
 /**
  * Converts a complete Claude plugin package to Qwen Code format.
  * Creates a new temporary directory with:
- * 1. Converted qwen-extension.json
+ * 1. Converted ollama-extension.json
  * 2. Commands, skills, and agents collected to respective folders
  * 3. MCP servers resolved from JSON files if needed
  * 4. All other files preserved
@@ -459,23 +460,23 @@ export async function convertClaudePluginPackage(
       // Otherwise, keep the existing folder from pluginSource (default behavior)
     }
 
-    // Step 9.1: Convert collected agent files from Claude format to Qwen format
+    // Step 9.1: Convert collected agent files from Claude format to Ollama format
     const agentsDestDir = path.join(tmpDir, 'agents');
     await convertAgentFiles(agentsDestDir);
 
-    // Step 10: Convert to Qwen format config
-    const qwenConfig = convertClaudeToQwenConfig(mergedConfig);
+    // Step 10: Convert to Ollama format config
+    const ollamaConfig = convertClaudeToOllamaConfig(mergedConfig);
 
-    // Step 11: Write qwen-extension.json
-    const qwenConfigPath = path.join(tmpDir, 'qwen-extension.json');
+    // Step 11: Write ollama-extension.json
+    const ollamaConfigPath = path.join(tmpDir, 'ollama-extension.json');
     fs.writeFileSync(
-      qwenConfigPath,
-      JSON.stringify(qwenConfig, null, 2),
+      ollamaConfigPath,
+      JSON.stringify(ollamaConfig, null, 2),
       'utf-8',
     );
 
     return {
-      config: qwenConfig,
+      config: ollamaConfig,
       convertedDir: tmpDir,
     };
   } catch (error) {

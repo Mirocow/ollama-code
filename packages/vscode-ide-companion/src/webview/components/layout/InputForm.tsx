@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  *
  * InputForm adapter for VSCode - wraps webui InputForm with local type handling
@@ -8,11 +8,14 @@
  */
 
 import type { FC } from 'react';
-import { InputForm as BaseInputForm, getEditModeIcon } from '@qwen-code/webui';
+import {
+  InputForm as BaseInputForm,
+  getEditModeIcon,
+} from '@ollama-code/webui';
 import type {
   InputFormProps as BaseInputFormProps,
   EditModeInfo,
-} from '@qwen-code/webui';
+} from '@ollama-code/webui';
 import { getApprovalModeInfoFromString } from '../../../types/acpTypes.js';
 import type { ApprovalModeValue } from '../../../types/approvalModeValueTypes.js';
 import type { ModelInfo } from '../../../types/acpTypes.js';
@@ -21,8 +24,10 @@ import { ModelSelector } from './ModelSelector.js';
 /**
  * Extended props that accept ApprovalModeValue and ModelSelector
  */
-export interface InputFormProps
-  extends Omit<BaseInputFormProps, 'editModeInfo'> {
+export interface InputFormProps extends Omit<
+  BaseInputFormProps,
+  'editModeInfo'
+> {
   /** Edit mode value (local type) */
   editMode: ApprovalModeValue;
   /** Whether to show model selector */

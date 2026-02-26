@@ -65,13 +65,13 @@ This is a fallback workflow to ensure that no issue gets missed by the triage pr
 - **When it runs**: Every hour on all open issues.
 - **What it does**:
   - It actively seeks out issues that either have no labels at all or still have the `status/need-triage` label.
-  - It then triggers the same powerful QwenCode-based analysis as the initial triage bot to apply the correct labels.
+  - It then triggers the same powerful OllamaCode-based analysis as the initial triage bot to apply the correct labels.
 - **What you should do**:
   - You typically don't need to do anything. This workflow is a safety net to ensure every issue is eventually categorized, even if the initial triage fails.
 
 ### 5. Release Automation
 
-This workflow handles the process of packaging and publishing new versions of Qwen Code.
+This workflow handles the process of packaging and publishing new versions of Ollama Code.
 
 - **Workflow File**: `.github/workflows/release.yml`
 - **When it runs**: On a daily schedule for "nightly" releases, and manually for official patch/minor releases.

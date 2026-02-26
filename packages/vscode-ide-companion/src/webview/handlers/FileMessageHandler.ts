@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,7 +13,7 @@ import {
   ensureLeftGroupOfChatWebview,
 } from '../../utils/editorGroupUtils.js';
 import { ReadonlyFileSystemProvider } from '../../services/readonlyFileSystemProvider.js';
-import { FileDiscoveryService } from '@qwen-code/qwen-code-core/src/services/fileDiscoveryService.js';
+import { FileDiscoveryService } from '@ollama-code/ollama-code-core/src/services/fileDiscoveryService.js';
 
 /**
  * File message handler
