@@ -8,16 +8,19 @@ import type React from 'react';
 import { Text, Box } from 'ink';
 import { MarkdownDisplay } from '../../utils/MarkdownDisplay.js';
 import { theme } from '../../semantic-colors.js';
-import { SCREEN_READER_MODEL_PREFIX } from '../../textConstants.js';
 
-interface GeminiMessageProps {
+interface OllamaThoughtMessageProps {
   text: string;
   isPending: boolean;
   availableTerminalHeight?: number;
   contentWidth: number;
 }
 
-export const GeminiMessage: React.FC<GeminiMessageProps> = ({
+/**
+ * Displays model thinking/reasoning text with a softer, dimmed style
+ * to visually distinguish it from regular content output.
+ */
+export const OllamaThoughtMessage: React.FC<OllamaThoughtMessageProps> = ({
   text,
   isPending,
   availableTerminalHeight,
@@ -29,9 +32,7 @@ export const GeminiMessage: React.FC<GeminiMessageProps> = ({
   return (
     <Box flexDirection="row">
       <Box width={prefixWidth}>
-        <Text color={theme.text.accent} aria-label={SCREEN_READER_MODEL_PREFIX}>
-          {prefix}
-        </Text>
+        <Text color={theme.text.secondary}>{prefix}</Text>
       </Box>
       <Box flexGrow={1} flexDirection="column">
         <MarkdownDisplay
@@ -39,6 +40,7 @@ export const GeminiMessage: React.FC<GeminiMessageProps> = ({
           isPending={isPending}
           availableTerminalHeight={availableTerminalHeight}
           contentWidth={contentWidth - prefixWidth}
+          textColor={theme.text.secondary}
         />
       </Box>
     </Box>

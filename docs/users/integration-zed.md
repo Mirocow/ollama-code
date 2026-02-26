@@ -1,6 +1,6 @@
 # Zed Editor
 
-> Zed Editor provides native support for AI coding assistants through the Agent Client Protocol (ACP). This integration allows you to use Qwen Code directly within Zed's interface with real-time code suggestions.
+> Zed Editor provides native support for AI coding assistants through the Agent Client Protocol (ACP). This integration allows you to use Ollama Code directly within Zed's interface with real-time code suggestions.
 
 ![Zed Editor Overview](https://img.alicdn.com/imgextra/i1/O1CN01aAhU311GwEoNh27FP_!!6000000000686-2-tps-3024-1898.png)
 
@@ -14,14 +14,14 @@
 ### Requirements
 
 - Zed Editor (latest version recommended)
-- Qwen Code CLI installed
+- Ollama Code CLI installed
 
 ### Installation
 
-1. Install Qwen Code CLI:
+1. Install Ollama Code CLI:
 
 ```bash
-npm install -g @qwen-code/qwen-code
+npm install -g @ollama-code/ollama-code
 ```
 
 2. Download and install [Zed Editor](https://zed.dev/)
@@ -29,7 +29,7 @@ npm install -g @qwen-code/qwen-code
 3. In Zed, click the **settings button** in the top right corner, select **"Add agent"**, choose **"Create a custom agent"**, and add the following configuration:
 
 ```json
-"Qwen Code": {
+"Ollama Code": {
   "type": "custom",
   "command": "qwen",
   "args": ["--acp"],
@@ -37,7 +37,7 @@ npm install -g @qwen-code/qwen-code
 }
 ```
 
-![Qwen Code Integration](https://img.alicdn.com/imgextra/i1/O1CN013s61L91dSE1J7MTgO_!!6000000003734-2-tps-2592-1234.png)
+![Ollama Code Integration](https://img.alicdn.com/imgextra/i1/O1CN013s61L91dSE1J7MTgO_!!6000000003734-2-tps-2592-1234.png)
 
 ## Troubleshooting
 
@@ -47,8 +47,8 @@ npm install -g @qwen-code/qwen-code
 - Check that the JSON configuration is valid
 - Restart Zed Editor
 
-### Qwen Code not responding
+### Ollama Code not responding
 
 - Check your internet connection
 - Verify CLI works by running `qwen` in terminal
-- [File an issue on GitHub](https://github.com/qwenlm/qwen-code/issues) if the problem persists
+- [File an issue on GitHub](https://github.com/qwenlm/ollama-code/issues) if the problem persists

@@ -1,6 +1,6 @@
 # JetBrains IDEs
 
-> JetBrains IDEs provide native support for AI coding assistants through the Agent Client Protocol (ACP). This integration allows you to use Qwen Code directly within your JetBrains IDE with real-time code suggestions.
+> JetBrains IDEs provide native support for AI coding assistants through the Agent Client Protocol (ACP). This integration allows you to use Ollama Code directly within your JetBrains IDE with real-time code suggestions.
 
 ### Features
 
@@ -12,19 +12,19 @@
 ### Requirements
 
 - JetBrains IDE with ACP support (IntelliJ IDEA, WebStorm, PyCharm, etc.)
-- Qwen Code CLI installed
+- Ollama Code CLI installed
 
 ### Installation
 
-1. Install Qwen Code CLI:
+1. Install Ollama Code CLI:
 
    ```bash
-   npm install -g @qwen-code/qwen-code
+   npm install -g @ollama-code/ollama-code
    ```
 
 2. Open your JetBrains IDE and navigate to AI Chat tool window.
 
-3. Click the 3-dot menu in the upper-right corner and select **Configure ACP Agent** and configure Qwen Code with the following settings:
+3. Click the 3-dot menu in the upper-right corner and select **Configure ACP Agent** and configure Ollama Code with the following settings:
 
 ```json
 {
@@ -38,9 +38,9 @@
 }
 ```
 
-4. The Qwen Code agent should now be available in the AI Assistant panel
+4. The Ollama Code agent should now be available in the AI Assistant panel
 
-![Qwen Code in JetBrains AI Chat](https://img.alicdn.com/imgextra/i3/O1CN01ZxYel21y433Ci6eg0_!!6000000006524-2-tps-2774-1494.png)
+![Ollama Code in JetBrains AI Chat](https://img.alicdn.com/imgextra/i3/O1CN01ZxYel21y433Ci6eg0_!!6000000006524-2-tps-2774-1494.png)
 
 ## Troubleshooting
 
@@ -50,8 +50,8 @@
 - Ensure your JetBrains IDE version supports ACP
 - Restart your JetBrains IDE
 
-### Qwen Code not responding
+### Ollama Code not responding
 
 - Check your internet connection
 - Verify CLI works by running `qwen` in terminal
-- [File an issue on GitHub](https://github.com/qwenlm/qwen-code/issues) if the problem persists
+- [File an issue on GitHub](https://github.com/qwenlm/ollama-code/issues) if the problem persists

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,11 +8,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as crypto from 'crypto';
-import { getProjectHash } from '@qwen-code/qwen-code-core/src/utils/paths.js';
-import type { QwenSession, QwenMessage } from './qwenSessionReader.js';
+import { getProjectHash } from '@ollama-code/ollama-code-core/src/utils/paths.js';
+import type { OllamaSession, OllamaMessage } from './ollamaSessionReader.js';
 
 /**
- * Qwen Session Manager
+ * Ollama Session Manager
  *
  * This service provides direct filesystem access to save and load sessions
  * without relying on the CLI's ACP session/save method.
@@ -21,11 +21,11 @@ import type { QwenSession, QwenMessage } from './qwenSessionReader.js';
  * unavailable or fail. In normal operation, ACP session/list and session/load
  * should be preferred for consistency with the CLI.
  */
-export class QwenSessionManager {
-  private qwenDir: string;
+export class OllamaSessionManager {
+  private ollamaDir: string;
 
   constructor() {
-    this.qwenDir = path.join(os.homedir(), '.qwen');
+    this.ollamaDir = path.join(os.homedir(), '.ollama');
   }
 
   /**
@@ -33,7 +33,7 @@ export class QwenSessionManager {
    */
   private getSessionDir(workingDir: string): string {
     const projectHash = getProjectHash(workingDir);
-    const sessionDir = path.join(this.qwenDir, 'tmp', projectHash, 'chats');
+    const sessionDir = path.join(this.ollamaDir, 'tmp', projectHash, 'chats');
     return sessionDir;
   }
 
@@ -53,7 +53,7 @@ export class QwenSessionManager {
    * @returns Session ID of the saved session
    */
   async saveSession(
-    messages: QwenMessage[],
+    messages: OllamaMessage[],
     sessionName: string,
     workingDir: string,
   ): Promise<string> {
@@ -79,7 +79,7 @@ export class QwenSessionManager {
       const filePath = path.join(sessionDir, filename);
 
       // Create session object
-      const session: QwenSession = {
+      const session: OllamaSession = {
         sessionId,
         projectHash: getProjectHash(workingDir),
         startTime: messages[0]?.timestamp || new Date().toISOString(),
@@ -90,10 +90,10 @@ export class QwenSessionManager {
       // Save session to file
       fs.writeFileSync(filePath, JSON.stringify(session, null, 2), 'utf-8');
 
-      console.log(`[QwenSessionManager] Session saved: ${filePath}`);
+      console.log(`[OllamaSessionManager] Session saved: ${filePath}`);
       return sessionId;
     } catch (error) {
-      console.error('[QwenSessionManager] Failed to save session:', error);
+      console.error('[OllamaSessionManager] Failed to save session:', error);
       throw error;
     }
   }
@@ -108,24 +108,26 @@ export class QwenSessionManager {
   async loadSession(
     sessionId: string,
     workingDir: string,
-  ): Promise<QwenSession | null> {
+  ): Promise<OllamaSession | null> {
     try {
       const sessionDir = this.getSessionDir(workingDir);
       const filename = `session-${sessionId}.json`;
       const filePath = path.join(sessionDir, filename);
 
       if (!fs.existsSync(filePath)) {
-        console.log(`[QwenSessionManager] Session file not found: ${filePath}`);
+        console.log(
+          `[OllamaSessionManager] Session file not found: ${filePath}`,
+        );
         return null;
       }
 
       const content = fs.readFileSync(filePath, 'utf-8');
-      const session = JSON.parse(content) as QwenSession;
+      const session = JSON.parse(content) as OllamaSession;
 
-      console.log(`[QwenSessionManager] Session loaded: ${filePath}`);
+      console.log(`[OllamaSessionManager] Session loaded: ${filePath}`);
       return session;
     } catch (error) {
-      console.error('[QwenSessionManager] Failed to load session:', error);
+      console.error('[OllamaSessionManager] Failed to load session:', error);
       return null;
     }
   }
@@ -136,7 +138,7 @@ export class QwenSessionManager {
    * @param workingDir - Current working directory
    * @returns Array of session objects
    */
-  async listSessions(workingDir: string): Promise<QwenSession[]> {
+  async listSessions(workingDir: string): Promise<OllamaSession[]> {
     try {
       const sessionDir = this.getSessionDir(workingDir);
 
@@ -150,16 +152,16 @@ export class QwenSessionManager {
           (file) => file.startsWith('session-') && file.endsWith('.json'),
         );
 
-      const sessions: QwenSession[] = [];
+      const sessions: OllamaSession[] = [];
       for (const file of files) {
         try {
           const filePath = path.join(sessionDir, file);
           const content = fs.readFileSync(filePath, 'utf-8');
-          const session = JSON.parse(content) as QwenSession;
+          const session = JSON.parse(content) as OllamaSession;
           sessions.push(session);
         } catch (error) {
           console.error(
-            `[QwenSessionManager] Failed to read session file ${file}:`,
+            `[OllamaSessionManager] Failed to read session file ${file}:`,
             error,
           );
         }
@@ -173,7 +175,7 @@ export class QwenSessionManager {
 
       return sessions;
     } catch (error) {
-      console.error('[QwenSessionManager] Failed to list sessions:', error);
+      console.error('[OllamaSessionManager] Failed to list sessions:', error);
       return [];
     }
   }
@@ -193,13 +195,13 @@ export class QwenSessionManager {
 
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-        console.log(`[QwenSessionManager] Session deleted: ${filePath}`);
+        console.log(`[OllamaSessionManager] Session deleted: ${filePath}`);
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error('[QwenSessionManager] Failed to delete session:', error);
+      console.error('[OllamaSessionManager] Failed to delete session:', error);
       return false;
     }
   }

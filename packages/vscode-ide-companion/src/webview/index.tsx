@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,7 +9,7 @@ import { App } from './App.js';
 import { VSCodePlatformProvider } from './context/VSCodePlatformProvider.js';
 
 // Import webui shared styles (CSS variables, component styles)
-import '@qwen-code/webui/styles.css';
+import '@ollama-code/webui/styles.css';
 
 // VSCode-specific: Tailwind utilities + theme variables
 // eslint-disable-next-line import/no-internal-modules

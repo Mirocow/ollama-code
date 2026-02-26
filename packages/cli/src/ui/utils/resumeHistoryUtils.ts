@@ -321,7 +321,7 @@ function convertToHistoryItems(
             });
             currentToolGroup = [];
           }
-          items.push({ type: 'gemini_thought', text: thoughtText });
+          items.push({ type: 'ollama_thought', text: thoughtText });
         }
 
         // If there's text content, add it as a gemini message
@@ -334,7 +334,7 @@ function convertToHistoryItems(
             });
             currentToolGroup = [];
           }
-          items.push({ type: 'gemini', text });
+          items.push({ type: 'ollama', text });
         }
 
         // Track function calls for pairing with results

@@ -10,13 +10,13 @@ import { escapeAnsiCtrlCodes } from '../utils/textUtils.js';
 import type { HistoryItem } from '../types.js';
 import { UserMessage } from './messages/UserMessage.js';
 import { UserShellMessage } from './messages/UserShellMessage.js';
-import { GeminiMessage } from './messages/GeminiMessage.js';
+import { OllamaMessage } from './messages/OllamaMessage.js';
 import { InfoMessage } from './messages/InfoMessage.js';
 import { ErrorMessage } from './messages/ErrorMessage.js';
 import { ToolGroupMessage } from './messages/ToolGroupMessage.js';
-import { GeminiMessageContent } from './messages/GeminiMessageContent.js';
-import { GeminiThoughtMessage } from './messages/GeminiThoughtMessage.js';
-import { GeminiThoughtMessageContent } from './messages/GeminiThoughtMessageContent.js';
+import { OllamaMessageContent } from './messages/OllamaMessageContent.js';
+import { OllamaThoughtMessage } from './messages/OllamaThoughtMessage.js';
+import { OllamaThoughtMessageContent } from './messages/OllamaThoughtMessageContent.js';
 import { CompressionMessage } from './messages/CompressionMessage.js';
 import { SummaryMessage } from './messages/SummaryMessage.js';
 import { WarningMessage } from './messages/WarningMessage.js';
@@ -78,8 +78,8 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
       {itemForDisplay.type === 'user_shell' && (
         <UserShellMessage text={itemForDisplay.text} />
       )}
-      {itemForDisplay.type === 'gemini' && (
-        <GeminiMessage
+      {itemForDisplay.type === 'ollama' && (
+        <OllamaMessage
           text={itemForDisplay.text}
           isPending={isPending}
           availableTerminalHeight={
@@ -88,8 +88,8 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
           contentWidth={contentWidth}
         />
       )}
-      {itemForDisplay.type === 'gemini_content' && (
-        <GeminiMessageContent
+      {itemForDisplay.type === 'ollama_content' && (
+        <OllamaMessageContent
           text={itemForDisplay.text}
           isPending={isPending}
           availableTerminalHeight={
@@ -98,8 +98,8 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
           contentWidth={contentWidth}
         />
       )}
-      {itemForDisplay.type === 'gemini_thought' && (
-        <GeminiThoughtMessage
+      {itemForDisplay.type === 'ollama_thought' && (
+        <OllamaThoughtMessage
           text={itemForDisplay.text}
           isPending={isPending}
           availableTerminalHeight={
@@ -108,8 +108,8 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
           contentWidth={contentWidth}
         />
       )}
-      {itemForDisplay.type === 'gemini_thought_content' && (
-        <GeminiThoughtMessageContent
+      {itemForDisplay.type === 'ollama_thought_content' && (
+        <OllamaThoughtMessageContent
           text={itemForDisplay.text}
           isPending={isPending}
           availableTerminalHeight={

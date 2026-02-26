@@ -1,11 +1,11 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as vscode from 'vscode';
-import type { File } from '@qwen-code/qwen-code-core/src/ide/types.js';
+import type { File } from '@ollama-code/ollama-code-core/src/ide/types.js';
 
 export function isFileUri(uri: vscode.Uri): boolean {
   return uri.scheme === 'file';

@@ -8,7 +8,7 @@
 
 If you need extra tools inside the container (e.g., `git`, `python`, `rg`), create a custom Dockerfile, The specific operation is as follows
 
-#### 1、Clone qwen code project first, https://github.com/QwenLM/qwen-code.git
+#### 1、Clone qwen code project first, https://github.com/QwenLM/ollama-code.git
 
 #### 2、Make sure you perform the following operation in the source code repository directory
 
@@ -16,7 +16,7 @@ If you need extra tools inside the container (e.g., `git`, `python`, `rg`), crea
 # 1. First, install the dependencies of the project
 npm install
 
-# 2. Build the Qwen Code project
+# 2. Build the Ollama Code project
 npm run build
 
 # 3. Verify that the dist directory has been generated
@@ -32,7 +32,7 @@ which qwen
 # Or similar paths, but it should be a symbolic link
 
 # 6. For details of the symbolic link, you can see the specific source code path
-ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
+ls -la $(dirname $(which qwen))/../lib/node_modules/@ollama-code/ollama-code
 # It should show that this is a symbolic link pointing to your source code directory
 
 # 7.Test the version of qwen
@@ -44,11 +44,11 @@ qwen -v
 
 - Path: `.qwen/sandbox.Dockerfile`
 
-- Official mirror image address:https://github.com/QwenLM/qwen-code/pkgs/container/qwen-code
+- Official mirror image address:https://github.com/QwenLM/ollama-code/pkgs/container/ollama-code
 
 ```bash
 # Based on the official Qwen sandbox image (It is recommended to explicitly specify the version)
-FROM ghcr.io/qwenlm/qwen-code:sha-570ec43
+FROM ghcr.io/qwenlm/ollama-code:sha-570ec43
 # Add your extra tools here
 RUN apt-get update && apt-get install -y \
     git \
@@ -71,7 +71,7 @@ This builds a project-specific image based on the default sandbox image.
 
 ```bash
 # Method 1: Unlink globally
-npm unlink -g @qwen-code/qwen-code
+npm unlink -g @ollama-code/ollama-code
 
 # Method 2: Remove it in the packages/cli directory
 cd packages/cli
@@ -82,7 +82,7 @@ which qwen
 # It should display "qwen not found"
 
 # Reinstall the global version if necessary
-npm install -g @qwen-code/qwen-code
+npm install -g @ollama-code/ollama-code
 
 # Verification Recovery
 which qwen

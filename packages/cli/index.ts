@@ -7,7 +7,7 @@
  */
 
 import './src/gemini.js';
-import { main } from './src/gemini.js';
+import { main } from './src/ollama.js';
 import { FatalError } from '@ollama-code/ollama-code-core';
 
 // --- Global Entry Point ---

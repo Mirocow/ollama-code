@@ -15,8 +15,8 @@ import { DefaultLight } from './default-light.js';
 import { DefaultDark } from './default.js';
 import { ShadesOfPurple } from './shades-of-purple.js';
 import { XCode } from './xcode.js';
-import { QwenLight } from './qwen-light.js';
-import { QwenDark } from './qwen-dark.js';
+import { OllamaLight } from './ollama-light.js';
+import { OllamaDark } from './ollama-dark.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -37,7 +37,7 @@ export interface ThemeDisplay {
   isCustom?: boolean;
 }
 
-export const DEFAULT_THEME: Theme = QwenDark;
+export const DEFAULT_THEME: Theme = OllamaDark;
 
 class ThemeManager {
   private readonly availableThemes: Theme[];
@@ -55,8 +55,8 @@ class ThemeManager {
       GitHubDark,
       GitHubLight,
       GoogleCode,
-      QwenLight,
-      QwenDark,
+      OllamaLight,
+      OllamaDark,
       ShadesOfPurple,
       XCode,
       ANSI,
@@ -195,12 +195,14 @@ class ThemeManager {
       }),
     );
 
-    // Separate Qwen themes
-    const qwenThemes = builtInThemes.filter(
-      (theme) => theme.name === QwenLight.name || theme.name === QwenDark.name,
+    // Separate Ollama themes
+    const ollamaThemes = builtInThemes.filter(
+      (theme) =>
+        theme.name === OllamaLight.name || theme.name === OllamaDark.name,
     );
     const otherBuiltInThemes = builtInThemes.filter(
-      (theme) => theme.name !== QwenLight.name && theme.name !== QwenDark.name,
+      (theme) =>
+        theme.name !== OllamaLight.name && theme.name !== OllamaDark.name,
     );
 
     // Sort other themes by type and then name
@@ -229,8 +231,8 @@ class ThemeManager {
       },
     );
 
-    // Combine Qwen themes first, then sorted others
-    return [...qwenThemes, ...sortedOtherThemes];
+    // Combine Ollama themes first, then sorted others
+    return [...ollamaThemes, ...sortedOtherThemes];
   }
 
   /**

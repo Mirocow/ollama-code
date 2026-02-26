@@ -1,11 +1,11 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { QwenAgentManager } from '../../services/qwenAgentManager.js';
+import type { OllamaAgentManager } from '../../services/ollamaAgentManager.js';
 import type { ConversationStore } from '../../services/conversationStore.js';
 import { FileMessageHandler } from './FileMessageHandler.js';
 import * as vscode from 'vscode';
@@ -41,7 +41,7 @@ const vscodeMock = vi.hoisted(() => {
 
 vi.mock('vscode', () => vscodeMock);
 vi.mock(
-  '@qwen-code/qwen-code-core/src/services/fileDiscoveryService.js',
+  '@ollama-code/ollama-code-core/src/services/fileDiscoveryService.js',
   () => ({
     FileDiscoveryService: class {
       shouldIgnoreFile(filePath: string, options?: unknown) {
@@ -78,7 +78,7 @@ describe('FileMessageHandler', () => {
 
     const sendToWebView = vi.fn();
     const handler = new FileMessageHandler(
-      {} as QwenAgentManager,
+      {} as OllamaAgentManager,
       {} as ConversationStore,
       null,
       sendToWebView,

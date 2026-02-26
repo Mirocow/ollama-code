@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Japanese translations for Qwen Code CLI
+// Japanese translations for Ollama Code CLI
 
 export default {
   // ============================================================================
@@ -55,10 +55,10 @@ export default {
   'For a full list of shortcuts, see {{docPath}}':
     'ショートカットの完全なリストは {{docPath}} を参照',
   'docs/keyboard-shortcuts.md': 'docs/keyboard-shortcuts.md',
-  'for help on Qwen Code': 'Qwen Code のヘルプ',
+  'for help on Ollama Code': 'Ollama Code のヘルプ',
   'show version info': 'バージョン情報を表示',
   'submit a bug report': 'バグレポートを送信',
-  'About Qwen Code': 'Qwen Code について',
+  'About Ollama Code': 'Ollama Code について',
 
   // ============================================================================
   // System Information Fields
@@ -83,9 +83,9 @@ export default {
   // ============================================================================
   'Analyzes the project and creates a tailored QWEN.md file.':
     'プロジェクトを分析し、カスタマイズされた QWEN.md ファイルを作成',
-  'list available Qwen Code tools. Usage: /tools [desc]':
-    '利用可能な Qwen Code ツールを一覧表示。使い方: /tools [desc]',
-  'Available Qwen Code CLI tools:': '利用可能な Qwen Code CLI ツール:',
+  'list available Ollama Code tools. Usage: /tools [desc]':
+    '利用可能な Ollama Code ツールを一覧表示。使い方: /tools [desc]',
+  'Available Ollama Code CLI tools:': '利用可能な Ollama Code CLI ツール:',
   'No tools available': '利用可能なツールはありません',
   'View or change the approval mode for tool usage':
     'ツール使用の承認モードを表示または変更',
@@ -106,8 +106,8 @@ export default {
     '会話履歴をクリアしてコンテキストを解放',
   'Compresses the context by replacing it with a summary.':
     'コンテキストを要約に置き換えて圧縮',
-  'open full Qwen Code documentation in your browser':
-    'ブラウザで Qwen Code のドキュメントを開く',
+  'open full Ollama Code documentation in your browser':
+    'ブラウザで Ollama Code のドキュメントを開く',
   'Configuration not available.': '設定が利用できません',
   'change the auth method': '認証方式を変更',
   'Configure authentication information for login':
@@ -181,7 +181,7 @@ export default {
   'Warnings:': '警告:',
   'Step {{n}}: Choose Location': 'ステップ {{n}}: 場所を選択',
   'Step {{n}}: Choose Generation Method': 'ステップ {{n}}: 作成方法を選択',
-  'Generate with Qwen Code (Recommended)': 'Qwen Code で生成(推奨)',
+  'Generate with Ollama Code (Recommended)': 'Ollama Code で生成(推奨)',
   'Manual Creation': '手動作成',
   'Generating subagent configuration...': 'サブエージェント設定を生成中...',
   'Failed to generate subagent: {{error}}':
@@ -247,11 +247,11 @@ export default {
   // Commands - General (continued)
   '(Use Enter to select{{tabText}})': '(Enter で選択{{tabText}})',
   ', Tab to change focus': '、Tab でフォーカス変更',
-  'To see changes, Qwen Code must be restarted. Press r to exit and apply changes now.':
-    '変更を確認するには Qwen Code を再起動する必要があります。 r を押して終了し、変更を適用してください',
+  'To see changes, Ollama Code must be restarted. Press r to exit and apply changes now.':
+    '変更を確認するには Ollama Code を再起動する必要があります。 r を押して終了し、変更を適用してください',
   'The command "/{{command}}" is not supported in non-interactive mode.':
     'コマンド "/{{command}}" は非対話モードではサポートされていません',
-  'View and edit Qwen Code settings': 'Qwen Code の設定を表示・編集',
+  'View and edit Ollama Code settings': 'Ollama Code の設定を表示・編集',
   Settings: '設定',
   'Vim Mode': 'Vim モード',
   'Disable Auto Update': '自動更新を無効化',
@@ -328,16 +328,16 @@ export default {
   'List active extensions': '有効な拡張機能を一覧表示',
   'Update extensions. Usage: update <extension-names>|--all':
     '拡張機能を更新。使い方: update <拡張機能名>|--all',
-  'You are installing an extension from {{originSource}}. Some features may not work perfectly with Qwen Code.':
-    '{{originSource}} から拡張機能をインストールしています。一部の機能は Qwen Code で完全に動作しない可能性があります。',
+  'You are installing an extension from {{originSource}}. Some features may not work perfectly with Ollama Code.':
+    '{{originSource}} から拡張機能をインストールしています。一部の機能は Ollama Code で完全に動作しない可能性があります。',
   'manage IDE integration': 'IDE連携を管理',
   'check status of IDE integration': 'IDE連携の状態を確認',
   'install required IDE companion for {{ideName}}':
     '{{ideName}} 用の必要なIDEコンパニオンをインストール',
   'enable IDE integration': 'IDE連携を有効化',
   'disable IDE integration': 'IDE連携を無効化',
-  'IDE integration is not supported in your current environment. To use this feature, run Qwen Code in one of these supported IDEs: VS Code or VS Code forks.':
-    '現在の環境ではIDE連携はサポートされていません。この機能を使用するには、VS Code または VS Code 派生エディタで Qwen Code を実行してください',
+  'IDE integration is not supported in your current environment. To use this feature, run Ollama Code in one of these supported IDEs: VS Code or VS Code forks.':
+    '現在の環境ではIDE連携はサポートされていません。この機能を使用するには、VS Code または VS Code 派生エディタで Ollama Code を実行してください',
   'Set up GitHub Actions': 'GitHub Actions を設定',
   'Configure terminal keybindings for multiline input (VS Code, Cursor, Windsurf, Trae)':
     '複数行入力用のターミナルキーバインドを設定(VS Code、Cursor、Windsurf、Trae)',
@@ -678,8 +678,8 @@ export default {
   'You must select an auth method to proceed. Press Ctrl+C again to exit.':
     '続行するには認証方法を選択してください。Ctrl+C をもう一度押すと終了します',
   '(Use Enter to Set Auth)': '(Enter で認証を設定)',
-  'Terms of Services and Privacy Notice for Qwen Code':
-    'Qwen Code の利用規約とプライバシー通知',
+  'Terms of Services and Privacy Notice for Ollama Code':
+    'Ollama Code の利用規約とプライバシー通知',
   'Qwen OAuth': 'Qwen OAuth',
   'Login with QwenChat account to use daily free quota.':
     'QwenChatアカウントでログインして、毎日の無料クォータをご利用ください。',
@@ -788,8 +788,8 @@ export default {
     '1. 質問したり、ファイルを編集したり、コマンドを実行したりできます',
   '2. Be specific for the best results.':
     '2. 具体的に指示すると最良の結果が得られます',
-  'files to customize your interactions with Qwen Code.':
-    'Qwen Code との対話をカスタマイズするためのファイル',
+  'files to customize your interactions with Ollama Code.':
+    'Ollama Code との対話をカスタマイズするためのファイル',
   'for more information.': '詳細情報を確認できます',
   // Exit Screen / Stats
   'Agent powering down. Goodbye!': 'エージェントを終了します。さようなら!',

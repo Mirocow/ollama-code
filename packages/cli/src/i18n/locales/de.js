@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// German translations for Qwen Code CLI
-// Deutsche Übersetzungen für Qwen Code CLI
+// German translations for Ollama Code CLI
+// Deutsche Übersetzungen für Ollama Code CLI
 
 export default {
   // ============================================================================
@@ -63,16 +63,16 @@ export default {
   'For a full list of shortcuts, see {{docPath}}':
     'Eine vollständige Liste der Tastenkürzel finden Sie unter {{docPath}}',
   'docs/keyboard-shortcuts.md': 'docs/keyboard-shortcuts.md',
-  'for help on Qwen Code': 'für Hilfe zu Qwen Code',
+  'for help on Ollama Code': 'für Hilfe zu Ollama Code',
   'show version info': 'Versionsinformationen anzeigen',
   'submit a bug report': 'Fehlerbericht einreichen',
-  'About Qwen Code': 'Über Qwen Code',
+  'About Ollama Code': 'Über Ollama Code',
   Status: 'Status',
 
   // ============================================================================
   // System Information Fields
   // ============================================================================
-  'Qwen Code': 'Qwen Code',
+  'Ollama Code': 'Ollama Code',
   Runtime: 'Laufzeit',
   OS: 'Betriebssystem',
   Auth: 'Authentifizierung',
@@ -97,9 +97,9 @@ export default {
   // ============================================================================
   'Analyzes the project and creates a tailored QWEN.md file.':
     'Analysiert das Projekt und erstellt eine maßgeschneiderte QWEN.md-Datei.',
-  'list available Qwen Code tools. Usage: /tools [desc]':
-    'Verfügbare Qwen Code Werkzeuge auflisten. Verwendung: /tools [desc]',
-  'Available Qwen Code CLI tools:': 'Verfügbare Qwen Code CLI-Werkzeuge:',
+  'list available Ollama Code tools. Usage: /tools [desc]':
+    'Verfügbare Ollama Code Werkzeuge auflisten. Verwendung: /tools [desc]',
+  'Available Ollama Code CLI tools:': 'Verfügbare Ollama Code CLI-Werkzeuge:',
   'No tools available': 'Keine Werkzeuge verfügbar',
   'View or change the approval mode for tool usage':
     'Genehmigungsmodus für Werkzeugnutzung anzeigen oder ändern',
@@ -121,8 +121,8 @@ export default {
     'Gesprächsverlauf löschen und Kontext freigeben',
   'Compresses the context by replacing it with a summary.':
     'Komprimiert den Kontext durch Ersetzen mit einer Zusammenfassung.',
-  'open full Qwen Code documentation in your browser':
-    'Vollständige Qwen Code Dokumentation im Browser öffnen',
+  'open full Ollama Code documentation in your browser':
+    'Vollständige Ollama Code Dokumentation im Browser öffnen',
   'Configuration not available.': 'Konfiguration nicht verfügbar.',
   'change the auth method': 'Authentifizierungsmethode ändern',
   'Configure authentication information for login':
@@ -210,8 +210,8 @@ export default {
   'Step {{n}}: Choose Location': 'Schritt {{n}}: Speicherort wählen',
   'Step {{n}}: Choose Generation Method':
     'Schritt {{n}}: Generierungsmethode wählen',
-  'Generate with Qwen Code (Recommended)':
-    'Mit Qwen Code generieren (Empfohlen)',
+  'Generate with Ollama Code (Recommended)':
+    'Mit Ollama Code generieren (Empfohlen)',
   'Manual Creation': 'Manuelle Erstellung',
   'Describe what this subagent should do and when it should be used. (Be comprehensive for best results)':
     'Beschreiben Sie, was dieser Unteragent tun soll und wann er verwendet werden soll. (Ausführliche Beschreibung für beste Ergebnisse)',
@@ -273,11 +273,11 @@ export default {
   // ============================================================================
   // Commands - General (continued)
   // ============================================================================
-  'View and edit Qwen Code settings':
-    'Qwen Code Einstellungen anzeigen und bearbeiten',
+  'View and edit Ollama Code settings':
+    'Ollama Code Einstellungen anzeigen und bearbeiten',
   Settings: 'Einstellungen',
-  'To see changes, Qwen Code must be restarted. Press r to exit and apply changes now.':
-    'Um Änderungen zu sehen, muss Qwen Code neu gestartet werden. Drücken Sie r, um jetzt zu beenden und Änderungen anzuwenden.',
+  'To see changes, Ollama Code must be restarted. Press r to exit and apply changes now.':
+    'Um Änderungen zu sehen, muss Ollama Code neu gestartet werden. Drücken Sie r, um jetzt zu beenden und Änderungen anzuwenden.',
   'The command "/{{command}}" is not supported in non-interactive mode.':
     'Der Befehl "/{{command}}" wird im nicht-interaktiven Modus nicht unterstützt.',
   // ============================================================================
@@ -432,8 +432,8 @@ export default {
     'Diese Erweiterung wird folgende Unteragenten installieren:',
   'Installation cancelled for "{{name}}".':
     'Installation von "{{name}}" abgebrochen.',
-  'You are installing an extension from {{originSource}}. Some features may not work perfectly with Qwen Code.':
-    'Sie installieren eine Erweiterung von {{originSource}}. Einige Funktionen funktionieren möglicherweise nicht perfekt mit Qwen Code.',
+  'You are installing an extension from {{originSource}}. Some features may not work perfectly with Ollama Code.':
+    'Sie installieren eine Erweiterung von {{originSource}}. Einige Funktionen funktionieren möglicherweise nicht perfekt mit Ollama Code.',
   '--ref and --auto-update are not applicable for marketplace extensions.':
     '--ref und --auto-update sind nicht anwendbar für Marketplace-Erweiterungen.',
   'Extension "{{name}}" installed successfully and enabled.':
@@ -549,8 +549,8 @@ export default {
     'Erforderlichen IDE-Begleiter für {{ideName}} installieren',
   'enable IDE integration': 'IDE-Integration aktivieren',
   'disable IDE integration': 'IDE-Integration deaktivieren',
-  'IDE integration is not supported in your current environment. To use this feature, run Qwen Code in one of these supported IDEs: VS Code or VS Code forks.':
-    'IDE-Integration wird in Ihrer aktuellen Umgebung nicht unterstützt. Um diese Funktion zu nutzen, führen Sie Qwen Code in einer dieser unterstützten IDEs aus: VS Code oder VS Code-Forks.',
+  'IDE integration is not supported in your current environment. To use this feature, run Ollama Code in one of these supported IDEs: VS Code or VS Code forks.':
+    'IDE-Integration wird in Ihrer aktuellen Umgebung nicht unterstützt. Um diese Funktion zu nutzen, führen Sie Ollama Code in einer dieser unterstützten IDEs aus: VS Code oder VS Code-Forks.',
   'Set up GitHub Actions': 'GitHub Actions einrichten',
   'Configure terminal keybindings for multiline input (VS Code, Cursor, Windsurf, Trae)':
     'Terminal-Tastenbelegungen für mehrzeilige Eingabe konfigurieren (VS Code, Cursor, Windsurf, Trae)',
@@ -951,8 +951,8 @@ export default {
   'You must select an auth method to proceed. Press Ctrl+C again to exit.':
     'Sie müssen eine Authentifizierungsmethode wählen, um fortzufahren. Drücken Sie erneut Strg+C zum Beenden.',
   '(Use Enter to Set Auth)': '(Enter zum Festlegen der Authentifizierung)',
-  'Terms of Services and Privacy Notice for Qwen Code':
-    'Nutzungsbedingungen und Datenschutzhinweis für Qwen Code',
+  'Terms of Services and Privacy Notice for Ollama Code':
+    'Nutzungsbedingungen und Datenschutzhinweis für Ollama Code',
   'Qwen OAuth': 'Qwen OAuth',
   'Login with QwenChat account to use daily free quota.':
     'Melden Sie sich mit Ihrem QwenChat-Konto an, um das tägliche kostenlose Kontingent zu nutzen.',
@@ -1115,8 +1115,8 @@ export default {
     '1. Stellen Sie Fragen, bearbeiten Sie Dateien oder führen Sie Befehle aus.',
   '2. Be specific for the best results.':
     '2. Seien Sie spezifisch für die besten Ergebnisse.',
-  'files to customize your interactions with Qwen Code.':
-    'Dateien, um Ihre Interaktionen mit Qwen Code anzupassen.',
+  'files to customize your interactions with Ollama Code.':
+    'Dateien, um Ihre Interaktionen mit Ollama Code anzupassen.',
   'for more information.': 'für weitere Informationen.',
 
   // ============================================================================

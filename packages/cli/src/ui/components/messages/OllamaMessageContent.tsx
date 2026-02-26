@@ -7,22 +7,26 @@
 import type React from 'react';
 import { Box } from 'ink';
 import { MarkdownDisplay } from '../../utils/MarkdownDisplay.js';
-import { theme } from '../../semantic-colors.js';
 
-interface GeminiThoughtMessageContentProps {
+interface OllamaMessageContentProps {
   text: string;
   isPending: boolean;
   availableTerminalHeight?: number;
   contentWidth: number;
 }
 
-/**
- * Continuation component for thought messages, similar to GeminiMessageContent.
- * Used when a thought response gets too long and needs to be split for performance.
+/*
+ * Gemini message content is a semi-hacked component. The intention is to represent a partial
+ * of OllamaMessage and is only used when a response gets too long. In that instance messages
+ * are split into multiple OllamaMessageContent's to enable the root <Static> component in
+ * App.tsx to be as performant as humanly possible.
  */
-export const GeminiThoughtMessageContent: React.FC<
-  GeminiThoughtMessageContentProps
-> = ({ text, isPending, availableTerminalHeight, contentWidth }) => {
+export const OllamaMessageContent: React.FC<OllamaMessageContentProps> = ({
+  text,
+  isPending,
+  availableTerminalHeight,
+  contentWidth,
+}) => {
   const originalPrefix = '✦ ';
   const prefixWidth = originalPrefix.length;
 
@@ -33,7 +37,6 @@ export const GeminiThoughtMessageContent: React.FC<
         isPending={isPending}
         availableTerminalHeight={availableTerminalHeight}
         contentWidth={contentWidth - prefixWidth}
-        textColor={theme.text.secondary}
       />
     </Box>
   );

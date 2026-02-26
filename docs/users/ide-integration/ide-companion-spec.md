@@ -1,12 +1,12 @@
-# Qwen Code Companion Plugin: Interface Specification
+# Ollama Code Companion Plugin: Interface Specification
 
 > Last Updated: September 15, 2025
 
-This document defines the contract for building a companion plugin to enable Qwen Code's IDE mode. For VS Code, these features (native diffing, context awareness) are provided by the official extension ([marketplace](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion)). This specification is for contributors who wish to bring similar functionality to other editors like JetBrains IDEs, Sublime Text, etc.
+This document defines the contract for building a companion plugin to enable Ollama Code's IDE mode. For VS Code, these features (native diffing, context awareness) are provided by the official extension ([marketplace](https://marketplace.visualstudio.com/items?itemName=qwenlm.ollama-code-vscode-ide-companion)). This specification is for contributors who wish to bring similar functionality to other editors like JetBrains IDEs, Sublime Text, etc.
 
 ## I. The Communication Interface
 
-Qwen Code and the IDE plugin communicate through a local communication channel.
+Ollama Code and the IDE plugin communicate through a local communication channel.
 
 ### 1. Transport Layer: MCP over HTTP
 
@@ -18,9 +18,9 @@ The plugin **MUST** run a local HTTP server that implements the **Model Context 
 
 ### 2. Discovery Mechanism: The Lock File
 
-For Qwen Code to connect, it needs to discover what port your server is using. The plugin **MUST** facilitate this by creating a "lock file" and setting the port environment variable.
+For Ollama Code to connect, it needs to discover what port your server is using. The plugin **MUST** facilitate this by creating a "lock file" and setting the port environment variable.
 
-- **How the CLI Finds the File:** The CLI reads the port from `QWEN_CODE_IDE_SERVER_PORT`, then reads `~/.qwen/ide/<PORT>.lock`. (Legacy fallbacks exist for older extensions; see note below.)
+- **How the CLI Finds the File:** The CLI reads the port from `OLLAMA_CODE_IDE_SERVER_PORT`, then reads `~/.qwen/ide/<PORT>.lock`. (Legacy fallbacks exist for older extensions; see note below.)
 - **File Location:** The file must be created in a specific directory: `~/.qwen/ide/`. Your plugin must create this directory if it doesn't exist.
 - **File Naming Convention:** The filename is critical and **MUST** follow the pattern:
   `<PORT>.lock`
@@ -36,6 +36,7 @@ For Qwen Code to connect, it needs to discover what port your server is using. T
     "ideName": "VS Code"
   }
   ```
+
   - `port` (number, required): The port of the MCP server.
   - `workspacePath` (string, required): A list of all open workspace root paths, delimited by the OS-specific path separator (`:` for Linux/macOS, `;` for Windows). The CLI uses this path to ensure it's running in the same project folder that's open in the IDE. If the CLI's current working directory is not a sub-directory of `workspacePath`, the connection will be rejected. Your plugin **MUST** provide the correct, absolute path(s) to the root of the open workspace(s).
   - `authToken` (string, required): A secret token for securing the connection. The CLI will include this token in an `Authorization: Bearer <token>` header on all requests.
@@ -43,9 +44,9 @@ For Qwen Code to connect, it needs to discover what port your server is using. T
   - `ideName` (string, required): A user-friendly name for the IDE (e.g., `VS Code`, `JetBrains IDE`).
 
 - **Authentication:** To secure the connection, the plugin **MUST** generate a unique, secret token and include it in the discovery file. The CLI will then include this token in the `Authorization` header for all requests to the MCP server (e.g., `Authorization: Bearer a-very-secret-token`). Your server **MUST** validate this token on every request and reject any that are unauthorized.
-- **Environment Variables (Required):** Your plugin **MUST** set `QWEN_CODE_IDE_SERVER_PORT` in the integrated terminal so the CLI can locate the correct `<PORT>.lock` file.
+- **Environment Variables (Required):** Your plugin **MUST** set `OLLAMA_CODE_IDE_SERVER_PORT` in the integrated terminal so the CLI can locate the correct `<PORT>.lock` file.
 
-**Legacy note:** For extensions older than v0.5.1, Qwen Code may fall back to reading JSON files in the system temp directory named `qwen-code-ide-server-<PID>.json` or `qwen-code-ide-server-<PORT>.json`. New integrations should not rely on these legacy files.
+**Legacy note:** For extensions older than v0.5.1, Ollama Code may fall back to reading JSON files in the system temp directory named `ollama-code-ide-server-<PID>.json` or `ollama-code-ide-server-<PORT>.json`. New integrations should not rely on these legacy files.
 
 ## II. The Context Interface
 

@@ -10,11 +10,11 @@ import { activate } from './extension.js';
 import {
   IDE_DEFINITIONS,
   detectIdeFromEnv,
-} from '@qwen-code/qwen-code-core/src/ide/detect-ide.js';
+} from '@ollama-code/ollama-code-core/src/ide/detect-ide.js';
 
-vi.mock('@qwen-code/qwen-code-core/src/ide/detect-ide.js', async () => {
+vi.mock('@ollama-code/ollama-code-core/src/ide/detect-ide.js', async () => {
   const actual = await vi.importActual(
-    '@qwen-code/qwen-code-core/src/ide/detect-ide.js',
+    '@ollama-code/ollama-code-core/src/ide/detect-ide.js',
   );
   return {
     ...actual,
@@ -276,7 +276,7 @@ describe('activate', () => {
 
       expect(executeCommandMock).toHaveBeenCalledWith(
         'workbench.extensions.installExtension',
-        'qwenlm.qwen-code-vscode-ide-companion',
+        'qwenlm.ollama-code-vscode-ide-companion',
       );
     });
 

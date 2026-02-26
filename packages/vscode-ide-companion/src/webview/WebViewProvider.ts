@@ -1,11 +1,11 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as vscode from 'vscode';
-import { QwenAgentManager } from '../services/qwenAgentManager.js';
+import { OllamaAgentManager } from '../services/ollamaAgentManager.js';
 import { ConversationStore } from '../services/conversationStore.js';
 import type { AcpPermissionRequest } from '../types/acpTypes.js';
 import type { ModelInfo } from '../types/acpTypes.js';
@@ -20,7 +20,7 @@ import { isAuthenticationRequiredError } from '../utils/authErrors.js';
 export class WebViewProvider {
   private panelManager: PanelManager;
   private messageHandler: MessageHandler;
-  private agentManager: QwenAgentManager;
+  private agentManager: OllamaAgentManager;
   private conversationStore: ConversationStore;
   private disposables: vscode.Disposable[] = [];
   private agentInitialized = false; // Track if agent has been initialized
@@ -39,7 +39,7 @@ export class WebViewProvider {
     private context: vscode.ExtensionContext,
     private extensionUri: vscode.Uri,
   ) {
-    this.agentManager = new QwenAgentManager();
+    this.agentManager = new OllamaAgentManager();
     this.conversationStore = new ConversationStore(context);
     this.panelManager = new PanelManager(extensionUri, () => {
       // Panel dispose callback
@@ -179,7 +179,7 @@ export class WebViewProvider {
       });
     });
 
-    // Note: Tool call updates are handled in handleSessionUpdate within QwenAgentManager
+    // Note: Tool call updates are handled in handleSessionUpdate within OllamaAgentManager
     // and sent via onStreamChunk callback
     this.agentManager.onToolCall((update) => {
       // Always surface tool calls; they are part of the live assistant flow.

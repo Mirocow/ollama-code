@@ -1,6 +1,6 @@
-# Qwen Code Keyboard Shortcuts
+# Ollama Code Keyboard Shortcuts
 
-This document lists the available keyboard shortcuts in Qwen Code.
+This document lists the available keyboard shortcuts in Ollama Code.
 
 ## General
 

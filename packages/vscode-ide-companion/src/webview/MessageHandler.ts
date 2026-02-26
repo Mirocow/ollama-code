@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { QwenAgentManager } from '../services/qwenAgentManager.js';
+import type { OllamaAgentManager } from '../services/ollamaAgentManager.js';
 import type { ConversationStore } from '../services/conversationStore.js';
 import type { PermissionResponseMessage } from '../types/webviewMessageTypes.js';
 import { MessageRouter } from './handlers/MessageRouter.js';
@@ -18,7 +18,7 @@ export class MessageHandler {
   private router: MessageRouter;
 
   constructor(
-    agentManager: QwenAgentManager,
+    agentManager: OllamaAgentManager,
     conversationStore: ConversationStore,
     currentConversationId: string | null,
     sendToWebView: (message: unknown) => void,

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,7 +19,7 @@ import {
 } from '../utils/acpModelInfo.js';
 import type { ModelInfo } from '../types/acpTypes.js';
 
-export interface QwenConnectionResult {
+export interface OllamaConnectionResult {
   sessionCreated: boolean;
   requiresAuth: boolean;
   modelInfo?: ModelInfo;
@@ -30,9 +30,9 @@ export interface QwenConnectionResult {
  * Qwen Connection Handler class
  * Handles connection, authentication, and session initialization
  */
-export class QwenConnectionHandler {
+export class OllamaConnectionHandler {
   /**
-   * Connect to Qwen service and establish session
+   * Connect to Ollama service and establish session
    *
    * @param connection - ACP connection instance
    * @param workingDir - Working directory
@@ -45,9 +45,9 @@ export class QwenConnectionHandler {
     options?: {
       autoAuthenticate?: boolean;
     },
-  ): Promise<QwenConnectionResult> {
+  ): Promise<OllamaConnectionResult> {
     const connectId = Date.now();
-    console.log(`[QwenAgentManager] 🚀 CONNECT() CALLED - ID: ${connectId}`);
+    console.log(`[OllamaAgentManager] 🚀 CONNECT() CALLED - ID: ${connectId}`);
     const autoAuthenticate = options?.autoAuthenticate ?? true;
     let sessionCreated = false;
     let requiresAuth = false;
@@ -68,12 +68,12 @@ export class QwenConnectionHandler {
     // Create new session if unable to restore
     if (!sessionRestored) {
       console.log(
-        '[QwenAgentManager] no sessionRestored, Creating new session...',
+        '[OllamaAgentManager] no sessionRestored, Creating new session...',
       );
 
       try {
         console.log(
-          '[QwenAgentManager] Creating new session (letting CLI handle authentication)...',
+          '[OllamaAgentManager] Creating new session (letting CLI handle authentication)...',
         );
         const newSessionResult = await this.newSessionWithRetry(
           connection,
@@ -93,12 +93,12 @@ export class QwenConnectionHandler {
         ) {
           availableModels = modelState.availableModels;
           console.log(
-            '[QwenAgentManager] Extracted availableModels from session/new:',
+            '[OllamaAgentManager] Extracted availableModels from session/new:',
             availableModels.map((m) => m.modelId),
           );
         }
 
-        console.log('[QwenAgentManager] New session created successfully');
+        console.log('[OllamaAgentManager] New session created successfully');
         sessionCreated = true;
       } catch (sessionError) {
         const needsAuth =
@@ -107,13 +107,13 @@ export class QwenConnectionHandler {
         if (needsAuth) {
           requiresAuth = true;
           console.log(
-            '[QwenAgentManager] Session creation requires authentication; waiting for user-triggered login.',
+            '[OllamaAgentManager] Session creation requires authentication; waiting for user-triggered login.',
           );
         } else {
           console.log(
             `\n⚠️ [SESSION FAILED] newSessionWithRetry threw error\n`,
           );
-          console.log(`[QwenAgentManager] Error details:`, sessionError);
+          console.log(`[OllamaAgentManager] Error details:`, sessionError);
           throw sessionError;
         }
       }
@@ -122,7 +122,7 @@ export class QwenConnectionHandler {
     }
 
     console.log(`\n========================================`);
-    console.log(`[QwenAgentManager] ✅ CONNECT() COMPLETED SUCCESSFULLY`);
+    console.log(`[OllamaAgentManager] ✅ CONNECT() COMPLETED SUCCESSFULLY`);
     console.log(`========================================\n`);
     return { sessionCreated, requiresAuth, modelInfo, availableModels };
   }
@@ -144,16 +144,16 @@ export class QwenConnectionHandler {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(
-          `[QwenAgentManager] Creating session (attempt ${attempt}/${maxRetries})...`,
+          `[OllamaAgentManager] Creating session (attempt ${attempt}/${maxRetries})...`,
         );
         const res = await connection.newSession(workingDir);
-        console.log('[QwenAgentManager] Session created successfully');
+        console.log('[OllamaAgentManager] Session created successfully');
         return res;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         console.error(
-          `[QwenAgentManager] Session creation attempt ${attempt} failed:`,
+          `[OllamaAgentManager] Session creation attempt ${attempt} failed:`,
           errorMessage,
         );
 
@@ -163,12 +163,12 @@ export class QwenConnectionHandler {
         if (requiresAuth) {
           if (!autoAuthenticate) {
             console.log(
-              '[QwenAgentManager] Authentication required but auto-authentication is disabled. Propagating error.',
+              '[OllamaAgentManager] Authentication required but auto-authentication is disabled. Propagating error.',
             );
             throw error;
           }
           console.log(
-            '[QwenAgentManager] Qwen requires authentication. Authenticating and retrying session/new...',
+            '[OllamaAgentManager] Qwen requires authentication. Authenticating and retrying session/new...',
           );
           try {
             await connection.authenticate(authMethod);
@@ -177,17 +177,17 @@ export class QwenConnectionHandler {
             // Add a slight delay to ensure auth state is settled
             await new Promise((resolve) => setTimeout(resolve, 300));
             console.log(
-              '[QwenAgentManager] newSessionWithRetry Authentication successful',
+              '[OllamaAgentManager] newSessionWithRetry Authentication successful',
             );
             // Retry immediately after successful auth
             const res = await connection.newSession(workingDir);
             console.log(
-              '[QwenAgentManager] Session created successfully after auth',
+              '[OllamaAgentManager] Session created successfully after auth',
             );
             return res;
           } catch (authErr) {
             console.error(
-              '[QwenAgentManager] Re-authentication failed:',
+              '[OllamaAgentManager] Re-authentication failed:',
               authErr,
             );
             // Fall through to retry logic below
@@ -201,7 +201,7 @@ export class QwenConnectionHandler {
         }
 
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-        console.log(`[QwenAgentManager] Retrying in ${delay}ms...`);
+        console.log(`[OllamaAgentManager] Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }

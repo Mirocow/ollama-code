@@ -143,7 +143,7 @@ export class OllamaLogger {
 
   private constructor(config: Config) {
     this.config = config;
-    this.debugLogger = createDebugLogger('QWEN_LOGGER');
+    this.debugLogger = createDebugLogger('OLLAMA_LOGGER');
     this.events = new FixedDeque<RumEvent>(Array, MAX_EVENTS);
     this.installationManager = new InstallationManager();
     this.userId = this.generateUserId();
@@ -295,7 +295,7 @@ export class OllamaLogger {
 
   readSourceInfo(): string {
     try {
-      const sourceJsonPath = path.join(os.homedir(), '.qwen', 'source.json');
+      const sourceJsonPath = path.join(os.homedir(), '.ollama', 'source.json');
       if (fs.existsSync(sourceJsonPath)) {
         const sourceJsonContent = fs.readFileSync(sourceJsonPath, 'utf8');
         const sourceData = JSON.parse(sourceJsonContent);
