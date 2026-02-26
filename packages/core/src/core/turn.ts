@@ -49,7 +49,7 @@ export interface ServerTool {
   ): Promise<ToolCallConfirmationDetails | false>;
 }
 
-export enum GeminiEventType {
+export enum OllamaEventType {
   Content = 'content',
   ToolCallRequest = 'tool_call_request',
   ToolCallResponse = 'tool_call_response',
@@ -66,8 +66,8 @@ export enum GeminiEventType {
   Retry = 'retry',
 }
 
-export type ServerGeminiRetryEvent = {
-  type: GeminiEventType.Retry;
+export type ServerOllamaRetryEvent = {
+  type: OllamaEventType.Retry;
   retryInfo?: RetryInfo;
 };
 
@@ -76,7 +76,7 @@ export interface StructuredError {
   status?: number;
 }
 
-export interface GeminiErrorEventValue {
+export interface OllamaErrorEventValue {
   error: StructuredError;
 }
 
@@ -86,7 +86,7 @@ export interface SessionTokenLimitExceededValue {
   message: string;
 }
 
-export interface GeminiFinishedEventValue {
+export interface OllamaFinishedEventValue {
   reason: FinishReason | undefined;
   usageMetadata: GenerateContentResponseUsageMetadata | undefined;
 }
@@ -115,38 +115,38 @@ export interface ServerToolCallConfirmationDetails {
   details: ToolCallConfirmationDetails;
 }
 
-export type ServerGeminiContentEvent = {
-  type: GeminiEventType.Content;
+export type ServerOllamaContentEvent = {
+  type: OllamaEventType.Content;
   value: string;
 };
 
-export type ServerGeminiThoughtEvent = {
-  type: GeminiEventType.Thought;
+export type ServerOllamaThoughtEvent = {
+  type: OllamaEventType.Thought;
   value: ThoughtSummary;
 };
 
-export type ServerGeminiToolCallRequestEvent = {
-  type: GeminiEventType.ToolCallRequest;
+export type ServerOllamaToolCallRequestEvent = {
+  type: OllamaEventType.ToolCallRequest;
   value: ToolCallRequestInfo;
 };
 
-export type ServerGeminiToolCallResponseEvent = {
-  type: GeminiEventType.ToolCallResponse;
+export type ServerOllamaToolCallResponseEvent = {
+  type: OllamaEventType.ToolCallResponse;
   value: ToolCallResponseInfo;
 };
 
-export type ServerGeminiToolCallConfirmationEvent = {
-  type: GeminiEventType.ToolCallConfirmation;
+export type ServerOllamaToolCallConfirmationEvent = {
+  type: OllamaEventType.ToolCallConfirmation;
   value: ServerToolCallConfirmationDetails;
 };
 
-export type ServerGeminiUserCancelledEvent = {
-  type: GeminiEventType.UserCancelled;
+export type ServerOllamaUserCancelledEvent = {
+  type: OllamaEventType.UserCancelled;
 };
 
-export type ServerGeminiErrorEvent = {
-  type: GeminiEventType.Error;
-  value: GeminiErrorEventValue;
+export type ServerOllamaErrorEvent = {
+  type: OllamaEventType.Error;
+  value: OllamaErrorEventValue;
 };
 
 export enum CompressionStatus {
@@ -173,49 +173,49 @@ export interface ChatCompressionInfo {
 }
 
 export type ServerOllamaChatCompressedEvent = {
-  type: GeminiEventType.ChatCompressed;
+  type: OllamaEventType.ChatCompressed;
   value: ChatCompressionInfo | null;
 };
 
-export type ServerGeminiMaxSessionTurnsEvent = {
-  type: GeminiEventType.MaxSessionTurns;
+export type ServerOllamaMaxSessionTurnsEvent = {
+  type: OllamaEventType.MaxSessionTurns;
 };
 
-export type ServerGeminiSessionTokenLimitExceededEvent = {
-  type: GeminiEventType.SessionTokenLimitExceeded;
+export type ServerOllamaSessionTokenLimitExceededEvent = {
+  type: OllamaEventType.SessionTokenLimitExceeded;
   value: SessionTokenLimitExceededValue;
 };
 
-export type ServerGeminiFinishedEvent = {
-  type: GeminiEventType.Finished;
-  value: GeminiFinishedEventValue;
+export type ServerOllamaFinishedEvent = {
+  type: OllamaEventType.Finished;
+  value: OllamaFinishedEventValue;
 };
 
-export type ServerGeminiLoopDetectedEvent = {
-  type: GeminiEventType.LoopDetected;
+export type ServerOllamaLoopDetectedEvent = {
+  type: OllamaEventType.LoopDetected;
 };
 
-export type ServerGeminiCitationEvent = {
-  type: GeminiEventType.Citation;
+export type ServerOllamaCitationEvent = {
+  type: OllamaEventType.Citation;
   value: string;
 };
 
 // The original union type, now composed of the individual types
-export type ServerGeminiStreamEvent =
+export type ServerOllamaStreamEvent =
   | ServerOllamaChatCompressedEvent
-  | ServerGeminiCitationEvent
-  | ServerGeminiContentEvent
-  | ServerGeminiErrorEvent
-  | ServerGeminiFinishedEvent
-  | ServerGeminiLoopDetectedEvent
-  | ServerGeminiMaxSessionTurnsEvent
-  | ServerGeminiThoughtEvent
-  | ServerGeminiToolCallConfirmationEvent
-  | ServerGeminiToolCallRequestEvent
-  | ServerGeminiToolCallResponseEvent
-  | ServerGeminiUserCancelledEvent
-  | ServerGeminiSessionTokenLimitExceededEvent
-  | ServerGeminiRetryEvent;
+  | ServerOllamaCitationEvent
+  | ServerOllamaContentEvent
+  | ServerOllamaErrorEvent
+  | ServerOllamaFinishedEvent
+  | ServerOllamaLoopDetectedEvent
+  | ServerOllamaMaxSessionTurnsEvent
+  | ServerOllamaThoughtEvent
+  | ServerOllamaToolCallConfirmationEvent
+  | ServerOllamaToolCallRequestEvent
+  | ServerOllamaToolCallResponseEvent
+  | ServerOllamaUserCancelledEvent
+  | ServerOllamaSessionTokenLimitExceededEvent
+  | ServerOllamaRetryEvent;
 
 // A turn manages the agentic loop turn within the server context.
 export class Turn {
@@ -234,7 +234,7 @@ export class Turn {
     model: string,
     req: PartListUnion,
     signal: AbortSignal,
-  ): AsyncGenerator<ServerGeminiStreamEvent> {
+  ): AsyncGenerator<ServerOllamaStreamEvent> {
     try {
       // Note: This assumes `sendMessageStream` yields events like
       // { type: StreamEventType.RETRY } or { type: StreamEventType.CHUNK, value: GenerateContentResponse }
@@ -251,14 +251,14 @@ export class Turn {
 
       for await (const streamEvent of responseStream) {
         if (signal?.aborted) {
-          yield { type: GeminiEventType.UserCancelled };
+          yield { type: OllamaEventType.UserCancelled };
           return;
         }
 
         // Handle the new RETRY event
         if (streamEvent.type === 'retry') {
           yield {
-            type: GeminiEventType.Retry,
+            type: OllamaEventType.Retry,
             retryInfo: streamEvent.retryInfo,
           };
           continue; // Skip to the next event in the stream
@@ -278,14 +278,14 @@ export class Turn {
         const thoughtText = getThoughtText(resp);
         if (thoughtText) {
           yield {
-            type: GeminiEventType.Thought,
+            type: OllamaEventType.Thought,
             value: parseThought(thoughtText),
           };
         }
 
         const text = getResponseText(resp);
         if (text) {
-          yield { type: GeminiEventType.Content, value: text };
+          yield { type: OllamaEventType.Content, value: text };
         }
 
         // Handle function calls (requesting tool execution)
@@ -308,7 +308,7 @@ export class Turn {
         if (finishReason) {
           if (this.pendingCitations.size > 0) {
             yield {
-              type: GeminiEventType.Citation,
+              type: OllamaEventType.Citation,
               value: `Citations:\n${[...this.pendingCitations].sort().join('\n')}`,
             };
             this.pendingCitations.clear();
@@ -316,7 +316,7 @@ export class Turn {
 
           this.finishReason = finishReason;
           yield {
-            type: GeminiEventType.Finished,
+            type: OllamaEventType.Finished,
             value: {
               reason: finishReason,
               usageMetadata: resp.usageMetadata,
@@ -326,7 +326,7 @@ export class Turn {
       }
     } catch (e) {
       if (signal.aborted) {
-        yield { type: GeminiEventType.UserCancelled };
+        yield { type: OllamaEventType.UserCancelled };
         // Regular cancellation error, fail gracefully.
         return;
       }
@@ -355,14 +355,14 @@ export class Turn {
         status,
       };
       await this.chat.maybeIncludeSchemaDepthContext(structuredError);
-      yield { type: GeminiEventType.Error, value: { error: structuredError } };
+      yield { type: OllamaEventType.Error, value: { error: structuredError } };
       return;
     }
   }
 
   private handlePendingFunctionCall(
     fnCall: FunctionCall,
-  ): ServerGeminiStreamEvent | null {
+  ): ServerOllamaStreamEvent | null {
     const callId =
       fnCall.id ??
       `${fnCall.name}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -381,7 +381,7 @@ export class Turn {
     this.pendingToolCalls.push(toolCallRequest);
 
     // Yield a request for the tool call, not the pending/confirming status
-    return { type: GeminiEventType.ToolCallRequest, value: toolCallRequest };
+    return { type: OllamaEventType.ToolCallRequest, value: toolCallRequest };
   }
 
   getDebugResponses(): GenerateContentResponse[] {

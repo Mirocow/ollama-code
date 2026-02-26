@@ -9,7 +9,9 @@ import * as os from 'node:os';
 import * as fs from 'node:fs';
 import { getProjectHash } from '../utils/paths.js';
 
-export const QWEN_DIR = '.qwen';
+export const OLLAMA_DIR = '.ollama-code';
+// Backward compatibility alias
+export const QWEN_DIR = OLLAMA_DIR;
 export const GOOGLE_ACCOUNTS_FILENAME = 'google_accounts.json';
 export const OAUTH_FILE = 'oauth_creds.json';
 const TMP_DIR_NAME = 'tmp';
@@ -25,44 +27,44 @@ export class Storage {
     this.targetDir = targetDir;
   }
 
-  static getGlobalQwenDir(): string {
+  static getGlobalOllamaDir(): string {
     const homeDir = os.homedir();
     if (!homeDir) {
-      return path.join(os.tmpdir(), '.qwen');
+      return path.join(os.tmpdir(), '.ollama-code');
     }
-    return path.join(homeDir, QWEN_DIR);
+    return path.join(homeDir, OLLAMA_DIR);
   }
 
   static getMcpOAuthTokensPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'mcp-oauth-tokens.json');
+    return path.join(Storage.getGlobalOllamaDir(), 'mcp-oauth-tokens.json');
   }
 
   static getGlobalSettingsPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'settings.json');
+    return path.join(Storage.getGlobalOllamaDir(), 'settings.json');
   }
 
   static getInstallationIdPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'installation_id');
+    return path.join(Storage.getGlobalOllamaDir(), 'installation_id');
   }
 
   static getGoogleAccountsPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), GOOGLE_ACCOUNTS_FILENAME);
+    return path.join(Storage.getGlobalOllamaDir(), GOOGLE_ACCOUNTS_FILENAME);
   }
 
   static getUserCommandsDir(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'commands');
+    return path.join(Storage.getGlobalOllamaDir(), 'commands');
   }
 
   static getGlobalMemoryFilePath(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'memory.md');
+    return path.join(Storage.getGlobalOllamaDir(), 'memory.md');
   }
 
   static getGlobalTempDir(): string {
-    return path.join(Storage.getGlobalQwenDir(), TMP_DIR_NAME);
+    return path.join(Storage.getGlobalOllamaDir(), TMP_DIR_NAME);
   }
 
   static getGlobalDebugDir(): string {
-    return path.join(Storage.getGlobalQwenDir(), DEBUG_DIR_NAME);
+    return path.join(Storage.getGlobalOllamaDir(), DEBUG_DIR_NAME);
   }
 
   static getDebugLogPath(sessionId: string): string {
@@ -70,20 +72,20 @@ export class Storage {
   }
 
   static getGlobalIdeDir(): string {
-    return path.join(Storage.getGlobalQwenDir(), IDE_DIR_NAME);
+    return path.join(Storage.getGlobalOllamaDir(), IDE_DIR_NAME);
   }
 
   static getGlobalBinDir(): string {
-    return path.join(Storage.getGlobalQwenDir(), BIN_DIR_NAME);
+    return path.join(Storage.getGlobalOllamaDir(), BIN_DIR_NAME);
   }
 
-  getQwenDir(): string {
-    return path.join(this.targetDir, QWEN_DIR);
+  getOllamaDir(): string {
+    return path.join(this.targetDir, OLLAMA_DIR);
   }
 
   getProjectDir(): string {
     const projectId = this.sanitizeCwd(this.getProjectRoot());
-    const projectsDir = path.join(Storage.getGlobalQwenDir(), PROJECT_DIR_NAME);
+    const projectsDir = path.join(Storage.getGlobalOllamaDir(), PROJECT_DIR_NAME);
     return path.join(projectsDir, projectId);
   }
 
@@ -99,7 +101,7 @@ export class Storage {
   }
 
   static getOAuthCredsPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), OAUTH_FILE);
+    return path.join(Storage.getGlobalOllamaDir(), OAUTH_FILE);
   }
 
   getProjectRoot(): string {
@@ -108,17 +110,17 @@ export class Storage {
 
   getHistoryDir(): string {
     const hash = getProjectHash(this.getProjectRoot());
-    const historyDir = path.join(Storage.getGlobalQwenDir(), 'history');
+    const historyDir = path.join(Storage.getGlobalOllamaDir(), 'history');
     const targetDir = path.join(historyDir, hash);
     return targetDir;
   }
 
   getWorkspaceSettingsPath(): string {
-    return path.join(this.getQwenDir(), 'settings.json');
+    return path.join(this.getOllamaDir(), 'settings.json');
   }
 
   getProjectCommandsDir(): string {
-    return path.join(this.getQwenDir(), 'commands');
+    return path.join(this.getOllamaDir(), 'commands');
   }
 
   getProjectTempCheckpointsDir(): string {
@@ -126,15 +128,15 @@ export class Storage {
   }
 
   getExtensionsDir(): string {
-    return path.join(this.getQwenDir(), 'extensions');
+    return path.join(this.getOllamaDir(), 'extensions');
   }
 
   getExtensionsConfigPath(): string {
-    return path.join(this.getExtensionsDir(), 'qwen-extension.json');
+    return path.join(this.getExtensionsDir(), 'ollama-extension.json');
   }
 
   getUserSkillsDir(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'skills');
+    return path.join(Storage.getGlobalOllamaDir(), 'skills');
   }
 
   getHistoryFilePath(): string {

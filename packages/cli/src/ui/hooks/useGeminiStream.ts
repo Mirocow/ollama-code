@@ -10,15 +10,15 @@ import type {
   EditorType,
   OllamaClient,
   ServerOllamaChatCompressedEvent,
-  ServerGeminiContentEvent as ContentEvent,
-  ServerGeminiFinishedEvent,
-  ServerGeminiStreamEvent as GeminiEvent,
+  ServerOllamaContentEvent as ContentEvent,
+  ServerOllamaFinishedEvent,
+  ServerOllamaStreamEvent as GeminiEvent,
   ThoughtSummary,
   ToolCallRequestInfo,
-  GeminiErrorEventValue,
+  OllamaErrorEventValue,
 } from '@ollama-code/ollama-code-core';
 import {
-  GeminiEventType as ServerGeminiEventType,
+  OllamaEventType as ServerOllamaEventType,
   createDebugLogger,
   getErrorMessage,
   isNodeError,
@@ -688,7 +688,7 @@ export const useGeminiStream = (
   );
 
   const handleErrorEvent = useCallback(
-    (eventValue: GeminiErrorEventValue, userMessageTimestamp: number) => {
+    (eventValue: OllamaErrorEventValue, userMessageTimestamp: number) => {
       if (pendingHistoryItemRef.current) {
         addItem(pendingHistoryItemRef.current, userMessageTimestamp);
         setPendingHistoryItem(null);
@@ -732,7 +732,7 @@ export const useGeminiStream = (
   );
 
   const handleFinishedEvent = useCallback(
-    (event: ServerGeminiFinishedEvent, userMessageTimestamp: number) => {
+    (event: ServerOllamaFinishedEvent, userMessageTimestamp: number) => {
       const finishReason = event.value.reason;
       if (!finishReason) {
         return;
@@ -877,7 +877,7 @@ export const useGeminiStream = (
       const toolCallRequests: ToolCallRequestInfo[] = [];
       for await (const event of stream) {
         switch (event.type) {
-          case ServerGeminiEventType.Thought:
+          case ServerOllamaEventType.Thought:
             // If the thought has a subject, it's a discrete status update rather than
             // a streamed textual thought, so we update the thought state directly.
             if (event.value.subject) {
@@ -890,50 +890,50 @@ export const useGeminiStream = (
               );
             }
             break;
-          case ServerGeminiEventType.Content:
+          case ServerOllamaEventType.Content:
             geminiMessageBuffer = handleContentEvent(
               event.value,
               geminiMessageBuffer,
               userMessageTimestamp,
             );
             break;
-          case ServerGeminiEventType.ToolCallRequest:
+          case ServerOllamaEventType.ToolCallRequest:
             toolCallRequests.push(event.value);
             break;
-          case ServerGeminiEventType.UserCancelled:
+          case ServerOllamaEventType.UserCancelled:
             handleUserCancelledEvent(userMessageTimestamp);
             break;
-          case ServerGeminiEventType.Error:
+          case ServerOllamaEventType.Error:
             handleErrorEvent(event.value, userMessageTimestamp);
             break;
-          case ServerGeminiEventType.ChatCompressed:
+          case ServerOllamaEventType.ChatCompressed:
             handleChatCompressionEvent(event.value, userMessageTimestamp);
             break;
-          case ServerGeminiEventType.ToolCallConfirmation:
-          case ServerGeminiEventType.ToolCallResponse:
+          case ServerOllamaEventType.ToolCallConfirmation:
+          case ServerOllamaEventType.ToolCallResponse:
             // do nothing
             break;
-          case ServerGeminiEventType.MaxSessionTurns:
+          case ServerOllamaEventType.MaxSessionTurns:
             handleMaxSessionTurnsEvent();
             break;
-          case ServerGeminiEventType.SessionTokenLimitExceeded:
+          case ServerOllamaEventType.SessionTokenLimitExceeded:
             handleSessionTokenLimitExceededEvent(event.value);
             break;
-          case ServerGeminiEventType.Finished:
+          case ServerOllamaEventType.Finished:
             handleFinishedEvent(
-              event as ServerGeminiFinishedEvent,
+              event as ServerOllamaFinishedEvent,
               userMessageTimestamp,
             );
             break;
-          case ServerGeminiEventType.Citation:
+          case ServerOllamaEventType.Citation:
             handleCitationEvent(event.value, userMessageTimestamp);
             break;
-          case ServerGeminiEventType.LoopDetected:
+          case ServerOllamaEventType.LoopDetected:
             // handle later because we want to move pending history to history
             // before we add loop detected message to history
             loopDetectedRef.current = true;
             break;
-          case ServerGeminiEventType.Retry:
+          case ServerOllamaEventType.Retry:
             // Clear any pending partial content from the failed attempt
             if (pendingHistoryItemRef.current) {
               setPendingHistoryItem(null);

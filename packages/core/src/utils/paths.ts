@@ -11,8 +11,11 @@ import * as crypto from 'node:crypto';
 import type { Config } from '../config/config.js';
 import { isNodeError } from './errors.js';
 
-export const QWEN_DIR = '.qwen';
+export const OLLAMA_DIR = '.ollama-code';
 export const GOOGLE_ACCOUNTS_FILENAME = 'google_accounts.json';
+
+// Backward compatibility alias
+export const QWEN_DIR = OLLAMA_DIR;
 
 /**
  * Special characters that need to be escaped in file paths for shell compatibility.

@@ -74,36 +74,38 @@ Do NOT use this tool:
   - If not specified, the tool will ask the user where they want to save the memory.
 `;
 
-export const QWEN_CONFIG_DIR = '.qwen';
-export const DEFAULT_CONTEXT_FILENAME = 'QWEN.md';
-export const MEMORY_SECTION_HEADER = '## Qwen Added Memories';
+export const OLLAMA_CONFIG_DIR = '.ollama-code';
+// Backward compatibility alias
+export const QWEN_CONFIG_DIR = OLLAMA_CONFIG_DIR;
+export const DEFAULT_CONTEXT_FILENAME = 'OLLAMA.md';
+export const MEMORY_SECTION_HEADER = '## Ollama Added Memories';
 
-// This variable will hold the currently configured filename for QWEN.md context files.
-// It defaults to DEFAULT_CONTEXT_FILENAME but can be overridden by setGeminiMdFilename.
-let currentGeminiMdFilename: string | string[] = DEFAULT_CONTEXT_FILENAME;
+// This variable will hold the currently configured filename for OLLAMA.md context files.
+// It defaults to DEFAULT_CONTEXT_FILENAME but can be overridden by setOllamaMdFilename.
+let currentOllamaMdFilename: string | string[] = DEFAULT_CONTEXT_FILENAME;
 
-export function setGeminiMdFilename(newFilename: string | string[]): void {
+export function setOllamaMdFilename(newFilename: string | string[]): void {
   if (Array.isArray(newFilename)) {
     if (newFilename.length > 0) {
-      currentGeminiMdFilename = newFilename.map((name) => name.trim());
+      currentOllamaMdFilename = newFilename.map((name) => name.trim());
     }
   } else if (newFilename && newFilename.trim() !== '') {
-    currentGeminiMdFilename = newFilename.trim();
+    currentOllamaMdFilename = newFilename.trim();
   }
 }
 
-export function getCurrentGeminiMdFilename(): string {
-  if (Array.isArray(currentGeminiMdFilename)) {
-    return currentGeminiMdFilename[0];
+export function getCurrentOllamaMdFilename(): string {
+  if (Array.isArray(currentOllamaMdFilename)) {
+    return currentOllamaMdFilename[0];
   }
-  return currentGeminiMdFilename;
+  return currentOllamaMdFilename;
 }
 
-export function getAllGeminiMdFilenames(): string[] {
-  if (Array.isArray(currentGeminiMdFilename)) {
-    return currentGeminiMdFilename;
+export function getAllOllamaMdFilenames(): string[] {
+  if (Array.isArray(currentOllamaMdFilename)) {
+    return currentOllamaMdFilename;
   }
-  return [currentGeminiMdFilename];
+  return [currentOllamaMdFilename];
 }
 
 interface SaveMemoryParams {
@@ -114,11 +116,11 @@ interface SaveMemoryParams {
 }
 
 function getGlobalMemoryFilePath(): string {
-  return path.join(Storage.getGlobalQwenDir(), getCurrentGeminiMdFilename());
+  return path.join(Storage.getGlobalOllamaDir(), getCurrentOllamaMdFilename());
 }
 
 function getProjectMemoryFilePath(): string {
-  return path.join(process.cwd(), getCurrentGeminiMdFilename());
+  return path.join(process.cwd(), getCurrentOllamaMdFilename());
 }
 
 function getMemoryFilePath(scope: 'global' | 'project' = 'global'): string {

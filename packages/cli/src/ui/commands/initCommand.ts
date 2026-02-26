@@ -11,7 +11,7 @@ import type {
   SlashCommand,
   SlashCommandActionReturn,
 } from './types.js';
-import { getCurrentGeminiMdFilename } from '@ollama-code/ollama-code-core';
+import { getCurrentOllamaMdFilename } from '@ollama-code/ollama-code-core';
 import { CommandKind } from './types.js';
 import { Text } from 'ink';
 import React from 'react';
@@ -35,7 +35,7 @@ export const initCommand: SlashCommand = {
       };
     }
     const targetDir = context.services.config.getTargetDir();
-    const contextFileName = getCurrentGeminiMdFilename();
+    const contextFileName = getCurrentOllamaMdFilename();
     const contextFilePath = path.join(targetDir, contextFileName);
 
     try {

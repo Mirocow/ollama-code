@@ -30,10 +30,10 @@ import {
 } from './prompts.js';
 import {
   CompressionStatus,
-  GeminiEventType,
+  OllamaEventType,
   Turn,
   type ChatCompressionInfo,
-  type ServerGeminiStreamEvent,
+  type ServerOllamaStreamEvent,
 } from './turn.js';
 
 // Services
@@ -405,7 +405,7 @@ export class OllamaClient {
     prompt_id: string,
     options?: { isContinuation: boolean },
     turns: number = MAX_TURNS,
-  ): AsyncGenerator<ServerGeminiStreamEvent, Turn> {
+  ): AsyncGenerator<ServerOllamaStreamEvent, Turn> {
     if (!options?.isContinuation) {
       this.loopDetector.reset(prompt_id);
       this.lastPromptId = prompt_id;
@@ -421,7 +421,7 @@ export class OllamaClient {
       this.config.getMaxSessionTurns() > 0 &&
       this.sessionTurnCount > this.config.getMaxSessionTurns()
     ) {
-      yield { type: GeminiEventType.MaxSessionTurns };
+      yield { type: OllamaEventType.MaxSessionTurns };
       return new Turn(this.getChat(), prompt_id);
     }
     // Ensure turns never exceeds MAX_TURNS to prevent infinite loops
@@ -433,7 +433,7 @@ export class OllamaClient {
     const compressed = await this.tryCompressChat(prompt_id, false);
 
     if (compressed.compressionStatus === CompressionStatus.COMPRESSED) {
-      yield { type: GeminiEventType.ChatCompressed, value: compressed };
+      yield { type: OllamaEventType.ChatCompressed, value: compressed };
     }
 
     // Check session token limit after compression.
@@ -443,7 +443,7 @@ export class OllamaClient {
       const lastPromptTokenCount = uiTelemetryService.getLastPromptTokenCount();
       if (lastPromptTokenCount > sessionTokenLimit) {
         yield {
-          type: GeminiEventType.SessionTokenLimitExceeded,
+          type: OllamaEventType.SessionTokenLimitExceeded,
           value: {
             currentTokens: lastPromptTokenCount,
             limit: sessionTokenLimit,
@@ -488,7 +488,7 @@ export class OllamaClient {
     if (!this.config.getSkipLoopDetection()) {
       const loopDetected = await this.loopDetector.turnStarted(signal);
       if (loopDetected) {
-        yield { type: GeminiEventType.LoopDetected };
+        yield { type: OllamaEventType.LoopDetected };
         return turn;
       }
     }
@@ -526,12 +526,12 @@ export class OllamaClient {
     for await (const event of resultStream) {
       if (!this.config.getSkipLoopDetection()) {
         if (this.loopDetector.addAndCheck(event)) {
-          yield { type: GeminiEventType.LoopDetected };
+          yield { type: OllamaEventType.LoopDetected };
           return turn;
         }
       }
       yield event;
-      if (event.type === GeminiEventType.Error) {
+      if (event.type === OllamaEventType.Error) {
         return turn;
       }
     }

@@ -14,7 +14,7 @@ import {
   executeToolCall,
   shutdownTelemetry,
   isTelemetrySdkInitialized,
-  GeminiEventType,
+  OllamaEventType,
   FatalInputError,
   promptIdContext,
   OutputFormat,
@@ -66,7 +66,7 @@ async function emitNonInteractiveFinalMessage(params: {
   // (systemMessage should already be emitted by caller)
   adapter.startAssistantMessage();
   adapter.processEvent({
-    type: GeminiEventType.Content,
+    type: OllamaEventType.Content,
     value: message,
   } as unknown as Parameters<JsonOutputAdapterInterface['processEvent']>[0]);
   adapter.finalizeAssistantMessage();
@@ -281,12 +281,12 @@ export async function runNonInteractive(
           }
           // Use adapter for all event processing
           adapter.processEvent(event);
-          if (event.type === GeminiEventType.ToolCallRequest) {
+          if (event.type === OllamaEventType.ToolCallRequest) {
             toolCallRequests.push(event.value);
           }
           if (
             outputFormat === OutputFormat.TEXT &&
-            event.type === GeminiEventType.Error
+            event.type === OllamaEventType.Error
           ) {
             const errorText = parseAndFormatApiError(
               event.value.error,

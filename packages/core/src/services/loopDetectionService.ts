@@ -6,8 +6,8 @@
 
 import type { Content } from '@google/genai';
 import { createHash } from 'node:crypto';
-import type { ServerGeminiStreamEvent } from '../core/turn.js';
-import { GeminiEventType } from '../core/turn.js';
+import type { ServerOllamaStreamEvent } from '../core/turn.js';
+import { OllamaEventType } from '../core/turn.js';
 import {
   logLoopDetected,
   logLoopDetectionDisabled,
@@ -124,19 +124,19 @@ export class LoopDetectionService {
    * @param event - The stream event to process
    * @returns true if a loop is detected, false otherwise
    */
-  addAndCheck(event: ServerGeminiStreamEvent): boolean {
+  addAndCheck(event: ServerOllamaStreamEvent): boolean {
     if (this.loopDetected || this.disabledForSession) {
       return this.loopDetected;
     }
 
     switch (event.type) {
-      case GeminiEventType.ToolCallRequest:
+      case OllamaEventType.ToolCallRequest:
         // content chanting only happens in one single stream, reset if there
         // is a tool call in between
         this.resetContentTracking();
         this.loopDetected = this.checkToolCallLoop(event.value);
         break;
-      case GeminiEventType.Content:
+      case OllamaEventType.Content:
         this.loopDetected = this.checkContentLoop(event.value);
         break;
       default:
