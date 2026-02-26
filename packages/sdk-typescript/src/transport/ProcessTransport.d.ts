@@ -1,0 +1,30 @@
+import type { Writable, Readable } from 'node:stream';
+import type { TransportOptions } from '../types/types.js';
+import type { Transport } from './Transport.js';
+export declare class ProcessTransport implements Transport {
+    private childProcess;
+    private childStdin;
+    private childStdout;
+    private options;
+    private ready;
+    private _exitError;
+    private closed;
+    private inputClosed;
+    private abortController;
+    private processExitHandler;
+    private abortHandler;
+    constructor(options: TransportOptions);
+    private initialize;
+    private setupEventHandlers;
+    private getProcessExitError;
+    private buildCliArguments;
+    close(): Promise<void>;
+    waitForExit(): Promise<void>;
+    write(message: string): void;
+    readMessages(): AsyncGenerator<unknown, void, unknown>;
+    get isReady(): boolean;
+    get exitError(): Error | null;
+    endInput(): void;
+    getInputStream(): Writable | undefined;
+    getOutputStream(): Readable | undefined;
+}

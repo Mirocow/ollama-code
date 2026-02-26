@@ -1,0 +1,589 @@
+/**
+ * @license
+ * Copyright 2025 Ollama Code Team
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * Converter for transforming between Google GenAI format and native Ollama format.
+ * This allows using the native Ollama API (/api/chat, /api/generate) instead of
+ * the OpenAI-compatible API.
+ */
+
+import type {
+  GenerateContentParameters,
+  Part,
+  Content,
+  Tool,
+  ToolListUnion,
+  CallableTool,
+  FunctionResponse,
+  ContentListUnion,
+  ContentUnion,
+  PartUnion,
+} from '@google/genai';
+import { GenerateContentResponse, FinishReason } from '@google/genai';
+import type {
+  OllamaChatMessage,
+  OllamaTool,
+  OllamaToolCall,
+  OllamaChatRequest,
+  OllamaChatResponse,
+  OllamaModelOptions,
+} from '../ollamaNativeClient.js';
+
+/**
+ * Converter class for transforming data between GenAI and native Ollama formats
+ */
+export class OllamaContentConverter {
+  private model: string;
+
+  constructor(model: string) {
+    this.model = model;
+  }
+
+  /**
+   * Update the model used for response metadata
+   */
+  setModel(model: string): void {
+    this.model = model;
+  }
+
+  /**
+   * Convert GenAI request to native Ollama chat request format
+   */
+  convertGenAIRequestToOllama(
+    request: GenerateContentParameters,
+  ): OllamaChatRequest {
+    const messages: OllamaChatMessage[] = [];
+
+    // Handle system instruction from config
+    const systemInstruction = this.extractSystemInstruction(request);
+    
+    // Process contents
+    this.processContents(request.contents, messages);
+
+    // Build options from config
+    const options: OllamaModelOptions = this.buildModelOptions(request);
+
+    // Build the request
+    const ollamaRequest: OllamaChatRequest = {
+      model: this.model,
+      messages,
+      stream: false,
+      options,
+    };
+
+    // Add system instruction if present
+    if (systemInstruction) {
+      // Ollama handles system messages as part of the messages array
+      messages.unshift({
+        role: 'system',
+        content: systemInstruction,
+      });
+    }
+
+    // Add tools if present (tools are in config)
+    const tools = this.convertGenAIToolsToOllama(request.config?.tools);
+    if (tools.length > 0) {
+      ollamaRequest.tools = tools;
+    }
+
+    return ollamaRequest;
+  }
+
+  /**
+   * Extract system instruction from request config
+   */
+  private extractSystemInstruction(request: GenerateContentParameters): string | null {
+    if (!request.config?.systemInstruction) return null;
+    return this.extractTextFromContentUnion(request.config.systemInstruction);
+  }
+
+  /**
+   * Build Ollama model options from request config
+   */
+  private buildModelOptions(request: GenerateContentParameters): OllamaModelOptions {
+    const options: OllamaModelOptions = {};
+    const config = request.config;
+
+    if (!config) return options;
+
+    // Map generation config to Ollama options
+    if (config.temperature !== undefined) {
+      options.temperature = config.temperature;
+    }
+    if (config.topP !== undefined) {
+      options.top_p = config.topP;
+    }
+    if (config.topK !== undefined) {
+      options.top_k = config.topK;
+    }
+    if (config.maxOutputTokens !== undefined) {
+      options.num_predict = config.maxOutputTokens;
+    }
+    if (config.stopSequences && config.stopSequences.length > 0) {
+      options.stop = config.stopSequences;
+    }
+
+    return options;
+  }
+
+  /**
+   * Convert GenAI tools to native Ollama format
+   */
+  convertGenAIToolsToOllama(
+    genaiTools: ToolListUnion | undefined,
+  ): OllamaTool[] {
+    if (!genaiTools) return [];
+
+    const ollamaTools: OllamaTool[] = [];
+
+    for (const tool of genaiTools) {
+      let actualTool: Tool;
+
+      // Handle CallableTool vs Tool
+      if ('tool' in tool) {
+        // CallableTool - need to get the actual tool asynchronously
+        // For now, skip async tools in sync context
+        continue;
+      } else {
+        actualTool = tool as Tool;
+      }
+
+      if (actualTool.functionDeclarations) {
+        for (const func of actualTool.functionDeclarations) {
+          if (func.name && func.description) {
+            let parameters: Record<string, unknown> | undefined;
+
+            // Handle both Gemini tools (parameters) and MCP tools (parametersJsonSchema)
+            if (func.parametersJsonSchema) {
+              parameters = {
+                ...(func.parametersJsonSchema as Record<string, unknown>),
+              };
+            } else if (func.parameters) {
+              parameters = this.convertParametersToOllama(
+                func.parameters as Record<string, unknown>,
+              );
+            }
+
+            ollamaTools.push({
+              type: 'function',
+              function: {
+                name: func.name,
+                description: func.description,
+                parameters: parameters || {},
+              },
+            });
+          }
+        }
+      }
+    }
+
+    return ollamaTools;
+  }
+
+  /**
+   * Convert tools asynchronously (for CallableTool support)
+   */
+  async convertGenAIToolsToOllamaAsync(
+    genaiTools: ToolListUnion | undefined,
+  ): Promise<OllamaTool[]> {
+    if (!genaiTools) return [];
+
+    const ollamaTools: OllamaTool[] = [];
+
+    for (const tool of genaiTools) {
+      let actualTool: Tool;
+
+      // Handle CallableTool vs Tool
+      if ('tool' in tool) {
+        actualTool = await (tool as CallableTool).tool();
+      } else {
+        actualTool = tool as Tool;
+      }
+
+      if (actualTool.functionDeclarations) {
+        for (const func of actualTool.functionDeclarations) {
+          if (func.name && func.description) {
+            let parameters: Record<string, unknown> | undefined;
+
+            // Handle both Gemini tools (parameters) and MCP tools (parametersJsonSchema)
+            if (func.parametersJsonSchema) {
+              parameters = {
+                ...(func.parametersJsonSchema as Record<string, unknown>),
+              };
+            } else if (func.parameters) {
+              parameters = this.convertParametersToOllama(
+                func.parameters as Record<string, unknown>,
+              );
+            }
+
+            ollamaTools.push({
+              type: 'function',
+              function: {
+                name: func.name,
+                description: func.description,
+                parameters: parameters || {},
+              },
+            });
+          }
+        }
+      }
+    }
+
+    return ollamaTools;
+  }
+
+  /**
+   * Convert parameters to Ollama format
+   */
+  private convertParametersToOllama(
+    parameters: Record<string, unknown>,
+  ): Record<string, unknown> | undefined {
+    if (!parameters || typeof parameters !== 'object') {
+      return parameters;
+    }
+
+    const converted = JSON.parse(JSON.stringify(parameters));
+
+    const convertTypes = (obj: unknown): unknown => {
+      if (typeof obj !== 'object' || obj === null) {
+        return obj;
+      }
+
+      if (Array.isArray(obj)) {
+        return obj.map(convertTypes);
+      }
+
+      const result: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (key === 'type' && typeof value === 'string') {
+          result[key] = value.toLowerCase();
+        } else if (typeof value === 'object') {
+          result[key] = convertTypes(value);
+        } else {
+          result[key] = value;
+        }
+      }
+      return result;
+    };
+
+    return convertTypes(converted) as Record<string, unknown> | undefined;
+  }
+
+  /**
+   * Process contents and convert to Ollama messages
+   */
+  private processContents(
+    contents: ContentListUnion,
+    messages: OllamaChatMessage[],
+  ): void {
+    if (Array.isArray(contents)) {
+      for (const content of contents) {
+        this.processContent(content, messages);
+      }
+    } else if (contents) {
+      this.processContent(contents, messages);
+    }
+  }
+
+  /**
+   * Process a single content item and convert to Ollama message(s)
+   */
+  private processContent(
+    content: ContentUnion | PartUnion,
+    messages: OllamaChatMessage[],
+  ): void {
+    if (typeof content === 'string') {
+      messages.push({ role: 'user', content });
+      return;
+    }
+
+    if (!this.isContentObject(content)) return;
+
+    const parts = content.parts || [];
+    const role = content.role === 'model' ? 'assistant' : 'user';
+
+    const contentParts: string[] = [];
+    const images: string[] = [];
+    const toolCalls: OllamaToolCall[] = [];
+
+    for (const part of parts) {
+      if (typeof part === 'string') {
+        contentParts.push(part);
+        continue;
+      }
+
+      // Handle text content (skip thought parts)
+      if ('text' in part && part.text && !('thought' in part && part.thought)) {
+        contentParts.push(part.text);
+      }
+
+      // Handle inline images (base64)
+      if (part.inlineData?.mimeType?.startsWith('image/') && part.inlineData?.data) {
+        images.push(part.inlineData.data);
+      }
+
+      // Handle function calls (assistant messages)
+      if ('functionCall' in part && part.functionCall && role === 'assistant') {
+        toolCalls.push({
+          function: {
+            name: part.functionCall.name || '',
+            arguments: part.functionCall.args || {},
+          },
+        });
+      }
+
+      // Handle function responses (user messages)
+      if (part.functionResponse && role === 'user') {
+        const toolMessage = this.createToolMessage(part.functionResponse);
+        if (toolMessage) {
+          messages.push(toolMessage);
+        }
+      }
+    }
+
+    // Build the message
+    const message: OllamaChatMessage = {
+      role: role as 'system' | 'user' | 'assistant' | 'tool',
+      content: contentParts.join(''),
+    };
+
+    if (images.length > 0) {
+      message.images = images;
+    }
+
+    if (toolCalls.length > 0) {
+      message.tool_calls = toolCalls;
+    }
+
+    // Only add message if it has content or tool calls
+    if (message.content || message.tool_calls) {
+      messages.push(message);
+    }
+  }
+
+  /**
+   * Create a tool message from function response
+   */
+  private createToolMessage(
+    response: FunctionResponse,
+  ): OllamaChatMessage | null {
+    const textContent = this.extractFunctionResponseContent(response.response);
+
+    return {
+      role: 'tool',
+      content: textContent,
+    };
+  }
+
+  /**
+   * Extract content from function response
+   */
+  private extractFunctionResponseContent(response: unknown): string {
+    if (response === null || response === undefined) {
+      return '';
+    }
+
+    if (typeof response === 'string') {
+      return response;
+    }
+
+    if (typeof response === 'object') {
+      const responseObject = response as Record<string, unknown>;
+      const output = responseObject['output'];
+      if (typeof output === 'string') {
+        return output;
+      }
+
+      const error = responseObject['error'];
+      if (typeof error === 'string') {
+        return error;
+      }
+    }
+
+    try {
+      return JSON.stringify(response);
+    } catch {
+      return String(response);
+    }
+  }
+
+  /**
+   * Convert native Ollama response to GenAI format
+   */
+  convertOllamaResponseToGenAI(
+    ollamaResponse: OllamaChatResponse,
+  ): GenerateContentResponse {
+    const response = new GenerateContentResponse();
+    const parts: Part[] = [];
+
+    // Handle text content
+    if (ollamaResponse.message?.content) {
+      parts.push({ text: ollamaResponse.message.content });
+    }
+
+    // Handle tool calls
+    if (ollamaResponse.message?.tool_calls) {
+      for (const toolCall of ollamaResponse.message.tool_calls) {
+        parts.push({
+          functionCall: {
+            id: `call_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            name: toolCall.function.name,
+            args: toolCall.function.arguments,
+          },
+        });
+      }
+    }
+
+    response.responseId = `ollama-${Date.now()}`;
+    response.createTime = new Date().getTime().toString();
+
+    response.candidates = [
+      {
+        content: {
+          parts,
+          role: 'model' as const,
+        },
+        finishReason: ollamaResponse.done
+          ? FinishReason.STOP
+          : FinishReason.FINISH_REASON_UNSPECIFIED,
+        index: 0,
+        safetyRatings: [],
+      },
+    ];
+
+    response.modelVersion = this.model;
+    response.promptFeedback = { safetyRatings: [] };
+
+    // Add usage metadata if available
+    if (
+      ollamaResponse.prompt_eval_count !== undefined ||
+      ollamaResponse.eval_count !== undefined
+    ) {
+      response.usageMetadata = {
+        promptTokenCount: ollamaResponse.prompt_eval_count || 0,
+        candidatesTokenCount: ollamaResponse.eval_count || 0,
+        totalTokenCount:
+          (ollamaResponse.prompt_eval_count || 0) +
+          (ollamaResponse.eval_count || 0),
+      };
+    }
+
+    return response;
+  }
+
+  /**
+   * Convert streaming Ollama response chunk to GenAI format
+   */
+  convertOllamaChunkToGenAI(
+    ollamaChunk: OllamaChatResponse,
+    accumulatedToolCalls?: Map<number, { name: string; args: string }>,
+  ): GenerateContentResponse {
+    const response = new GenerateContentResponse();
+    const parts: Part[] = [];
+
+    // Handle text content
+    if (ollamaChunk.message?.content) {
+      parts.push({ text: ollamaChunk.message.content });
+    }
+
+    // Handle tool calls in streaming
+    if (ollamaChunk.message?.tool_calls && accumulatedToolCalls) {
+      for (let i = 0; i < ollamaChunk.message.tool_calls.length; i++) {
+        const toolCall = ollamaChunk.message.tool_calls[i];
+        if (toolCall.function.name) {
+          accumulatedToolCalls.set(i, {
+            name: toolCall.function.name,
+            args: JSON.stringify(toolCall.function.arguments),
+          });
+        }
+      }
+
+      // If stream is done, emit all completed tool calls
+      if (ollamaChunk.done) {
+        for (const [, toolCall] of accumulatedToolCalls) {
+          parts.push({
+            functionCall: {
+              id: `call_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+              name: toolCall.name,
+              args: JSON.parse(toolCall.args || '{}'),
+            },
+          });
+        }
+      }
+    }
+
+    response.responseId = `ollama-${Date.now()}`;
+    response.createTime = new Date().getTime().toString();
+
+    const candidate: { content: { parts: Part[]; role: string }; index: number; safetyRatings: never[]; finishReason?: FinishReason } = {
+      content: {
+        parts,
+        role: 'model' as const,
+      },
+      index: 0,
+      safetyRatings: [],
+    };
+
+    if (ollamaChunk.done) {
+      candidate.finishReason = FinishReason.STOP;
+    }
+
+    response.candidates = [candidate];
+    response.modelVersion = this.model;
+    response.promptFeedback = { safetyRatings: [] };
+
+    return response;
+  }
+
+  /**
+   * Type guard to check if content is a valid Content object
+   */
+  private isContentObject(
+    content: unknown,
+  ): content is { role: string; parts: Part[] } {
+    return (
+      typeof content === 'object' &&
+      content !== null &&
+      'role' in content &&
+      'parts' in content &&
+      Array.isArray((content as Record<string, unknown>)['parts'])
+    );
+  }
+
+  /**
+   * Extract text content from various GenAI content union types
+   */
+  private extractTextFromContentUnion(contentUnion: unknown): string {
+    if (typeof contentUnion === 'string') {
+      return contentUnion;
+    }
+
+    if (Array.isArray(contentUnion)) {
+      return contentUnion
+        .map((item) => this.extractTextFromContentUnion(item))
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    if (typeof contentUnion === 'object' && contentUnion !== null) {
+      if ('parts' in contentUnion) {
+        const content = contentUnion as Content;
+        return (
+          content.parts
+            ?.map((part: Part) => {
+              if (typeof part === 'string') return part;
+              if ('text' in part) return part.text || '';
+              return '';
+            })
+            .filter(Boolean)
+            .join('\n') || ''
+        );
+      }
+    }
+
+    return '';
+  }
+}

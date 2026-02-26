@@ -1,0 +1,42 @@
+/**
+ * @license
+ * Copyright 2025 Ollama Code Team
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Qwen Connection Handler
+ *
+ * Handles Qwen Agent connection establishment, authentication, and session creation
+ */
+import type { AcpConnection } from './acpConnection.js';
+import type { ModelInfo } from '../types/acpTypes.js';
+export interface OllamaConnectionResult {
+    sessionCreated: boolean;
+    requiresAuth: boolean;
+    modelInfo?: ModelInfo;
+    availableModels?: ModelInfo[];
+}
+/**
+ * Qwen Connection Handler class
+ * Handles connection, authentication, and session initialization
+ */
+export declare class OllamaConnectionHandler {
+    /**
+     * Connect to Ollama service and establish session
+     *
+     * @param connection - ACP connection instance
+     * @param workingDir - Working directory
+     * @param cliPath - CLI path (optional, if provided will override the path in configuration)
+     */
+    connect(connection: AcpConnection, workingDir: string, cliEntryPath: string, options?: {
+        autoAuthenticate?: boolean;
+    }): Promise<OllamaConnectionResult>;
+    /**
+     * Create new session (with retry)
+     *
+     * @param connection - ACP connection instance
+     * @param workingDir - Working directory
+     * @param maxRetries - Maximum number of retries
+     */
+    private newSessionWithRetry;
+}
