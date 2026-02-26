@@ -9,7 +9,7 @@ import type {
   Content,
   Part,
   PartUnion,
-} from '@google/genai';
+} from '../../../types/content.js';
 import type { TokenCalculationResult } from './types.js';
 import { TextTokenizer } from './textTokenizer.js';
 import { ImageTokenizer } from './imageTokenizer.js';

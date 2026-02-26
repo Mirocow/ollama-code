@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FunctionDeclaration, Part, PartListUnion } from '@google/genai';
+import type {
+  FunctionDeclaration,
+  Part,
+  PartListUnion,
+} from '../types/content.js';
 import { ToolErrorType } from './tool-error.js';
 import type { DiffUpdateResult } from '../ide/ide-client.js';
 import type { ShellExecutionConfig } from '../services/shellExecutionService.js';
@@ -65,8 +69,7 @@ export interface ToolInvocation<
 export abstract class BaseToolInvocation<
   TParams extends object,
   TResult extends ToolResult,
-> implements ToolInvocation<TParams, TResult>
-{
+> implements ToolInvocation<TParams, TResult> {
   constructor(readonly params: TParams) {}
 
   abstract getDescription(): string;
@@ -150,8 +153,7 @@ export interface ToolBuilder<
 export abstract class DeclarativeTool<
   TParams extends object,
   TResult extends ToolResult,
-> implements ToolBuilder<TParams, TResult>
-{
+> implements ToolBuilder<TParams, TResult> {
   constructor(
     readonly name: string,
     readonly displayName: string,

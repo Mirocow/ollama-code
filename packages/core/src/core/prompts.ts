@@ -11,7 +11,7 @@ import { ToolNames } from '../tools/tool-names.js';
 import process from 'node:process';
 import { isGitRepository } from '../utils/gitUtils.js';
 import { OLLAMA_CODE_CONFIG_DIR } from '../tools/memoryTool.js';
-import type { GenerateContentConfig } from '@google/genai';
+import type { GenerateContentConfig } from '../types/content.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('PROMPTS');
@@ -116,9 +116,13 @@ export function getCoreSystemPrompt(
   // default path is .ollama-code/system.md but can be modified via custom path in OLLAMA_CODE_SYSTEM_MD
   let systemMdEnabled = false;
   // The default path for the system prompt file. This can be overridden.
-  let systemMdPath = path.resolve(path.join(OLLAMA_CODE_CONFIG_DIR, 'system.md'));
+  let systemMdPath = path.resolve(
+    path.join(OLLAMA_CODE_CONFIG_DIR, 'system.md'),
+  );
   // Resolve the environment variable to get either a path or a switch value.
-  const systemMdResolution = resolvePathFromEnv(process.env['OLLAMA_CODE_SYSTEM_MD']);
+  const systemMdResolution = resolvePathFromEnv(
+    process.env['OLLAMA_CODE_SYSTEM_MD'],
+  );
 
   // Proceed only if the environment variable is set and is not disabled.
   if (systemMdResolution.value && !systemMdResolution.isDisabled) {

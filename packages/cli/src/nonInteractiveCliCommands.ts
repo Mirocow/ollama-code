@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { PartListUnion } from '@google/genai';
-import { parseSlashCommand } from './utils/commands.js';
-import {
+import type { PartListUnion ,
   Logger,
   uiTelemetryService,
   type Config,
   createDebugLogger,
 } from '@ollama-code/ollama-code-core';
+import { parseSlashCommand } from './utils/commands.js';
 import { CommandService } from './services/CommandService.js';
 import { BuiltinCommandLoader } from './services/BuiltinCommandLoader.js';
 import { FileCommandLoader } from './services/FileCommandLoader.js';

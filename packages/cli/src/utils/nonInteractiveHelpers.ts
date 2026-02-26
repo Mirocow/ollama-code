@@ -13,14 +13,13 @@ import type {
   ToolCallResponseInfo,
   SessionMetrics,
   McpToolProgressData,
-} from '@ollama-code/ollama-code-core';
+ Part, PartListUnion } from '@ollama-code/ollama-code-core';
 import {
   OutputFormat,
   ToolErrorType,
   createDebugLogger,
   getMCPServerStatus,
 } from '@ollama-code/ollama-code-core';
-import type { Part, PartListUnion } from '@google/genai';
 import type {
   CLIUserMessage,
   Usage,

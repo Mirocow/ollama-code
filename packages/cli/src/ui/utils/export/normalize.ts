@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Part } from '@google/genai';
+import type { Part , ChatRecord, Config, Kind } from '@ollama-code/ollama-code-core';
 import { ExitPlanModeTool, ToolNames } from '@ollama-code/ollama-code-core';
-import type { ChatRecord, Config, Kind } from '@ollama-code/ollama-code-core';
 import type { ExportMessage, ExportSessionData } from './types.js';
 
 /**

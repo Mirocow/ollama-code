@@ -39,7 +39,7 @@ import type {
   FunctionResponsePart,
   Part,
   PartListUnion,
-} from '@google/genai';
+} from '../types/content.js';
 import { ToolNames } from '../tools/tool-names.js';
 import { getResponseTextFromParts } from '../utils/generateContentResponseUtilities.js';
 import type { ModifyContext } from '../tools/modifiable-tool.js';

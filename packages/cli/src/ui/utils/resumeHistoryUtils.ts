@@ -5,8 +5,7 @@
  */
 
 import * as path from 'node:path';
-import type { Part, FunctionCall } from '@google/genai';
-import type {
+import type { Part, FunctionCall ,
   ResumedSessionData,
   ConversationRecord,
   Config,

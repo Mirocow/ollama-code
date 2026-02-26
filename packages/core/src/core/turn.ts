@@ -10,9 +10,9 @@ import type {
   GenerateContentResponse,
   FunctionCall,
   FunctionDeclaration,
-  FinishReason,
   GenerateContentResponseUsageMetadata,
-} from '@google/genai';
+} from '../types/content.js';
+import type { FinishReason } from '../types/content.js';
 import type {
   ToolCallConfirmationDetails,
   ToolResult,

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GenerateContentResponseUsageMetadata } from '@google/genai';
+import type { GenerateContentResponseUsageMetadata } from '@ollama-code/ollama-code-core';
 import type { Usage } from '../../schema.js';
 import { BaseEmitter } from './BaseEmitter.js';
 

@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';
-import type { PartUnion } from '@google/genai';
+import type { PartUnion } from '../types/content.js';
 import mime from 'mime/lite';
 import { ToolErrorType } from '../tools/tool-error.js';
 import { BINARY_EXTENSIONS } from './ignorePatterns.js';

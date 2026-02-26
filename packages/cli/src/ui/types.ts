@@ -11,8 +11,7 @@ import type {
   ToolCallConfirmationDetails,
   ToolConfirmationOutcome,
   ToolResultDisplay,
-} from '@ollama-code/ollama-code-core';
-import type { PartListUnion } from '@google/genai';
+ PartListUnion } from '@ollama-code/ollama-code-core';
 import { type ReactNode } from 'react';
 
 export type { ThoughtSummary };

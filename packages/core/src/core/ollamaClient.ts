@@ -11,7 +11,7 @@ import type {
   GenerateContentResponse,
   PartListUnion,
   Tool,
-} from '@google/genai';
+} from '../types/content.js';
 
 // Config
 import { ApprovalMode, type Config } from '../config/config.js';

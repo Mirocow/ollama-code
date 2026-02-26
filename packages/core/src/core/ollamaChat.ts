@@ -10,7 +10,7 @@ import type {
   Tool,
   GenerateContentResponse,
   GenerateContentConfig,
-} from '@google/genai';
+} from '../types/content.js';
 import type { Config } from '../config/config.js';
 import type { RetryInfo } from '../utils/rateLimit.js';
 

@@ -90,7 +90,14 @@ export interface FunctionResponse {
  * Parameter schema for function declarations.
  */
 export interface Schema {
-  type: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object' | 'null';
+  type:
+    | 'string'
+    | 'number'
+    | 'integer'
+    | 'boolean'
+    | 'array'
+    | 'object'
+    | 'null';
   description?: string;
   properties?: Record<string, Schema>;
   items?: Schema;
@@ -143,7 +150,7 @@ export interface Content {
  */
 export interface UserContent extends Content {
   role: 'user';
-  parts: (TextPart | InlineDataPart)[];
+  parts: Array<TextPart | InlineDataPart>;
 }
 
 /**
@@ -151,7 +158,7 @@ export interface UserContent extends Content {
  */
 export interface ModelContent extends Content {
   role: 'model';
-  parts: (TextPart | FunctionCallPart)[];
+  parts: Array<TextPart | FunctionCallPart>;
 }
 
 /**
@@ -283,15 +290,31 @@ export interface CitationSource {
 
 /**
  * Response from generateContent.
+ * This is a class to support creating new instances.
  */
-export interface GenerateContentResponse {
-  candidates: ContentCandidate[];
+export class GenerateContentResponse {
+  candidates: ContentCandidate[] = [];
   usageMetadata?: UsageMetadata;
   modelVersion?: string;
   promptFeedback?: {
     blockReason?: string;
     safetyRatings?: SafetyRating[];
   };
+
+  // Additional properties used by the converter
+  responseId?: string;
+  createTime?: string;
+
+  constructor(init?: Partial<GenerateContentResponse>) {
+    if (init) {
+      this.candidates = init.candidates ?? [];
+      this.usageMetadata = init.usageMetadata;
+      this.modelVersion = init.modelVersion;
+      this.promptFeedback = init.promptFeedback;
+      this.responseId = init.responseId;
+      this.createTime = init.createTime;
+    }
+  }
 }
 
 // ============================================================================
@@ -327,7 +350,12 @@ export interface CountTokensResponse {
 export interface EmbedContentParameters {
   model?: string;
   content: Content;
-  taskType?: 'RETRIEVAL_QUERY' | 'RETRIEVAL_DOCUMENT' | 'SEMANTIC_SIMILARITY' | 'CLASSIFICATION' | 'CLUSTERING';
+  taskType?:
+    | 'RETRIEVAL_QUERY'
+    | 'RETRIEVAL_DOCUMENT'
+    | 'SEMANTIC_SIMILARITY'
+    | 'CLASSIFICATION'
+    | 'CLUSTERING';
   title?: string;
 }
 
@@ -361,7 +389,9 @@ export function isFunctionCallPart(part: Part): part is FunctionCallPart {
 /**
  * Check if a part is a function response part.
  */
-export function isFunctionResponsePart(part: Part): part is FunctionResponsePart {
+export function isFunctionResponsePart(
+  part: Part,
+): part is FunctionResponsePart {
   return 'functionResponse' in part;
 }
 
@@ -382,7 +412,10 @@ export function textContent(role: Role, text: string): Content {
 /**
  * Create a user content.
  */
-export function userContent(text: string, ...additionalParts: UserPart[]): UserContent {
+export function userContent(
+  text: string,
+  ...additionalParts: UserPart[]
+): UserContent {
   return {
     role: 'user',
     parts: [{ text }, ...additionalParts],
@@ -392,8 +425,11 @@ export function userContent(text: string, ...additionalParts: UserPart[]): UserC
 /**
  * Create a model content.
  */
-export function modelContent(text: string, ...functionCalls: FunctionCall[]): ModelContent {
-  const parts: (TextPart | FunctionCallPart)[] = [{ text }];
+export function modelContent(
+  text: string,
+  ...functionCalls: FunctionCall[]
+): ModelContent {
+  const parts: Array<TextPart | FunctionCallPart> = [{ text }];
   for (const fc of functionCalls) {
     parts.push({ functionCall: fc });
   }
@@ -410,7 +446,11 @@ export function systemContent(text: string): SystemContent {
 /**
  * Create a tool response content.
  */
-export function toolContent(name: string, response: Record<string, unknown>, id?: string): ToolContent {
+export function toolContent(
+  name: string,
+  response: Record<string, unknown>,
+  id?: string,
+): ToolContent {
   return {
     role: 'tool',
     parts: [{ functionResponse: { name, response, id } }],
@@ -448,3 +488,101 @@ export function normalizeParts(parts: PartListUnion): Part[] {
  * Union type for parts in user content.
  */
 export type PartUnion = UserPart | string;
+
+// ============================================================================
+// Additional Compatibility Types (for @google/genai compatibility)
+// ============================================================================
+
+/**
+ * Alias for ContentCandidate (for @google/genai compatibility)
+ */
+export type Candidate = ContentCandidate;
+
+/**
+ * Alias for CitationSource (for @google/genai compatibility)
+ */
+export type Citation = CitationSource;
+
+/**
+ * Union type for content.
+ */
+export type ContentUnion = Content | Part | string;
+
+/**
+ * Union type for content list.
+ */
+export type ContentListUnion =
+  | Content
+  | Content[]
+  | Part
+  | Part[]
+  | string
+  | string[];
+
+/**
+ * Usage metadata with additional fields (for @google/genai compatibility)
+ */
+export interface GenerateContentResponseUsageMetadata extends UsageMetadata {
+  cachedContentTokenCount?: number;
+}
+
+/**
+ * CallableTool interface for tools that need to be resolved asynchronously.
+ */
+export interface CallableTool {
+  tool(): Promise<Tool>;
+}
+
+/**
+ * Schema type enum (for @google/genai compatibility)
+ */
+export const Type = {
+  STRING: 'string',
+  NUMBER: 'number',
+  INTEGER: 'integer',
+  BOOLEAN: 'boolean',
+  ARRAY: 'array',
+  OBJECT: 'object',
+  NULL: 'null',
+} as const;
+
+/**
+ * Helper function to convert MCP tools to Tool format.
+ * This is a placeholder for compatibility with @google/genai.
+ */
+export function mcpToTool(
+  mcpTool: unknown,
+  _options?: { timeout?: number },
+): CallableTool {
+  // MCP tools are already in a compatible format
+  const tool: Tool =
+    mcpTool && typeof mcpTool === 'object' && 'functionDeclarations' in mcpTool
+      ? (mcpTool as Tool)
+      : { functionDeclarations: [] };
+
+  return {
+    tool: async () => tool,
+  };
+}
+
+/**
+ * Create a user content from a part list union.
+ */
+export function createUserContent(parts: PartListUnion): UserContent {
+  const normalizedParts = normalizeParts(parts);
+  return {
+    role: 'user',
+    parts: normalizedParts as Array<TextPart | InlineDataPart>,
+  };
+}
+
+/**
+ * Create a model content from a part list union.
+ */
+export function createModelContent(parts: PartListUnion): ModelContent {
+  const normalizedParts = normalizeParts(parts);
+  return {
+    role: 'model',
+    parts: normalizedParts as Array<TextPart | FunctionCallPart>,
+  };
+}

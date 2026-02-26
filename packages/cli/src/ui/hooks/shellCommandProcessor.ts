@@ -15,13 +15,12 @@ import type {
   Config,
   OllamaClient,
   ShellExecutionResult,
-} from '@ollama-code/ollama-code-core';
+ type PartListUnion } from '@ollama-code/ollama-code-core';
 import {
   createDebugLogger,
   isBinary,
   ShellExecutionService,
 } from '@ollama-code/ollama-code-core';
-import { type PartListUnion } from '@google/genai';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { SHELL_COMMAND_NAME } from '../constants.js';
 import { formatMemoryUsage } from '../utils/formatters.js';

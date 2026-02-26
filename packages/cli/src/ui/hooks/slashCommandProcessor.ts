@@ -5,9 +5,7 @@
  */
 
 import { useCallback, useMemo, useEffect, useState } from 'react';
-import { type PartListUnion } from '@google/genai';
-import type { UseHistoryManagerReturn } from './useHistoryManager.js';
-import {
+import { type PartListUnion ,
   type Logger,
   type Config,
   createDebugLogger,
@@ -18,6 +16,7 @@ import {
   ToolConfirmationOutcome,
   IdeClient,
 } from '@ollama-code/ollama-code-core';
+import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import type {
   Message,

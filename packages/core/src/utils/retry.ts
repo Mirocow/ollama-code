@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GenerateContentResponse } from '@google/genai';
+import type { GenerateContentResponse } from '../types/content.js';
 import { createDebugLogger } from './debugLogger.js';
 
 const debugLogger = createDebugLogger('RETRY');

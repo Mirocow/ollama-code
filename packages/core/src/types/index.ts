@@ -75,20 +75,27 @@ export type {
   SafetySetting,
   UsageMetadata,
   ContentCandidate,
+  Candidate,
   SafetyRating,
   CitationMetadata,
   CitationSource,
+  Citation,
   GenerateContentResponse,
+  GenerateContentResponseUsageMetadata,
   CountTokensParameters,
   CountTokensResponse,
   EmbedContentParameters,
   EmbedContentResponse,
   PartListUnion,
   PartUnion,
+  ContentUnion,
+  ContentListUnion,
+  CallableTool,
 } from './content.js';
 
 export {
   FinishReason,
+  Type,
   isTextPart,
   isFunctionCallPart,
   isFunctionResponsePart,
@@ -99,4 +106,5 @@ export {
   systemContent,
   toolContent,
   normalizeParts,
+  mcpToTool,
 } from './content.js';

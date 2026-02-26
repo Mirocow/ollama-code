@@ -11,7 +11,7 @@ import type {
   EmbedContentResponse,
   GenerateContentParameters,
   GenerateContentResponse,
-} from '@google/genai';
+} from '../types/content.js';
 import type { Config } from '../config/config.js';
 import { LoggingContentGenerator } from './loggingContentGenerator/index.js';
 import type {
@@ -241,10 +241,12 @@ export async function createContentGenerator(
   }
 
   // Use native Ollama API
-  const { createOllamaNativeContentGenerator } = await import(
-    './ollamaNativeContentGenerator/index.js'
+  const { createOllamaNativeContentGenerator } =
+    await import('./ollamaNativeContentGenerator/index.js');
+  const baseGenerator = createOllamaNativeContentGenerator(
+    generatorConfig,
+    config,
   );
-  const baseGenerator = createOllamaNativeContentGenerator(generatorConfig, config);
 
   return new LoggingContentGenerator(baseGenerator, config, generatorConfig);
 }
