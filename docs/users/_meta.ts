@@ -11,7 +11,6 @@ export default {
     title: 'Outside of the terminal', // Title is optional
   },
   'integration-vscode': 'Visual Studio Code',
-  'integration-zed': 'Zed IDE',
   'integration-jetbrains': 'JetBrains IDEs',
   'integration-github-action': 'Github Actions',
   'Code with Qwen Code': {
