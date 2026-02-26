@@ -10,7 +10,10 @@ import type {
   ToolConfirmationOutcome,
   ToolResultDisplay,
 } from '../tools/tools.js';
-import type { Part, GenerateContentResponseUsageMetadata } from '@google/genai';
+import type {
+  Part,
+  GenerateContentResponseUsageMetadata,
+} from '../types/content.js';
 
 export type SubAgentEvent =
   | 'start'

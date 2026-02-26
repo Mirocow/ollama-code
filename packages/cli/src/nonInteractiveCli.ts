@@ -7,7 +7,10 @@
 import type {
   Config,
   ToolCallRequestInfo,
-} from '@ollama-code/ollama-code-core';
+
+  Content,
+  Part,
+  PartListUnion} from '@ollama-code/ollama-code-core';
 import { isSlashCommand } from './ui/utils/commandUtils.js';
 import type { LoadedSettings } from './config/settings.js';
 import {
@@ -23,7 +26,6 @@ import {
   parseAndFormatApiError,
   createDebugLogger,
 } from '@ollama-code/ollama-code-core';
-import type { Content, Part, PartListUnion } from '@google/genai';
 import type { CLIUserMessage, PermissionMode } from './nonInteractive/types.js';
 import type { JsonOutputAdapterInterface } from './nonInteractive/io/BaseJsonOutputAdapter.js';
 import { JsonOutputAdapter } from './nonInteractive/io/JsonOutputAdapter.js';

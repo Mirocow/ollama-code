@@ -10,7 +10,10 @@
  * the OpenAI-compatible API.
  */
 
-import type { ContentGenerator, ContentGeneratorConfig } from '../contentGenerator.js';
+import type {
+  ContentGenerator,
+  ContentGeneratorConfig,
+} from '../contentGenerator.js';
 import type { Config } from '../../config/config.js';
 import type {
   CountTokensParameters,
@@ -19,7 +22,7 @@ import type {
   EmbedContentResponse,
   GenerateContentParameters,
   GenerateContentResponse,
-} from '@google/genai';
+} from '../../types/content.js';
 import {
   OllamaNativeClient,
   DEFAULT_OLLAMA_NATIVE_URL,
@@ -78,18 +81,25 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
 
       // Handle tools asynchronously if present (tools are in config)
       if (request.config?.tools) {
-        ollamaRequest.tools = await this.converter.convertGenAIToolsToOllamaAsync(request.config.tools);
+        ollamaRequest.tools =
+          await this.converter.convertGenAIToolsToOllamaAsync(
+            request.config.tools,
+          );
       }
 
       // Apply config-level options
       this.applyConfigOptions(ollamaRequest);
 
-      debugLogger.debug('Ollama request', { request: JSON.stringify(ollamaRequest, null, 2) });
+      debugLogger.debug('Ollama request', {
+        request: JSON.stringify(ollamaRequest, null, 2),
+      });
 
       // Make the API call
       const ollamaResponse = await this.client.chat(ollamaRequest);
 
-      debugLogger.debug('Ollama response', { response: JSON.stringify(ollamaResponse, null, 2) });
+      debugLogger.debug('Ollama response', {
+        response: JSON.stringify(ollamaResponse, null, 2),
+      });
 
       // Convert response back to GenAI format
       return this.converter.convertOllamaResponseToGenAI(ollamaResponse);
@@ -111,22 +121,27 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
       userPromptId,
     });
 
-    const self = this;
-
     // Convert request once
     const ollamaRequest = this.converter.convertGenAIRequestToOllama(request);
     if (request.config?.tools) {
-      ollamaRequest.tools = await this.converter.convertGenAIToolsToOllamaAsync(request.config.tools);
+      ollamaRequest.tools = await this.converter.convertGenAIToolsToOllamaAsync(
+        request.config.tools,
+      );
     }
     this.applyConfigOptions(ollamaRequest);
 
+    // Store references for the generator
+    const client = this.client;
+    const converter = this.converter;
+    const handleError = this.handleError.bind(this);
+
     // Create async generator
-    async function* streamGenerator(): AsyncGenerator<GenerateContentResponse> {
+    return (async function* (): AsyncGenerator<GenerateContentResponse> {
       try {
         // Use streaming API
         let finalResponse: OllamaChatResponse | null = null;
 
-        await self.client.chat(ollamaRequest, (chunk: OllamaChatResponse) => {
+        await client.chat(ollamaRequest, (chunk: OllamaChatResponse) => {
           // Collect final response
           if (chunk.done) {
             finalResponse = chunk;
@@ -135,15 +150,13 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
 
         // Yield final response
         if (finalResponse) {
-          yield self.converter.convertOllamaResponseToGenAI(finalResponse);
+          yield converter.convertOllamaResponseToGenAI(finalResponse);
         }
       } catch (error) {
         debugLogger.error('Ollama native streaming error:', error);
-        throw self.handleError(error, request);
+        throw handleError(error, request);
       }
-    }
-
-    return streamGenerator();
+    })();
   }
 
   /**
@@ -246,7 +259,11 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
   /**
    * Apply config-level options to the Ollama request
    */
-  private applyConfigOptions(ollamaRequest: ReturnType<typeof this.converter.convertGenAIRequestToOllama>): void {
+  private applyConfigOptions(
+    ollamaRequest: ReturnType<
+      typeof this.converter.convertGenAIRequestToOllama
+    >,
+  ): void {
     if (!ollamaRequest.options) {
       ollamaRequest.options = {};
     }
@@ -286,7 +303,10 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
   /**
    * Handle errors from the Ollama API
    */
-  private handleError(error: unknown, request: GenerateContentParameters): Error {
+  private handleError(
+    error: unknown,
+    request: GenerateContentParameters,
+  ): Error {
     if (isAbortError(error) && request.config?.abortSignal?.aborted) {
       // User cancelled the request
       return error as Error;

@@ -13,13 +13,14 @@ import type {
   ServerOllamaStreamEvent,
   TaskResultDisplay,
   McpToolProgressData,
-} from '@ollama-code/ollama-code-core';
+
+  Part,
+  GenerateContentResponseUsageMetadata} from '@ollama-code/ollama-code-core';
 import {
   OllamaEventType,
   ToolErrorType,
   parseAndFormatApiError,
 } from '@ollama-code/ollama-code-core';
-import type { Part, GenerateContentResponseUsageMetadata } from '@google/genai';
 import type {
   CLIAssistantMessage,
   CLIMessage,

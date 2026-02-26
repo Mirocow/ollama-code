@@ -27,7 +27,7 @@ import type {
   GenerateContentConfig,
   FunctionDeclaration,
   GenerateContentResponseUsageMetadata,
-} from '@google/genai';
+} from '../types/content.js';
 import { OllamaChat, type OllamaChatOptions } from '../core/ollamaChat.js';
 import type {
   PromptConfig,

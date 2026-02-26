@@ -9,7 +9,7 @@ import type {
   Content,
   GenerateContentConfig,
   GenerateContentResponse,
-} from '@google/genai';
+} from '../types/content.js';
 import type { OllamaClient } from '../core/ollamaClient.js';
 import { DEFAULT_OLLAMA_MODEL } from '../config/models.js';
 import { getResponseText, partToString } from './partUtils.js';

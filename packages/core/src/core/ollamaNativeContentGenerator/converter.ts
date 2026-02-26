@@ -21,8 +21,8 @@ import type {
   ContentListUnion,
   ContentUnion,
   PartUnion,
-} from '@google/genai';
-import { GenerateContentResponse, FinishReason } from '@google/genai';
+} from '../../types/content.js';
+import { FinishReason, GenerateContentResponse } from '../../types/content.js';
 import type {
   OllamaChatMessage,
   OllamaTool,
@@ -59,7 +59,7 @@ export class OllamaContentConverter {
 
     // Handle system instruction from config
     const systemInstruction = this.extractSystemInstruction(request);
-    
+
     // Process contents
     this.processContents(request.contents, messages);
 
@@ -95,7 +95,9 @@ export class OllamaContentConverter {
   /**
    * Extract system instruction from request config
    */
-  private extractSystemInstruction(request: GenerateContentParameters): string | null {
+  private extractSystemInstruction(
+    request: GenerateContentParameters,
+  ): string | null {
     if (!request.config?.systemInstruction) return null;
     return this.extractTextFromContentUnion(request.config.systemInstruction);
   }
@@ -103,7 +105,9 @@ export class OllamaContentConverter {
   /**
    * Build Ollama model options from request config
    */
-  private buildModelOptions(request: GenerateContentParameters): OllamaModelOptions {
+  private buildModelOptions(
+    request: GenerateContentParameters,
+  ): OllamaModelOptions {
     const options: OllamaModelOptions = {};
     const config = request.config;
 
@@ -321,7 +325,10 @@ export class OllamaContentConverter {
       }
 
       // Handle inline images (base64)
-      if (part.inlineData?.mimeType?.startsWith('image/') && part.inlineData?.data) {
+      if (
+        part.inlineData?.mimeType?.startsWith('image/') &&
+        part.inlineData?.data
+      ) {
         images.push(part.inlineData.data);
       }
 
@@ -518,7 +525,12 @@ export class OllamaContentConverter {
     response.responseId = `ollama-${Date.now()}`;
     response.createTime = new Date().getTime().toString();
 
-    const candidate: { content: { parts: Part[]; role: string }; index: number; safetyRatings: never[]; finishReason?: FinishReason } = {
+    const candidate: {
+      content: { parts: Part[]; role: string };
+      index: number;
+      safetyRatings: never[];
+      finishReason?: FinishReason;
+    } = {
       content: {
         parts,
         role: 'model' as const,

@@ -16,7 +16,10 @@ import type {
   ThoughtSummary,
   ToolCallRequestInfo,
   OllamaErrorEventValue,
-} from '@ollama-code/ollama-code-core';
+
+  type Part,
+  type PartListUnion,
+  FinishReason} from '@ollama-code/ollama-code-core';
 import {
   OllamaEventType as ServerOllamaEventType,
   createDebugLogger,
@@ -36,7 +39,6 @@ import {
   logApiCancel,
   ApiCancelEvent,
 } from '@ollama-code/ollama-code-core';
-import { type Part, type PartListUnion, FinishReason } from '@google/genai';
 import type {
   HistoryItem,
   HistoryItemWithoutId,

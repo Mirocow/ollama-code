@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content } from '@google/genai';
+import type { Content } from '../types/content.js';
 import type { Config } from '../config/config.js';
 import type { OllamaChat } from '../core/ollamaChat.js';
 import { type ChatCompressionInfo, CompressionStatus } from '../core/turn.js';

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content, FunctionDeclaration } from '@google/genai';
+import type { Content, FunctionDeclaration } from '../types/content.js';
 
 /**
  * Represents the storage level for a subagent configuration.

@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '@ollama-code/ollama-code-core';
-import type { Part } from '@google/genai';
+import type { Config , Part } from '@ollama-code/ollama-code-core';
 import type * as acp from '../acp.js';
 
 /**

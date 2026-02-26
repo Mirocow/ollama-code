@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content } from '@google/genai';
+import type { Content } from '../types/content.js';
 import { DEFAULT_OLLAMA_MODEL } from '../config/models.js';
 import type { OllamaChat } from '../core/ollamaChat.js';
 import { isFunctionResponse } from './messageInspectors.js';

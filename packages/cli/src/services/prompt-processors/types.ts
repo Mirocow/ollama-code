@@ -5,7 +5,7 @@
  */
 
 import type { CommandContext } from '../../ui/commands/types.js';
-import type { PartUnion } from '@google/genai';
+import type { PartUnion } from '@ollama-code/ollama-code-core';
 
 /**
  * Defines the input/output type for prompt processors.

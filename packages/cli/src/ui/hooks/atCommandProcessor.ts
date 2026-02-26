@@ -6,8 +6,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { PartListUnion } from '@google/genai';
-import type { Config } from '@ollama-code/ollama-code-core';
+import type { PartListUnion , Config } from '@ollama-code/ollama-code-core';
 import {
   getErrorMessage,
   isNodeError,

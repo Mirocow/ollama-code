@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type PartListUnion, type Part } from '@google/genai';
-import {
+import { type PartListUnion, type Part ,
   AuthType,
   type Config,
   ApprovalMode,

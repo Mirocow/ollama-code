@@ -32,8 +32,8 @@ import { DiscoveredMCPTool } from './mcp-tool.js';
 import type { McpToolAnnotations } from './mcp-tool.js';
 import { SdkControlClientTransport } from './sdk-control-client-transport.js';
 
-import type { FunctionDeclaration } from '@google/genai';
-import { mcpToTool } from '@google/genai';
+import type { FunctionDeclaration } from '../types/content.js';
+import { mcpToTool } from '../types/content.js';
 import { basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { MCPOAuthProvider } from '../mcp/oauth-provider.js';

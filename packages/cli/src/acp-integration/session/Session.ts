@@ -9,15 +9,13 @@ import type {
   FunctionCall,
   GenerateContentResponseUsageMetadata,
   Part,
-} from '@google/genai';
-import type {
+
   Config,
   ToolCallConfirmationDetails,
   ToolResult,
   ChatRecord,
   SubAgentEventEmitter,
-  StreamEvent,
-} from '@ollama-code/ollama-code-core';
+  StreamEvent} from '@ollama-code/ollama-code-core';
 import {
   ApprovalMode,
   convertToFunctionResponse,

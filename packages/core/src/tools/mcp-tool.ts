@@ -20,7 +20,7 @@ import {
   Kind,
   ToolConfirmationOutcome,
 } from './tools.js';
-import type { CallableTool, FunctionCall, Part } from '@google/genai';
+import type { CallableTool, FunctionCall, Part } from '../types/content.js';
 import { ToolErrorType } from './tool-error.js';
 import type { Config } from '../config/config.js';
 

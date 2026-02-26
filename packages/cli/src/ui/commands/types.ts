@@ -5,8 +5,7 @@
  */
 
 import type { ReactNode } from 'react';
-import type { Content, PartListUnion } from '@google/genai';
-import type { Config, GitService, Logger } from '@ollama-code/ollama-code-core';
+import type { Content, PartListUnion , Config, GitService, Logger } from '@ollama-code/ollama-code-core';
 import type {
   HistoryItemWithoutId,
   HistoryItem,

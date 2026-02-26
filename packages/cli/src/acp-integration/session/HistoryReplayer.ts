@@ -7,11 +7,9 @@
 import type {
   ChatRecord,
   TaskResultDisplay,
-} from '@ollama-code/ollama-code-core';
-import type {
+
   Content,
-  GenerateContentResponseUsageMetadata,
-} from '@google/genai';
+  GenerateContentResponseUsageMetadata} from '@ollama-code/ollama-code-core';
 import type { SessionContext } from './types.js';
 import { MessageEmitter } from './emitters/MessageEmitter.js';
 import { ToolCallEmitter } from './emitters/ToolCallEmitter.js';

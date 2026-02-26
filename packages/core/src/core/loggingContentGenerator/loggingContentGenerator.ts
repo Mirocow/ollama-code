@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type {
+  GenerateContentResponse} from '../../types/content.js';
 import {
-  GenerateContentResponse,
   type Content,
   type CountTokensParameters,
   type CountTokensResponse,
@@ -17,7 +18,7 @@ import {
   type ContentUnion,
   type Part,
   type PartUnion,
-} from '@google/genai';
+} from '../../types/content.js';
 import {
   ApiRequestEvent,
   ApiResponseEvent,
