@@ -1,0 +1,73 @@
+/**
+ * @license
+ * Copyright 2025 Ollama Code Team
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Build webSearch configuration from multiple sources with priority:
+ * 1. settings.json (new format) - highest priority
+ * 2. Command line args + environment variables
+ * 3. Legacy tavilyApiKey (backward compatibility)
+ *
+ * @param argv - Command line arguments
+ * @param settings - User settings from settings.json
+ * @returns WebSearch configuration or undefined if no providers available
+ */
+export function buildWebSearchConfig(argv, settings, _authType) {
+    // Step 1: Collect providers from settings or command line/env
+    let providers = [];
+    let userDefault;
+    if (settings.webSearch) {
+        // Use providers from settings.json
+        providers = [...settings.webSearch.provider];
+        userDefault = settings.webSearch.default;
+    }
+    else {
+        // Build providers from command line args and environment variables
+        const tavilyKey = argv.tavilyApiKey ||
+            settings.advanced?.tavilyApiKey ||
+            process.env['TAVILY_API_KEY'];
+        if (tavilyKey) {
+            providers.push({
+                type: 'tavily',
+                apiKey: tavilyKey,
+            });
+        }
+        const googleKey = argv.googleApiKey || process.env['GOOGLE_API_KEY'];
+        const googleEngineId = argv.googleSearchEngineId || process.env['GOOGLE_SEARCH_ENGINE_ID'];
+        if (googleKey && googleEngineId) {
+            providers.push({
+                type: 'google',
+                apiKey: googleKey,
+                searchEngineId: googleEngineId,
+            });
+        }
+    }
+    // Step 2: If no providers available, return undefined
+    if (providers.length === 0) {
+        return undefined;
+    }
+    // Step 3: Determine default provider
+    // Priority: user explicit config > CLI arg > first available provider (tavily > google)
+    const providerPriority = ['tavily', 'google'];
+    // Determine default provider based on availability
+    let defaultProvider = userDefault || argv.webSearchDefault;
+    if (!defaultProvider) {
+        // Find first available provider by priority order
+        for (const providerType of providerPriority) {
+            if (providers.some((p) => p.type === providerType)) {
+                defaultProvider = providerType;
+                break;
+            }
+        }
+        // Fallback to first available provider if none found in priority list
+        if (!defaultProvider) {
+            defaultProvider = providers[0]?.type || 'tavily';
+        }
+    }
+    return {
+        provider: providers,
+        default: defaultProvider,
+    };
+}
+//# sourceMappingURL=webSearch.js.map

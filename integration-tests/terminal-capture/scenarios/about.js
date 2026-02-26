@@ -1,0 +1,7 @@
+export default {
+    name: '/about command',
+    spawn: ['node', 'dist/cli.js', '--yolo'],
+    terminal: { title: 'ollama-code', cwd: '../../..' },
+    flow: [{ type: 'hi' }, { type: '/about' }],
+};
+//# sourceMappingURL=about.js.map

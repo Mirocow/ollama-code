@@ -1,0 +1,1 @@
+{"version":3,"file":"useQwenAuth.js","sourceRoot":"","sources":["useQwenAuth.ts"],"names":[],"mappings":"AAAA;;;;GAIG;AAeH,MAAM,UAAU,WAAW,CACzB,gBAAsC,EACtC,iBAA0B;IAK1B,OAAO;QACL,aAAa,EAAE;YACb,UAAU,EAAE,IAAI;YAChB,UAAU,EAAE,gBAAgB;YAC5B,WAAW,EAAE,IAAI;SAClB;QACD,cAAc,EAAE,GAAG,EAAE;YACnB,mBAAmB;QACrB,CAAC;KACF,CAAC;AACJ,CAAC"}

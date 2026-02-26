@@ -240,11 +240,11 @@ export async function createContentGenerator(
     );
   }
 
-  // Ollama uses OpenAI-compatible API
-  const { createOpenAIContentGenerator } = await import(
-    './openaiContentGenerator/index.js'
+  // Use native Ollama API
+  const { createOllamaNativeContentGenerator } = await import(
+    './ollamaNativeContentGenerator/index.js'
   );
-  const baseGenerator = createOpenAIContentGenerator(generatorConfig, config);
+  const baseGenerator = createOllamaNativeContentGenerator(generatorConfig, config);
 
   return new LoggingContentGenerator(baseGenerator, config, generatorConfig);
 }

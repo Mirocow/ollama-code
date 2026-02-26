@@ -1,0 +1,485 @@
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+import { useCallback, useMemo, useEffect, useState } from 'react';
+import {} from '@google/genai';
+import { createDebugLogger, GitService, logSlashCommand, makeSlashCommandEvent, SlashCommandStatus, ToolConfirmationOutcome, IdeClient, } from '@ollama-code/ollama-code-core';
+import { useSessionStats } from '../contexts/SessionContext.js';
+import { MessageType } from '../types.js';
+import {} from '../commands/types.js';
+import { CommandService } from '../../services/CommandService.js';
+import { BuiltinCommandLoader } from '../../services/BuiltinCommandLoader.js';
+import { FileCommandLoader } from '../../services/FileCommandLoader.js';
+import { McpPromptLoader } from '../../services/McpPromptLoader.js';
+import { parseSlashCommand } from '../../utils/commands.js';
+import { clearScreen } from '../../utils/stdioHelpers.js';
+import {} from '../state/extensions.js';
+const debugLogger = createDebugLogger('SLASH_COMMAND_PROCESSOR');
+function serializeHistoryItemForRecording(item) {
+    const clone = { ...item };
+    if ('timestamp' in clone && clone['timestamp'] instanceof Date) {
+        clone['timestamp'] = clone['timestamp'].toISOString();
+    }
+    return clone;
+}
+const SLASH_COMMANDS_SKIP_RECORDING = new Set([
+    'quit',
+    'exit',
+    'clear',
+    'reset',
+    'new',
+    'resume',
+]);
+/**
+ * Hook to define and process slash commands (e.g., /help, /clear).
+ */
+export const useSlashCommandProcessor = (config, settings, addItem, clearItems, loadHistory, refreshStatic, toggleVimEnabled, setIsProcessing, setGeminiMdFileCount, actions, extensionsUpdateState, isConfigInitialized, logger) => {
+    const { stats: sessionStats, startNewSession } = useSessionStats();
+    const [commands, setCommands] = useState([]);
+    const [reloadTrigger, setReloadTrigger] = useState(0);
+    const reloadCommands = useCallback(() => {
+        setReloadTrigger((v) => v + 1);
+    }, []);
+    const [shellConfirmationRequest, setShellConfirmationRequest] = useState(null);
+    const [confirmationRequest, setConfirmationRequest] = useState(null);
+    const [sessionShellAllowlist, setSessionShellAllowlist] = useState(new Set());
+    const gitService = useMemo(() => {
+        if (!config?.getProjectRoot()) {
+            return;
+        }
+        return new GitService(config.getProjectRoot(), config.storage);
+    }, [config]);
+    const [pendingItem, setPendingItem] = useState(null);
+    const pendingHistoryItems = useMemo(() => {
+        const items = [];
+        if (pendingItem != null) {
+            items.push(pendingItem);
+        }
+        return items;
+    }, [pendingItem]);
+    const addMessage = useCallback((message) => {
+        // Convert Message to HistoryItemWithoutId
+        let historyItemContent;
+        if (message.type === MessageType.ABOUT) {
+            historyItemContent = {
+                type: 'about',
+                systemInfo: message.systemInfo,
+            };
+        }
+        else if (message.type === MessageType.HELP) {
+            historyItemContent = {
+                type: 'help',
+                timestamp: message.timestamp,
+            };
+        }
+        else if (message.type === MessageType.STATS) {
+            historyItemContent = {
+                type: 'stats',
+                duration: message.duration,
+            };
+        }
+        else if (message.type === MessageType.MODEL_STATS) {
+            historyItemContent = {
+                type: 'model_stats',
+            };
+        }
+        else if (message.type === MessageType.TOOL_STATS) {
+            historyItemContent = {
+                type: 'tool_stats',
+            };
+        }
+        else if (message.type === MessageType.QUIT) {
+            historyItemContent = {
+                type: 'quit',
+                duration: message.duration,
+            };
+        }
+        else if (message.type === MessageType.COMPRESSION) {
+            historyItemContent = {
+                type: 'compression',
+                compression: message.compression,
+            };
+        }
+        else if (message.type === MessageType.SUMMARY) {
+            historyItemContent = {
+                type: 'summary',
+                summary: message.summary,
+            };
+        }
+        else {
+            historyItemContent = {
+                type: message.type,
+                text: message.content,
+            };
+        }
+        addItem(historyItemContent, message.timestamp.getTime());
+    }, [addItem]);
+    const commandContext = useMemo(() => ({
+        services: {
+            config,
+            settings,
+            git: gitService,
+            logger,
+        },
+        ui: {
+            addItem,
+            clear: () => {
+                clearItems();
+                clearScreen();
+                refreshStatic();
+            },
+            loadHistory,
+            setDebugMessage: actions.setDebugMessage,
+            pendingItem,
+            setPendingItem,
+            toggleVimEnabled,
+            setGeminiMdFileCount,
+            reloadCommands,
+            extensionsUpdateState,
+            dispatchExtensionStateUpdate: actions.dispatchExtensionStateUpdate,
+            addConfirmUpdateExtensionRequest: actions.addConfirmUpdateExtensionRequest,
+        },
+        session: {
+            stats: sessionStats,
+            sessionShellAllowlist,
+            startNewSession,
+        },
+    }), [
+        config,
+        settings,
+        gitService,
+        logger,
+        loadHistory,
+        addItem,
+        clearItems,
+        refreshStatic,
+        sessionStats,
+        startNewSession,
+        actions,
+        pendingItem,
+        setPendingItem,
+        toggleVimEnabled,
+        sessionShellAllowlist,
+        setGeminiMdFileCount,
+        reloadCommands,
+        extensionsUpdateState,
+    ]);
+    useEffect(() => {
+        if (!config) {
+            return;
+        }
+        const listener = () => {
+            reloadCommands();
+        };
+        (async () => {
+            const ideClient = await IdeClient.getInstance();
+            ideClient.addStatusChangeListener(listener);
+        })();
+        return () => {
+            (async () => {
+                const ideClient = await IdeClient.getInstance();
+                ideClient.removeStatusChangeListener(listener);
+            })();
+        };
+    }, [config, reloadCommands]);
+    useEffect(() => {
+        const controller = new AbortController();
+        const load = async () => {
+            const loaders = [
+                new McpPromptLoader(config),
+                new BuiltinCommandLoader(config),
+                new FileCommandLoader(config),
+            ];
+            const commandService = await CommandService.create(loaders, controller.signal);
+            setCommands(commandService.getCommands());
+        };
+        load();
+        return () => {
+            controller.abort();
+        };
+    }, [config, reloadTrigger, isConfigInitialized]);
+    const handleSlashCommand = useCallback(async (rawQuery, oneTimeShellAllowlist, overwriteConfirmed) => {
+        if (typeof rawQuery !== 'string') {
+            return false;
+        }
+        const trimmed = rawQuery.trim();
+        if (!trimmed.startsWith('/') && !trimmed.startsWith('?')) {
+            return false;
+        }
+        const recordedItems = [];
+        const recordItem = (item) => {
+            recordedItems.push(item);
+        };
+        const addItemWithRecording = (item, timestamp) => {
+            recordItem(item);
+            return addItem(item, timestamp);
+        };
+        setIsProcessing(true);
+        const userMessageTimestamp = Date.now();
+        addItemWithRecording({ type: MessageType.USER, text: trimmed }, userMessageTimestamp);
+        let hasError = false;
+        const { commandToExecute, args, canonicalPath: resolvedCommandPath, } = parseSlashCommand(trimmed, commands);
+        const subcommand = resolvedCommandPath.length > 1
+            ? resolvedCommandPath.slice(1).join(' ')
+            : undefined;
+        try {
+            if (commandToExecute) {
+                if (commandToExecute.action) {
+                    const fullCommandContext = {
+                        ...commandContext,
+                        ui: {
+                            ...commandContext.ui,
+                            addItem: addItemWithRecording,
+                        },
+                        invocation: {
+                            raw: trimmed,
+                            name: commandToExecute.name,
+                            args,
+                        },
+                        overwriteConfirmed,
+                    };
+                    // If a one-time list is provided for a "Proceed" action, temporarily
+                    // augment the session allowlist for this single execution.
+                    if (oneTimeShellAllowlist && oneTimeShellAllowlist.size > 0) {
+                        fullCommandContext.session = {
+                            ...fullCommandContext.session,
+                            sessionShellAllowlist: new Set([
+                                ...fullCommandContext.session.sessionShellAllowlist,
+                                ...oneTimeShellAllowlist,
+                            ]),
+                        };
+                    }
+                    const result = await commandToExecute.action(fullCommandContext, args);
+                    if (result) {
+                        switch (result.type) {
+                            case 'tool':
+                                return {
+                                    type: 'schedule_tool',
+                                    toolName: result.toolName,
+                                    toolArgs: result.toolArgs,
+                                };
+                            case 'message':
+                                if (result.messageType === 'info') {
+                                    addMessage({
+                                        type: MessageType.INFO,
+                                        content: result.content,
+                                        timestamp: new Date(),
+                                    });
+                                }
+                                else {
+                                    addMessage({
+                                        type: MessageType.ERROR,
+                                        content: result.content,
+                                        timestamp: new Date(),
+                                    });
+                                }
+                                return { type: 'handled' };
+                            case 'dialog':
+                                switch (result.dialog) {
+                                    case 'auth':
+                                        actions.openAuthDialog();
+                                        return { type: 'handled' };
+                                    case 'theme':
+                                        actions.openThemeDialog();
+                                        return { type: 'handled' };
+                                    case 'editor':
+                                        actions.openEditorDialog();
+                                        return { type: 'handled' };
+                                    case 'settings':
+                                        actions.openSettingsDialog();
+                                        return { type: 'handled' };
+                                    case 'model':
+                                        actions.openModelDialog();
+                                        return { type: 'handled' };
+                                    case 'permissions':
+                                        actions.openPermissionsDialog();
+                                        return { type: 'handled' };
+                                    case 'subagent_create':
+                                        actions.openSubagentCreateDialog();
+                                        return { type: 'handled' };
+                                    case 'subagent_list':
+                                        actions.openAgentsManagerDialog();
+                                        return { type: 'handled' };
+                                    case 'approval-mode':
+                                        actions.openApprovalModeDialog();
+                                        return { type: 'handled' };
+                                    case 'resume':
+                                        actions.openResumeDialog();
+                                        return { type: 'handled' };
+                                    case 'help':
+                                        return { type: 'handled' };
+                                    default: {
+                                        const unhandled = result.dialog;
+                                        throw new Error(`Unhandled slash command result: ${unhandled}`);
+                                    }
+                                }
+                            case 'load_history': {
+                                config?.getOllamaClient()?.setHistory(result.clientHistory);
+                                config?.getOllamaClient()?.stripThoughtsFromHistory();
+                                fullCommandContext.ui.clear();
+                                result.history.forEach((item, index) => {
+                                    fullCommandContext.ui.addItem(item, index);
+                                });
+                                return { type: 'handled' };
+                            }
+                            case 'quit':
+                                actions.quit(result.messages);
+                                return { type: 'handled' };
+                            case 'submit_prompt':
+                                return {
+                                    type: 'submit_prompt',
+                                    content: result.content,
+                                };
+                            case 'confirm_shell_commands': {
+                                const { outcome, approvedCommands } = await new Promise((resolve) => {
+                                    setShellConfirmationRequest({
+                                        commands: result.commandsToConfirm,
+                                        onConfirm: (resolvedOutcome, resolvedApprovedCommands) => {
+                                            setShellConfirmationRequest(null); // Close the dialog
+                                            resolve({
+                                                outcome: resolvedOutcome,
+                                                approvedCommands: resolvedApprovedCommands,
+                                            });
+                                        },
+                                    });
+                                });
+                                if (outcome === ToolConfirmationOutcome.Cancel ||
+                                    !approvedCommands ||
+                                    approvedCommands.length === 0) {
+                                    return { type: 'handled' };
+                                }
+                                if (outcome === ToolConfirmationOutcome.ProceedAlways) {
+                                    setSessionShellAllowlist((prev) => new Set([...prev, ...approvedCommands]));
+                                }
+                                return await handleSlashCommand(result.originalInvocation.raw, 
+                                // Pass the approved commands as a one-time grant for this execution.
+                                new Set(approvedCommands));
+                            }
+                            case 'confirm_action': {
+                                const { confirmed } = await new Promise((resolve) => {
+                                    setConfirmationRequest({
+                                        prompt: result.prompt,
+                                        onConfirm: (resolvedConfirmed) => {
+                                            setConfirmationRequest(null);
+                                            resolve({ confirmed: resolvedConfirmed });
+                                        },
+                                    });
+                                });
+                                if (!confirmed) {
+                                    addItemWithRecording({
+                                        type: MessageType.INFO,
+                                        text: 'Operation cancelled.',
+                                    }, Date.now());
+                                    return { type: 'handled' };
+                                }
+                                return await handleSlashCommand(result.originalInvocation.raw, undefined, true);
+                            }
+                            case 'stream_messages': {
+                                // stream_messages is only used in ACP/Zed integration mode
+                                // and should not be returned in interactive UI mode
+                                throw new Error('stream_messages result type is not supported in interactive mode');
+                            }
+                            default: {
+                                const unhandled = result;
+                                throw new Error(`Unhandled slash command result: ${unhandled}`);
+                            }
+                        }
+                    }
+                    return { type: 'handled' };
+                }
+                else if (commandToExecute.subCommands) {
+                    const helpText = `Command '/${commandToExecute.name}' requires a subcommand. Available:\n${commandToExecute.subCommands
+                        .map((sc) => `  - ${sc.name}: ${sc.description || ''}`)
+                        .join('\n')}`;
+                    addMessage({
+                        type: MessageType.INFO,
+                        content: helpText,
+                        timestamp: new Date(),
+                    });
+                    return { type: 'handled' };
+                }
+            }
+            addMessage({
+                type: MessageType.ERROR,
+                content: `Unknown command: ${trimmed}`,
+                timestamp: new Date(),
+            });
+            return { type: 'handled' };
+        }
+        catch (e) {
+            hasError = true;
+            if (config) {
+                const event = makeSlashCommandEvent({
+                    command: resolvedCommandPath[0],
+                    subcommand,
+                    status: SlashCommandStatus.ERROR,
+                });
+                logSlashCommand(config, event);
+            }
+            addItemWithRecording({
+                type: MessageType.ERROR,
+                text: e instanceof Error ? e.message : String(e),
+            }, Date.now());
+            return { type: 'handled' };
+        }
+        finally {
+            if (config?.getChatRecordingService) {
+                const chatRecorder = config.getChatRecordingService();
+                const primaryCommand = resolvedCommandPath[0] ||
+                    trimmed.replace(/^[/?]/, '').split(/\s+/)[0] ||
+                    trimmed;
+                const shouldRecord = !SLASH_COMMANDS_SKIP_RECORDING.has(primaryCommand);
+                try {
+                    if (shouldRecord) {
+                        chatRecorder?.recordSlashCommand({
+                            phase: 'invocation',
+                            rawCommand: trimmed,
+                        });
+                        const outputItems = recordedItems
+                            .filter((item) => item.type !== 'user')
+                            .map(serializeHistoryItemForRecording);
+                        chatRecorder?.recordSlashCommand({
+                            phase: 'result',
+                            rawCommand: trimmed,
+                            outputHistoryItems: outputItems,
+                        });
+                    }
+                }
+                catch (recordError) {
+                    debugLogger.error('[slashCommand] Failed to record slash command:', recordError);
+                }
+            }
+            if (config && resolvedCommandPath[0] && !hasError) {
+                const event = makeSlashCommandEvent({
+                    command: resolvedCommandPath[0],
+                    subcommand,
+                    status: SlashCommandStatus.SUCCESS,
+                });
+                logSlashCommand(config, event);
+            }
+            setIsProcessing(false);
+        }
+    }, [
+        config,
+        addItem,
+        actions,
+        commands,
+        commandContext,
+        addMessage,
+        setShellConfirmationRequest,
+        setSessionShellAllowlist,
+        setIsProcessing,
+        setConfirmationRequest,
+    ]);
+    return {
+        handleSlashCommand,
+        slashCommands: commands,
+        pendingHistoryItems,
+        commandContext,
+        shellConfirmationRequest,
+        confirmationRequest,
+    };
+};
+//# sourceMappingURL=slashCommandProcessor.js.map
