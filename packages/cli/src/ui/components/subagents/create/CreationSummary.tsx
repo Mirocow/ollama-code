@@ -263,8 +263,8 @@ export function CreationSummary({
           <Text color={theme.text.primary}>{t('Location: ')}</Text>
           <Text>
             {state.location === 'project'
-              ? t('Project Level (.qwen/agents/)')
-              : t('User Level (~/.qwen/agents/)')}
+              ? t('Project Level (.ollama-code/agents/)')
+              : t('User Level (~/.ollama-code/agents/)')}
           </Text>
         </Box>
 

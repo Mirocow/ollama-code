@@ -92,9 +92,9 @@ describe('loadIgnoreRules', () => {
     expect(fileFilter('test.txt')).toBe(false);
   });
 
-  it('should load rules from .qwenignore', async () => {
+  it('should load rules from .ollama-codeignore', async () => {
     tmpDir = await createTmpDir({
-      '.qwenignore': '*.log',
+      '.ollama-codeignore': '*.log',
     });
     const ignore = loadIgnoreRules({
       projectRoot: tmpDir,
@@ -107,10 +107,10 @@ describe('loadIgnoreRules', () => {
     expect(fileFilter('test.txt')).toBe(false);
   });
 
-  it('should combine rules from .gitignore and .qwenignore', async () => {
+  it('should combine rules from .gitignore and .ollama-codeignore', async () => {
     tmpDir = await createTmpDir({
       '.gitignore': '*.log',
-      '.qwenignore': '*.txt',
+      '.ollama-codeignore': '*.txt',
     });
     const ignore = loadIgnoreRules({
       projectRoot: tmpDir,

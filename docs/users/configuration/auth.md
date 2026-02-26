@@ -33,7 +33,7 @@ Use this if you want more flexibility over which provider and model to use. Supp
 
 ### Recommended: One-file setup via `settings.json`
 
-The simplest way to get started with API-KEY authentication is to put everything in a single `~/.qwen/settings.json` file. Here's a complete, ready-to-use example:
+The simplest way to get started with API-KEY authentication is to put everything in a single `~/.ollama-code/settings.json` file. Here's a complete, ready-to-use example:
 
 ```json
 {
@@ -100,7 +100,7 @@ Enter your `sk-sp-xxxxxxxxx` key, then use the `/model` command to switch betwee
 
 **Alternative: configure Coding Plan via `settings.json`**
 
-If you prefer to skip the interactive `/auth` flow, add the following to `~/.qwen/settings.json`:
+If you prefer to skip the interactive `/auth` flow, add the following to `~/.ollama-code/settings.json`:
 
 ```json
 {
@@ -137,7 +137,7 @@ If you prefer to skip the interactive `/auth` flow, add the following to `~/.qwe
 
 Use this if you want to connect to third-party providers such as OpenAI, Anthropic, Google, Azure OpenAI, OpenRouter, ModelScope, or a self-hosted endpoint.
 
-The key concept is **Model Providers** (`modelProviders`): Ollama Code supports multiple API protocols, not just OpenAI. You configure which providers and models are available by editing `~/.qwen/settings.json`, then switch between them at runtime with the `/model` command.
+The key concept is **Model Providers** (`modelProviders`): Ollama Code supports multiple API protocols, not just OpenAI. You configure which providers and models are available by editing `~/.ollama-code/settings.json`, then switch between them at runtime with the `/model` command.
 
 #### Supported protocols
 
@@ -148,15 +148,15 @@ The key concept is **Model Providers** (`modelProviders`): Ollama Code supports 
 | Google GenAI      | `gemini`             | `GEMINI_API_KEY`, `GEMINI_MODEL`                             | Google Gemini                                                                                       |
 | Google Vertex AI  | `vertex-ai`          | `GOOGLE_API_KEY`, `GOOGLE_MODEL`                             | Google Vertex AI                                                                                    |
 
-#### Step 1: Configure models and providers in `~/.qwen/settings.json`
+#### Step 1: Configure models and providers in `~/.ollama-code/settings.json`
 
 Define which models are available for each protocol. Each model entry requires at minimum an `id` and an `envKey` (the environment variable name that holds your API key).
 
 > [!important]
 >
-> It is recommended to define `modelProviders` in the user-scope `~/.qwen/settings.json` to avoid merge conflicts between project and user settings.
+> It is recommended to define `modelProviders` in the user-scope `~/.ollama-code/settings.json` to avoid merge conflicts between project and user settings.
 
-Edit `~/.qwen/settings.json` (create it if it doesn't exist). You can mix multiple protocols in a single file — here is a multi-provider example showing just the `modelProviders` section:
+Edit `~/.ollama-code/settings.json` (create it if it doesn't exist). You can mix multiple protocols in a single file — here is a multi-provider example showing just the `modelProviders` section:
 
 ```json
 {
@@ -236,21 +236,21 @@ Ollama Code auto-loads the **first** `.env` file it finds (variables are **not m
 
 Search order (from the current directory, walking upward toward `/`):
 
-1. `.qwen/.env` (preferred — keeps Ollama Code variables isolated from other tools)
+1. `.ollama-code/.env` (preferred — keeps Ollama Code variables isolated from other tools)
 2. `.env`
 
 If nothing is found, it falls back to your **home directory**:
 
-3. `~/.qwen/.env`
+3. `~/.ollama-code/.env`
 4. `~/.env`
 
 > [!tip]
 >
-> `.qwen/.env` is recommended over `.env` to avoid conflicts with other tools. Some variables (like `DEBUG` and `DEBUG_MODE`) are excluded from project-level `.env` files to avoid interfering with Ollama Code behavior.
+> `.ollama-code/.env` is recommended over `.env` to avoid conflicts with other tools. Some variables (like `DEBUG` and `DEBUG_MODE`) are excluded from project-level `.env` files to avoid interfering with Ollama Code behavior.
 
 **3. `settings.json` → `env` field (lowest priority)**
 
-You can also define API keys directly in `~/.qwen/settings.json` under the `env` key. These are loaded as the **lowest-priority fallback** — only applied when a variable is not already set by the system environment or `.env` files.
+You can also define API keys directly in `~/.ollama-code/settings.json` under the `env` key. These are loaded as the **lowest-priority fallback** — only applied when a variable is not already set by the system environment or `.env` files.
 
 ```json
 {
@@ -298,5 +298,5 @@ qwen --model "qwen3-coder-next"
 ## Security notes
 
 - Don’t commit API keys to version control.
-- Prefer `.qwen/.env` for project-local secrets (and keep it out of git).
+- Prefer `.ollama-code/.env` for project-local secrets (and keep it out of git).
 - Treat your terminal output as sensitive if it prints credentials for verification.

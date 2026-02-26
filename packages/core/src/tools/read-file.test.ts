@@ -40,7 +40,7 @@ describe('ReadFileTool', () => {
       getWorkspaceContext: () => createMockWorkspaceContext(tempRootDir),
       storage: {
         getProjectTempDir: () => path.join(tempRootDir, '.temp'),
-        getUserSkillsDir: () => path.join(os.homedir(), '.qwen', 'skills'),
+        getUserSkillsDir: () => path.join(os.homedir(), '.ollama-code', 'skills'),
       },
       getTruncateToolOutputThreshold: () => 2500,
       getTruncateToolOutputLines: () => 500,
@@ -424,21 +424,21 @@ describe('ReadFileTool', () => {
       expect(result.returnDisplay).toBe('');
     });
 
-    describe('with .qwenignore', () => {
+    describe('with .ollama-codeignore', () => {
       beforeEach(async () => {
         await fsp.writeFile(
-          path.join(tempRootDir, '.qwenignore'),
+          path.join(tempRootDir, '.ollama-codeignore'),
           ['foo.*', 'ignored/'].join('\n'),
         );
       });
 
-      it('should throw error if path is ignored by a .qwenignore pattern', async () => {
+      it('should throw error if path is ignored by a .ollama-codeignore pattern', async () => {
         const ignoredFilePath = path.join(tempRootDir, 'foo.bar');
         await fsp.writeFile(ignoredFilePath, 'content', 'utf-8');
         const params: ReadFileToolParams = {
           absolute_path: ignoredFilePath,
         };
-        const expectedError = `File path '${ignoredFilePath}' is ignored by .qwenignore pattern(s).`;
+        const expectedError = `File path '${ignoredFilePath}' is ignored by .ollama-codeignore pattern(s).`;
         expect(() => tool.build(params)).toThrow(expectedError);
       });
 
@@ -450,7 +450,7 @@ describe('ReadFileTool', () => {
         const params: ReadFileToolParams = {
           absolute_path: ignoredFilePath,
         };
-        const expectedError = `File path '${ignoredFilePath}' is ignored by .qwenignore pattern(s).`;
+        const expectedError = `File path '${ignoredFilePath}' is ignored by .ollama-codeignore pattern(s).`;
         expect(() => tool.build(params)).toThrow(expectedError);
       });
 

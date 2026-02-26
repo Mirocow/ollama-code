@@ -229,11 +229,11 @@ describe('terminal-bench integration', () => {
         const args = [
           'run',
           '--agent-import-path',
-          'integration-tests.terminal-bench.qwen_code:QwenCodeAgent',
+          'integration-tests.terminal-bench.ollama_code:OllamaCodeAgent',
           '--agent-kwarg',
           `api_key=${apiKey}`,
           '--agent-kwarg',
-          `version=${process.env['QWEN_CODE_VERSION'] || 'latest'}`,
+          `version=${process.env['OLLAMA_CODE_VERSION'] || 'latest'}`,
           '--dataset-path',
           ciTasksPath,
           '--task-id',

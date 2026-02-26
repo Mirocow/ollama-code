@@ -7,11 +7,8 @@
 import * as path from 'node:path';
 import * as os from 'node:os';
 import * as fs from 'node:fs';
-import { getProjectHash } from '../utils/paths.js';
+import { getProjectHash, OLLAMA_DIR } from '../utils/paths.js';
 
-export const OLLAMA_DIR = '.ollama-code';
-// Backward compatibility alias
-export const QWEN_DIR = OLLAMA_DIR;
 export const GOOGLE_ACCOUNTS_FILENAME = 'google_accounts.json';
 export const OAUTH_FILE = 'oauth_creds.json';
 const TMP_DIR_NAME = 'tmp';

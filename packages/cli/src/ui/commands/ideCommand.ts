@@ -13,7 +13,7 @@ import {
   IdeConnectionType,
 } from '@ollama-code/ollama-code-core';
 import {
-  QWEN_CODE_COMPANION_EXTENSION_NAME,
+  OLLAMA_CODE_COMPANION_EXTENSION_NAME,
   getIdeInstaller,
   IDEConnectionStatus,
   ideContextStore,
@@ -207,7 +207,7 @@ export const ideCommand = async (): Promise<SlashCommand> => {
         context.ui.addItem(
           {
             type: 'error',
-            text: `Automatic installation is not supported for ${ideName}. Please install the '${QWEN_CODE_COMPANION_EXTENSION_NAME}' extension manually from the marketplace.`,
+            text: `Automatic installation is not supported for ${ideName}. Please install the '${OLLAMA_CODE_COMPANION_EXTENSION_NAME}' extension manually from the marketplace.`,
           },
           Date.now(),
         );

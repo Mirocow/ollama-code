@@ -115,8 +115,8 @@ export default {
   // ============================================================================
   // Команды - Общие
   // ============================================================================
-  'Analyzes the project and creates a tailored QWEN.md file.':
-    'Анализ проекта и создание адаптированного файла QWEN.md',
+  'Analyzes the project and creates a tailored OLLAMA_CODE.md file.':
+    'Анализ проекта и создание адаптированного файла OLLAMA_CODE.md',
   'list available Ollama Code tools. Usage: /tools [desc]':
     'Просмотр доступных инструментов Ollama Code. Использование: /tools [desc]',
   'Available Ollama Code CLI tools:': 'Доступные инструменты Ollama Code CLI:',
@@ -212,8 +212,8 @@ export default {
   // ============================================================================
   // Агенты - Мастер создания
   // ============================================================================
-  'Project Level (.qwen/agents/)': 'Уровень проекта (.qwen/agents/)',
-  'User Level (~/.qwen/agents/)': 'Уровень пользователя (~/.qwen/agents/)',
+  'Project Level (.ollama-code/agents/)': 'Уровень проекта (.ollama-code/agents/)',
+  'User Level (~/.ollama-code/agents/)': 'Уровень пользователя (~/.ollama-code/agents/)',
   '✅ Subagent Created Successfully!': '✅ Подагент успешно создан!',
   'Subagent "{{name}}" has been saved to {{level}} level.':
     'Подагент "{{name}}" сохранен на уровне {{level}}.',
@@ -350,7 +350,7 @@ export default {
   'Load Memory From Include Directories':
     'Загружать память из включенных директорий',
   'Respect .gitignore': 'Учитывать .gitignore',
-  'Respect .qwenignore': 'Учитывать .qwenignore',
+  'Respect .ollama-codeignore': 'Учитывать .ollama-codeignore',
   'Enable Recursive File Search': 'Включить рекурсивный поиск файлов',
   'Disable Fuzzy Search': 'Отключить нечеткий поиск',
   'Interactive Shell (PTY)': 'Интерактивный терминал (PTY)',
@@ -443,8 +443,8 @@ export default {
   remote: 'удалённый',
   'This extension will add the following commands: {{commands}}.':
     'Это расширение добавит следующие команды: {{commands}}.',
-  'This extension will append info to your QWEN.md context using {{fileName}}':
-    'Это расширение добавит информацию в ваш контекст QWEN.md с помощью {{fileName}}',
+  'This extension will append info to your OLLAMA_CODE.md context using {{fileName}}':
+    'Это расширение добавит информацию в ваш контекст OLLAMA_CODE.md с помощью {{fileName}}',
   'This extension will exclude the following core tools: {{tools}}':
     'Это расширение исключит следующие основные инструменты: {{tools}}',
   'This extension will install the following skills:':
@@ -803,8 +803,8 @@ export default {
   // ============================================================================
   // Команды - Резюме
   // ============================================================================
-  'Generate a project summary and save it to .qwen/PROJECT_SUMMARY.md':
-    'Сгенерировать сводку проекта и сохранить её в .qwen/PROJECT_SUMMARY.md',
+  'Generate a project summary and save it to .ollama-code/PROJECT_SUMMARY.md':
+    'Сгенерировать сводку проекта и сохранить её в .ollama-code/PROJECT_SUMMARY.md',
   'No chat client available to generate summary.':
     'Нет доступного чат-клиента для генерации сводки.',
   'Already generating summary, wait for previous request to complete':
@@ -866,8 +866,8 @@ export default {
     'Команда /directory add не поддерживается в ограничительных профилях песочницы. Пожалуйста, используйте --include-directories при запуске сессии.',
   "Error adding '{{path}}': {{error}}":
     "Ошибка при добавлении '{{path}}': {{error}}",
-  'Successfully added QWEN.md files from the following directories if there are:\n- {{directories}}':
-    'Успешно добавлены файлы QWEN.md из следующих директорий (если они есть):\n- {{directories}}',
+  'Successfully added OLLAMA_CODE.md files from the following directories if there are:\n- {{directories}}':
+    'Успешно добавлены файлы OLLAMA_CODE.md из следующих директорий (если они есть):\n- {{directories}}',
   'Error refreshing memory: {{error}}':
     'Ошибка при обновлении памяти: {{error}}',
   'Successfully added directories:\n- {{directories}}':
@@ -1013,8 +1013,8 @@ export default {
     'Не удалось авторизоваться. Сообщение: {{message}}',
   'Authenticated successfully with {{authType}} credentials.':
     'Успешно авторизовано с учетными данными {{authType}}.',
-  'Invalid QWEN_DEFAULT_AUTH_TYPE value: "{{value}}". Valid values are: {{validValues}}':
-    'Неверное значение QWEN_DEFAULT_AUTH_TYPE: "{{value}}". Допустимые значения: {{validValues}}',
+  'Invalid OLLAMA_CODE_DEFAULT_AUTH_TYPE value: "{{value}}". Valid values are: {{validValues}}':
+    'Неверное значение OLLAMA_CODE_DEFAULT_AUTH_TYPE: "{{value}}". Допустимые значения: {{validValues}}',
   'OpenAI Configuration Required': 'Требуется конфигурация OpenAI',
   'Please enter your OpenAI configuration. You can get an API key from':
     'Пожалуйста, введите конфигурацию OpenAI. Вы можете получить ключ API на',

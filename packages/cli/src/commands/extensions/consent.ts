@@ -195,7 +195,7 @@ export function extensionConsentString(
       : extensionConfig.contextFileName;
     output.push(
       t(
-        'This extension will append info to your QWEN.md context using {{fileName}}',
+        'This extension will append info to your OLLAMA_CODE.md context using {{fileName}}',
         { fileName },
       ),
     );

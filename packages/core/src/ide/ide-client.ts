@@ -151,7 +151,7 @@ export class IdeClient {
     }
     const workspacePath =
       this.connectionConfig?.workspacePath ??
-      process.env['QWEN_CODE_IDE_WORKSPACE_PATH'];
+      process.env['OLLAMA_CODE_IDE_WORKSPACE_PATH'];
 
     const { isValid, error } = IdeClient.validateWorkspacePath(
       workspacePath,
@@ -532,7 +532,7 @@ export class IdeClient {
   }
 
   private getPortFromEnv(): string | undefined {
-    const port = process.env['QWEN_CODE_IDE_SERVER_PORT'];
+    const port = process.env['OLLAMA_CODE_IDE_SERVER_PORT'];
     if (!port) {
       return undefined;
     }
@@ -540,12 +540,12 @@ export class IdeClient {
   }
 
   private getStdioConfigFromEnv(): StdioConfig | undefined {
-    const command = process.env['QWEN_CODE_IDE_SERVER_STDIO_COMMAND'];
+    const command = process.env['OLLAMA_CODE_IDE_SERVER_STDIO_COMMAND'];
     if (!command) {
       return undefined;
     }
 
-    const argsStr = process.env['QWEN_CODE_IDE_SERVER_STDIO_ARGS'];
+    const argsStr = process.env['OLLAMA_CODE_IDE_SERVER_STDIO_ARGS'];
     let args: string[] = [];
     if (argsStr) {
       try {
@@ -554,12 +554,12 @@ export class IdeClient {
           args = parsedArgs;
         } else {
           debugLogger.error(
-            'QWEN_CODE_IDE_SERVER_STDIO_ARGS must be a JSON array string.',
+            'OLLAMA_CODE_IDE_SERVER_STDIO_ARGS must be a JSON array string.',
           );
         }
       } catch (e) {
         debugLogger.error(
-          'Failed to parse QWEN_CODE_IDE_SERVER_STDIO_ARGS:',
+          'Failed to parse OLLAMA_CODE_IDE_SERVER_STDIO_ARGS:',
           e,
         );
       }

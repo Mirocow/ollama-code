@@ -42,8 +42,8 @@ qwen mcp list
 
 Most users only need these two scopes:
 
-- **Project scope (default)**: `.qwen/settings.json` in your project root
-- **User scope**: `~/.qwen/settings.json` across all projects on your machine
+- **Project scope (default)**: `.ollama-code/settings.json` in your project root
+- **User scope**: `~/.ollama-code/settings.json` across all projects on your machine
 
 Write to user scope:
 
@@ -75,7 +75,7 @@ Both approaches produce the same `mcpServers` entries in your `settings.json`—
 
 #### Stdio server (local process)
 
-JSON (`.qwen/settings.json`):
+JSON (`.ollama-code/settings.json`):
 
 ```json
 {

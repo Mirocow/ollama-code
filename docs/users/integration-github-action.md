@@ -12,7 +12,7 @@ Use it to perform GitHub pull request reviews, triage issues, perform code analy
 - **On-demand Collaboration**: Trigger workflows in issue and pull request
   comments by mentioning the [Ollama Code CLI](./features/commands) (e.g., `@qwencoder /review`).
 - **Extensible with Tools**: Leverage [Ollama Code](../developers/tools/introduction.md) models' tool-calling capabilities to interact with other CLIs like the [GitHub CLI] (`gh`).
-- **Customizable**: Use a `QWEN.md` file in your repository to provide
+- **Customizable**: Use a `OLLAMA_CODE.md` file in your repository to provide
   project-specific instructions and context to [Ollama Code CLI](./features/commands).
 
 ## Quick Start
@@ -37,7 +37,7 @@ Add the following entries to your `.gitignore` file:
 
 ```gitignore
 # ollama-code-cli settings
-.qwen/
+.ollama-code/
 
 # GitHub App credentials
 gha-creds-*.json
@@ -122,7 +122,7 @@ This type of action can be used to invoke a general-purpose, conversational Olla
 
 - <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(Optional, default: `You are a helpful assistant.`)_ A string passed to the Ollama Code CLI's [`--prompt` argument](https://github.com/QwenLM/ollama-code-action/blob/main/docs/cli/configuration.md#command-line-arguments).
 
-- <a name="__input_settings"></a><a href="#user-content-__input_settings"><code>settings</code></a>: _(Optional)_ A JSON string written to `.qwen/settings.json` to configure the CLI's _project_ settings.
+- <a name="__input_settings"></a><a href="#user-content-__input_settings"><code>settings</code></a>: _(Optional)_ A JSON string written to `.ollama-code/settings.json` to configure the CLI's _project_ settings.
   For more details, see the documentation on [settings files](https://github.com/QwenLM/ollama-code-action/blob/main/docs/cli/configuration.md#settings-files).
 
 - <a name="__input_use_qwen_code_assist"></a><a href="#user-content-__input_use_qwen_code_assist"><code>use*qwen_code_assist</code></a>: *(Optional, default: `false`)\_ Whether to use Code Assist for Ollama Code model access instead of the default Ollama Code API key.
@@ -223,7 +223,7 @@ For a comprehensive guide on securing your repository and workflows, please refe
 
 ## Customization
 
-Create a QWEN.md file in the root of your repository to provide
+Create a OLLAMA_CODE.md file in the root of your repository to provide
 project-specific context and instructions to [Ollama Code CLI](./common-workflow). This is useful for defining
 coding conventions, architectural patterns, or other guidelines the model should
 follow for a given repository.
@@ -238,4 +238,4 @@ Contributions are welcome! Check out the Ollama Code CLI **Contributing Guide** 
 [Ollama Code CLI]: https://github.com/QwenLM/ollama-code-action/
 [variables]: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#creating-configuration-variables-for-a-repository
 [GitHub CLI]: https://docs.github.com/en/github-cli/github-cli
-[QWEN.md]: https://github.com/QwenLM/ollama-code-action/blob/main/docs/cli/configuration.md#context-files-hierarchical-instructional-context
+[OLLAMA_CODE.md]: https://github.com/QwenLM/ollama-code-action/blob/main/docs/cli/configuration.md#context-files-hierarchical-instructional-context

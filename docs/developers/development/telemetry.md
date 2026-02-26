@@ -51,18 +51,18 @@ observability framework — Ollama Code's observability system provides:
 >
 > **⚠️ Special Note: This feature requires corresponding code changes. This documentation is provided in advance; please refer to future code updates for actual functionality.**
 
-All telemetry behavior is controlled through your `.qwen/settings.json` file.
+All telemetry behavior is controlled through your `.ollama-code/settings.json` file.
 These settings can be overridden by environment variables or CLI flags.
 
 | Setting        | Environment Variable           | CLI Flag                                                 | Description                                       | Values             | Default                 |
 | -------------- | ------------------------------ | -------------------------------------------------------- | ------------------------------------------------- | ------------------ | ----------------------- |
-| `enabled`      | `QWEN_TELEMETRY_ENABLED`       | `--telemetry` / `--no-telemetry`                         | Enable or disable telemetry                       | `true`/`false`     | `false`                 |
-| `target`       | `QWEN_TELEMETRY_TARGET`        | `--telemetry-target <local\|qwen>`                       | Where to send telemetry data                      | `"qwen"`/`"local"` | `"local"`               |
-| `otlpEndpoint` | `QWEN_TELEMETRY_OTLP_ENDPOINT` | `--telemetry-otlp-endpoint <URL>`                        | OTLP collector endpoint                           | URL string         | `http://localhost:4317` |
-| `otlpProtocol` | `QWEN_TELEMETRY_OTLP_PROTOCOL` | `--telemetry-otlp-protocol <grpc\|http>`                 | OTLP transport protocol                           | `"grpc"`/`"http"`  | `"grpc"`                |
-| `outfile`      | `QWEN_TELEMETRY_OUTFILE`       | `--telemetry-outfile <path>`                             | Save telemetry to file (overrides `otlpEndpoint`) | file path          | -                       |
-| `logPrompts`   | `QWEN_TELEMETRY_LOG_PROMPTS`   | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Include prompts in telemetry logs                 | `true`/`false`     | `true`                  |
-| `useCollector` | `QWEN_TELEMETRY_USE_COLLECTOR` | -                                                        | Use external OTLP collector (advanced)            | `true`/`false`     | `false`                 |
+| `enabled`      | `OLLAMA_CODE_TELEMETRY_ENABLED`       | `--telemetry` / `--no-telemetry`                         | Enable or disable telemetry                       | `true`/`false`     | `false`                 |
+| `target`       | `OLLAMA_CODE_TELEMETRY_TARGET`        | `--telemetry-target <local\|qwen>`                       | Where to send telemetry data                      | `"qwen"`/`"local"` | `"local"`               |
+| `otlpEndpoint` | `OLLAMA_CODE_TELEMETRY_OTLP_ENDPOINT` | `--telemetry-otlp-endpoint <URL>`                        | OTLP collector endpoint                           | URL string         | `http://localhost:4317` |
+| `otlpProtocol` | `OLLAMA_CODE_TELEMETRY_OTLP_PROTOCOL` | `--telemetry-otlp-protocol <grpc\|http>`                 | OTLP transport protocol                           | `"grpc"`/`"http"`  | `"grpc"`                |
+| `outfile`      | `OLLAMA_CODE_TELEMETRY_OUTFILE`       | `--telemetry-outfile <path>`                             | Save telemetry to file (overrides `otlpEndpoint`) | file path          | -                       |
+| `logPrompts`   | `OLLAMA_CODE_TELEMETRY_LOG_PROMPTS`   | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Include prompts in telemetry logs                 | `true`/`false`     | `true`                  |
+| `useCollector` | `OLLAMA_CODE_TELEMETRY_USE_COLLECTOR` | -                                                        | Use external OTLP collector (advanced)            | `true`/`false`     | `false`                 |
 
 **Note on boolean environment variables:** For the boolean settings (`enabled`,
 `logPrompts`, `useCollector`), setting the corresponding environment variable to
@@ -77,7 +77,7 @@ For detailed information about all configuration options, see the
 
 Sends telemetry directly to Aliyun services. No collector needed.
 
-1. Enable telemetry in your `.qwen/settings.json`:
+1. Enable telemetry in your `.ollama-code/settings.json`:
    ```json
    {
      "telemetry": {
@@ -95,19 +95,19 @@ For local development and debugging, you can capture telemetry data locally:
 
 ### File-based Output (Recommended)
 
-1. Enable telemetry in your `.qwen/settings.json`:
+1. Enable telemetry in your `.ollama-code/settings.json`:
    ```json
    {
      "telemetry": {
        "enabled": true,
        "target": "local",
        "otlpEndpoint": "",
-       "outfile": ".qwen/telemetry.log"
+       "outfile": ".ollama-code/telemetry.log"
      }
    }
    ```
 2. Run Ollama Code and send prompts.
-3. View logs and metrics in the specified file (e.g., `.qwen/telemetry.log`).
+3. View logs and metrics in the specified file (e.g., `.ollama-code/telemetry.log`).
 
 ### Collector-Based Export (Advanced)
 
@@ -119,7 +119,7 @@ For local development and debugging, you can capture telemetry data locally:
    - Download and start Jaeger and OTEL collector
    - Configure your workspace for local telemetry
    - Provide a Jaeger UI at http://localhost:16686
-   - Save logs/metrics to `~/.qwen/tmp/<projectHash>/otel/collector.log`
+   - Save logs/metrics to `~/.ollama-code/tmp/<projectHash>/otel/collector.log`
    - Stop collector on exit (e.g. `Ctrl+C`)
 2. Run Ollama Code and send prompts.
 3. View traces at http://localhost:16686 and logs/metrics in the collector log

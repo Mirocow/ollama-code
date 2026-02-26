@@ -81,8 +81,8 @@ export default {
   // ============================================================================
   // Commands - General
   // ============================================================================
-  'Analyzes the project and creates a tailored QWEN.md file.':
-    'プロジェクトを分析し、カスタマイズされた QWEN.md ファイルを作成',
+  'Analyzes the project and creates a tailored OLLAMA_CODE.md file.':
+    'プロジェクトを分析し、カスタマイズされた OLLAMA_CODE.md ファイルを作成',
   'list available Ollama Code tools. Usage: /tools [desc]':
     '利用可能な Ollama Code ツールを一覧表示。使い方: /tools [desc]',
   'Available Ollama Code CLI tools:': '利用可能な Ollama Code CLI ツール:',
@@ -169,8 +169,8 @@ export default {
   '❌ Error:': '❌ エラー:',
   'Are you sure you want to delete agent "{{name}}"?':
     'エージェント "{{name}}" を削除してもよろしいですか?',
-  'Project Level (.qwen/agents/)': 'プロジェクトレベル (.qwen/agents/)',
-  'User Level (~/.qwen/agents/)': 'ユーザーレベル (~/.qwen/agents/)',
+  'Project Level (.ollama-code/agents/)': 'プロジェクトレベル (.ollama-code/agents/)',
+  'User Level (~/.ollama-code/agents/)': 'ユーザーレベル (~/.ollama-code/agents/)',
   '✅ Subagent Created Successfully!':
     '✅ サブエージェントの作成に成功しました!',
   'Subagent "{{name}}" has been saved to {{level}} level.':
@@ -299,7 +299,7 @@ export default {
   'Load Memory From Include Directories':
     'インクルードディレクトリからメモリを読み込み',
   'Respect .gitignore': '.gitignore を優先',
-  'Respect .qwenignore': '.qwenignore を優先',
+  'Respect .ollama-codeignore': '.ollama-codeignore を優先',
   'Enable Recursive File Search': '再帰的ファイル検索を有効化',
   'Disable Fuzzy Search': 'ファジー検索を無効化',
   'Enable Interactive Shell': '対話型シェルを有効化',
@@ -554,8 +554,8 @@ export default {
   'Share the current conversation to a markdown or json file. Usage: /chat share <file>':
     '現在の会話をmarkdownまたはjsonファイルに共有。使い方: /chat share <ファイル>',
   // Summary
-  'Generate a project summary and save it to .qwen/PROJECT_SUMMARY.md':
-    'プロジェクトサマリーを生成し、.qwen/PROJECT_SUMMARY.md に保存',
+  'Generate a project summary and save it to .ollama-code/PROJECT_SUMMARY.md':
+    'プロジェクトサマリーを生成し、.ollama-code/PROJECT_SUMMARY.md に保存',
   'No chat client available to generate summary.':
     'サマリーを生成するためのチャットクライアントがありません',
   'Already generating summary, wait for previous request to complete':
@@ -605,8 +605,8 @@ export default {
     '制限的なサンドボックスプロファイルでは /directory add コマンドはサポートされていません。代わりにセッション開始時に --include-directories を使用してください',
   "Error adding '{{path}}': {{error}}":
     "'{{path}}' の追加中にエラー: {{error}}",
-  'Successfully added QWEN.md files from the following directories if there are:\n- {{directories}}':
-    '以下のディレクトリから QWEN.md ファイルを追加しました(存在する場合):\n- {{directories}}',
+  'Successfully added OLLAMA_CODE.md files from the following directories if there are:\n- {{directories}}':
+    '以下のディレクトリから OLLAMA_CODE.md ファイルを追加しました(存在する場合):\n- {{directories}}',
   'Error refreshing memory: {{error}}': 'メモリの更新中にエラー: {{error}}',
   'Successfully added directories:\n- {{directories}}':
     'ディレクトリを正常に追加しました:\n- {{directories}}',
@@ -718,8 +718,8 @@ export default {
     '認証に失敗しました。メッセージ: {{message}}',
   'Authenticated successfully with {{authType}} credentials.':
     '{{authType}} 認証情報で正常に認証されました',
-  'Invalid QWEN_DEFAULT_AUTH_TYPE value: "{{value}}". Valid values are: {{validValues}}':
-    '無効な QWEN_DEFAULT_AUTH_TYPE 値: "{{value}}"。有効な値: {{validValues}}',
+  'Invalid OLLAMA_CODE_DEFAULT_AUTH_TYPE value: "{{value}}". Valid values are: {{validValues}}':
+    '無効な OLLAMA_CODE_DEFAULT_AUTH_TYPE 値: "{{value}}"。有効な値: {{validValues}}',
   'OpenAI Configuration Required': 'OpenAI設定が必要です',
   'Please enter your OpenAI configuration. You can get an API key from':
     'OpenAI設定を入力してください。APIキーは以下から取得できます',

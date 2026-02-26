@@ -320,7 +320,7 @@ When you configure Coding Plan through the `/auth` command, the API key is store
 > **Security Recommendation**: For better security, it is recommended to move the API key from `settings.json` to a separate `.env` file and load it as an environment variable. For example:
 >
 > ```bash
-> # ~/.qwen/.env
+> # ~/.ollama-code/.env
 > BAILIAN_CODING_PLAN_API_KEY=your-api-key-here
 > ```
 >
@@ -422,7 +422,7 @@ The following fields are treated as atomic objects - provider values completely 
 ### Example
 
 ```json
-// User settings (~/.qwen/settings.json)
+// User settings (~/.ollama-code/settings.json)
 {
   "model": {
     "generationConfig": {
@@ -515,7 +515,7 @@ The snapshot:
 ## Selection Persistence and Recommendations
 
 > [!important]
-> Define `modelProviders` in the user-scope `~/.qwen/settings.json` whenever possible and avoid persisting credential overrides in any scope. Keeping the provider catalog in user settings prevents merge/override conflicts between project and user scopes and ensures `/auth` and `/model` updates always write back to a consistent scope.
+> Define `modelProviders` in the user-scope `~/.ollama-code/settings.json` whenever possible and avoid persisting credential overrides in any scope. Keeping the provider catalog in user settings prevents merge/override conflicts between project and user scopes and ensures `/auth` and `/model` updates always write back to a consistent scope.
 
 - `/model` and `/auth` persist `model.name` (where applicable) and `security.auth.selectedType` to the closest writable scope that already defines `modelProviders`; otherwise they fall back to the user scope. This keeps workspace/user files in sync with the active provider catalog.
 - Without `modelProviders`, the resolver mixes CLI/env/settings layers, creating Runtime Models. This is fine for single-provider setups but cumbersome when frequently switching. Define provider catalogs whenever multi-model workflows are common so that switches stay atomic, source-attributed, and debuggable.

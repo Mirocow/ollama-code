@@ -60,7 +60,7 @@ describe('ShellTool', () => {
         .fn()
         .mockReturnValue(createMockWorkspaceContext('/test/dir')),
       storage: {
-        getUserSkillsDir: vi.fn().mockReturnValue('/test/dir/.qwen/skills'),
+        getUserSkillsDir: vi.fn().mockReturnValue('/test/dir/.ollama-code/skills'),
       },
       getOllamaClient: vi.fn(),
       getGitCoAuthor: vi.fn().mockReturnValue({
@@ -149,7 +149,7 @@ describe('ShellTool', () => {
       expect(() =>
         shellTool.build({
           command: 'ls',
-          directory: '/test/dir/.qwen/skills/my-skill',
+          directory: '/test/dir/.ollama-code/skills/my-skill',
           is_background: false,
         }),
       ).toThrow(
@@ -161,7 +161,7 @@ describe('ShellTool', () => {
       expect(() =>
         shellTool.build({
           command: 'ls',
-          directory: '/test/dir/.qwen/skills',
+          directory: '/test/dir/.ollama-code/skills',
           is_background: false,
         }),
       ).toThrow(
@@ -173,7 +173,7 @@ describe('ShellTool', () => {
       expect(() =>
         shellTool.build({
           command: 'ls',
-          directory: '/test/dir/.qwen/skills/../skills/my-skill',
+          directory: '/test/dir/.ollama-code/skills/../skills/my-skill',
           is_background: false,
         }),
       ).toThrow(

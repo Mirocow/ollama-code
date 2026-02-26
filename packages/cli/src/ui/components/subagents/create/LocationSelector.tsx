@@ -17,13 +17,13 @@ interface LocationOption {
 const locationOptions: LocationOption[] = [
   {
     get label() {
-      return t('Project Level (.qwen/agents/)');
+      return t('Project Level (.ollama-code/agents/)');
     },
     value: 'project',
   },
   {
     get label() {
-      return t('User Level (~/.qwen/agents/)');
+      return t('User Level (~/.ollama-code/agents/)');
     },
     value: 'user',
   },

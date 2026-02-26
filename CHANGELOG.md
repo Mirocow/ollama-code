@@ -69,7 +69,7 @@
 - Improved tool execution with early stop on invalid tool calls.
 - Added explicit `is_background` parameter for shell tool.
 - Enhanced memory management with sub-commands to switch between project and global memory operations.
-- Renamed `GEMINI_DIR` to `QWEN_DIR` for better branding consistency.
+- Renamed `GEMINI_DIR` to `OLLAMA_DIR` for better branding consistency.
 - Added support for Qwen Markdown selection.
 - Fixed parallel tool usage and improved tool reliability.
 - Upgraded integration tests to use Vitest framework.
@@ -92,7 +92,7 @@
 - Added deterministic cache control for the DashScope provider.
 - Added option to choose a project-level or global save location.
 - Limited `grep` results to 25 items by default.
-- `grep` now respects `.qwenignore`.
+- `grep` now respects `.ollama-codeignore`.
 - Miscellaneous improvements and bug fixes.
 
 ## 0.0.7
@@ -109,7 +109,7 @@
 ## 0.0.6
 
 - Added usage statistics logging for Qwen integration.
-- Made `/init` respect the configured context filename and aligned docs with `QWEN.md`.
+- Made `/init` respect the configured context filename and aligned docs with `OLLAMA_CODE.md`.
 - Fixed `EPERM` error when running `qwen --sandbox` on macOS.
 - Fixed terminal flicker while waiting for login.
 - Fixed `glm-4.5` model request error.

@@ -95,8 +95,8 @@ export default {
   // ============================================================================
   // Commands - General
   // ============================================================================
-  'Analyzes the project and creates a tailored QWEN.md file.':
-    'Analysiert das Projekt und erstellt eine maßgeschneiderte QWEN.md-Datei.',
+  'Analyzes the project and creates a tailored OLLAMA_CODE.md file.':
+    'Analysiert das Projekt und erstellt eine maßgeschneiderte OLLAMA_CODE.md-Datei.',
   'list available Ollama Code tools. Usage: /tools [desc]':
     'Verfügbare Ollama Code Werkzeuge auflisten. Verwendung: /tools [desc]',
   'Available Ollama Code CLI tools:': 'Verfügbare Ollama Code CLI-Werkzeuge:',
@@ -187,8 +187,8 @@ export default {
   // ============================================================================
   // Agents - Creation Wizard
   // ============================================================================
-  'Project Level (.qwen/agents/)': 'Projektebene (.qwen/agents/)',
-  'User Level (~/.qwen/agents/)': 'Benutzerebene (~/.qwen/agents/)',
+  'Project Level (.ollama-code/agents/)': 'Projektebene (.ollama-code/agents/)',
+  'User Level (~/.ollama-code/agents/)': 'Benutzerebene (~/.ollama-code/agents/)',
   '✅ Subagent Created Successfully!': '✅ Unteragent erfolgreich erstellt!',
   'Subagent "{{name}}" has been saved to {{level}} level.':
     'Unteragent "{{name}}" wurde auf {{level}}-Ebene gespeichert.',
@@ -328,7 +328,7 @@ export default {
   'Load Memory From Include Directories':
     'Speicher aus Include-Verzeichnissen laden',
   'Respect .gitignore': '.gitignore beachten',
-  'Respect .qwenignore': '.qwenignore beachten',
+  'Respect .ollama-codeignore': '.ollama-codeignore beachten',
   'Enable Recursive File Search': 'Rekursive Dateisuche aktivieren',
   'Disable Fuzzy Search': 'Unscharfe Suche deaktivieren',
   'Interactive Shell (PTY)': 'Interaktive Shell (PTY)',
@@ -422,8 +422,8 @@ export default {
   remote: 'remote',
   'This extension will add the following commands: {{commands}}.':
     'Diese Erweiterung wird folgende Befehle hinzufügen: {{commands}}.',
-  'This extension will append info to your QWEN.md context using {{fileName}}':
-    'Diese Erweiterung wird Informationen zu Ihrem QWEN.md-Kontext mit {{fileName}} hinzufügen',
+  'This extension will append info to your OLLAMA_CODE.md context using {{fileName}}':
+    'Diese Erweiterung wird Informationen zu Ihrem OLLAMA_CODE.md-Kontext mit {{fileName}} hinzufügen',
   'This extension will exclude the following core tools: {{tools}}':
     'Diese Erweiterung wird folgende Kernwerkzeuge ausschließen: {{tools}}',
   'This extension will install the following skills:':
@@ -792,8 +792,8 @@ export default {
   // ============================================================================
   // Commands - Summary
   // ============================================================================
-  'Generate a project summary and save it to .qwen/PROJECT_SUMMARY.md':
-    'Projektzusammenfassung generieren und in .qwen/PROJECT_SUMMARY.md speichern',
+  'Generate a project summary and save it to .ollama-code/PROJECT_SUMMARY.md':
+    'Projektzusammenfassung generieren und in .ollama-code/PROJECT_SUMMARY.md speichern',
   'No chat client available to generate summary.':
     'Kein Chat-Client verfügbar, um Zusammenfassung zu generieren.',
   'Already generating summary, wait for previous request to complete':
@@ -858,8 +858,8 @@ export default {
     'Der Befehl /directory add wird in restriktiven Sandbox-Profilen nicht unterstützt. Bitte verwenden Sie --include-directories beim Starten der Sitzung.',
   "Error adding '{{path}}': {{error}}":
     "Fehler beim Hinzufügen von '{{path}}': {{error}}",
-  'Successfully added QWEN.md files from the following directories if there are:\n- {{directories}}':
-    'QWEN.md-Dateien aus folgenden Verzeichnissen erfolgreich hinzugefügt, falls vorhanden:\n- {{directories}}',
+  'Successfully added OLLAMA_CODE.md files from the following directories if there are:\n- {{directories}}':
+    'OLLAMA_CODE.md-Dateien aus folgenden Verzeichnissen erfolgreich hinzugefügt, falls vorhanden:\n- {{directories}}',
   'Error refreshing memory: {{error}}':
     'Fehler beim Aktualisieren des Speichers: {{error}}',
   'Successfully added directories:\n- {{directories}}':
@@ -1009,8 +1009,8 @@ export default {
     'Authentifizierung fehlgeschlagen. Meldung: {{message}}',
   'Authenticated successfully with {{authType}} credentials.':
     'Erfolgreich mit {{authType}}-Anmeldedaten authentifiziert.',
-  'Invalid QWEN_DEFAULT_AUTH_TYPE value: "{{value}}". Valid values are: {{validValues}}':
-    'Ungültiger QWEN_DEFAULT_AUTH_TYPE-Wert: "{{value}}". Gültige Werte sind: {{validValues}}',
+  'Invalid OLLAMA_CODE_DEFAULT_AUTH_TYPE value: "{{value}}". Valid values are: {{validValues}}':
+    'Ungültiger OLLAMA_CODE_DEFAULT_AUTH_TYPE-Wert: "{{value}}". Gültige Werte sind: {{validValues}}',
   'OpenAI Configuration Required': 'OpenAI-Konfiguration erforderlich',
   'Please enter your OpenAI configuration. You can get an API key from':
     'Bitte geben Sie Ihre OpenAI-Konfiguration ein. Sie können einen API-Schlüssel erhalten von',

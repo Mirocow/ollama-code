@@ -269,8 +269,8 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
       <div class="header-left">
         <div class="logo-icon">${FAVICON_SVG}</div>
         <div class="logo">
-          <div class="logo-text" data-text="QWEN">
-            <span class="logo-text-inner">QWEN</span>
+          <div class="logo-text" data-text="OLLAMA">
+            <span class="logo-text-inner">OLLAMA</span>
           </div>
         </div>
       </div>

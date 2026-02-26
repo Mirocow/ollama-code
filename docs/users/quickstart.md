@@ -10,7 +10,7 @@ Make sure you have:
 
 - A **terminal** or command prompt open
 - A code project to work with
-- A [Ollama Code](https://chat.qwen.ai/auth?mode=register) account
+- A [Ollama Code](https://chat.ollama-code.ai/auth?mode=register) account
 
 ## Step 1: Install Ollama Code
 
@@ -50,7 +50,7 @@ Select `Qwen OAuth`, log in to your account and follow the prompts to confirm. O
 
 > [!note]
 >
-> When you first authenticate Ollama Code with your Qwen account, a workspace called ".qwen" is automatically created for you. This workspace provides centralized cost tracking and management for all Ollama Code usage in your organization.
+> When you first authenticate Ollama Code with your Qwen account, a workspace called ".ollama-code" is automatically created for you. This workspace provides centralized cost tracking and management for all Ollama Code usage in your organization.
 
 > [!tip]
 >

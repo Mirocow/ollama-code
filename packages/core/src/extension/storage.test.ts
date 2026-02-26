@@ -38,7 +38,7 @@ describe('ExtensionStorage', () => {
     vi.mocked(Storage).mockImplementation(
       () =>
         ({
-          getExtensionsDir: () => path.join(mockHomeDir, '.qwen', 'extensions'),
+          getExtensionsDir: () => path.join(mockHomeDir, '.ollama-code', 'extensions'),
         }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     );
     storage = new ExtensionStorage(extensionName);
@@ -51,7 +51,7 @@ describe('ExtensionStorage', () => {
   it('should return the correct extension directory', () => {
     const expectedDir = path.join(
       mockHomeDir,
-      '.qwen',
+      '.ollama-code',
       'extensions',
       extensionName,
     );
@@ -61,7 +61,7 @@ describe('ExtensionStorage', () => {
   it('should return the correct config path', () => {
     const expectedPath = path.join(
       mockHomeDir,
-      '.qwen',
+      '.ollama-code',
       'extensions',
       extensionName,
       EXTENSIONS_CONFIG_FILENAME, // EXTENSIONS_CONFIG_FILENAME
@@ -72,7 +72,7 @@ describe('ExtensionStorage', () => {
   it('should return the correct env file path', () => {
     const expectedPath = path.join(
       mockHomeDir,
-      '.qwen',
+      '.ollama-code',
       'extensions',
       extensionName,
       EXTENSION_SETTINGS_FILENAME, // EXTENSION_SETTINGS_FILENAME
@@ -81,7 +81,7 @@ describe('ExtensionStorage', () => {
   });
 
   it('should return the correct user extensions directory', () => {
-    const expectedDir = path.join(mockHomeDir, '.qwen', 'extensions');
+    const expectedDir = path.join(mockHomeDir, '.ollama-code', 'extensions');
     expect(ExtensionStorage.getUserExtensionsDir()).toBe(expectedDir);
   });
 

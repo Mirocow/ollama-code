@@ -320,7 +320,7 @@ export const RealConversation: Story = {
         message: {
           role: 'user',
           content: `Message received: Object from: Object
-service-worker.js:137 Attempting to connect to Native Host: com.qwen.cli.bridge
+service-worker.js:137 Attempting to connect to Native Host: com.ollama.cli.bridge
 service-worker.js:202 Sending handshake...
 service-worker.js:175 Native host disconnected
 service-worker.js:177 Disconnect error: Object
@@ -390,7 +390,7 @@ packages/chrome-extension/
 │   └── manifest.json          # Extension manifest
 └── native-host/
     ├── index.js               # Native host entry
-    └── com.qwen.cli.bridge.json  # Host manifest
+    └── com.ollama.cli.bridge.json  # Host manifest
 \`\`\`
 
 The issue appears to be in the handshake timing. The native host is exiting before the handshake completes.`,
