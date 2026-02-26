@@ -13,7 +13,7 @@ npm install -g @ollama-code/ollama-code
 To verify the installation
 
 ```bash
-qwen --version
+ollama-code --version
 ```
 
 ## Overview of sandboxing
@@ -29,7 +29,7 @@ The benefits of sandboxing include:
 
 > [!note]
 >
-> **Naming note:** Some sandbox-related environment variables still use the `GEMINI_*` prefix for backwards compatibility.
+> **Naming note:** Some sandbox-related environment variables support both `OLLAMA_*` and legacy `GEMINI_*` prefixes for backwards compatibility.
 
 ## Sandboxing methods
 
@@ -49,7 +49,7 @@ Cross-platform sandboxing with complete process isolation.
 
 By default, Ollama Code uses a published sandbox image (configured in the CLI package) and will pull it as needed.
 
-The container sandbox mounts your workspace and your `~/.qwen` directory into the container so auth and settings persist between runs.
+The container sandbox mounts your workspace and your `~/.ollama-code` directory into the container so auth and settings persist between runs.
 
 **Best for**: Strong isolation on any OS, consistent tooling inside a known image.
 
@@ -65,11 +65,11 @@ The container sandbox mounts your workspace and your `~/.qwen` directory into th
 
 ```bash
 # Enable sandboxing with command flag
-qwen -s -p "analyze the code structure"
+ollama-code -s -p "analyze the code structure"
 
 # Or enable sandboxing for your shell session (recommended for CI / scripts)
-export GEMINI_SANDBOX=true   # true auto-picks a provider (see notes below)
-qwen -p "run the test suite"
+export OLLAMA_SANDBOX=true   # true auto-picks a provider (see notes below)
+ollama-code -p "run the test suite"
 
 # Configure in settings.json
 {
@@ -83,26 +83,26 @@ qwen -p "run the test suite"
 >
 > **Provider selection notes:**
 >
-> - On **macOS**, `GEMINI_SANDBOX=true` typically selects `sandbox-exec` (Seatbelt) if available.
-> - On **Linux/Windows**, `GEMINI_SANDBOX=true` requires `docker` or `podman` to be installed.
-> - To force a provider, set `GEMINI_SANDBOX=docker|podman|sandbox-exec`.
+> - On **macOS**, `OLLAMA_SANDBOX=true` typically selects `sandbox-exec` (Seatbelt) if available.
+> - On **Linux/Windows**, `OLLAMA_SANDBOX=true` requires `docker` or `podman` to be installed.
+> - To force a provider, set `OLLAMA_SANDBOX=docker|podman|sandbox-exec`.
 
 ## Configuration
 
 ### Enable sandboxing (in order of precedence)
 
-1. **Environment variable**: `GEMINI_SANDBOX=true|false|docker|podman|sandbox-exec`
+1. **Environment variable**: `OLLAMA_SANDBOX=true|false|docker|podman|sandbox-exec`
 2. **Command flag / argument**: `-s`, `--sandbox`, or `--sandbox=<provider>`
 3. **Settings file**: `tools.sandbox` in your `settings.json` (e.g., `{"tools": {"sandbox": true}}`).
 
 > [!important]
 >
-> If `GEMINI_SANDBOX` is set, it **overrides** the CLI flag and `settings.json`.
+> If `OLLAMA_SANDBOX` is set, it **overrides** the CLI flag and `settings.json`.
 
 ### Configure the sandbox image (Docker/Podman)
 
 - **CLI flag**: `--sandbox-image <image>`
-- **Environment variable**: `GEMINI_SANDBOX_IMAGE=<image>`
+- **Environment variable**: `OLLAMA_SANDBOX_IMAGE=<image>`
 
 If you don’t set either, Ollama Code uses the default image configured in the CLI package (for example `ghcr.io/qwenlm/ollama-code:<version>`).
 
@@ -125,7 +125,7 @@ Built-in profiles (set via `SEATBELT_PROFILE` env var):
 
 To use a custom Seatbelt profile:
 
-1. Create a file named `.qwen/sandbox-macos-<profile_name>.sb` in your project.
+1. Create a file named `.ollama-code/sandbox-macos-<profile_name>.sb` in your project.
 2. Set `SEATBELT_PROFILE=<profile_name>`.
 
 ### Custom Sandbox Flags
@@ -150,7 +150,7 @@ export SANDBOX_FLAGS="--flag1 --flag2=value"
 
 If you want to restrict outbound network access to an allowlist, you can run a local proxy alongside the sandbox:
 
-- Set `GEMINI_SANDBOX_PROXY_COMMAND=<command>`
+- Set `OLLAMA_SANDBOX_PROXY_COMMAND=<command>`
 - The command must start a proxy server that listens on `:::8877`
 
 This is especially useful with `*-proxied` Seatbelt profiles.
@@ -159,7 +159,7 @@ For a working allowlist-style proxy example, see: [Example Proxy Script](/develo
 
 ## Linux UID/GID handling
 
-On Linux, Ollama Code defaults to enabling UID/GID mapping so the sandbox runs as your user (and reuses the mounted `~/.qwen`). Override with:
+On Linux, Ollama Code defaults to enabling UID/GID mapping so the sandbox runs as your user (and reuses the mounted `~/.ollama-code`). Override with:
 
 ```bash
 export SANDBOX_SET_UID_GID=true   # Force host UID/GID
@@ -178,7 +178,7 @@ export SANDBOX_SET_UID_GID=false  # Disable UID/GID mapping
 
 **Missing commands**
 
-- Container sandbox: add them via `.qwen/sandbox.Dockerfile` or `.qwen/sandbox.bashrc`.
+- Container sandbox: add them via `.ollama-code/sandbox.Dockerfile` or `.ollama-code/sandbox.bashrc`.
 - Seatbelt: your host binaries are used, but the sandbox may restrict access to some paths.
 
 **Network issues**
@@ -189,19 +189,19 @@ export SANDBOX_SET_UID_GID=false  # Disable UID/GID mapping
 ### Debug mode
 
 ```bash
-DEBUG=1 qwen -s -p "debug command"
+DEBUG=1 ollama-code -s -p "debug command"
 ```
 
-**Note:** If you have `DEBUG=true` in a project's `.env` file, it won't affect the CLI due to automatic exclusion. Use `.qwen/.env` files for Ollama Code-specific debug settings.
+**Note:** If you have `DEBUG=true` in a project's `.env` file, it won't affect the CLI due to automatic exclusion. Use `.ollama-code/.env` files for Ollama Code-specific debug settings.
 
 ### Inspect sandbox
 
 ```bash
 # Check environment
-qwen -s -p "run shell command: env | grep SANDBOX"
+ollama-code -s -p "run shell command: env | grep SANDBOX"
 
 # List mounts
-qwen -s -p "run shell command: mount | grep workspace"
+ollama-code -s -p "run shell command: mount | grep workspace"
 ```
 
 ## Security notes
