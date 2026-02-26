@@ -57,12 +57,14 @@ export async function resolveTelemetrySettings(options: {
 
   const enabled =
     argv.telemetry ??
-    parseBooleanEnvFlag(env['GEMINI_TELEMETRY_ENABLED']) ??
+    parseBooleanEnvFlag(env['OLLAMA_TELEMETRY_ENABLED']) ??
+    parseBooleanEnvFlag(env['GEMINI_TELEMETRY_ENABLED']) ?? // Legacy support
     settings.enabled;
 
   const rawTarget =
     (argv.telemetryTarget as string | TelemetryTarget | undefined) ??
-    env['GEMINI_TELEMETRY_TARGET'] ??
+    env['OLLAMA_TELEMETRY_TARGET'] ??
+    env['GEMINI_TELEMETRY_TARGET'] ?? // Legacy support
     (settings.target as string | TelemetryTarget | undefined);
   const target = parseTelemetryTargetValue(rawTarget);
   if (rawTarget !== undefined && target === undefined) {
@@ -75,13 +77,15 @@ export async function resolveTelemetrySettings(options: {
 
   const otlpEndpoint =
     argv.telemetryOtlpEndpoint ??
-    env['GEMINI_TELEMETRY_OTLP_ENDPOINT'] ??
+    env['OLLAMA_TELEMETRY_OTLP_ENDPOINT'] ??
+    env['GEMINI_TELEMETRY_OTLP_ENDPOINT'] ?? // Legacy support
     env['OTEL_EXPORTER_OTLP_ENDPOINT'] ??
     settings.otlpEndpoint;
 
   const rawProtocol =
     (argv.telemetryOtlpProtocol as string | undefined) ??
-    env['GEMINI_TELEMETRY_OTLP_PROTOCOL'] ??
+    env['OLLAMA_TELEMETRY_OTLP_PROTOCOL'] ??
+    env['GEMINI_TELEMETRY_OTLP_PROTOCOL'] ?? // Legacy support
     settings.otlpProtocol;
   const otlpProtocol = (['grpc', 'http'] as const).find(
     (p) => p === rawProtocol,
@@ -96,16 +100,19 @@ export async function resolveTelemetrySettings(options: {
 
   const logPrompts =
     argv.telemetryLogPrompts ??
-    parseBooleanEnvFlag(env['GEMINI_TELEMETRY_LOG_PROMPTS']) ??
+    parseBooleanEnvFlag(env['OLLAMA_TELEMETRY_LOG_PROMPTS']) ??
+    parseBooleanEnvFlag(env['GEMINI_TELEMETRY_LOG_PROMPTS']) ?? // Legacy support
     settings.logPrompts;
 
   const outfile =
     argv.telemetryOutfile ??
-    env['GEMINI_TELEMETRY_OUTFILE'] ??
+    env['OLLAMA_TELEMETRY_OUTFILE'] ??
+    env['GEMINI_TELEMETRY_OUTFILE'] ?? // Legacy support
     settings.outfile;
 
   const useCollector =
-    parseBooleanEnvFlag(env['GEMINI_TELEMETRY_USE_COLLECTOR']) ??
+    parseBooleanEnvFlag(env['OLLAMA_TELEMETRY_USE_COLLECTOR']) ??
+    parseBooleanEnvFlag(env['GEMINI_TELEMETRY_USE_COLLECTOR']) ?? // Legacy support
     settings.useCollector;
 
   return {

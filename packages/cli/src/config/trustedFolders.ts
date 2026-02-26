@@ -22,6 +22,10 @@ export const SETTINGS_DIRECTORY_NAME = '.ollama';
 export const USER_SETTINGS_DIR = path.join(homedir(), SETTINGS_DIRECTORY_NAME);
 
 export function getTrustedFoldersPath(): string {
+  if (process.env['OLLAMA_CLI_TRUSTED_FOLDERS_PATH']) {
+    return process.env['OLLAMA_CLI_TRUSTED_FOLDERS_PATH'];
+  }
+  // Legacy support
   if (process.env['GEMINI_CLI_TRUSTED_FOLDERS_PATH']) {
     return process.env['GEMINI_CLI_TRUSTED_FOLDERS_PATH'];
   }

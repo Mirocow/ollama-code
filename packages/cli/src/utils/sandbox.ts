@@ -263,8 +263,9 @@ export async function start_sandbox(
         ...finalArgv.map((arg) => quote([arg])),
       ].join(' '),
     );
-    // start and set up proxy if GEMINI_SANDBOX_PROXY_COMMAND is set
-    const proxyCommand = process.env['GEMINI_SANDBOX_PROXY_COMMAND'];
+    // start and set up proxy if OLLAMA_SANDBOX_PROXY_COMMAND or GEMINI_SANDBOX_PROXY_COMMAND is set
+    const proxyCommand = process.env['OLLAMA_SANDBOX_PROXY_COMMAND'] ??
+      process.env['GEMINI_SANDBOX_PROXY_COMMAND']; // Legacy support
     let proxyProcess: ChildProcess | undefined = undefined;
     let sandboxProcess: ChildProcess | undefined = undefined;
     const sandboxEnv = { ...process.env };
@@ -378,7 +379,8 @@ export async function start_sandbox(
           stdio: 'inherit',
           env: {
             ...process.env,
-            GEMINI_SANDBOX: config.command, // in case sandbox is enabled via flags (see config.ts under cli package)
+            OLLAMA_SANDBOX: config.command, // in case sandbox is enabled via flags
+            GEMINI_SANDBOX: config.command, // Legacy support
           },
         },
       );
@@ -498,8 +500,9 @@ export async function start_sandbox(
 
   // copy proxy environment variables, replacing localhost with SANDBOX_PROXY_NAME
   // copy as both upper-case and lower-case as is required by some utilities
-  // GEMINI_SANDBOX_PROXY_COMMAND implies HTTPS_PROXY unless HTTP_PROXY is set
-  const proxyCommand = process.env['GEMINI_SANDBOX_PROXY_COMMAND'];
+  // OLLAMA_SANDBOX_PROXY_COMMAND or GEMINI_SANDBOX_PROXY_COMMAND implies HTTPS_PROXY unless HTTP_PROXY is set
+  const proxyCommand = process.env['OLLAMA_SANDBOX_PROXY_COMMAND'] ??
+    process.env['GEMINI_SANDBOX_PROXY_COMMAND']; // Legacy support
 
   if (proxyCommand) {
     let proxy =
@@ -541,7 +544,8 @@ export async function start_sandbox(
   // name container after image, plus random suffix to avoid conflicts
   const imageName = parseImageName(image);
   const isIntegrationTest =
-    process.env['GEMINI_CLI_INTEGRATION_TEST'] === 'true';
+    process.env['OLLAMA_CLI_INTEGRATION_TEST'] === 'true' ||
+    process.env['GEMINI_CLI_INTEGRATION_TEST'] === 'true'; // Legacy support
   let containerName;
   if (isIntegrationTest) {
     containerName = `qwen-code-integration-test-${randomBytes(4).toString(
@@ -571,7 +575,11 @@ export async function start_sandbox(
     );
   }
 
-  // copy GEMINI_API_KEY(s)
+  // copy OLLAMA_API_KEY(s)
+  if (process.env['OLLAMA_API_KEY']) {
+    args.push('--env', `OLLAMA_API_KEY=${process.env['OLLAMA_API_KEY']}`);
+  }
+  // copy GEMINI_API_KEY(s) - Legacy support
   if (process.env['GEMINI_API_KEY']) {
     args.push('--env', `GEMINI_API_KEY=${process.env['GEMINI_API_KEY']}`);
   }
@@ -626,7 +634,11 @@ export async function start_sandbox(
     );
   }
 
-  // copy GEMINI_MODEL
+  // copy OLLAMA_MODEL
+  if (process.env['OLLAMA_MODEL']) {
+    args.push('--env', `OLLAMA_MODEL=${process.env['OLLAMA_MODEL']}`);
+  }
+  // copy GEMINI_MODEL - Legacy support
   if (process.env['GEMINI_MODEL']) {
     args.push('--env', `GEMINI_MODEL=${process.env['GEMINI_MODEL']}`);
   }
@@ -735,10 +747,10 @@ export async function start_sandbox(
 
     // Instead of passing --user to the main sandbox container, we let it
     // start as root, then create a user with the host's UID/GID, and
-    // finally switch to that user to run the gemini process. This is
+    // finally switch to that user to run the ollama process. This is
     // necessary on Linux to ensure the user exists within the
     // container's /etc/passwd file, which is required by os.userInfo().
-    const username = 'gemini';
+    const username = 'ollama';
     const homeDir = getContainerPath(os.homedir());
 
     const setupUserCommands = [
@@ -769,7 +781,7 @@ export async function start_sandbox(
   // push container entrypoint (including args)
   args.push(...finalEntrypoint);
 
-  // start and set up proxy if GEMINI_SANDBOX_PROXY_COMMAND is set
+  // start and set up proxy if OLLAMA_SANDBOX_PROXY_COMMAND or GEMINI_SANDBOX_PROXY_COMMAND is set
   let proxyProcess: ChildProcess | undefined = undefined;
   let sandboxProcess: ChildProcess | undefined = undefined;
 
