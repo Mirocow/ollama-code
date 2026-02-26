@@ -351,6 +351,102 @@ Use the `/model` command at any time to switch between all configured models.
 
 > **Security note:** Never commit API keys to version control. The `~/.qwen/settings.json` file is in your home directory and should stay private.
 
+### Ollama (Local Models)
+
+This version includes built-in support for **Ollama** — run AI models locally without API keys or internet connection.
+
+#### Prerequisites
+
+1. Install Ollama: [https://ollama.ai](https://ollama.ai)
+2. Download a model:
+
+```bash
+ollama pull qwen2.5-coder
+# or other models:
+ollama pull llama3.2
+ollama pull codellama
+ollama pull deepseek-coder-v2
+```
+
+#### Quick Setup
+
+**Option 1: Environment Variables**
+
+```bash
+export OLLAMA_BASE_URL=http://localhost:11434/v1
+export OLLAMA_MODEL=qwen2.5-coder
+qwen --model-provider ollama
+```
+
+**Option 2: settings.json**
+
+Add to `~/.qwen/settings.json`:
+
+```json
+{
+  "modelProviders": {
+    "ollama": [
+      {
+        "id": "qwen2.5-coder",
+        "name": "Qwen 2.5 Coder (Local)",
+        "baseUrl": "http://localhost:11434/v1",
+        "description": "Qwen 2.5 Coder - excellent for coding tasks"
+      },
+      {
+        "id": "llama3.2",
+        "name": "Llama 3.2 (Local)",
+        "baseUrl": "http://localhost:11434/v1",
+        "description": "Meta Llama 3.2 - versatile model"
+      },
+      {
+        "id": "codellama",
+        "name": "Code Llama (Local)",
+        "baseUrl": "http://localhost:11434/v1",
+        "description": "Code Llama - specialized for code generation"
+      },
+      {
+        "id": "deepseek-coder-v2",
+        "name": "DeepSeek Coder V2 (Local)",
+        "baseUrl": "http://localhost:11434/v1",
+        "description": "DeepSeek Coder V2 - powerful coding model"
+      }
+    ]
+  },
+  "security": {
+    "auth": {
+      "selectedType": "ollama"
+    }
+  },
+  "model": {
+    "name": "qwen2.5-coder"
+  }
+}
+```
+
+#### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OLLAMA_BASE_URL` | Ollama API endpoint | `http://localhost:11434/v1` |
+| `OLLAMA_MODEL` | Default model name | `qwen2.5-coder` |
+| `OLLAMA_API_KEY` | API key (optional, for remote Ollama) | `ollama` |
+
+#### Remote Ollama
+
+To connect to a remote Ollama instance:
+
+```bash
+export OLLAMA_BASE_URL=http://your-server:11434/v1
+export OLLAMA_API_KEY=your-key  # if authentication is required
+qwen --model-provider ollama
+```
+
+#### Notes
+
+- **No API key required** for local Ollama (uses placeholder `ollama`)
+- **Extended timeout** (5 minutes) for slower local inference
+- **GPU acceleration** is handled by Ollama automatically
+
 ## Usage
 
 As an open-source terminal agent, you can use Qwen Code in four primary ways:
