@@ -10,11 +10,11 @@ import type { WebViewProvider } from '../webview/WebViewProvider.js';
 
 type Logger = (message: string) => void;
 
-export const runQwenCodeCommand = 'qwen-code.runQwenCode';
-export const showDiffCommand = 'qwenCode.showDiff';
-export const openChatCommand = 'qwen-code.openChat';
-export const openNewChatTabCommand = 'qwenCode.openNewChatTab';
-export const loginCommand = 'qwen-code.login';
+export const runQwenCodeCommand = 'ollama-code.run';
+export const showDiffCommand = 'ollamaCode.showDiff';
+export const openChatCommand = 'ollama-code.openChat';
+export const openNewChatTabCommand = 'ollamaCode.openNewChatTab';
+export const loginCommand = 'ollama-code.login';
 
 export function registerNewCommands(
   context: vscode.ExtensionContext,
@@ -77,7 +77,7 @@ export function registerNewCommands(
         await providers[providers.length - 1].forceReLogin();
       } else {
         vscode.window.showInformationMessage(
-          'Please open Qwen Code chat first before logging in.',
+          'Please open Ollama Code chat first before logging in.',
         );
       }
     }),

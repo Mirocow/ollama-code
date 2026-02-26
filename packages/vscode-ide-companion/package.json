@@ -1,13 +1,13 @@
 {
-  "name": "qwen-code-vscode-ide-companion",
-  "displayName": "Qwen Code Companion",
-  "description": "Enable Qwen Code with direct access to your VS Code workspace.",
+  "name": "ollama-code-vscode-ide-companion",
+  "displayName": "Ollama Code Companion",
+  "description": "Enable Ollama Code with direct access to your VS Code workspace.",
   "version": "0.10.5",
   "publisher": "qwenlm",
   "icon": "assets/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/QwenLM/qwen-code.git",
+    "url": "https://github.com/QwenLM/ollama-code.git",
     "directory": "packages/vscode-ide-companion"
   },
   "engines": {
@@ -19,10 +19,9 @@
     "AI"
   ],
   "keywords": [
-    "qwen-code",
-    "qwen code",
-    "qwen",
-    "qwen code",
+    "ollama-code",
+    "ollama code",
+    "ollama",
     "cli",
     "ide integration",
     "ide companion"
@@ -33,80 +32,80 @@
   "contributes": {
     "languages": [
       {
-        "id": "qwen-diff-editable"
+        "id": "ollama-diff-editable"
       }
     ],
     "commands": [
       {
-        "command": "qwen.diff.accept",
-        "title": "Qwen Code: Accept Current Diff",
+        "command": "ollama.diff.accept",
+        "title": "Ollama Code: Accept Current Diff",
         "icon": "$(check)"
       },
       {
-        "command": "qwen.diff.cancel",
-        "title": "Qwen Code: Close Diff Editor",
+        "command": "ollama.diff.cancel",
+        "title": "Ollama Code: Close Diff Editor",
         "icon": "$(close)"
       },
       {
-        "command": "qwen-code.runQwenCode",
-        "title": "Qwen Code: Run"
+        "command": "ollama-code.run",
+        "title": "Ollama Code: Run"
       },
       {
-        "command": "qwen-code.showNotices",
-        "title": "Qwen Code: View Third-Party Notices"
+        "command": "ollama-code.showNotices",
+        "title": "Ollama Code: View Third-Party Notices"
       },
       {
-        "command": "qwen-code.openChat",
-        "title": "Qwen Code: Open",
+        "command": "ollama-code.openChat",
+        "title": "Ollama Code: Open",
         "icon": "./assets/icon.png"
       },
       {
-        "command": "qwen-code.login",
-        "title": "Qwen Code: Login"
+        "command": "ollama-code.login",
+        "title": "Ollama Code: Login"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "qwen.diff.accept",
-          "when": "qwen.diff.isVisible"
+          "command": "ollama.diff.accept",
+          "when": "ollama.diff.isVisible"
         },
         {
-          "command": "qwen.diff.cancel",
-          "when": "qwen.diff.isVisible"
+          "command": "ollama.diff.cancel",
+          "when": "ollama.diff.isVisible"
         },
         {
-          "command": "qwen-code.login",
+          "command": "ollama-code.login",
           "when": "false"
         }
       ],
       "editor/title": [
         {
-          "command": "qwen.diff.accept",
-          "when": "qwen.diff.isVisible",
+          "command": "ollama.diff.accept",
+          "when": "ollama.diff.isVisible",
           "group": "navigation"
         },
         {
-          "command": "qwen.diff.cancel",
-          "when": "qwen.diff.isVisible",
+          "command": "ollama.diff.cancel",
+          "when": "ollama.diff.isVisible",
           "group": "navigation"
         },
         {
-          "command": "qwen-code.openChat",
+          "command": "ollama-code.openChat",
           "group": "navigation"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "qwen.diff.accept",
+        "command": "ollama.diff.accept",
         "key": "ctrl+s",
-        "when": "qwen.diff.isVisible"
+        "when": "ollama.diff.isVisible"
       },
       {
-        "command": "qwen.diff.accept",
+        "command": "ollama.diff.accept",
         "key": "cmd+s",
-        "when": "qwen.diff.isVisible"
+        "when": "ollama.diff.isVisible"
       }
     ]
   },

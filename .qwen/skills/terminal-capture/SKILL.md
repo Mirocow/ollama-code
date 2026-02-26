@@ -43,7 +43,7 @@ import type { ScenarioConfig } from '../scenario-runner.js';
 export default {
   name: '/about',
   spawn: ['node', 'dist/cli.js', '--yolo'],
-  terminal: { title: 'qwen-code', cwd: '../../..' }, // Relative to this config file's location
+  terminal: { title: 'ollama-code', cwd: '../../..' }, // Relative to this config file's location
   flow: [
     { type: 'Hi, can you help me understand this codebase?' },
     { type: '/about' },

@@ -75,7 +75,7 @@ export async function getIdeClientName(
 /**
  * Gets the sandbox environment information.
  * Handles different sandbox types including sandbox-exec and custom sandbox environments.
- * For bug reports, removes 'qwen-' or 'qwen-code-' prefixes from sandbox names.
+ * For bug reports, removes 'ollama-' or 'ollama-code-' prefixes from sandbox names.
  *
  * @param stripPrefix - Whether to strip 'qwen-' prefix (used for bug reports)
  */

@@ -64,7 +64,7 @@ export class AuthMessageHandler extends BaseMessageHandler {
         vscode.window.showInformationMessage(
           'Please wait while we connect to Qwen Code...',
         );
-        await vscode.commands.executeCommand('qwen-code.login');
+        await vscode.commands.executeCommand('ollama-code.login');
       }
     } catch (error) {
       console.error('[AuthMessageHandler] Login failed:', error);
