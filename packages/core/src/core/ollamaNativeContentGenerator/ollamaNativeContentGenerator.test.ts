@@ -9,19 +9,25 @@
  * Tests the content generator that uses native Ollama API.
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OllamaNativeContentGenerator } from './ollamaNativeContentGenerator.js';
 import { AuthType, type ContentGeneratorConfig } from '../contentGenerator.js';
 import type { Config } from '../../config/config.js';
 import type { GenerateContentParameters } from '@google/genai';
 
+// Create mock functions
+const mockChat = vi.fn();
+const mockGenerate = vi.fn();
+const mockEmbed = vi.fn();
+const mockEmbeddings = vi.fn();
+
 // Mock dependencies
 vi.mock('../ollamaNativeClient.js', () => ({
   OllamaNativeClient: vi.fn().mockImplementation(() => ({
-    chat: vi.fn(),
-    generate: vi.fn(),
-    embed: vi.fn(),
-    embeddings: vi.fn(),
+    chat: mockChat,
+    generate: mockGenerate,
+    embed: mockEmbed,
+    embeddings: mockEmbeddings,
     listModels: vi.fn(),
     showModel: vi.fn(),
     getVersion: vi.fn(),
@@ -59,29 +65,15 @@ function createGeneratorConfig(overrides: Partial<ContentGeneratorConfig> = {}):
 }
 
 describe('OllamaNativeContentGenerator', () => {
-  let generator: OllamaNativeContentGenerator;
-  let mockConfig: Config;
-  let mockClient: any;
+  const mockConfig = createMockConfig();
 
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-
-    mockConfig = createMockConfig();
-    const generatorConfig = createGeneratorConfig();
-
-    generator = new OllamaNativeContentGenerator(generatorConfig, mockConfig);
-
-    // Get the mocked client instance
-    const { OllamaNativeClient } = await import('../ollamaNativeClient.js');
-    mockClient = (OllamaNativeClient as any).mock.results[0].value;
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   describe('constructor', () => {
     it('should create instance with default settings', () => {
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
       expect(generator).toBeDefined();
     });
 
@@ -118,7 +110,7 @@ describe('OllamaNativeContentGenerator', () => {
 
   describe('generateContent', () => {
     it('should generate content successfully', async () => {
-      mockClient.chat.mockResolvedValueOnce({
+      mockChat.mockResolvedValueOnce({
         model: 'llama3.2',
         created_at: '2024-01-01T00:00:00Z',
         message: {
@@ -130,6 +122,7 @@ describe('OllamaNativeContentGenerator', () => {
         eval_count: 5,
       });
 
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
       const request: GenerateContentParameters = {
         model: 'llama3.2',
         contents: [
@@ -145,7 +138,7 @@ describe('OllamaNativeContentGenerator', () => {
     });
 
     it('should handle tools in request', async () => {
-      mockClient.chat.mockResolvedValueOnce({
+      mockChat.mockResolvedValueOnce({
         model: 'llama3.2',
         created_at: '2024-01-01T00:00:00Z',
         message: {
@@ -163,6 +156,7 @@ describe('OllamaNativeContentGenerator', () => {
         done: true,
       });
 
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
       const request: GenerateContentParameters = {
         model: 'llama3.2',
         contents: [
@@ -185,8 +179,7 @@ describe('OllamaNativeContentGenerator', () => {
 
       const result = await generator.generateContent(request, 'test-prompt-id');
 
-      // Check that tools were passed to client
-      expect(mockClient.chat).toHaveBeenCalledWith(
+      expect(mockChat).toHaveBeenCalledWith(
         expect.objectContaining({
           tools: expect.arrayContaining([
             expect.objectContaining({
@@ -200,14 +193,13 @@ describe('OllamaNativeContentGenerator', () => {
     });
 
     it('should apply sampling parameters', async () => {
-      mockClient.chat.mockResolvedValueOnce({
+      mockChat.mockResolvedValueOnce({
         model: 'llama3.2',
-        created_at: '2024-01-01T00:00:00Z',
         message: { role: 'assistant', content: 'Test' },
         done: true,
       });
 
-      const generatorWithSampling = new OllamaNativeContentGenerator(
+      const generator = new OllamaNativeContentGenerator(
         createGeneratorConfig({
           samplingParams: {
             temperature: 0.7,
@@ -218,23 +210,26 @@ describe('OllamaNativeContentGenerator', () => {
         mockConfig
       );
 
-      await generatorWithSampling.generateContent(
+      await generator.generateContent(
         { model: 'llama3.2', contents: [{ role: 'user', parts: [{ text: 'Test' }] }] },
         'test-id'
       );
 
-      // Verify sampling params were applied
-      const lastCall = mockClient.chat.mock.calls[mockClient.chat.mock.calls.length - 1];
-      expect(lastCall[0].options).toMatchObject({
-        temperature: 0.7,
-        top_p: 0.9,
-        num_predict: 100,
-      });
+      expect(mockChat).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            temperature: 0.7,
+            top_p: 0.9,
+            num_predict: 100,
+          }),
+        })
+      );
     });
 
     it('should handle errors gracefully', async () => {
-      mockClient.chat.mockRejectedValueOnce(new Error('Ollama connection failed'));
+      mockChat.mockRejectedValueOnce(new Error('Ollama connection failed'));
 
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
       const request: GenerateContentParameters = {
         model: 'llama3.2',
         contents: [{ role: 'user', parts: [{ text: 'Test' }] }],
@@ -249,8 +244,9 @@ describe('OllamaNativeContentGenerator', () => {
       const abortError = new Error('Aborted');
       (abortError as any).name = 'AbortError';
 
-      mockClient.chat.mockRejectedValueOnce(abortError);
+      mockChat.mockRejectedValueOnce(abortError);
 
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
       const controller = new AbortController();
       controller.abort();
 
@@ -268,7 +264,7 @@ describe('OllamaNativeContentGenerator', () => {
 
   describe('generateContentStream', () => {
     it('should return async generator', async () => {
-      mockClient.chat.mockImplementationOnce(async (_request: any, callback: any) => {
+      mockChat.mockImplementationOnce(async (_request: any, callback: any) => {
         if (callback) {
           callback({
             model: 'llama3.2',
@@ -288,6 +284,7 @@ describe('OllamaNativeContentGenerator', () => {
         }
       });
 
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
       const request: GenerateContentParameters = {
         model: 'llama3.2',
         contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
@@ -306,6 +303,7 @@ describe('OllamaNativeContentGenerator', () => {
 
   describe('countTokens', () => {
     it('should estimate tokens', async () => {
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
       const request = {
         model: 'llama3.2',
         contents: [{ role: 'user', parts: [{ text: 'Hello, World!' }] }],
@@ -318,6 +316,7 @@ describe('OllamaNativeContentGenerator', () => {
     });
 
     it('should handle complex content', async () => {
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
       const request = {
         model: 'llama3.2',
         contents: [
@@ -335,11 +334,12 @@ describe('OllamaNativeContentGenerator', () => {
 
   describe('embedContent', () => {
     it('should generate embeddings', async () => {
-      mockClient.embed.mockResolvedValueOnce({
+      mockEmbed.mockResolvedValueOnce({
         model: 'nomic-embed-text',
         embeddings: [[0.1, 0.2, 0.3, 0.4]],
       });
 
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
       const request = {
         model: 'nomic-embed-text',
         contents: ['Hello, World!'],
@@ -353,11 +353,12 @@ describe('OllamaNativeContentGenerator', () => {
     });
 
     it('should handle array contents', async () => {
-      mockClient.embed.mockResolvedValueOnce({
+      mockEmbed.mockResolvedValueOnce({
         model: 'nomic-embed-text',
         embeddings: [[0.1, 0.2], [0.3, 0.4]],
       });
 
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
       const request = {
         model: 'nomic-embed-text',
         contents: [
@@ -368,7 +369,7 @@ describe('OllamaNativeContentGenerator', () => {
 
       await generator.embedContent(request);
 
-      expect(mockClient.embed).toHaveBeenCalledWith(
+      expect(mockEmbed).toHaveBeenCalledWith(
         expect.objectContaining({
           input: expect.stringContaining('Hello'),
         })
@@ -376,7 +377,9 @@ describe('OllamaNativeContentGenerator', () => {
     });
 
     it('should handle embedding errors', async () => {
-      mockClient.embed.mockRejectedValueOnce(new Error('Model not found'));
+      mockEmbed.mockRejectedValueOnce(new Error('Model not found'));
+
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
 
       await expect(
         generator.embedContent({ model: 'test', contents: ['Test'] })
@@ -386,40 +389,46 @@ describe('OllamaNativeContentGenerator', () => {
 
   describe('useSummarizedThinking', () => {
     it('should return false (not supported in native Ollama)', () => {
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
       expect(generator.useSummarizedThinking()).toBe(false);
     });
   });
 
   describe('Configuration', () => {
     it('should apply context window size', async () => {
-      mockClient.chat.mockResolvedValueOnce({
+      mockChat.mockResolvedValueOnce({
         model: 'llama3.2',
         message: { role: 'assistant', content: 'Test' },
         done: true,
       });
 
-      const generatorWithContext = new OllamaNativeContentGenerator(
+      const generator = new OllamaNativeContentGenerator(
         createGeneratorConfig({ contextWindowSize: 4096 }),
         mockConfig
       );
 
-      await generatorWithContext.generateContent(
+      await generator.generateContent(
         { model: 'llama3.2', contents: [{ role: 'user', parts: [{ text: 'Test' }] }] },
         'test-id'
       );
 
-      const lastCall = mockClient.chat.mock.calls[mockClient.chat.mock.calls.length - 1];
-      expect(lastCall[0].options?.num_ctx).toBe(4096);
+      expect(mockChat).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            num_ctx: 4096,
+          }),
+        })
+      );
     });
 
     it('should apply repetition penalty', async () => {
-      mockClient.chat.mockResolvedValueOnce({
+      mockChat.mockResolvedValueOnce({
         model: 'llama3.2',
         message: { role: 'assistant', content: 'Test' },
         done: true,
       });
 
-      const generatorWithPenalty = new OllamaNativeContentGenerator(
+      const generator = new OllamaNativeContentGenerator(
         createGeneratorConfig({
           samplingParams: {
             repetition_penalty: 1.1,
@@ -430,21 +439,28 @@ describe('OllamaNativeContentGenerator', () => {
         mockConfig
       );
 
-      await generatorWithPenalty.generateContent(
+      await generator.generateContent(
         { model: 'llama3.2', contents: [{ role: 'user', parts: [{ text: 'Test' }] }] },
         'test-id'
       );
 
-      const lastCall = mockClient.chat.mock.calls[mockClient.chat.mock.calls.length - 1];
-      expect(lastCall[0].options?.repeat_penalty).toBe(1.1);
-      expect(lastCall[0].options?.presence_penalty).toBe(0.5);
-      expect(lastCall[0].options?.frequency_penalty).toBe(0.3);
+      expect(mockChat).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            repeat_penalty: 1.1,
+            presence_penalty: 0.5,
+            frequency_penalty: 0.3,
+          }),
+        })
+      );
     });
   });
 
   describe('Error Recovery', () => {
     it('should provide meaningful error messages', async () => {
-      mockClient.chat.mockRejectedValueOnce(new Error('Model llama3.2 not found'));
+      mockChat.mockRejectedValueOnce(new Error('Model llama3.2 not found'));
+
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
 
       await expect(
         generator.generateContent(
@@ -455,7 +471,9 @@ describe('OllamaNativeContentGenerator', () => {
     });
 
     it('should handle network errors', async () => {
-      mockClient.chat.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+      mockChat.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+
+      const generator = new OllamaNativeContentGenerator(createGeneratorConfig(), mockConfig);
 
       await expect(
         generator.generateContent(

@@ -89,7 +89,7 @@ describe('OllamaContentConverter', () => {
         config: {
           systemInstruction: {
             role: 'system',
-            parts: [{ text: 'Be concise.' }, { text: ' Be accurate.' }],
+            parts: [{ text: 'Be concise.' }, { text: 'Be accurate.' }],
           },
         },
       };

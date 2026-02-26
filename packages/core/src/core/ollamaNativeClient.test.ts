@@ -9,7 +9,7 @@
  * Tests all native Ollama REST API endpoints.
  */
 
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import {
   OllamaNativeClient,
   DEFAULT_OLLAMA_NATIVE_URL,
@@ -347,7 +347,7 @@ describe('OllamaNativeClient', () => {
       it('should copy a model', async () => {
         const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
 
-        mockFetch.mockResolvedValueOnce({ ok: true });
+        mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
 
         await client.copyModel('llama3.2', 'llama3-backup');
 
@@ -365,7 +365,7 @@ describe('OllamaNativeClient', () => {
       it('should delete a model', async () => {
         const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
 
-        mockFetch.mockResolvedValueOnce({ ok: true });
+        mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
 
         await client.deleteModel('llama3:13b');
 
@@ -383,7 +383,7 @@ describe('OllamaNativeClient', () => {
       it('should pull a model (non-streaming)', async () => {
         const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
 
-        mockFetch.mockResolvedValueOnce({ ok: true });
+        mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
 
         await client.pullModel('llama3.2');
 
@@ -435,7 +435,7 @@ describe('OllamaNativeClient', () => {
       it('should push a model', async () => {
         const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
 
-        mockFetch.mockResolvedValueOnce({ ok: true });
+        mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
 
         await client.pushModel('mattw/pygmalion:latest');
 
@@ -583,17 +583,18 @@ describe('OllamaNativeClient', () => {
           timeout: 1, // 1ms timeout
         });
 
-        // Mock a slow response
-        mockFetch.mockImplementationOnce(() =>
-          new Promise((resolve) => {
+        // Create an AbortController to simulate abort
+        const abortError = new Error('The operation was aborted');
+        (abortError as any).name = 'AbortError';
+
+        // Mock fetch to throw abort error when signal is aborted
+        mockFetch.mockImplementationOnce((_url: string, _options: any) => {
+          return new Promise((_resolve, reject) => {
             setTimeout(() => {
-              resolve({
-                ok: true,
-                json: async () => ({ version: '0.1.26' }),
-              });
-            }, 100);
-          })
-        );
+              reject(abortError);
+            }, 10);
+          });
+        });
 
         // The abort signal should cause an error
         await expect(client.getVersion()).rejects.toThrow();
