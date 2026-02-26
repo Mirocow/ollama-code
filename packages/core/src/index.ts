@@ -244,27 +244,10 @@ export type {
 } from './mcp/oauth-utils.js';
 
 // ============================================================================
-// Telemetry
+// Telemetry (stubs)
 // ============================================================================
 
 export * from './telemetry/index.js';
-export {
-  logAuth,
-  logExtensionDisable,
-  logExtensionEnable,
-  logIdeConnection,
-  logModelSlashCommand,
-} from './telemetry/loggers.js';
-export {
-  AuthEvent,
-  ExtensionDisableEvent,
-  ExtensionEnableEvent,
-  ExtensionInstallEvent,
-  ExtensionUninstallEvent,
-  IdeConnectionEvent,
-  IdeConnectionType,
-  ModelSlashCommandEvent,
-} from './telemetry/types.js';
 
 // ============================================================================
 // Extensions & Subagents

@@ -10,7 +10,7 @@ import type { ToolResult, ToolResultDisplay } from './tools.js';
 import type { Config } from '../config/config.js';
 import type { SkillManager } from '../skills/skill-manager.js';
 import type { SkillConfig } from '../skills/types.js';
-import { logSkillLaunch, SkillLaunchEvent } from '../telemetry/index.js';
+
 import path from 'path';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
@@ -186,7 +186,7 @@ ${skillDescriptions}
 
 class SkillToolInvocation extends BaseToolInvocation<SkillParams, ToolResult> {
   constructor(
-    private readonly config: Config,
+    _config: Config,
     private readonly skillManager: SkillManager,
     params: SkillParams,
   ) {
@@ -213,11 +213,7 @@ class SkillToolInvocation extends BaseToolInvocation<SkillParams, ToolResult> {
       );
 
       if (!skill) {
-        // Log failed skill launch
-        logSkillLaunch(
-          this.config,
-          new SkillLaunchEvent(this.params.skill, false),
-        );
+        // Telemetry logging removed
 
         // Get parse errors if any
         const parseErrors = this.skillManager.getParseErrors();
@@ -240,11 +236,7 @@ class SkillToolInvocation extends BaseToolInvocation<SkillParams, ToolResult> {
         };
       }
 
-      // Log successful skill launch
-      logSkillLaunch(
-        this.config,
-        new SkillLaunchEvent(this.params.skill, true),
-      );
+      // Telemetry logging removed
 
       const baseDir = path.dirname(skill.filePath);
 
@@ -260,11 +252,7 @@ class SkillToolInvocation extends BaseToolInvocation<SkillParams, ToolResult> {
         error instanceof Error ? error.message : String(error);
       debugLogger.error(`[SkillsTool] Error using skill: ${errorMessage}`);
 
-      // Log failed skill launch
-      logSkillLaunch(
-        this.config,
-        new SkillLaunchEvent(this.params.skill, false),
-      );
+      // Telemetry logging removed
 
       return {
         llmContent: `Failed to load skill "${this.params.skill}": ${errorMessage}`,

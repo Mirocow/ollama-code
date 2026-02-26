@@ -3,9 +3,6 @@ import * as fs from 'node:fs';
 import {
   type Config,
   createDebugLogger,
-  logUserFeedback,
-  UserFeedbackEvent,
-  type UserFeedbackRating,
   isNodeError,
   AuthType,
 } from '@ollama-code/ollama-code-core';
@@ -118,19 +115,6 @@ export const useFeedbackDialog = ({
 
   const submitFeedback = useCallback(
     (rating: number) => {
-      // Only create and log feedback event for ratings 1-3 (GOOD, BAD, FINE)
-      // Rating 0 (DISMISS) should not trigger any telemetry
-      if (rating >= FEEDBACK_OPTIONS.GOOD && rating <= FEEDBACK_OPTIONS.FINE) {
-        const feedbackEvent = new UserFeedbackEvent(
-          sessionStats.sessionId,
-          rating as UserFeedbackRating,
-          config.getModel(),
-          config.getApprovalMode(),
-        );
-
-        logUserFeedback(config, feedbackEvent);
-      }
-
       // Record the timestamp when feedback dialog is submitted
       settings.setValue(
         SettingScope.User,
@@ -140,7 +124,7 @@ export const useFeedbackDialog = ({
 
       closeFeedbackDialog();
     },
-    [closeFeedbackDialog, sessionStats.sessionId, config, settings],
+    [closeFeedbackDialog, settings],
   );
 
   useEffect(() => {

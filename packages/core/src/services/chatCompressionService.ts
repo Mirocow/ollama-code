@@ -8,12 +8,11 @@ import type { Content } from '../types/content.js';
 import type { Config } from '../config/config.js';
 import type { OllamaChat } from '../core/ollamaChat.js';
 import { type ChatCompressionInfo, CompressionStatus } from '../core/turn.js';
-import { uiTelemetryService } from '../telemetry/uiTelemetry.js';
+
 import { DEFAULT_TOKEN_LIMIT } from '../core/tokenLimits.js';
 import { getCompressionPrompt } from '../core/prompts.js';
 import { getResponseText } from '../utils/partUtils.js';
-import { logChatCompression } from '../telemetry/loggers.js';
-import { makeChatCompressionEvent } from '../telemetry/types.js';
+
 
 /**
  * Threshold for compression token count as a fraction of the model's token limit.
@@ -105,7 +104,7 @@ export class ChatCompressionService {
       };
     }
 
-    const originalTokenCount = uiTelemetryService.getLastPromptTokenCount();
+    const originalTokenCount = 0; // Telemetry removed
 
     // Don't compress if not forced and we are under the limit.
     if (!force) {
@@ -220,15 +219,7 @@ export class ChatCompressionService {
       }
     }
 
-    logChatCompression(
-      config,
-      makeChatCompressionEvent({
-        tokens_before: originalTokenCount,
-        tokens_after: newTokenCount,
-        compression_input_token_count: compressionInputTokenCount,
-        compression_output_token_count: compressionOutputTokenCount,
-      }),
-    );
+    // Telemetry logging removed
 
     if (isSummaryEmpty) {
       return {
@@ -260,7 +251,7 @@ export class ChatCompressionService {
         },
       };
     } else {
-      uiTelemetryService.setLastPromptTokenCount(newTokenCount);
+      // Telemetry token count tracking removed
       return {
         newHistory: extraHistory,
         info: {

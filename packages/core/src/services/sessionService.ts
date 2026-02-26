@@ -14,9 +14,7 @@ import * as jsonl from '../utils/jsonl-utils.js';
 import type {
   ChatCompressionRecordPayload,
   ChatRecord,
-  UiTelemetryRecordPayload,
 } from './chatRecordingService.js';
-import { uiTelemetryService } from '../telemetry/uiTelemetry.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('SESSION');
@@ -645,33 +643,6 @@ export function buildApiHistoryFromConversation(
   return result;
 }
 
-/**
- * Replays stored UI telemetry events to rebuild metrics when resuming a session.
- * Also restores the last prompt token count from the best available source.
- */
-export function replayUiTelemetryFromConversation(
-  conversation: ConversationRecord,
-): void {
-  uiTelemetryService.reset();
-
-  for (const record of conversation.messages) {
-    if (record.type !== 'system' || record.subtype !== 'ui_telemetry') {
-      continue;
-    }
-    const payload = record.systemPayload as
-      | UiTelemetryRecordPayload
-      | undefined;
-    const uiEvent = payload?.uiEvent;
-    if (uiEvent) {
-      uiTelemetryService.addEvent(uiEvent);
-    }
-  }
-
-  const resumePromptTokens = getResumePromptTokenCount(conversation);
-  if (resumePromptTokens !== undefined) {
-    uiTelemetryService.setLastPromptTokenCount(resumePromptTokens);
-  }
-}
 
 /**
  * Returns the best available prompt token count for resuming telemetry:

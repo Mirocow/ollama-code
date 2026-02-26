@@ -48,13 +48,6 @@ import { LoopDetectionService } from '../services/loopDetectionService.js';
 // Tools
 import { TaskTool } from '../tools/task.js';
 
-// Telemetry
-import {
-  NextSpeakerCheckEvent,
-  logNextSpeakerCheck,
-} from '../telemetry/index.js';
-import { uiTelemetryService } from '../telemetry/uiTelemetry.js';
-
 // Utilities
 import {
   getDirectoryContextString,
@@ -62,7 +55,6 @@ import {
 } from '../utils/environmentContext.js';
 import {
   buildApiHistoryFromConversation,
-  replayUiTelemetryFromConversation,
 } from '../services/sessionService.js';
 import { reportError } from '../utils/errorReporting.js';
 import { getErrorMessage } from '../utils/errors.js';
@@ -101,7 +93,6 @@ export class OllamaClient {
     // Check if we're resuming from a previous session
     const resumedSessionData = this.config.getResumedSessionData();
     if (resumedSessionData) {
-      replayUiTelemetryFromConversation(resumedSessionData.conversation);
       // Convert resumed session to API history format
       // Each ChatRecord's message field is already a Content object
       const resumedHistory = buildApiHistoryFromConversation(
@@ -437,26 +428,6 @@ export class OllamaClient {
       yield { type: OllamaEventType.ChatCompressed, value: compressed };
     }
 
-    // Check session token limit after compression.
-    // `lastPromptTokenCount` is treated as authoritative for the (possibly compressed) history;
-    const sessionTokenLimit = this.config.getSessionTokenLimit();
-    if (sessionTokenLimit > 0) {
-      const lastPromptTokenCount = uiTelemetryService.getLastPromptTokenCount();
-      if (lastPromptTokenCount > sessionTokenLimit) {
-        yield {
-          type: OllamaEventType.SessionTokenLimitExceeded,
-          value: {
-            currentTokens: lastPromptTokenCount,
-            limit: sessionTokenLimit,
-            message:
-              `Session token limit exceeded: ${lastPromptTokenCount} tokens > ${sessionTokenLimit} limit. ` +
-              'Please start a new session or increase the sessionTokenLimit in your settings.json.',
-          },
-        };
-        return new Turn(this.getChat(), prompt_id);
-      }
-    }
-
     // Prevent context updates from being sent while a tool call is
     // waiting for a response. The Ollama API requires that a functionResponse
     // part from the user immediately follows a functionCall part from the model
@@ -546,14 +517,6 @@ export class OllamaClient {
         this.config,
         signal,
         prompt_id,
-      );
-      logNextSpeakerCheck(
-        this.config,
-        new NextSpeakerCheckEvent(
-          prompt_id,
-          turn.finishReason?.toString() || '',
-          nextSpeakerCheck?.next_speaker || '',
-        ),
       );
       if (nextSpeakerCheck?.next_speaker === 'model') {
         const nextRequest = [{ text: 'Please continue.' }];
@@ -651,7 +614,6 @@ export class OllamaClient {
         });
 
         this.chat = await this.startChat(newHistory);
-        uiTelemetryService.setLastPromptTokenCount(info.newTokenCount);
         this.forceFullIdeContext = true;
       }
     } else if (
