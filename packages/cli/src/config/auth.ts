@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -14,13 +14,10 @@ import { loadEnvironment, loadSettings, type Settings } from './settings.js';
 import { t } from '../i18n/index.js';
 
 /**
- * Default environment variable names for each auth type
+ * Default environment variable names for Ollama auth type
  */
 const DEFAULT_ENV_KEYS: Record<string, string> = {
-  [AuthType.USE_OPENAI]: 'OPENAI_API_KEY',
-  [AuthType.USE_ANTHROPIC]: 'ANTHROPIC_API_KEY',
-  [AuthType.USE_GEMINI]: 'GEMINI_API_KEY',
-  [AuthType.USE_VERTEX_AI]: 'GOOGLE_API_KEY',
+  [AuthType.USE_OLLAMA]: 'OLLAMA_API_KEY', // Optional, for remote instances
 };
 
 /**
@@ -45,7 +42,7 @@ function findModelConfig(
 
 /**
  * Check if API key is available for the given auth type and model configuration.
- * Prioritizes custom envKey from modelProviders over default environment variables.
+ * For Ollama, API key is optional (only needed for remote instances).
  */
 function hasApiKeyForAuth(
   authType: string,
@@ -61,13 +58,11 @@ function hasApiKeyForAuth(
     | undefined;
 
   // Use config.getModelsConfig().getModel() if available for accurate model ID resolution
-  // that accounts for CLI args, env vars, and settings. Fall back to settings.model.name.
   const modelId = config?.getModelsConfig().getModel() ?? settings.model?.name;
 
   // Try to find model-specific envKey from modelProviders
   const modelConfig = findModelConfig(modelProviders, authType, modelId);
   if (modelConfig?.envKey) {
-    // Explicit envKey configured - only check this env var, no apiKey fallback
     const hasKey = !!process.env[modelConfig.envKey];
     return {
       hasKey,
@@ -76,7 +71,7 @@ function hasApiKeyForAuth(
     };
   }
 
-  // Using default environment variable - apiKey fallback is allowed
+  // Using default environment variable
   const defaultEnvKey = DEFAULT_ENV_KEYS[authType];
   if (defaultEnvKey) {
     const hasKey = !!process.env[defaultEnvKey];
@@ -85,7 +80,7 @@ function hasApiKeyForAuth(
     }
   }
 
-  // Also check settings.security.auth.apiKey as fallback (only for default env key)
+  // Check settings.security.auth.apiKey as fallback
   if (settings.security?.auth?.apiKey) {
     return {
       hasKey: true,
@@ -102,38 +97,8 @@ function hasApiKeyForAuth(
 }
 
 /**
- * Generate API key error message based on auth check result.
- * Returns null if API key is present, otherwise returns the appropriate error message.
- */
-function getApiKeyError(
-  authMethod: string,
-  settings: Settings,
-  config?: Config,
-): string | null {
-  const { hasKey, checkedEnvKey, isExplicitEnvKey } = hasApiKeyForAuth(
-    authMethod,
-    settings,
-    config,
-  );
-  if (hasKey) {
-    return null;
-  }
-
-  const envKeyHint = checkedEnvKey || DEFAULT_ENV_KEYS[authMethod];
-  if (isExplicitEnvKey) {
-    return t(
-      '{{envKeyHint}} environment variable not found. Please set it in your .env file or environment variables.',
-      { envKeyHint },
-    );
-  }
-  return t(
-    '{{envKeyHint}} environment variable not found (or set settings.security.auth.apiKey). Please set it in your .env file or environment variables.',
-    { envKeyHint },
-  );
-}
-
-/**
  * Validate that the required credentials and configuration exist for the given auth method.
+ * For Ollama, no API key is required for local instances.
  */
 export function validateAuthMethod(
   authMethod: string,
@@ -142,82 +107,40 @@ export function validateAuthMethod(
   const settings = loadSettings();
   loadEnvironment(settings.merged);
 
-  if (authMethod === AuthType.USE_OPENAI) {
-    const { hasKey, checkedEnvKey, isExplicitEnvKey } = hasApiKeyForAuth(
-      authMethod,
-      settings.merged,
-      config,
-    );
-    if (!hasKey) {
-      const envKeyHint = checkedEnvKey
-        ? `'${checkedEnvKey}'`
-        : "'OPENAI_API_KEY'";
-      if (isExplicitEnvKey) {
-        // Explicit envKey configured - only suggest setting the env var
-        return t(
-          'Missing API key for OpenAI-compatible auth. Set the {{envKeyHint}} environment variable.',
-          { envKeyHint },
-        );
-      }
-      // Default env key - can use either apiKey or env var
-      return t(
-        'Missing API key for OpenAI-compatible auth. Set settings.security.auth.apiKey, or set the {{envKeyHint}} environment variable.',
-        { envKeyHint },
-      );
-    }
-    return null;
-  }
+  if (authMethod === AuthType.USE_OLLAMA) {
+    // Ollama doesn't require an API key for local instances
+    // The baseUrl (default: http://localhost:11434) is all that's needed
+    // API key is only needed for remote Ollama instances
 
-  if (authMethod === AuthType.QWEN_OAUTH) {
-    // Qwen OAuth doesn't require any environment variables for basic setup
-    // The OAuth flow will handle authentication
-    return null;
-  }
-
-  if (authMethod === AuthType.USE_ANTHROPIC) {
-    const apiKeyError = getApiKeyError(authMethod, settings.merged, config);
-    if (apiKeyError) {
-      return apiKeyError;
-    }
-
-    // Check baseUrl - can come from modelProviders or environment
     const modelProviders = settings.merged.modelProviders as
       | ModelProvidersConfig
       | undefined;
-    // Use config.getModelsConfig().getModel() if available for accurate model ID
     const modelId =
       config?.getModelsConfig().getModel() ?? settings.merged.model?.name;
     const modelConfig = findModelConfig(modelProviders, authMethod, modelId);
 
-    if (modelConfig && !modelConfig.baseUrl) {
-      return t(
-        'Anthropic provider missing required baseUrl in modelProviders[].baseUrl.',
+    // Check if using a remote instance that might need API key
+    const baseUrl = modelConfig?.baseUrl || process.env['OLLAMA_BASE_URL'] || process.env['OLLAMA_HOST'];
+    const isRemoteInstance = baseUrl && !baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1');
+
+    if (isRemoteInstance) {
+      // Remote instance - check for API key
+      const { hasKey, checkedEnvKey } = hasApiKeyForAuth(
+        authMethod,
+        settings.merged,
+        config,
       );
-    }
-    if (!modelConfig && !process.env['ANTHROPIC_BASE_URL']) {
-      return t('ANTHROPIC_BASE_URL environment variable not found.');
+      if (!hasKey) {
+        const envKeyHint = checkedEnvKey || 'OLLAMA_API_KEY';
+        return t(
+          'Remote Ollama instance detected. Set the {{envKeyHint}} environment variable for authentication.',
+          { envKeyHint },
+        );
+      }
     }
 
     return null;
   }
 
-  if (authMethod === AuthType.USE_GEMINI) {
-    const apiKeyError = getApiKeyError(authMethod, settings.merged, config);
-    if (apiKeyError) {
-      return apiKeyError;
-    }
-    return null;
-  }
-
-  if (authMethod === AuthType.USE_VERTEX_AI) {
-    const apiKeyError = getApiKeyError(authMethod, settings.merged, config);
-    if (apiKeyError) {
-      return apiKeyError;
-    }
-
-    process.env['GOOGLE_GENAI_USE_VERTEXAI'] = 'true';
-    return null;
-  }
-
-  return t('Invalid auth method selected.');
+  return t('Invalid auth method selected. Only USE_OLLAMA is supported.');
 }

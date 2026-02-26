@@ -12,19 +12,17 @@ import type {
 } from '@google/genai';
 import type {
   Config,
-  GeminiChat,
   ToolCallConfirmationDetails,
   ToolResult,
   ChatRecord,
   SubAgentEventEmitter,
+  StreamEvent,
 } from '@qwen-code/qwen-code-core';
 import {
-  AuthType,
   ApprovalMode,
   convertToFunctionResponse,
   createDebugLogger,
   DiscoveredMCPTool,
-  StreamEventType,
   ToolConfirmationOutcome,
   logToolCall,
   logUserPrompt,
@@ -71,6 +69,16 @@ import { SubAgentTracker } from './SubAgentTracker.js';
 
 const debugLogger = createDebugLogger('SESSION');
 
+// Chat interface for ACP session
+interface ChatInterface {
+  addHistory(message: Content): void;
+  sendMessageStream(
+    model: string,
+    options: { message: Part[]; config: { abortSignal: AbortSignal } },
+    promptId: string,
+  ): AsyncIterable<StreamEvent>;
+}
+
 /**
  * Session represents an active conversation session with the AI model.
  * It uses modular components for consistent event emission:
@@ -94,7 +102,7 @@ export class Session implements SessionContext {
 
   constructor(
     id: string,
-    private readonly chat: GeminiChat,
+    private readonly chat: ChatInterface,
     readonly config: Config,
     private readonly client: acp.Client,
     private readonly settings: LoadedSettings,
@@ -208,7 +216,7 @@ export class Session implements SessionContext {
       const streamStartTime = Date.now();
 
       try {
-        const responseStream = await chat.sendMessageStream(
+        const responseStream = chat.sendMessageStream(
           this.config.getModel(),
           {
             message: nextMessage?.parts ?? [],
@@ -225,31 +233,30 @@ export class Session implements SessionContext {
             return { stopReason: 'cancelled' };
           }
 
-          if (
-            resp.type === StreamEventType.CHUNK &&
-            resp.value.candidates &&
-            resp.value.candidates.length > 0
-          ) {
-            const candidate = resp.value.candidates[0];
-            for (const part of candidate.content?.parts ?? []) {
-              if (!part.text) {
-                continue;
+          if (resp.type === 'chunk' && resp.value) {
+            const value = resp.value;
+            if (value.candidates && value.candidates.length > 0) {
+              const candidate = value.candidates[0];
+              for (const part of candidate.content?.parts ?? []) {
+                if (!part.text) {
+                  continue;
+                }
+
+                this.messageEmitter.emitMessage(
+                  part.text,
+                  'assistant',
+                  part.thought,
+                );
               }
-
-              this.messageEmitter.emitMessage(
-                part.text,
-                'assistant',
-                part.thought,
-              );
             }
-          }
 
-          if (resp.type === StreamEventType.CHUNK && resp.value.usageMetadata) {
-            usageMetadata = resp.value.usageMetadata;
-          }
+            if (value.usageMetadata) {
+              usageMetadata = value.usageMetadata;
+            }
 
-          if (resp.type === StreamEventType.CHUNK && resp.value.functionCalls) {
-            functionCalls.push(...resp.value.functionCalls);
+            if (value.functionCalls) {
+              functionCalls.push(...value.functionCalls);
+            }
           }
         }
       } catch (error) {
@@ -375,13 +382,10 @@ export class Session implements SessionContext {
       );
     }
 
+    // For Ollama, no special credential handling needed
     await this.config.switchModel(
       selectedAuthType,
       parsed.modelId,
-      selectedAuthType !== previousAuthType &&
-        selectedAuthType === AuthType.QWEN_OAUTH
-        ? { requireCachedCredentials: true }
-        : undefined,
     );
 
     // Get updated model info

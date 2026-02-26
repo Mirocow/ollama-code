@@ -8,7 +8,7 @@ import {
   ApprovalMode,
   AuthType,
   Config,
-  DEFAULT_QWEN_EMBEDDING_MODEL,
+  DEFAULT_OLLAMA_EMBEDDING_MODEL,
   FileDiscoveryService,
   FileEncoding,
   getCurrentGeminiMdFilename,
@@ -126,10 +126,8 @@ export interface CliArgs {
   experimentalLsp: boolean | undefined;
   extensions: string[] | undefined;
   listExtensions: boolean | undefined;
-  openaiLogging: boolean | undefined;
-  openaiApiKey: string | undefined;
-  openaiBaseUrl: string | undefined;
-  openaiLoggingDir: string | undefined;
+  ollamaApiKey: string | undefined;
+  ollamaBaseUrl: string | undefined;
   proxy: string | undefined;
   includeDirectories: string[] | undefined;
   tavilyApiKey: string | undefined;
@@ -387,23 +385,13 @@ export async function parseArguments(): Promise<CliArgs> {
             // Handle comma-separated values
             dirs.flatMap((dir) => dir.split(',').map((d) => d.trim())),
         })
-        .option('openai-logging', {
-          type: 'boolean',
-          description:
-            'Enable logging of OpenAI API calls for debugging and analysis',
-        })
-        .option('openai-logging-dir', {
+        .option('ollama-api-key', {
           type: 'string',
-          description:
-            'Custom directory path for OpenAI API logs. Overrides settings files.',
+          description: 'Ollama API key (optional, for remote instances)',
         })
-        .option('openai-api-key', {
+        .option('ollama-base-url', {
           type: 'string',
-          description: 'OpenAI API key to use for authentication',
-        })
-        .option('openai-base-url', {
-          type: 'string',
-          description: 'OpenAI base URL (for custom endpoints)',
+          description: 'Ollama base URL (default: http://localhost:11434)',
         })
         .option('tavily-api-key', {
           type: 'string',
@@ -420,7 +408,7 @@ export async function parseArguments(): Promise<CliArgs> {
         .option('web-search-default', {
           type: 'string',
           description:
-            'Default web search provider (dashscope, tavily, google)',
+            'Default web search provider (tavily, google)',
         })
         .option('screen-reader', {
           type: 'boolean',
@@ -495,14 +483,8 @@ export async function parseArguments(): Promise<CliArgs> {
         })
         .option('auth-type', {
           type: 'string',
-          choices: [
-            AuthType.USE_OPENAI,
-            AuthType.USE_ANTHROPIC,
-            AuthType.QWEN_OAUTH,
-            AuthType.USE_GEMINI,
-            AuthType.USE_VERTEX_AI,
-          ],
-          description: 'Authentication type',
+          choices: [AuthType.USE_OLLAMA],
+          description: 'Authentication type (only Ollama is supported)',
         })
         .deprecateOption(
           'sandbox-image',
@@ -885,10 +867,8 @@ export async function loadCliConfig(
   const resolvedCliConfig = resolveCliGenerationConfig({
     argv: {
       model: argv.model,
-      openaiApiKey: argv.openaiApiKey,
-      openaiBaseUrl: argv.openaiBaseUrl,
-      openaiLogging: argv.openaiLogging,
-      openaiLoggingDir: argv.openaiLoggingDir,
+      ollamaApiKey: argv.ollamaApiKey,
+      ollamaBaseUrl: argv.ollamaBaseUrl,
     },
     settings,
     selectedAuthType,
@@ -945,7 +925,7 @@ export async function loadCliConfig(
   const config = new Config({
     sessionId,
     sessionData,
-    embeddingModel: DEFAULT_QWEN_EMBEDDING_MODEL,
+    embeddingModel: DEFAULT_OLLAMA_EMBEDDING_MODEL,
     sandbox: sandboxConfig,
     targetDir: cwd,
     includeDirectories,

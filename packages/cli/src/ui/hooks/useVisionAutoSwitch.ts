@@ -123,8 +123,8 @@ export function shouldOfferVisionSwitch(
   currentModel: string,
   visionModelPreviewEnabled: boolean = true,
 ): boolean {
-  // Only trigger for qwen-oauth
-  if (authType !== AuthType.QWEN_OAUTH) {
+  // Only trigger for Ollama
+  if (authType !== AuthType.USE_OLLAMA) {
     return false;
   }
 
@@ -220,8 +220,8 @@ export function useVisionAutoSwitch(
 
       const contentGeneratorConfig = config.getContentGeneratorConfig();
 
-      // Only handle qwen-oauth auth type
-      if (contentGeneratorConfig?.authType !== AuthType.QWEN_OAUTH) {
+      // Only handle Ollama auth type
+      if (contentGeneratorConfig?.authType !== AuthType.USE_OLLAMA) {
         return { shouldProceed: true };
       }
 
@@ -244,7 +244,7 @@ export function useVisionAutoSwitch(
       if (
         !shouldOfferVisionSwitch(
           query,
-          contentGeneratorConfig.authType,
+          contentGeneratorConfig?.authType ?? AuthType.USE_OLLAMA,
           config.getModel(),
           visionModelPreviewEnabled,
         )

@@ -187,7 +187,7 @@ export abstract class BaseJsonOutputAdapter {
   /**
    * Creates a Usage object from metadata.
    *
-   * @param metadata - Optional usage metadata from Gemini API
+   * @param metadata - Optional usage metadata from Ollama API
    * @returns Usage object
    */
   protected createUsage(
@@ -580,10 +580,10 @@ export abstract class BaseJsonOutputAdapter {
   }
 
   /**
-   * Processes a stream event from the Gemini API.
+   * Processes a stream event from the Ollama API.
    * This is a shared implementation used by both streaming and non-streaming adapters.
    *
-   * @param event - Stream event from Gemini API
+   * @param event - Stream event from Ollama API
    */
   processEvent(event: ServerGeminiStreamEvent): void {
     const state = this.mainAgentMessageState;

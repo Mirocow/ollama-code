@@ -1,10 +1,9 @@
 /**
  * @license
- * Copyright 2025 Qwen
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AuthType } from '@qwen-code/qwen-code-core';
 import type { WebSearchProviderConfig } from '@qwen-code/qwen-code-core';
 import type { Settings } from './settings.js';
 
@@ -34,16 +33,13 @@ export interface WebSearchConfig {
  *
  * @param argv - Command line arguments
  * @param settings - User settings from settings.json
- * @param authType - Authentication type (e.g., 'qwen-oauth')
  * @returns WebSearch configuration or undefined if no providers available
  */
 export function buildWebSearchConfig(
   argv: WebSearchCliArgs,
   settings: Settings,
-  authType?: string,
+  _authType?: string,
 ): WebSearchConfig | undefined {
-  const isQwenOAuth = authType === AuthType.QWEN_OAUTH;
-
   // Step 1: Collect providers from settings or command line/env
   let providers: WebSearchProviderConfig[] = [];
   let userDefault: string | undefined;
@@ -77,26 +73,14 @@ export function buildWebSearchConfig(
     }
   }
 
-  // Step 2: Ensure dashscope is available for qwen-oauth users
-  if (isQwenOAuth) {
-    const hasDashscope = providers.some((p) => p.type === 'dashscope');
-    if (!hasDashscope) {
-      providers.push({ type: 'dashscope' } as WebSearchProviderConfig);
-    }
-  }
-
-  // Step 3: If no providers available, return undefined
+  // Step 2: If no providers available, return undefined
   if (providers.length === 0) {
     return undefined;
   }
 
-  // Step 4: Determine default provider
-  // Priority: user explicit config > CLI arg > first available provider (tavily > google > dashscope)
-  const providerPriority: Array<'tavily' | 'google' | 'dashscope'> = [
-    'tavily',
-    'google',
-    'dashscope',
-  ];
+  // Step 3: Determine default provider
+  // Priority: user explicit config > CLI arg > first available provider (tavily > google)
+  const providerPriority: Array<'tavily' | 'google'> = ['tavily', 'google'];
 
   // Determine default provider based on availability
   let defaultProvider = userDefault || argv.webSearchDefault;
@@ -110,7 +94,7 @@ export function buildWebSearchConfig(
     }
     // Fallback to first available provider if none found in priority list
     if (!defaultProvider) {
-      defaultProvider = providers[0]?.type || 'dashscope';
+      defaultProvider = providers[0]?.type || 'tavily';
     }
   }
 
