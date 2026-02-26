@@ -99,7 +99,7 @@ class WebFetchToolInvocation extends BaseToolInvocation<
         `[WebFetchTool] Converted HTML to text (${textContent.length} characters)`,
       );
 
-      const geminiClient = this.config.getGeminiClient();
+      const ollamaClient = this.config.getOllamaClient();
       const fallbackPrompt = `The user requested the following: "${this.params.prompt}".
 
 I have fetched the content from ${this.params.url}. Please use the following content to answer the user's request.
@@ -112,7 +112,7 @@ ${textContent}
         `[WebFetchTool] Processing content with prompt: "${this.params.prompt}"`,
       );
 
-      const result = await geminiClient.generateContent(
+      const result = await ollamaClient.generateContent(
         [{ role: 'user', parts: [{ text: fallbackPrompt }] }],
         {},
         signal,

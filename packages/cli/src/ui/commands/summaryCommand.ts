@@ -11,7 +11,7 @@ import {
   CommandKind,
   type SlashCommandActionReturn,
 } from './types.js';
-import { getProjectSummaryPrompt } from '@qwen-code/qwen-code-core';
+import { getProjectSummaryPrompt } from '@ollama-code/ollama-code-core';
 import type { HistoryItemSummary } from '../types.js';
 import { t } from '../../i18n/index.js';
 
@@ -36,7 +36,7 @@ export const summaryCommand: SlashCommand = {
       };
     }
 
-    const geminiClient = config.getGeminiClient();
+    const geminiClient = config.getOllamaClient();
     if (!geminiClient) {
       return {
         type: 'message',

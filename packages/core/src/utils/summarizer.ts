@@ -10,7 +10,7 @@ import type {
   GenerateContentConfig,
   GenerateContentResponse,
 } from '@google/genai';
-import type { GeminiClient } from '../core/client.js';
+import type { OllamaClient } from '../core/ollamaClient.js';
 import { DEFAULT_OLLAMA_MODEL } from '../config/models.js';
 import { getResponseText, partToString } from './partUtils.js';
 import { createDebugLogger } from './debugLogger.js';
@@ -25,7 +25,7 @@ const debugLogger = createDebugLogger('SUMMARIZER');
  */
 export type Summarizer = (
   result: ToolResult,
-  geminiClient: GeminiClient,
+  ollamaClient: OllamaClient,
   abortSignal: AbortSignal,
 ) => Promise<string>;
 
@@ -33,13 +33,13 @@ export type Summarizer = (
  * The default summarizer for tool results.
  *
  * @param result The result of the tool execution.
- * @param geminiClient The Gemini client to use for summarization.
+ * @param ollamaClient The Gemini client to use for summarization.
  * @param abortSignal The abort signal to use for summarization.
  * @returns The summary of the result.
  */
 export const defaultSummarizer: Summarizer = (
   result: ToolResult,
-  _geminiClient: GeminiClient,
+  _ollamaClient: OllamaClient,
   _abortSignal: AbortSignal,
 ) => Promise.resolve(JSON.stringify(result.llmContent));
 
@@ -57,16 +57,16 @@ Text to summarize:
 Return the summary string which should first contain an overall summarization of text followed by the full stack trace of errors and warnings in the tool output.
 `;
 
-export const llmSummarizer: Summarizer = (result, geminiClient, abortSignal) =>
+export const llmSummarizer: Summarizer = (result, ollamaClient, abortSignal) =>
   summarizeToolOutput(
     partToString(result.llmContent),
-    geminiClient,
+    ollamaClient,
     abortSignal,
   );
 
 export async function summarizeToolOutput(
   textToSummarize: string,
-  geminiClient: GeminiClient,
+  ollamaClient: OllamaClient,
   abortSignal: AbortSignal,
   maxOutputTokens: number = 2000,
 ): Promise<string> {
@@ -85,7 +85,7 @@ export async function summarizeToolOutput(
     maxOutputTokens,
   };
   try {
-    const parsedResponse = (await geminiClient.generateContent(
+    const parsedResponse = (await ollamaClient.generateContent(
       contents,
       toolOutputSummarizerConfig,
       abortSignal,

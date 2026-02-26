@@ -28,7 +28,7 @@ import type {
   FunctionDeclaration,
   GenerateContentResponseUsageMetadata,
 } from '@google/genai';
-import { GeminiChat, type GeminiChatOptions } from '../core/geminiChat.js';
+import { OllamaChat, type OllamaChatOptions } from '../core/ollamaChat.js';
 import type {
   PromptConfig,
   ModelConfig,
@@ -891,12 +891,15 @@ export class SubAgentScope {
       };
 
       if (systemInstruction) {
-        generationConfig.systemInstruction = systemInstruction as string | Part | Part[];
+        generationConfig.systemInstruction = systemInstruction as
+          | string
+          | Part
+          | Part[];
       }
 
-      return new GeminiChat(
+      return new OllamaChat(
         this.runtimeContext,
-        generationConfig as GeminiChatOptions,
+        generationConfig as OllamaChatOptions,
         start_history,
       );
     } catch (error) {

@@ -4,7 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ExtensionManager, type Extension } from '@qwen-code/qwen-code-core';
+import {
+  ExtensionManager,
+  type Extension,
+} from '@ollama-code/ollama-code-core';
 import { loadSettings } from '../../config/settings.js';
 import {
   requestConsentOrFail,

@@ -13,13 +13,13 @@ import type {
   ToolCallResponseInfo,
   SessionMetrics,
   McpToolProgressData,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import {
   OutputFormat,
   ToolErrorType,
   createDebugLogger,
   getMCPServerStatus,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import type { Part, PartListUnion } from '@google/genai';
 import type {
   CLIUserMessage,
@@ -102,7 +102,7 @@ export function extractPartsFromUserMessage(
  * @param geminiClient - The Gemini client instance
  * @returns Usage information or undefined if not available
  */
-export function extractUsageFromGeminiClient(
+export function extractUsageFromOllamaClient(
   geminiClient: unknown,
 ): Usage | undefined {
   if (

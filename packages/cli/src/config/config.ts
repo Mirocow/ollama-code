@@ -31,7 +31,7 @@ import {
   NativeLspClient,
   createDebugLogger,
   NativeLspService,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { extensionsCommand } from '../commands/extensions.js';
 import type { Settings } from './settings.js';
 import {
@@ -407,8 +407,7 @@ export async function parseArguments(): Promise<CliArgs> {
         })
         .option('web-search-default', {
           type: 'string',
-          description:
-            'Default web search provider (tavily, google)',
+          description: 'Default web search provider (tavily, google)',
         })
         .option('screen-reader', {
           type: 'boolean',

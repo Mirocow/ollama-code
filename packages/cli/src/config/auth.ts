@@ -9,7 +9,7 @@ import {
   type Config,
   type ModelProvidersConfig,
   type ProviderModelConfig,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { loadEnvironment, loadSettings, type Settings } from './settings.js';
 import { t } from '../i18n/index.js';
 
@@ -120,8 +120,14 @@ export function validateAuthMethod(
     const modelConfig = findModelConfig(modelProviders, authMethod, modelId);
 
     // Check if using a remote instance that might need API key
-    const baseUrl = modelConfig?.baseUrl || process.env['OLLAMA_BASE_URL'] || process.env['OLLAMA_HOST'];
-    const isRemoteInstance = baseUrl && !baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1');
+    const baseUrl =
+      modelConfig?.baseUrl ||
+      process.env['OLLAMA_BASE_URL'] ||
+      process.env['OLLAMA_HOST'];
+    const isRemoteInstance =
+      baseUrl &&
+      !baseUrl.includes('localhost') &&
+      !baseUrl.includes('127.0.0.1');
 
     if (isRemoteInstance) {
       // Remote instance - check for API key

@@ -16,8 +16,8 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { DebugLogger } from '@qwen-code/qwen-code-core';
-import { createDebugLogger } from '@qwen-code/qwen-code-core';
+import type { DebugLogger } from '@ollama-code/ollama-code-core';
+import { createDebugLogger } from '@ollama-code/ollama-code-core';
 import type { IControlContext } from '../ControlContext.js';
 import type {
   ControlRequestPayload,

@@ -11,7 +11,7 @@ import type {
   MessageActionReturn,
 } from './types.js';
 import { CommandKind } from './types.js';
-import type { DiscoveredMCPPrompt } from '@qwen-code/qwen-code-core';
+import type { DiscoveredMCPPrompt } from '@ollama-code/ollama-code-core';
 import {
   DiscoveredMCPTool,
   getMCPDiscoveryState,
@@ -21,7 +21,7 @@ import {
   getErrorMessage,
   MCPOAuthTokenStorage,
   MCPOAuthProvider,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { appEvents, AppEvent } from '../../utils/events.js';
 import { MessageType, type HistoryItemMcpStatus } from '../types.js';
 import { t } from '../../i18n/index.js';
@@ -144,7 +144,7 @@ const authCommand: SlashCommand = {
         await toolRegistry.discoverToolsForServer(serverName);
       }
       // Update the client with the new tools
-      const geminiClient = config.getGeminiClient();
+      const geminiClient = config.getOllamaClient();
       if (geminiClient) {
         await geminiClient.setTools();
       }
@@ -340,7 +340,7 @@ const refreshCommand: SlashCommand = {
     await toolRegistry.restartMcpServers();
 
     // Update the client with the new tools
-    const geminiClient = config.getGeminiClient();
+    const geminiClient = config.getOllamaClient();
     if (geminiClient) {
       await geminiClient.setTools();
     }

@@ -6,7 +6,7 @@
 
 import type { Content } from '@google/genai';
 import { DEFAULT_OLLAMA_MODEL } from '../config/models.js';
-import type { GeminiChat } from '../core/geminiChat.js';
+import type { OllamaChat } from '../core/ollamaChat.js';
 import { isFunctionResponse } from './messageInspectors.js';
 import type { Config } from '../config/config.js';
 import { createDebugLogger } from './debugLogger.js';
@@ -43,7 +43,7 @@ export interface NextSpeakerResponse {
 }
 
 export async function checkNextSpeaker(
-  chat: GeminiChat,
+  chat: OllamaChat,
   config: Config,
   abortSignal: AbortSignal,
   promptId: string,

@@ -1,7 +1,7 @@
 {
-  "name": "@qwen-code/sdk",
+  "name": "@ollama-code/sdk",
   "version": "0.1.4",
-  "description": "TypeScript SDK for programmatic access to qwen-code CLI",
+  "description": "TypeScript SDK for programmatic access to ollama-code CLI",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -33,14 +33,14 @@
     "prepack": "npm run build && npm run bundle:cli"
   },
   "keywords": [
-    "qwen",
-    "qwen-code",
+    "ollama",
+    "ollama-code",
     "ai",
     "code-assistant",
     "sdk",
     "typescript"
   ],
-  "author": "Qwen Team",
+  "author": "Ollama Code Team",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=18.0.0"
@@ -65,11 +65,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/QwenLM/qwen-code.git",
+    "url": "http://178.140.10.58:8082/ai/ollama-code.git",
     "directory": "packages/sdk-typescript"
   },
   "bugs": {
-    "url": "https://github.com/QwenLM/qwen-code/issues"
+    "url": "http://178.140.10.58:8082/ai/ollama-code/issues"
   },
-  "homepage": "https://qwenlm.github.io/qwen-code-docs/"
+  "homepage": "http://178.140.10.58:8082/ai/ollama-code"
 }

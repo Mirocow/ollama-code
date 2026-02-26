@@ -48,7 +48,7 @@ export * from './output/types.js';
 // Core Engine
 // ============================================================================
 
-export * from './core/client.js';
+export * from './core/ollamaClient.js';
 export * from './core/contentGenerator.js';
 export * from './core/coreToolScheduler.js';
 export * from './core/logger.js';
@@ -56,7 +56,7 @@ export * from './core/nonInteractiveToolExecutor.js';
 export * from './core/prompts.js';
 export * from './core/tokenLimits.js';
 export * from './core/turn.js';
-export { GeminiChat, type StreamEvent } from './core/geminiChat.js';
+export { OllamaChat, type StreamEvent } from './core/ollamaChat.js';
 export * from './tools/tool-names.js';
 
 // Native Ollama API Client

@@ -1,10 +1,10 @@
 {
-  "name": "@qwen-code/qwen-code-core",
+  "name": "@ollama-code/ollama-code-core",
   "version": "0.10.5",
-  "description": "Qwen Code Core",
+  "description": "Ollama Code Core",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/QwenLM/qwen-code.git"
+    "url": "git+http://178.140.10.58:8082/ai/ollama-code.git"
   },
   "type": "module",
   "main": "dist/index.js",
@@ -80,7 +80,7 @@
     "@lydell/node-pty-win32-x64": "1.1.0"
   },
   "devDependencies": {
-    "@qwen-code/qwen-code-test-utils": "file:../test-utils",
+    "@ollama-code/ollama-code-test-utils": "file:../test-utils",
     "@types/diff": "^7.0.2",
     "@types/dotenv": "^6.1.1",
     "@types/fast-levenshtein": "^0.0.4",

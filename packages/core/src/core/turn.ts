@@ -26,7 +26,7 @@ import {
   UnauthorizedError,
   toFriendlyError,
 } from '../utils/errors.js';
-import type { GeminiChat } from './geminiChat.js';
+import type { OllamaChat } from './ollamaChat.js';
 import type { RetryInfo } from '../utils/rateLimit.js';
 import {
   getThoughtText,
@@ -172,7 +172,7 @@ export interface ChatCompressionInfo {
   compressionStatus: CompressionStatus;
 }
 
-export type ServerGeminiChatCompressedEvent = {
+export type ServerOllamaChatCompressedEvent = {
   type: GeminiEventType.ChatCompressed;
   value: ChatCompressionInfo | null;
 };
@@ -202,7 +202,7 @@ export type ServerGeminiCitationEvent = {
 
 // The original union type, now composed of the individual types
 export type ServerGeminiStreamEvent =
-  | ServerGeminiChatCompressedEvent
+  | ServerOllamaChatCompressedEvent
   | ServerGeminiCitationEvent
   | ServerGeminiContentEvent
   | ServerGeminiErrorEvent
@@ -226,7 +226,7 @@ export class Turn {
   private currentResponseId?: string;
 
   constructor(
-    private readonly chat: GeminiChat,
+    private readonly chat: OllamaChat,
     private readonly prompt_id: string,
   ) {}
   // The run method yields simpler events suitable for server logic

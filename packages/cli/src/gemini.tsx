@@ -11,7 +11,7 @@ import {
   Storage,
   type Config,
   createDebugLogger,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { render } from 'ink';
 import dns from 'node:dns';
 import os from 'node:os';

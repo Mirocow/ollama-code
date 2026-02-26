@@ -12,7 +12,7 @@ import {
   type SlashCommandActionReturn,
   CommandKind,
 } from './types.js';
-import type { Config } from '@qwen-code/qwen-code-core';
+import type { Config } from '@ollama-code/ollama-code-core';
 
 async function restoreAction(
   context: CommandContext,
@@ -89,7 +89,7 @@ async function restoreAction(
     }
 
     if (toolCallData.clientHistory) {
-      await config?.getGeminiClient()?.setHistory(toolCallData.clientHistory);
+      await config?.getOllamaClient()?.setHistory(toolCallData.clientHistory);
     }
 
     if (toolCallData.commitHash) {

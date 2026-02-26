@@ -62,7 +62,7 @@ describe('ShellTool', () => {
       storage: {
         getUserSkillsDir: vi.fn().mockReturnValue('/test/dir/.qwen/skills'),
       },
-      getGeminiClient: vi.fn(),
+      getOllamaClient: vi.fn(),
       getGitCoAuthor: vi.fn().mockReturnValue({
         enabled: true,
         name: 'Qwen-Coder',
@@ -509,7 +509,7 @@ describe('ShellTool', () => {
 
       expect(summarizer.summarizeToolOutput).toHaveBeenCalledWith(
         expect.any(String),
-        mockConfig.getGeminiClient(),
+        mockConfig.getOllamaClient(),
         expect.any(AbortSignal),
         1000,
       );

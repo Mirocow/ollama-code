@@ -21,7 +21,7 @@ const debugLogger = createDebugLogger('CLIENT');
 
 // Core modules
 import type { ContentGenerator } from './contentGenerator.js';
-import { GeminiChat } from './geminiChat.js';
+import { OllamaChat } from './ollamaChat.js';
 import {
   getCoreSystemPrompt,
   getCustomSystemPrompt,
@@ -75,8 +75,8 @@ import { type File, type IdeContext } from '../ide/types.js';
 
 const MAX_TURNS = 100;
 
-export class GeminiClient {
-  private chat?: GeminiChat;
+export class OllamaClient {
+  private chat?: OllamaChat;
   private sessionTurnCount = 0;
 
   private readonly loopDetector: LoopDetectionService;
@@ -123,7 +123,7 @@ export class GeminiClient {
     this.getChat().addHistory(content);
   }
 
-  getChat(): GeminiChat {
+  getChat(): OllamaChat {
     if (!this.chat) {
       throw new Error('Chat not initialized');
     }
@@ -173,7 +173,7 @@ export class GeminiClient {
     });
   }
 
-  async startChat(extraHistory?: Content[]): Promise<GeminiChat> {
+  async startChat(extraHistory?: Content[]): Promise<OllamaChat> {
     this.forceFullIdeContext = true;
     this.hasFailedCompressionAttempt = false;
 
@@ -188,7 +188,7 @@ export class GeminiClient {
       const model = this.config.getModel();
       const systemInstruction = getCoreSystemPrompt(userMemory, model);
 
-      return new GeminiChat(
+      return new OllamaChat(
         this.config,
         {
           systemInstruction,
@@ -457,7 +457,7 @@ export class GeminiClient {
     }
 
     // Prevent context updates from being sent while a tool call is
-    // waiting for a response. The Qwen API requires that a functionResponse
+    // waiting for a response. The Ollama API requires that a functionResponse
     // part from the user immediately follows a functionCall part from the model
     // in the conversation history . The IDE context is not discarded; it will
     // be included in the next regular message sent to the model.

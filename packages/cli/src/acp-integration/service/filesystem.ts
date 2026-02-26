@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FileSystemService } from '@qwen-code/qwen-code-core';
+import type { FileSystemService } from '@ollama-code/ollama-code-core';
 import type * as acp from '../acp.js';
 import { ACP_ERROR_CODES } from '../errorCodes.js';
 
@@ -85,7 +85,10 @@ export class AcpFileSystemService implements FileSystemService {
         });
         // Check if content starts with BOM character (U+FEFF)
         // Use codePointAt for better Unicode support and check content length first
-        return response.content.length > 0 && response.content.codePointAt(0) === 0xfeff;
+        return (
+          response.content.length > 0 &&
+          response.content.codePointAt(0) === 0xfeff
+        );
       } catch {
         // Fall through to fallback if ACP read fails
       }
