@@ -891,10 +891,7 @@ export class SubAgentScope {
       };
 
       if (systemInstruction) {
-        generationConfig.systemInstruction = systemInstruction as
-          | string
-          | Part
-          | Part[];
+        generationConfig.systemInstruction = systemInstruction;
       }
 
       return new OllamaChat(

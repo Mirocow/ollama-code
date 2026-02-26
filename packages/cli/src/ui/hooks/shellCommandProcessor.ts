@@ -15,7 +15,8 @@ import type {
   Config,
   OllamaClient,
   ShellExecutionResult,
- type PartListUnion } from '@ollama-code/ollama-code-core';
+  PartListUnion,
+} from '@ollama-code/ollama-code-core';
 import {
   createDebugLogger,
   isBinary,

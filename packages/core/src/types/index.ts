@@ -71,7 +71,7 @@ export type {
   ToolContent,
   GenerateContentConfig,
   GenerateContentParameters,
-  ToolConfig,
+  ToolCallingConfig,
   SafetySetting,
   UsageMetadata,
   ContentCandidate,

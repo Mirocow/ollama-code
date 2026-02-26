@@ -182,7 +182,11 @@ export class HistoryReplayer {
       return;
     }
 
-    const usageMetadata: GenerateContentResponseUsageMetadata = {};
+    const usageMetadata: GenerateContentResponseUsageMetadata = {
+      promptTokenCount: 0,
+      candidatesTokenCount: 0,
+      totalTokenCount: 0,
+    };
 
     if (Number.isFinite(summary.inputTokens)) {
       usageMetadata.promptTokenCount = summary.inputTokens;

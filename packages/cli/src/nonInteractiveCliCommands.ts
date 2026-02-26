@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { PartListUnion ,
+import type { PartListUnion, Config } from '@ollama-code/ollama-code-core';
+import {
   Logger,
   uiTelemetryService,
-  type Config,
   createDebugLogger,
 } from '@ollama-code/ollama-code-core';
 import { parseSlashCommand } from './utils/commands.js';

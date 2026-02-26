@@ -9,6 +9,7 @@ import type {
   Content,
   GenerateContentConfig,
   GenerateContentResponse,
+  Part,
   PartListUnion,
   Tool,
 } from '../types/content.js';
@@ -520,7 +521,7 @@ export class OllamaClient {
 
     const resultStream = turn.run(
       this.config.getModel(),
-      requestToSent,
+      requestToSent as Part[],
       signal,
     );
     for await (const event of resultStream) {

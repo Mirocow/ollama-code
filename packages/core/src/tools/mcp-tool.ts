@@ -20,7 +20,7 @@ import {
   Kind,
   ToolConfirmationOutcome,
 } from './tools.js';
-import type { CallableTool, FunctionCall, Part } from '../types/content.js';
+import type { CallableTool, Part } from '../types/content.js';
 import { ToolErrorType } from './tool-error.js';
 import type { Config } from '../config/config.js';
 
@@ -277,13 +277,6 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
   private async executeWithCallableTool(
     signal: AbortSignal,
   ): Promise<ToolResult> {
-    const functionCalls: FunctionCall[] = [
-      {
-        name: this.serverToolName,
-        args: this.params,
-      },
-    ];
-
     // Race MCP tool call with abort signal to respect cancellation
     const rawResponseParts = await new Promise<Part[]>((resolve, reject) => {
       if (signal.aborted) {
@@ -303,8 +296,15 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
       };
       signal.addEventListener('abort', onAbort, { once: true });
 
+      // Check if callTool exists before calling
+      if (!this.mcpTool.callTool) {
+        cleanup();
+        reject(new Error('MCP tool does not support callTool'));
+        return;
+      }
+
       this.mcpTool
-        .callTool(functionCalls)
+        .callTool(this.params)
         .then((res) => {
           cleanup();
           resolve(res);
@@ -319,9 +319,10 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
     if (this.isMCPToolError(rawResponseParts)) {
       const errorMessage = `MCP tool '${
         this.serverToolName
-      }' reported tool error for function call: ${safeJsonStringify(
-        functionCalls[0],
-      )} with response: ${safeJsonStringify(rawResponseParts)}`;
+      }' reported tool error for function call: ${safeJsonStringify({
+        name: this.serverToolName,
+        args: this.params,
+      })} with response: ${safeJsonStringify(rawResponseParts)}`;
       return {
         llmContent: errorMessage,
         returnDisplay: `Error: MCP tool '${this.serverToolName}' reported an error.`,
