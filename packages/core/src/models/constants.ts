@@ -85,11 +85,17 @@ export const AUTH_ENV_MAPPINGS = {
     baseUrl: [],
     model: [],
   },
+  ollama: {
+    apiKey: ['OLLAMA_API_KEY'], // Optional, for remote instances
+    baseUrl: ['OLLAMA_BASE_URL', 'OLLAMA_HOST'],
+    model: ['OLLAMA_MODEL'],
+  },
 } as const satisfies Record<AuthType, AuthEnvMapping>;
 
 export const DEFAULT_MODELS = {
   openai: 'qwen3-coder-plus',
   'qwen-oauth': DEFAULT_QWEN_MODEL,
+  ollama: 'qwen2.5-coder',
 } as Partial<Record<AuthType, string>>;
 
 export const QWEN_OAUTH_ALLOWED_MODELS = [
@@ -114,5 +120,36 @@ export const QWEN_OAUTH_MODELS: ModelConfig[] = [
     name: 'vision-model',
     description: 'The latest Qwen Vision model from Alibaba Cloud ModelStudio',
     capabilities: { vision: true },
+  },
+];
+
+/**
+ * Popular Ollama models for local LLM inference.
+ * These are provided as convenient defaults for Ollama users.
+ */
+export const OLLAMA_MODELS: ModelConfig[] = [
+  {
+    id: 'qwen2.5-coder',
+    name: 'Qwen 2.5 Coder',
+    description: 'Qwen 2.5 Coder - excellent for coding tasks',
+    capabilities: { vision: false },
+  },
+  {
+    id: 'llama3.2',
+    name: 'Llama 3.2',
+    description: 'Meta Llama 3.2 - versatile model',
+    capabilities: { vision: false },
+  },
+  {
+    id: 'codellama',
+    name: 'Code Llama',
+    description: 'Code Llama - specialized for code generation',
+    capabilities: { vision: false },
+  },
+  {
+    id: 'deepseek-coder-v2',
+    name: 'DeepSeek Coder V2',
+    description: 'DeepSeek Coder V2 - powerful coding model',
+    capabilities: { vision: false },
   },
 ];

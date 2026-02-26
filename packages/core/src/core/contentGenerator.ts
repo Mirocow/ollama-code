@@ -58,6 +58,7 @@ export enum AuthType {
   USE_GEMINI = 'gemini',
   USE_VERTEX_AI = 'vertex-ai',
   USE_ANTHROPIC = 'anthropic',
+  USE_OLLAMA = 'ollama',
 }
 
 export type ContentGeneratorConfig = {
@@ -211,6 +212,25 @@ export function validateModelConfig(
     return { valid: true, errors: [] };
   }
 
+  // Ollama doesn't require an API key for local instances
+  // Set a placeholder API key if not provided
+  if (config.authType === AuthType.USE_OLLAMA) {
+    if (!config.apiKey) {
+      // Ollama doesn't require a real API key, use placeholder
+      (config as { apiKey?: string }).apiKey = 'ollama';
+    }
+    // Model is still required for Ollama
+    if (!config.model) {
+      if (isStrictModelProvider) {
+        errors.push(new StrictMissingModelIdError(config.authType));
+      } else {
+        const envKey = getDefaultModelEnvVar(config.authType);
+        errors.push(new MissingModelError({ authType: config.authType, envKey }));
+      }
+    }
+    return { valid: errors.length === 0, errors };
+  }
+
   // API key is required for all other auth types
   if (!config.apiKey) {
     if (isStrictModelProvider) {
@@ -324,6 +344,12 @@ export async function createContentGenerator(
       './anthropicContentGenerator/index.js'
     );
     baseGenerator = createAnthropicContentGenerator(generatorConfig, config);
+  } else if (authType === AuthType.USE_OLLAMA) {
+    // Ollama uses OpenAI-compatible API
+    const { createOpenAIContentGenerator } = await import(
+      './openaiContentGenerator/index.js'
+    );
+    baseGenerator = createOpenAIContentGenerator(generatorConfig, config);
   } else if (
     authType === AuthType.USE_GEMINI ||
     authType === AuthType.USE_VERTEX_AI
