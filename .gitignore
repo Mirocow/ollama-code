@@ -49,6 +49,7 @@ packages/cli/src/generated/
 packages/core/src/generated/
 .integration-tests/
 packages/vscode-ide-companion/*.vsix
+scripts/unused-keys-only-in-locales.json
 
 # Qwen Code Configs
 
