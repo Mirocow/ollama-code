@@ -16,6 +16,7 @@ import { RequestTokenEstimator } from '../../utils/request-tokenizer/index.js';
 import type { ContentGeneratorConfig } from '../contentGenerator.js';
 import { isAbortError } from '../../utils/errors.js';
 import { createDebugLogger } from '../../utils/debugLogger.js';
+import { DEFAULT_OLLAMA_EMBEDDING_MODEL } from '../../config/models.js';
 
 const debugLogger = createDebugLogger('OPENAI');
 
@@ -142,8 +143,10 @@ export class OpenAIContentGenerator implements ContentGenerator {
     }
 
     try {
+      // Use Ollama embedding model (nomic-embed-text by default)
+      // Ollama requires pulling the embedding model first: ollama pull nomic-embed-text
       const embedding = await this.pipeline.client.embeddings.create({
-        model: 'text-embedding-ada-002', // Default embedding model
+        model: DEFAULT_OLLAMA_EMBEDDING_MODEL,
         input: text,
       });
 
