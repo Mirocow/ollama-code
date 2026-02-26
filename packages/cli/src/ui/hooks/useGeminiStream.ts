@@ -8,15 +8,15 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type {
   Config,
   EditorType,
-  GeminiClient,
-  ServerGeminiChatCompressedEvent,
+  OllamaClient,
+  ServerOllamaChatCompressedEvent,
   ServerGeminiContentEvent as ContentEvent,
   ServerGeminiFinishedEvent,
   ServerGeminiStreamEvent as GeminiEvent,
   ThoughtSummary,
   ToolCallRequestInfo,
   GeminiErrorEventValue,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import {
   GeminiEventType as ServerGeminiEventType,
   createDebugLogger,
@@ -35,7 +35,7 @@ import {
   ToolConfirmationOutcome,
   logApiCancel,
   ApiCancelEvent,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { type Part, type PartListUnion, FinishReason } from '@google/genai';
 import type {
   HistoryItem,
@@ -89,7 +89,7 @@ function showCitations(settings: LoadedSettings): boolean {
  * API interaction, and tool call lifecycle.
  */
 export const useGeminiStream = (
-  geminiClient: GeminiClient,
+  geminiClient: OllamaClient,
   history: HistoryItem[],
   addItem: UseHistoryManagerReturn['addItem'],
   config: Config,
@@ -780,7 +780,7 @@ export const useGeminiStream = (
 
   const handleChatCompressionEvent = useCallback(
     (
-      eventValue: ServerGeminiChatCompressedEvent['value'],
+      eventValue: ServerOllamaChatCompressedEvent['value'],
       userMessageTimestamp: number,
     ) => {
       if (pendingHistoryItemRef.current) {
@@ -838,7 +838,7 @@ export const useGeminiStream = (
       setLoopDetectionConfirmationRequest(null);
 
       if (result.userSelection === 'disable') {
-        config.getGeminiClient().getLoopDetectionService().disableForSession();
+        config.getOllamaClient().getLoopDetectionService().disableForSession();
         addItem(
           {
             type: 'info',

@@ -1,16 +1,16 @@
 {
-  "name": "@qwen-code/qwen-code",
+  "name": "@ollama-code/ollama-code",
   "version": "0.10.5",
-  "description": "Qwen Code",
+  "description": "Ollama Code",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/QwenLM/qwen-code.git"
+    "url": "git+http://178.140.10.58:8082/ai/ollama-code.git"
   },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "qwen": "dist/index.js"
+    "ollama": "dist/index.js"
   },
   "exports": {
     ".": {
@@ -34,13 +34,13 @@
     "dist"
   ],
   "config": {
-    "sandboxImageUri": "ghcr.io/qwenlm/qwen-code:0.10.5"
+    "sandboxImageUri": "ghcr.io/ollama-code/ollama-code:0.10.5"
   },
   "dependencies": {
     "@google/genai": "1.30.0",
     "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.25.1",
-    "@qwen-code/qwen-code-core": "file:../core",
+    "@ollama-code/ollama-code-core": "file:../core",
     "@types/update-notifier": "^6.0.8",
     "ansi-regex": "^6.2.2",
     "command-exists": "^1.2.9",
@@ -74,7 +74,7 @@
   "devDependencies": {
     "@babel/runtime": "^7.27.6",
     "@google/gemini-cli-test-utils": "file:../test-utils",
-    "@qwen-code/qwen-code-test-utils": "file:../test-utils",
+    "@ollama-code/ollama-code-test-utils": "file:../test-utils",
     "@testing-library/react": "^16.3.0",
     "@types/archiver": "^6.0.3",
     "@types/command-exists": "^1.2.3",

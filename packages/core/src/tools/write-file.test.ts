@@ -24,7 +24,7 @@ import type { ToolRegistry } from './tool-registry.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
-import { GeminiClient } from '../core/client.js';
+import { OllamaClient } from '../core/ollamaClient.js';
 import { createMockWorkspaceContext } from '../test-utils/mockWorkspaceContext.js';
 import { StandardFileSystemService } from '../services/fileSystemService.js';
 import type { DiffUpdateResult } from '../ide/ide-client.js';
@@ -40,7 +40,7 @@ vi.mock('../ide/ide-client.js', () => ({
   },
 }));
 
-let mockGeminiClientInstance: Mocked<GeminiClient>;
+let mockOllamaClientInstance: Mocked<OllamaClient>;
 const mockIdeClient = {
   openDiff: vi.fn(),
   isDiffingEnabled: vi.fn(),
@@ -56,7 +56,7 @@ const mockConfigInternal = {
   getTargetDir: () => rootDir,
   getApprovalMode: vi.fn(() => ApprovalMode.DEFAULT),
   setApprovalMode: vi.fn(),
-  getGeminiClient: vi.fn(), // Initialize as a plain mock function
+  getOllamaClient: vi.fn(), // Initialize as a plain mock function
   getBaseLlmClient: vi.fn(), // Initialize as a plain mock function
   getFileSystemService: () => fsService,
   getIdeMode: vi.fn(() => false),
@@ -106,15 +106,15 @@ describe('WriteFileTool', () => {
       fs.mkdirSync(rootDir, { recursive: true });
     }
 
-    // Setup GeminiClient mock
-    mockGeminiClientInstance = new (vi.mocked(GeminiClient))(
+    // Setup OllamaClient mock
+    mockOllamaClientInstance = new (vi.mocked(OllamaClient))(
       mockConfig,
-    ) as Mocked<GeminiClient>;
-    vi.mocked(GeminiClient).mockImplementation(() => mockGeminiClientInstance);
+    ) as Mocked<OllamaClient>;
+    vi.mocked(OllamaClient).mockImplementation(() => mockOllamaClientInstance);
 
-    // Now that mockGeminiClientInstance is initialized, set the mock implementation for getGeminiClient
-    mockConfigInternal.getGeminiClient.mockReturnValue(
-      mockGeminiClientInstance,
+    // Now that mockOllamaClientInstance is initialized, set the mock implementation for getOllamaClient
+    mockConfigInternal.getOllamaClient.mockReturnValue(
+      mockOllamaClientInstance,
     );
 
     tool = new WriteFileTool(mockConfig);

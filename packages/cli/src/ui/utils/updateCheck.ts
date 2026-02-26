@@ -8,7 +8,7 @@ import type { UpdateInfo } from 'update-notifier';
 import updateNotifier from 'update-notifier';
 import semver from 'semver';
 import { getPackageJson } from '../../utils/package.js';
-import { createDebugLogger } from '@qwen-code/qwen-code-core';
+import { createDebugLogger } from '@ollama-code/ollama-code-core';
 
 const debugLogger = createDebugLogger('UPDATE_CHECK');
 

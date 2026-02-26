@@ -5,7 +5,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import type { ProviderModelConfig as ModelConfig } from '@qwen-code/qwen-code-core';
+import type { ProviderModelConfig as ModelConfig } from '@ollama-code/ollama-code-core';
 
 /**
  * Coding plan regions

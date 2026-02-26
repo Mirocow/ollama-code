@@ -15,7 +15,7 @@ import {
   type ContentGeneratorConfig,
   type ContentGeneratorConfigSource,
   type ContentGeneratorConfigSources,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { theme } from '../semantic-colors.js';
 import { DescriptiveRadioButtonSelect } from './shared/DescriptiveRadioButtonSelect.js';
@@ -209,9 +209,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
     }
 
     // Fixed order: Ollama only
-    const authTypeOrder: AuthType[] = [
-      AuthType.USE_OLLAMA,
-    ];
+    const authTypeOrder: AuthType[] = [AuthType.USE_OLLAMA];
 
     // Filter to only include authTypes that have registry models and maintain order
     const availableAuthTypes = new Set(modelsByAuthTypeMap.keys());
@@ -356,10 +354,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
           modelId = idx >= 0 ? selected.slice(idx + sep.length) : selected;
         }
 
-        await config.switchModel(
-          selectedAuthType,
-          modelId,
-        );
+        await config.switchModel(selectedAuthType, modelId);
 
         if (!isRuntime) {
           const event = new ModelSlashCommandEvent(modelId);
@@ -421,7 +416,10 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
             <>
               <ConfigRow
                 label="Base URL"
-                value={effectiveConfig?.baseUrl ?? t('(default: http://localhost:11434)')}
+                value={
+                  effectiveConfig?.baseUrl ??
+                  t('(default: http://localhost:11434)')
+                }
                 badge={formatSourceBadge(sources['baseUrl'])}
               />
               <ConfigRow

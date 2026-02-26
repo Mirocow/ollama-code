@@ -17,7 +17,7 @@ import {
   SlashCommandStatus,
   ToolConfirmationOutcome,
   IdeClient,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import type {
   Message,
@@ -435,8 +435,8 @@ export const useSlashCommandProcessor = (
                     }
                   }
                 case 'load_history': {
-                  config?.getGeminiClient()?.setHistory(result.clientHistory);
-                  config?.getGeminiClient()?.stripThoughtsFromHistory();
+                  config?.getOllamaClient()?.setHistory(result.clientHistory);
+                  config?.getOllamaClient()?.stripThoughtsFromHistory();
                   fullCommandContext.ui.clear();
                   result.history.forEach((item, index) => {
                     fullCommandContext.ui.addItem(item, index);

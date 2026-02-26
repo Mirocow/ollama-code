@@ -13,14 +13,14 @@ import { useCallback, useState } from 'react';
 import type {
   AnsiOutput,
   Config,
-  GeminiClient,
+  OllamaClient,
   ShellExecutionResult,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import {
   createDebugLogger,
   isBinary,
   ShellExecutionService,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { type PartListUnion } from '@google/genai';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { SHELL_COMMAND_NAME } from '../constants.js';
@@ -36,7 +36,7 @@ const MAX_OUTPUT_LENGTH = 10000;
 const debugLogger = createDebugLogger('SHELL_COMMAND_PROCESSOR');
 
 function addShellCommandToGeminiHistory(
-  geminiClient: GeminiClient,
+  geminiClient: OllamaClient,
   rawQuery: string,
   resultText: string,
 ) {
@@ -75,7 +75,7 @@ export const useShellCommandProcessor = (
   onExec: (command: Promise<void>) => void,
   onDebugMessage: (message: string) => void,
   config: Config,
-  geminiClient: GeminiClient,
+  geminiClient: OllamaClient,
   setShellInputFocused: (value: boolean) => void,
   terminalWidth?: number,
   terminalHeight?: number,

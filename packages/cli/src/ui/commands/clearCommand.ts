@@ -7,7 +7,7 @@
 import type { SlashCommand } from './types.js';
 import { CommandKind } from './types.js';
 import { t } from '../../i18n/index.js';
-import { uiTelemetryService } from '@qwen-code/qwen-code-core';
+import { uiTelemetryService } from '@ollama-code/ollama-code-core';
 
 export const clearCommand: SlashCommand = {
   name: 'clear',
@@ -29,7 +29,7 @@ export const clearCommand: SlashCommand = {
         context.session.startNewSession(newSessionId);
       }
 
-      const geminiClient = config.getGeminiClient();
+      const geminiClient = config.getOllamaClient();
       if (geminiClient) {
         context.ui.setDebugMessage(
           t('Starting a new session, resetting chat, and clearing terminal.'),

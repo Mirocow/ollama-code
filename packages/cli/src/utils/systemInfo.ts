@@ -9,7 +9,7 @@ import os from 'node:os';
 import { execSync } from 'node:child_process';
 import type { CommandContext } from '../ui/commands/types.js';
 import { getCliVersion } from './version.js';
-import { IdeClient } from '@qwen-code/qwen-code-core';
+import { IdeClient } from '@ollama-code/ollama-code-core';
 import { formatMemoryUsage } from '../ui/utils/formatters.js';
 import { GIT_COMMIT_INFO } from '../generated/git-commit.js';
 
@@ -155,8 +155,7 @@ export async function getExtendedSystemInfo(
   const sandboxEnv = getSandboxEnv(true);
 
   // Get base URL if configured
-  const baseUrl =
-    context.services.config?.getContentGeneratorConfig()?.baseUrl;
+  const baseUrl = context.services.config?.getContentGeneratorConfig()?.baseUrl;
 
   // Get git commit info
   const gitCommit =

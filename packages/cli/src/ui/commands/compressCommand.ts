@@ -43,7 +43,7 @@ export const compressCommand: SlashCommand = {
     };
 
     const config = context.services.config;
-    const geminiClient = config?.getGeminiClient();
+    const geminiClient = config?.getOllamaClient();
     if (!config || !geminiClient) {
       return {
         type: 'message',

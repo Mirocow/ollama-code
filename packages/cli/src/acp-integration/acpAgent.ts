@@ -16,7 +16,7 @@ import {
   tokenLimit,
   type Config,
   type ConversationRecord,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import type { ApprovalModeValue } from './schema.js';
 import * as acp from './acp.js';
 import { buildAuthMethods } from './authMethods.js';
@@ -311,14 +311,14 @@ class OllamaAgent {
     conversation?: ConversationRecord,
   ): Promise<Session> {
     const sessionId = config.getSessionId();
-    const geminiClient = config.getGeminiClient();
+    const geminiClient = config.getOllamaClient();
 
-    // Use GeminiClient to manage chat lifecycle properly
+    // Use OllamaClient to manage chat lifecycle properly
     if (!geminiClient.isInitialized()) {
       await geminiClient.initialize();
     }
 
-    // Now get the chat instance that's managed by GeminiClient
+    // Now get the chat instance that's managed by OllamaClient
     const chat = geminiClient.getChat();
 
     const session = new Session(

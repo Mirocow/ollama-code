@@ -9,7 +9,7 @@
  * Coding Plan was a Qwen-specific feature.
  */
 
-import type { AuthType, Config } from '@qwen-code/qwen-code-core';
+import type { AuthType, Config } from '@ollama-code/ollama-code-core';
 
 export function useCodingPlanUpdates(
   _config: Config,

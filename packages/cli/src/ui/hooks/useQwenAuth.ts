@@ -9,7 +9,7 @@
  * Ollama doesn't use OAuth authentication.
  */
 
-import type { AuthType } from '@qwen-code/qwen-code-core';
+import type { AuthType } from '@ollama-code/ollama-code-core';
 
 export interface QwenAuthState {
   deviceAuth: null;

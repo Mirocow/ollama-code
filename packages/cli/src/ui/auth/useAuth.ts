@@ -7,13 +7,13 @@
 import type {
   Config,
   ContentGeneratorConfig,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import {
   AuthEvent,
   AuthType,
   getErrorMessage,
   logAuth,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { useCallback, useEffect, useState } from 'react';
 import type { LoadedSettings } from '../../config/settings.js';
 import { getPersistScopeForModelSelection } from '../../config/modelProvidersScope.js';
@@ -186,11 +186,7 @@ export const useAuthCommand = (
         await performAuth();
       }
     },
-    [
-      config,
-      performAuth,
-      settings.merged.model?.generationConfig,
-    ],
+    [config, performAuth, settings.merged.model?.generationConfig],
   );
 
   const openAuthDialog = useCallback(() => {
@@ -200,7 +196,11 @@ export const useAuthCommand = (
   const cancelAuthentication = useCallback(() => {
     // Log authentication cancellation
     if (isAuthenticating) {
-      const authEvent = new AuthEvent(AuthType.USE_OLLAMA, 'manual', 'cancelled');
+      const authEvent = new AuthEvent(
+        AuthType.USE_OLLAMA,
+        'manual',
+        'cancelled',
+      );
       logAuth(config, authEvent);
     }
 

@@ -17,7 +17,7 @@ import type {
   ChatRecord,
   SubAgentEventEmitter,
   StreamEvent,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import {
   ApprovalMode,
   convertToFunctionResponse,
@@ -32,7 +32,7 @@ import {
   TodoWriteTool,
   ExitPlanModeTool,
   readManyFiles,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 
 import * as acp from '../acp.js';
 import type { LoadedSettings } from '../../config/settings.js';
@@ -383,10 +383,7 @@ export class Session implements SessionContext {
     }
 
     // For Ollama, no special credential handling needed
-    await this.config.switchModel(
-      selectedAuthType,
-      parsed.modelId,
-    );
+    await this.config.switchModel(selectedAuthType, parsed.modelId);
 
     // Get updated model info
     const currentModel = this.config.getModel();

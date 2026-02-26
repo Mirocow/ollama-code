@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { SessionService, type Config } from '@qwen-code/qwen-code-core';
+import { SessionService, type Config } from '@ollama-code/ollama-code-core';
 import { buildResumedHistoryItems } from '../utils/resumeHistoryUtils.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 
@@ -65,7 +65,7 @@ export function useResumeCommand(
 
       // Update session history core.
       config.startNewSession(sessionId, sessionData);
-      await config.getGeminiClient()?.initialize?.();
+      await config.getOllamaClient()?.initialize?.();
 
       // Refresh terminal UI.
       remount?.();

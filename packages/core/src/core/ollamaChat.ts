@@ -14,7 +14,7 @@ import type {
 import type { Config } from '../config/config.js';
 import type { RetryInfo } from '../utils/rateLimit.js';
 
-export interface GeminiChatOptions {
+export interface OllamaChatOptions {
   systemInstruction?: string | Part | Part[];
   tools?: Tool[];
 }
@@ -30,14 +30,14 @@ export interface StreamEvent {
   retryInfo?: RetryInfo;
 }
 
-export class GeminiChat {
+export class OllamaChat {
   private history: Content[] = [];
   private systemInstruction?: string | Part | Part[];
   private tools?: Tool[];
 
   constructor(
     private readonly config: Config,
-    options: GeminiChatOptions,
+    options: OllamaChatOptions,
     history: Content[],
   ) {
     this.systemInstruction = options.systemInstruction;
@@ -89,23 +89,20 @@ export class GeminiChat {
       } as GenerateContentConfig,
     };
 
-    try {
-      const stream = await contentGenerator.generateContentStream(
-        request,
-        prompt_id,
-      );
+    const stream = await contentGenerator.generateContentStream(
+      request,
+      prompt_id,
+    );
 
-      for await (const response of stream) {
-        yield { type: 'chunk', value: response };
-      }
-    } catch (error) {
-      throw error;
+    for await (const response of stream) {
+      yield { type: 'chunk', value: response };
     }
   }
 
-  async maybeIncludeSchemaDepthContext(
-    _error: { message: string; status?: number },
-  ): Promise<void> {
+  async maybeIncludeSchemaDepthContext(_error: {
+    message: string;
+    status?: number;
+  }): Promise<void> {
     // No-op for now - can be extended to include schema depth context for debugging
   }
 }

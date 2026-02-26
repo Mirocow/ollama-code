@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '@qwen-code/qwen-code-core';
+import type { Config } from '@ollama-code/ollama-code-core';
 import {
   OutputFormat,
   JsonFormatter,
@@ -13,7 +13,7 @@ import {
   FatalCancellationError,
   ToolErrorType,
   createDebugLogger,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { writeStderrLine } from './stdioHelpers.js';
 
 const debugLogger = createDebugLogger('CLI_ERRORS');

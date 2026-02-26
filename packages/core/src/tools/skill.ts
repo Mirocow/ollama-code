@@ -83,9 +83,9 @@ export class SkillTool extends BaseDeclarativeTool<SkillParams, ToolResult> {
       this.updateDescriptionAndSchema();
     } finally {
       // Update the client with the new tools
-      const geminiClient = this.config.getGeminiClient();
-      if (geminiClient && geminiClient.isInitialized()) {
-        await geminiClient.setTools();
+      const ollamaClient = this.config.getOllamaClient();
+      if (ollamaClient && ollamaClient.isInitialized()) {
+        await ollamaClient.setTools();
       }
     }
   }

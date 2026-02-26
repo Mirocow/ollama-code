@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { parse as parseYaml } from '@qwen-code/qwen-code-core';
+import { parse as parseYaml } from '@ollama-code/ollama-code-core';
 
 /**
  * Defines the Zod schema for a Markdown command definition file.

@@ -9,7 +9,7 @@ import {
   DEFAULT_OLLAMA_MODEL,
   type Config,
   type AvailableModel as CoreAvailableModel,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { t } from '../../i18n/index.js';
 
 export type AvailableModel = {

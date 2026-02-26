@@ -6,7 +6,7 @@
 
 import type React from 'react';
 import { useState } from 'react';
-import { AuthType } from '@qwen-code/qwen-code-core';
+import { AuthType } from '@ollama-code/ollama-code-core';
 import { Box, Text } from 'ink';
 import Link from 'ink-link';
 import { theme } from '../semantic-colors.js';

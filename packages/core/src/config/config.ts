@@ -24,7 +24,7 @@ import type { AnyToolInvocation } from '../tools/tools.js';
 
 // Core
 import { BaseLlmClient } from '../core/baseLlmClient.js';
-import { GeminiClient } from '../core/client.js';
+import { OllamaClient } from '../core/ollamaClient.js';
 import {
   type AuthType,
   createContentGenerator,
@@ -455,7 +455,7 @@ export class Config {
   private readonly telemetrySettings: TelemetrySettings;
   private readonly gitCoAuthor: GitCoAuthorSettings;
   private readonly usageStatisticsEnabled: boolean;
-  private geminiClient!: GeminiClient;
+  private ollamaClient!: OllamaClient;
   private baseLlmClient!: BaseLlmClient;
   private readonly fileFiltering: {
     respectGitIgnore: boolean;
@@ -524,7 +524,8 @@ export class Config {
     this.sessionData = params.sessionData;
     setDebugLogSession(this);
     this.debugLogger = createDebugLogger();
-    this.embeddingModel = params.embeddingModel ?? DEFAULT_OLLAMA_EMBEDDING_MODEL;
+    this.embeddingModel =
+      params.embeddingModel ?? DEFAULT_OLLAMA_EMBEDDING_MODEL;
     this.fileSystemService = new StandardFileSystemService();
     this.sandbox = params.sandbox;
     this.targetDir = path.resolve(params.targetDir);
@@ -663,7 +664,7 @@ export class Config {
     if (this.getProxy()) {
       setGlobalDispatcher(new ProxyAgent(this.getProxy() as string));
     }
-    this.geminiClient = new GeminiClient(this);
+    this.ollamaClient = new OllamaClient(this);
     this.chatRecordingService = this.chatRecordingEnabled
       ? new ChatRecordingService(this)
       : undefined;
@@ -717,7 +718,7 @@ export class Config {
       `Tool registry initialized with ${this.toolRegistry.getAllToolNames().length} tools`,
     );
 
-    await this.geminiClient.initialize();
+    await this.ollamaClient.initialize();
     this.debugLogger.info('Gemini client initialized');
 
     // Detect and capture runtime model snapshot (from CLI/ENV/credentials)
@@ -1240,8 +1241,8 @@ export class Config {
     return this.telemetrySettings.useCollector ?? false;
   }
 
-  getGeminiClient(): GeminiClient {
-    return this.geminiClient;
+  getOllamaClient(): OllamaClient {
+    return this.ollamaClient;
   }
 
   getEnableRecursiveFileSearch(): boolean {

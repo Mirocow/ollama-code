@@ -7,7 +7,11 @@
 import type React from 'react';
 import { Box, Text } from 'ink';
 import Gradient from 'ink-gradient';
-import { AuthType, shortenPath, tildeifyPath } from '@qwen-code/qwen-code-core';
+import {
+  AuthType,
+  shortenPath,
+  tildeifyPath,
+} from '@ollama-code/ollama-code-core';
 import { theme } from '../semantic-colors.js';
 import { shortAsciiLogo } from './AsciiArt.js';
 import { getAsciiArtWidth, getCachedStringWidth } from '../utils/textUtils.js';

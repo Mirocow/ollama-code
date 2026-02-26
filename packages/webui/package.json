@@ -1,7 +1,7 @@
 {
-  "name": "@qwen-code/webui",
+  "name": "@ollama-code/webui",
   "version": "0.10.5",
-  "description": "Shared UI components for Qwen Code packages",
+  "description": "Shared UI components for Ollama Code packages",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -70,11 +70,11 @@
     "@vitest/coverage-v8": "^3.2.4"
   },
   "keywords": [
-    "qwen",
+    "ollama",
     "ui",
     "components",
     "shared"
   ],
-  "author": "Qwen Team",
+  "author": "Ollama Code Team",
   "license": "MIT"
 }

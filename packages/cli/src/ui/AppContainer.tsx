@@ -39,7 +39,7 @@ import {
   getAllGeminiMdFilenames,
   ShellExecutionService,
   Storage,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { buildResumedHistoryItems } from './utils/resumeHistoryUtils.js';
 import { validateAuthMethod } from '../config/auth.js';
 import { loadHierarchicalGeminiMemory } from '../config/config.js';
@@ -670,7 +670,7 @@ export const AppContainer = (props: AppContainerProps) => {
     activePtyId,
     loopDetectionConfirmationRequest,
   } = useGeminiStream(
-    config.getGeminiClient(),
+    config.getOllamaClient(),
     historyManager.history,
     historyManager.addItem,
     config,
@@ -822,7 +822,7 @@ export const AppContainer = (props: AppContainerProps) => {
   // Initial prompt handling
   const initialPrompt = useMemo(() => config.getQuestion(), [config]);
   const initialPromptSubmitted = useRef(false);
-  const geminiClient = config.getGeminiClient();
+  const geminiClient = config.getOllamaClient();
 
   useEffect(() => {
     if (activePtyId) {

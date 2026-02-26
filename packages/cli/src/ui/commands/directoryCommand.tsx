@@ -9,7 +9,7 @@ import { CommandKind } from './types.js';
 import { MessageType } from '../types.js';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { loadServerHierarchicalMemory } from '@qwen-code/qwen-code-core';
+import { loadServerHierarchicalMemory } from '@ollama-code/ollama-code-core';
 import { t } from '../../i18n/index.js';
 
 export function expandHomeDir(p: string): string {
@@ -144,7 +144,7 @@ export const directoryCommand: SlashCommand = {
         }
 
         if (added.length > 0) {
-          const gemini = config.getGeminiClient();
+          const gemini = config.getOllamaClient();
           if (gemini) {
             await gemini.addDirectoryContext();
           }

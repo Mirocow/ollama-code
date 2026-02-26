@@ -13,7 +13,7 @@ import {
   type AuthType,
   type EditorType,
   type ApprovalMode,
-} from '@qwen-code/qwen-code-core';
+} from '@ollama-code/ollama-code-core';
 import { type SettingScope } from '../../config/settings.js';
 import type { AuthState } from '../types.js';
 import { type VisionSwitchOutcome } from '../components/ModelSwitchDialog.js';
