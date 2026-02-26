@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import './src/gemini.js';
 import { main } from './src/ollama.js';
 import { FatalError } from '@ollama-code/ollama-code-core';
 

@@ -128,6 +128,18 @@ export const OLLAMA_VISION_MODELS: ModelConfig[] = [
  */
 export const OLLAMA_MODELS: ModelConfig[] = [
   {
+    id: 'qwen3-coder:30b',
+    name: 'Qwen 3 Coder 30B',
+    description: 'Qwen 3 Coder 30B - latest coding model from Alibaba',
+    capabilities: { vision: false },
+  },
+  {
+    id: 'qwen3-coder',
+    name: 'Qwen 3 Coder',
+    description: 'Qwen 3 Coder - latest coding model from Alibaba',
+    capabilities: { vision: false },
+  },
+  {
     id: 'qwen2.5-coder',
     name: 'Qwen 2.5 Coder',
     description: 'Qwen 2.5 Coder - excellent for coding tasks',
