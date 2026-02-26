@@ -36,7 +36,7 @@ import {
   ideContextStore,
   createDebugLogger,
   getErrorMessage,
-  getAllGeminiMdFilenames,
+  getAllOllamaMdFilenames,
   ShellExecutionService,
   Storage,
 } from '@ollama-code/ollama-code-core';
@@ -817,7 +817,7 @@ export const AppContainer = (props: AppContainerProps) => {
       ? Array.isArray(fromSettings)
         ? fromSettings
         : [fromSettings]
-      : getAllGeminiMdFilenames();
+      : getAllOllamaMdFilenames();
   }, [settings.merged.context?.fileName]);
   // Initial prompt handling
   const initialPrompt = useMemo(() => config.getQuestion(), [config]);

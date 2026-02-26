@@ -10,12 +10,12 @@ import type {
   ToolCallRequestInfo,
   ToolCallResponseInfo,
   SessionMetrics,
-  ServerGeminiStreamEvent,
+  ServerOllamaStreamEvent,
   TaskResultDisplay,
   McpToolProgressData,
 } from '@ollama-code/ollama-code-core';
 import {
-  GeminiEventType,
+  OllamaEventType,
   ToolErrorType,
   parseAndFormatApiError,
 } from '@ollama-code/ollama-code-core';
@@ -104,7 +104,7 @@ export interface MessageEmitter {
  */
 export interface JsonOutputAdapterInterface extends MessageEmitter {
   startAssistantMessage(): void;
-  processEvent(event: ServerGeminiStreamEvent): void;
+  processEvent(event: ServerOllamaStreamEvent): void;
   finalizeAssistantMessage(): CLIAssistantMessage;
   emitResult(options: ResultOptions): void;
 
@@ -585,22 +585,22 @@ export abstract class BaseJsonOutputAdapter {
    *
    * @param event - Stream event from Ollama API
    */
-  processEvent(event: ServerGeminiStreamEvent): void {
+  processEvent(event: ServerOllamaStreamEvent): void {
     const state = this.mainAgentMessageState;
     if (state.finalized) {
       return;
     }
 
     switch (event.type) {
-      case GeminiEventType.Content:
+      case OllamaEventType.Content:
         this.appendText(state, event.value, null);
         break;
-      case GeminiEventType.Citation:
+      case OllamaEventType.Citation:
         if (typeof event.value === 'string') {
           this.appendText(state, `\n${event.value}`, null);
         }
         break;
-      case GeminiEventType.Thought:
+      case OllamaEventType.Thought:
         this.appendThinking(
           state,
           event.value.subject,
@@ -608,16 +608,16 @@ export abstract class BaseJsonOutputAdapter {
           null,
         );
         break;
-      case GeminiEventType.ToolCallRequest:
+      case OllamaEventType.ToolCallRequest:
         this.appendToolUse(state, event.value, null);
         break;
-      case GeminiEventType.Finished:
+      case OllamaEventType.Finished:
         if (event.value?.usageMetadata) {
           state.usage = this.createUsage(event.value.usageMetadata);
         }
         this.finalizePendingBlocks(state, null);
         break;
-      case GeminiEventType.Error: {
+      case OllamaEventType.Error: {
         // Format the error message using parseAndFormatApiError for consistency
         // with interactive mode error display
         const errorText = parseAndFormatApiError(

@@ -8,9 +8,9 @@ import type { Mock } from 'vitest';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   MemoryTool,
-  setGeminiMdFilename,
-  getCurrentGeminiMdFilename,
-  getAllGeminiMdFilenames,
+  setOllamaMdFilename,
+  getCurrentOllamaMdFilename,
+  getAllOllamaMdFilenames,
   DEFAULT_CONTEXT_FILENAME,
 } from './memoryTool.js';
 import * as fs from 'node:fs/promises';
@@ -68,30 +68,30 @@ describe('MemoryTool', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     // Reset GEMINI_MD_FILENAME to its original value after each test
-    setGeminiMdFilename(DEFAULT_CONTEXT_FILENAME);
+    setOllamaMdFilename(DEFAULT_CONTEXT_FILENAME);
   });
 
-  describe('setGeminiMdFilename', () => {
+  describe('setOllamaMdFilename', () => {
     it('should update currentGeminiMdFilename when a valid new name is provided', () => {
       const newName = 'CUSTOM_CONTEXT.md';
-      setGeminiMdFilename(newName);
-      expect(getCurrentGeminiMdFilename()).toBe(newName);
+      setOllamaMdFilename(newName);
+      expect(getCurrentOllamaMdFilename()).toBe(newName);
     });
 
     it('should not update currentGeminiMdFilename if the new name is empty or whitespace', () => {
-      const initialName = getCurrentGeminiMdFilename(); // Get current before trying to change
-      setGeminiMdFilename('  ');
-      expect(getCurrentGeminiMdFilename()).toBe(initialName);
+      const initialName = getCurrentOllamaMdFilename(); // Get current before trying to change
+      setOllamaMdFilename('  ');
+      expect(getCurrentOllamaMdFilename()).toBe(initialName);
 
-      setGeminiMdFilename('');
-      expect(getCurrentGeminiMdFilename()).toBe(initialName);
+      setOllamaMdFilename('');
+      expect(getCurrentOllamaMdFilename()).toBe(initialName);
     });
 
     it('should handle an array of filenames', () => {
       const newNames = ['CUSTOM_CONTEXT.md', 'ANOTHER_CONTEXT.md'];
-      setGeminiMdFilename(newNames);
-      expect(getCurrentGeminiMdFilename()).toBe('CUSTOM_CONTEXT.md');
-      expect(getAllGeminiMdFilenames()).toEqual(newNames);
+      setOllamaMdFilename(newNames);
+      expect(getCurrentOllamaMdFilename()).toBe('CUSTOM_CONTEXT.md');
+      expect(getAllOllamaMdFilenames()).toEqual(newNames);
     });
   });
 
@@ -217,11 +217,11 @@ describe('MemoryTool', () => {
       const invocation = memoryTool.build(params);
       const result = await invocation.execute(mockAbortSignal);
 
-      // Use getCurrentGeminiMdFilename for the default expectation before any setGeminiMdFilename calls in a test
+      // Use getCurrentOllamaMdFilename for the default expectation before any setOllamaMdFilename calls in a test
       const expectedFilePath = path.join(
         os.homedir(),
         '.qwen',
-        getCurrentGeminiMdFilename(), // This will be DEFAULT_CONTEXT_FILENAME unless changed by a test
+        getCurrentOllamaMdFilename(), // This will be DEFAULT_CONTEXT_FILENAME unless changed by a test
       );
 
       // For this test, we expect the actual fs methods to be passed
@@ -249,7 +249,7 @@ describe('MemoryTool', () => {
       // For project scope, expect the file to be in current working directory
       const expectedFilePath = path.join(
         process.cwd(),
-        getCurrentGeminiMdFilename(),
+        getCurrentOllamaMdFilename(),
       );
 
       // For this test, we expect the actual fs methods to be passed
@@ -381,7 +381,7 @@ describe('MemoryTool', () => {
       const memoryFilePath = path.join(
         os.homedir(),
         '.qwen',
-        getCurrentGeminiMdFilename(),
+        getCurrentOllamaMdFilename(),
       );
 
       const invocation = memoryTool.build(params);
@@ -398,7 +398,7 @@ describe('MemoryTool', () => {
       const params = { fact: 'Test fact', scope: 'project' as const };
       const memoryFilePath = path.join(
         process.cwd(),
-        getCurrentGeminiMdFilename(),
+        getCurrentOllamaMdFilename(),
       );
 
       const invocation = memoryTool.build(params);
@@ -418,7 +418,7 @@ describe('MemoryTool', () => {
       const memoryFilePath = path.join(
         os.homedir(),
         '.qwen',
-        getCurrentGeminiMdFilename(),
+        getCurrentOllamaMdFilename(),
       );
 
       const invocation = memoryTool.build(params);
@@ -445,7 +445,7 @@ describe('MemoryTool', () => {
       const params = { fact: 'Test fact', scope: 'project' as const };
       const memoryFilePath = path.join(
         process.cwd(),
-        getCurrentGeminiMdFilename(),
+        getCurrentOllamaMdFilename(),
       );
 
       const invocation = memoryTool.build(params);
@@ -473,7 +473,7 @@ describe('MemoryTool', () => {
       const memoryFilePath = path.join(
         os.homedir(),
         '.qwen',
-        getCurrentGeminiMdFilename(),
+        getCurrentOllamaMdFilename(),
       );
 
       const invocation = memoryTool.build(params);

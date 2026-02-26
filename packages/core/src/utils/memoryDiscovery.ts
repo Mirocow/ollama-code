@@ -8,15 +8,15 @@ import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import { homedir } from 'node:os';
-import { getAllGeminiMdFilenames } from '../tools/memoryTool.js';
+import { getAllOllamaMdFilenames } from '../tools/memoryTool.js';
 import type { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 import { processImports } from './memoryImportProcessor.js';
-import { QWEN_DIR } from './paths.js';
+import { OLLAMA_DIR } from './paths.js';
 import { createDebugLogger } from './debugLogger.js';
 
 const logger = createDebugLogger('MEMORY_DISCOVERY');
 
-interface GeminiFileContent {
+interface OllamaFileContent {
   filePath: string;
   content: string | null;
 }
@@ -65,16 +65,16 @@ async function findProjectRoot(startDir: string): Promise<string | null> {
   }
 }
 
-async function getGeminiMdFilePathsInternal(
+async function getOllamaMdFilePathsInternal(
   currentWorkingDirectory: string,
-  includeDirectoriesToReadGemini: readonly string[],
+  includeDirectoriesToReadOllama: readonly string[],
   userHomePath: string,
   fileService: FileDiscoveryService,
   extensionContextFilePaths: string[] = [],
   folderTrust: boolean,
 ): Promise<string[]> {
   const dirs = new Set<string>([
-    ...includeDirectoriesToReadGemini,
+    ...includeDirectoriesToReadOllama,
     currentWorkingDirectory,
   ]);
 
@@ -86,7 +86,7 @@ async function getGeminiMdFilePathsInternal(
   for (let i = 0; i < dirsArray.length; i += CONCURRENT_LIMIT) {
     const batch = dirsArray.slice(i, i + CONCURRENT_LIMIT);
     const batchPromises = batch.map((dir) =>
-      getGeminiMdFilePathsInternalForEachDir(
+      getOllamaMdFilePathsInternalForEachDir(
         dir,
         userHomePath,
         fileService,
@@ -113,7 +113,7 @@ async function getGeminiMdFilePathsInternal(
   return Array.from(new Set<string>(paths));
 }
 
-async function getGeminiMdFilePathsInternalForEachDir(
+async function getOllamaMdFilePathsInternalForEachDir(
   dir: string,
   userHomePath: string,
   fileService: FileDiscoveryService,
@@ -121,14 +121,14 @@ async function getGeminiMdFilePathsInternalForEachDir(
   folderTrust: boolean,
 ): Promise<string[]> {
   const allPaths = new Set<string>();
-  const geminiMdFilenames = getAllGeminiMdFilenames();
+  const ollamaMdFilenames = getAllOllamaMdFilenames();
 
-  for (const geminiMdFilename of geminiMdFilenames) {
+  for (const ollamaMdFilename of ollamaMdFilenames) {
     const resolvedHome = path.resolve(userHomePath);
     const globalMemoryPath = path.join(
       resolvedHome,
-      QWEN_DIR,
-      geminiMdFilename,
+      OLLAMA_DIR,
+      ollamaMdFilename,
     );
 
     // This part that finds the global file always runs.
@@ -136,7 +136,7 @@ async function getGeminiMdFilePathsInternalForEachDir(
       await fs.access(globalMemoryPath, fsSync.constants.R_OK);
       allPaths.add(globalMemoryPath);
       logger.debug(
-        `Found readable global ${geminiMdFilename}: ${globalMemoryPath}`,
+        `Found readable global ${ollamaMdFilename}: ${globalMemoryPath}`,
       );
     } catch {
       // It's okay if it's not found.
@@ -147,14 +147,14 @@ async function getGeminiMdFilePathsInternalForEachDir(
     const isHomeDirectory = resolvedDir === resolvedHome;
 
     if (isHomeDirectory) {
-      // For home directory, only check for QWEN.md directly in the home directory
-      const homeContextPath = path.join(resolvedHome, geminiMdFilename);
+      // For home directory, only check for OLLAMA.md directly in the home directory
+      const homeContextPath = path.join(resolvedHome, ollamaMdFilename);
       try {
         await fs.access(homeContextPath, fsSync.constants.R_OK);
         if (homeContextPath !== globalMemoryPath) {
           allPaths.add(homeContextPath);
           logger.debug(
-            `Found readable home ${geminiMdFilename}: ${homeContextPath}`,
+            `Found readable home ${ollamaMdFilename}: ${homeContextPath}`,
           );
         }
       } catch {
@@ -165,7 +165,7 @@ async function getGeminiMdFilePathsInternalForEachDir(
       // if a valid currentWorkingDirectory is provided and it's not the home directory.
       const resolvedCwd = path.resolve(dir);
       logger.debug(
-        `Searching for ${geminiMdFilename} starting from CWD: ${resolvedCwd}`,
+        `Searching for ${ollamaMdFilename} starting from CWD: ${resolvedCwd}`,
       );
 
       const projectRoot = await findProjectRoot(resolvedCwd);
@@ -178,11 +178,11 @@ async function getGeminiMdFilePathsInternalForEachDir(
         : path.dirname(resolvedHome);
 
       while (currentDir && currentDir !== path.dirname(currentDir)) {
-        if (currentDir === path.join(resolvedHome, QWEN_DIR)) {
+        if (currentDir === path.join(resolvedHome, OLLAMA_DIR)) {
           break;
         }
 
-        const potentialPath = path.join(currentDir, geminiMdFilename);
+        const potentialPath = path.join(currentDir, ollamaMdFilename);
         try {
           await fs.access(potentialPath, fsSync.constants.R_OK);
           if (potentialPath !== globalMemoryPath) {
@@ -210,25 +210,25 @@ async function getGeminiMdFilePathsInternalForEachDir(
   const finalPaths = Array.from(allPaths);
 
   logger.debug(
-    `Final ordered ${getAllGeminiMdFilenames()} paths to read: ${JSON.stringify(
+    `Final ordered ${getAllOllamaMdFilenames()} paths to read: ${JSON.stringify(
       finalPaths,
     )}`,
   );
   return finalPaths;
 }
 
-async function readGeminiMdFiles(
+async function readOllamaMdFiles(
   filePaths: string[],
   importFormat: 'flat' | 'tree' = 'tree',
-): Promise<GeminiFileContent[]> {
+): Promise<OllamaFileContent[]> {
   // Process files in parallel with concurrency limit to prevent EMFILE errors
   const CONCURRENT_LIMIT = 20; // Higher limit for file reads as they're typically faster
-  const results: GeminiFileContent[] = [];
+  const results: OllamaFileContent[] = [];
 
   for (let i = 0; i < filePaths.length; i += CONCURRENT_LIMIT) {
     const batch = filePaths.slice(i, i + CONCURRENT_LIMIT);
     const batchPromises = batch.map(
-      async (filePath): Promise<GeminiFileContent> => {
+      async (filePath): Promise<OllamaFileContent> => {
         try {
           const content = await fs.readFile(filePath, 'utf-8');
 
@@ -252,7 +252,7 @@ async function readGeminiMdFiles(
             const message =
               error instanceof Error ? error.message : String(error);
             logger.warn(
-              `Warning: Could not read ${getAllGeminiMdFilenames()} file at ${filePath}. Error: ${message}`,
+              `Warning: Could not read ${getAllOllamaMdFilenames()} file at ${filePath}. Error: ${message}`,
             );
           }
           logger.debug(`Failed to read: ${filePath}`);
@@ -280,7 +280,7 @@ async function readGeminiMdFiles(
 }
 
 function concatenateInstructions(
-  instructionContents: GeminiFileContent[],
+  instructionContents: OllamaFileContent[],
   // CWD is needed to resolve relative paths for display markers
   currentWorkingDirectoryForDisplay: string,
 ): string {
@@ -306,12 +306,12 @@ export interface LoadServerHierarchicalMemoryResponse {
 }
 
 /**
- * Loads hierarchical QWEN.md files and concatenates their content.
+ * Loads hierarchical OLLAMA.md files and concatenates their content.
  * This function is intended for use by the server.
  */
 export async function loadServerHierarchicalMemory(
   currentWorkingDirectory: string,
-  includeDirectoriesToReadGemini: readonly string[],
+  includeDirectoriesToReadOllama: readonly string[],
   fileService: FileDiscoveryService,
   extensionContextFilePaths: string[] = [],
   folderTrust: boolean,
@@ -324,28 +324,28 @@ export async function loadServerHierarchicalMemory(
   // For the server, homedir() refers to the server process's home.
   // This is consistent with how MemoryTool already finds the global path.
   const userHomePath = homedir();
-  const filePaths = await getGeminiMdFilePathsInternal(
+  const filePaths = await getOllamaMdFilePathsInternal(
     currentWorkingDirectory,
-    includeDirectoriesToReadGemini,
+    includeDirectoriesToReadOllama,
     userHomePath,
     fileService,
     extensionContextFilePaths,
     folderTrust,
   );
   if (filePaths.length === 0) {
-    logger.debug('No QWEN.md files found in hierarchy.');
+    logger.debug('No OLLAMA.md files found in hierarchy.');
     return { memoryContent: '', fileCount: 0 };
   }
-  const contentsWithPaths = await readGeminiMdFiles(filePaths, importFormat);
+  const contentsWithPaths = await readOllamaMdFiles(filePaths, importFormat);
   // Pass CWD for relative path display in concatenated content
   const combinedInstructions = concatenateInstructions(
     contentsWithPaths,
     currentWorkingDirectory,
   );
 
-  // Only count files that match configured memory filenames (e.g., QWEN.md),
+  // Only count files that match configured memory filenames (e.g., OLLAMA.md),
   // excluding system context files like output-language.md
-  const memoryFilenames = new Set(getAllGeminiMdFilenames());
+  const memoryFilenames = new Set(getAllOllamaMdFilenames());
   const fileCount = contentsWithPaths.filter((item) =>
     memoryFilenames.has(path.basename(item.filePath)),
   ).length;

@@ -48,7 +48,7 @@ import { GlobTool } from '../tools/glob.js';
 import { GrepTool } from '../tools/grep.js';
 import { LSTool } from '../tools/ls.js';
 import type { SendSdkMcpMessage } from '../tools/mcp-client.js';
-import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
+import { MemoryTool, setOllamaMdFilename } from '../tools/memoryTool.js';
 import { ReadFileTool } from '../tools/read-file.js';
 import { canUseRipgrep } from '../utils/ripgrepUtils.js';
 import { RipGrepTool } from '../tools/ripGrep.js';
@@ -638,7 +638,7 @@ export class Config {
     this.fileExclusions = new FileExclusions(this);
     this.eventEmitter = params.eventEmitter;
     if (params.contextFileName) {
-      setGeminiMdFilename(params.contextFileName);
+      setOllamaMdFilename(params.contextFileName);
     }
 
     // Create ModelsConfig for centralized model management

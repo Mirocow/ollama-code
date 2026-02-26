@@ -6,7 +6,7 @@
 
 import {
   getErrorMessage,
-  getCurrentGeminiMdFilename,
+  getCurrentOllamaMdFilename,
   loadServerHierarchicalMemory,
   QWEN_DIR,
 } from '@ollama-code/ollama-code-core';
@@ -61,7 +61,7 @@ export const memoryCommand: SlashCommand = {
                 context.services.config?.getWorkingDir?.() ?? process.cwd();
               const projectMemoryPath = path.join(
                 workingDir,
-                getCurrentGeminiMdFilename(),
+                getCurrentOllamaMdFilename(),
               );
               const memoryContent = await fs.readFile(
                 projectMemoryPath,
@@ -110,7 +110,7 @@ export const memoryCommand: SlashCommand = {
               const globalMemoryPath = path.join(
                 os.homedir(),
                 QWEN_DIR,
-                getCurrentGeminiMdFilename(),
+                getCurrentOllamaMdFilename(),
               );
               const globalMemoryContent = await fs.readFile(
                 globalMemoryPath,
