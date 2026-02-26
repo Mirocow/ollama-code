@@ -757,7 +757,7 @@ const SETTINGS_SCHEMA = {
             description: 'Respect .gitignore files when searching',
             showInDialog: true,
           },
-          respectQwenIgnore: {
+          respectOllamaCodeIgnore: {
             type: 'boolean',
             label: 'Respect .ollamaignore',
             category: 'Context',

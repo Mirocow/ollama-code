@@ -96,7 +96,7 @@ describe('FileMessageHandler', () => {
     );
     expect(shouldIgnoreFileMock).toHaveBeenCalledWith(ignoredPath, {
       respectGitIgnore: true,
-      respectQwenIgnore: false,
+      respectOllamaCodeIgnore: false,
     });
 
     expect(sendToWebView).toHaveBeenCalledTimes(1);

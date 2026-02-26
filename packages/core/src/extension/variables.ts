@@ -9,7 +9,7 @@ import path from 'node:path';
 import { OLLAMA_DIR } from '../config/storage.js';
 
 export const EXTENSIONS_DIRECTORY_NAME = path.join(OLLAMA_DIR, 'extensions');
-export const EXTENSIONS_CONFIG_FILENAME = 'qwen-extension.json';
+export const EXTENSIONS_CONFIG_FILENAME = 'ollama-extension.json';
 export const INSTALL_METADATA_FILENAME = '.ollama-code-extension-install.json';
 export const EXTENSION_SETTINGS_FILENAME = '.env';
 
