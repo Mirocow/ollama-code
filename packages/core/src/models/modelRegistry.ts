@@ -5,7 +5,7 @@
  */
 
 import { AuthType } from '../core/contentGenerator.js';
-import { DEFAULT_OLLAMA_BASE_URL } from '../core/openaiContentGenerator/constants.js';
+import { DEFAULT_OLLAMA_NATIVE_URL } from '../core/ollamaNativeClient.js';
 import {
   type ModelConfig,
   type ModelProvidersConfig,
@@ -42,7 +42,7 @@ export class ModelRegistry {
   private modelsByAuthType: Map<AuthType, Map<string, ResolvedModelConfig>>;
 
   private getDefaultBaseUrl(_authType: AuthType): string {
-    return DEFAULT_OLLAMA_BASE_URL;
+    return DEFAULT_OLLAMA_NATIVE_URL;
   }
 
   constructor(modelProvidersConfig?: ModelProvidersConfig) {
