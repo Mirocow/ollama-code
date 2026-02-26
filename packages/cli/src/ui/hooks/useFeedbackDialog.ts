@@ -13,7 +13,6 @@ import {
   USER_SETTINGS_PATH,
 } from '../../config/settings.js';
 import type { SessionStatsState } from '../contexts/SessionContext.js';
-import { FEEDBACK_OPTIONS } from '../FeedbackDialog.js';
 import stripJsonComments from 'strip-json-comments';
 
 const FEEDBACK_SHOW_PROBABILITY = 0.25; // 25% probability of showing feedback dialog
@@ -114,7 +113,7 @@ export const useFeedbackDialog = ({
   }, []);
 
   const submitFeedback = useCallback(
-    (rating: number) => {
+    (_rating: number) => {
       // Record the timestamp when feedback dialog is submitted
       settings.setValue(
         SettingScope.User,

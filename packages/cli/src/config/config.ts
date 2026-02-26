@@ -14,7 +14,6 @@ import {
   getCurrentOllamaMdFilename,
   loadServerHierarchicalMemory,
   setOllamaMdFilename as setServerOllamaMdFilename,
-  FatalConfigError,
   Storage,
   InputFormat,
   OutputFormat,

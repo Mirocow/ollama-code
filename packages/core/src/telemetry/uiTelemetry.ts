@@ -4,16 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// UI Telemetry stubs - telemetry has been removed
+// UI Telemetry - local session statistics (no external telemetry)
 
-export interface SessionMetrics {
-  totalTurns: number;
-  totalTokens: number;
-  promptTokens: number;
-  candidatesTokens: number;
-  cachedTokens: number;
-  totalApiTime: number;
-  toolCalls: number;
+export interface ToolCallStats {
+  count: number;
+  success: number;
+  fail: number;
+  durationMs: number;
+  decisions: Record<string, number>;
 }
 
 export interface ModelMetrics {
@@ -23,18 +21,36 @@ export interface ModelMetrics {
     candidates: number;
     cached: number;
     total: number;
+    thoughts: number;
+    tool: number;
   };
   api: {
     totalLatencyMs: number;
     requestCount: number;
+    totalRequests: number;
+    totalErrors: number;
   };
 }
 
-export interface ToolCallStats {
-  accepted: number;
-  rejected: number;
-  modified: number;
-  total: number;
+export interface SessionMetrics {
+  models: Record<string, ModelMetrics>;
+  tools: {
+    totalCalls: number;
+    totalSuccess: number;
+    totalFail: number;
+    totalDurationMs: number;
+    totalDecisions: {
+      accept: number;
+      reject: number;
+      modify: number;
+      auto_accept: number;
+    };
+    byName: Record<string, ToolCallStats>;
+  };
+  files: {
+    totalLinesAdded: number;
+    totalLinesRemoved: number;
+  };
 }
 
 export interface ToolDecisionMetrics {
@@ -51,13 +67,11 @@ export interface SessionStatsState {
   sessionId: string;
   sessionStartTime: Date;
   lastPromptTokenCount: number;
-  metrics: {
-    models: Map<string, ModelMetrics>;
-    tools: ToolCallStats;
-    files: { read: number; written: number };
-  };
+  metrics: SessionMetrics;
   promptCount: number;
 }
+
+type EventCallback = (data: unknown) => void;
 
 class UiTelemetryService {
   private lastPromptTokenCount: number = 0;
@@ -74,28 +88,48 @@ class UiTelemetryService {
     this.lastPromptTokenCount = 0;
   }
 
+  on(_event: string, _callback: EventCallback): void {
+    // Stub - event registration (no-op)
+  }
+
+  off(_event: string, _callback: EventCallback): void {
+    // Stub - event unregistration (no-op)
+  }
+
   getSessionMetrics(): SessionMetrics {
     return {
-      totalTurns: 0,
-      totalTokens: 0,
-      promptTokens: 0,
-      candidatesTokens: 0,
-      cachedTokens: 0,
-      totalApiTime: 0,
-      toolCalls: 0,
+      models: {},
+      tools: {
+        totalCalls: 0,
+        totalSuccess: 0,
+        totalFail: 0,
+        totalDurationMs: 0,
+        totalDecisions: {
+          accept: 0,
+          reject: 0,
+          modify: 0,
+          auto_accept: 0,
+        },
+        byName: {},
+      },
+      files: {
+        totalLinesAdded: 0,
+        totalLinesRemoved: 0,
+      },
     };
   }
 
-  getModelMetrics(): Map<string, ModelMetrics> {
-    return new Map();
+  getModelMetrics(): Record<string, ModelMetrics> {
+    return {};
   }
 
   getToolCallStats(): ToolCallStats {
     return {
-      accepted: 0,
-      rejected: 0,
-      modified: 0,
-      total: 0,
+      count: 0,
+      success: 0,
+      fail: 0,
+      durationMs: 0,
+      decisions: {},
     };
   }
 
@@ -105,18 +139,8 @@ class UiTelemetryService {
     };
   }
 
-  getMetrics(): SessionStatsState {
-    return {
-      sessionId: '',
-      sessionStartTime: new Date(),
-      lastPromptTokenCount: this.lastPromptTokenCount,
-      metrics: {
-        models: new Map(),
-        tools: this.getToolCallStats(),
-        files: { read: 0, written: 0 },
-      },
-      promptCount: 0,
-    };
+  getMetrics(): SessionMetrics {
+    return this.getSessionMetrics();
   }
 }
 
