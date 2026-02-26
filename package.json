@@ -1,5 +1,5 @@
 {
-  "name": "@qwen-code/qwen-code",
+  "name": "@ollama-code/ollama-code",
   "version": "0.10.5",
   "engines": {
     "node": ">=20.0.0"
@@ -10,10 +10,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/QwenLM/qwen-code.git"
+    "url": "git+http://178.140.10.58:8082/ai/ollama-code.git"
   },
   "config": {
-    "sandboxImageUri": "ghcr.io/qwenlm/qwen-code:0.10.5"
+    "sandboxImageUri": "ghcr.io/ollama-code/ollama-code:0.10.5"
   },
   "scripts": {
     "start": "cross-env node scripts/start.js",
@@ -67,7 +67,7 @@
     "baseline-browser-mapping": "^2.9.19"
   },
   "bin": {
-    "qwen": "dist/cli.js"
+    "ollama-code": "dist/cli.js"
   },
   "files": [
     "dist/",
