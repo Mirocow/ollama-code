@@ -26,18 +26,12 @@ import {
   getErrorMessage,
   isNodeError,
   MessageSenderType,
-  logUserPrompt,
   GitService,
   UnauthorizedError,
-  UserPromptEvent,
-  logConversationFinishedEvent,
-  ConversationFinishedEvent,
   ApprovalMode,
   parseAndFormatApiError,
   promptIdContext,
   ToolConfirmationOutcome,
-  logApiCancel,
-  ApiCancelEvent,
 } from '@ollama-code/ollama-code-core';
 import type {
   HistoryItem,
@@ -322,19 +316,7 @@ export const useOllamaStream = (
       config.getApprovalMode() === ApprovalMode.YOLO &&
       streamingState === StreamingState.Idle
     ) {
-      const lastUserMessageIndex = history.findLastIndex(
-        (item: HistoryItem) => item.type === MessageType.USER,
-      );
-
-      const turnCount =
-        lastUserMessageIndex === -1 ? 0 : history.length - lastUserMessageIndex;
-
-      if (turnCount > 0) {
-        logConversationFinishedEvent(
-          config,
-          new ConversationFinishedEvent(config.getApprovalMode(), turnCount),
-        );
-      }
+      // YOLO mode idle state handling
     }
   }, [streamingState, config, history]);
 
@@ -348,15 +330,6 @@ export const useOllamaStream = (
     turnCancelledRef.current = true;
     isSubmittingQueryRef.current = false;
     abortControllerRef.current?.abort();
-
-    // Log API cancellation
-    const prompt_id = config.getSessionId() + '########' + getPromptCount();
-    const cancellationEvent = new ApiCancelEvent(
-      config.getModel(),
-      prompt_id,
-      config.getContentGeneratorConfig()?.authType,
-    );
-    logApiCancel(config, cancellationEvent);
 
     if (pendingHistoryItemRef.current) {
       addItem(pendingHistoryItemRef.current, Date.now());
@@ -381,8 +354,6 @@ export const useOllamaStream = (
     pendingHistoryItemRef,
     setShellInputFocused,
     clearRetryCountdown,
-    config,
-    getPromptCount,
   ]);
 
   const prepareQueryForOllama = useCallback(
@@ -1049,19 +1020,6 @@ export const useOllamaStream = (
         if (!options?.isContinuation) {
           // trigger new prompt event for session stats in CLI
           startNewPrompt();
-
-          // log user prompt event for telemetry, only text prompts for now
-          if (typeof queryToSend === 'string') {
-            logUserPrompt(
-              config,
-              new UserPromptEvent(
-                queryToSend.length,
-                prompt_id,
-                config.getContentGeneratorConfig()?.authType,
-                queryToSend,
-              ),
-            );
-          }
 
           // Reset thought when starting a new prompt
           setThought(null);

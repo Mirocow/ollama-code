@@ -19,26 +19,13 @@ import {
   type Part,
   type PartUnion,
 } from '../../types/content.js';
-import {
-  ApiRequestEvent,
-  ApiResponseEvent,
-  ApiErrorEvent,
-} from '../../telemetry/types.js';
+
 import type { Config } from '../../config/config.js';
-import {
-  logApiError,
-  logApiRequest,
-  logApiResponse,
-} from '../../telemetry/loggers.js';
+
 import type {
   ContentGenerator,
   ContentGeneratorConfig,
 } from '../contentGenerator.js';
-import { isStructuredError } from '../../utils/quotaErrorDetection.js';
-
-interface StructuredError {
-  status: number;
-}
 
 /**
  * A decorator that wraps a ContentGenerator to add logging to API calls.
@@ -46,7 +33,7 @@ interface StructuredError {
 export class LoggingContentGenerator implements ContentGenerator {
   constructor(
     private readonly wrapped: ContentGenerator,
-    private readonly config: Config,
+    _config: Config,
     _generatorConfig: ContentGeneratorConfig,
   ) {}
 
@@ -55,74 +42,32 @@ export class LoggingContentGenerator implements ContentGenerator {
   }
 
   private logApiRequest(
-    contents: Content[],
-    model: string,
-    promptId: string,
+    _contents: Content[],
+    _model: string,
+    _promptId: string,
   ): void {
-    const requestText = JSON.stringify(contents);
-    logApiRequest(
-      this.config,
-      new ApiRequestEvent(model, promptId, requestText),
-    );
+    // Telemetry logging removed
   }
 
   private _logApiResponse(
-    responseId: string,
-    durationMs: number,
-    model: string,
-    prompt_id: string,
-    usageMetadata?: GenerateContentResponseUsageMetadata,
-    responseText?: string,
+    _responseId: string,
+    _durationMs: number,
+    _model: string,
+    _prompt_id: string,
+    _usageMetadata?: GenerateContentResponseUsageMetadata,
+    _responseText?: string,
   ): void {
-    logApiResponse(
-      this.config,
-      new ApiResponseEvent(
-        responseId,
-        model,
-        durationMs,
-        prompt_id,
-        this.config.getAuthType(),
-        usageMetadata,
-        responseText,
-      ),
-    );
+    // Telemetry logging removed
   }
 
   private _logApiError(
-    responseId: string | undefined,
-    durationMs: number,
-    error: unknown,
-    model: string,
-    prompt_id: string,
+    _responseId: string | undefined,
+    _durationMs: number,
+    _error: unknown,
+    _model: string,
+    _prompt_id: string,
   ): void {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorType =
-      (error as { type?: string })?.type ||
-      (error instanceof Error ? error.name : 'unknown');
-    const errorResponseId =
-      (error as { requestID?: string; request_id?: string })?.requestID ||
-      (error as { requestID?: string; request_id?: string })?.request_id ||
-      responseId;
-    const errorStatus =
-      (error as { code?: string | number; status?: number })?.code ??
-      (error as { status?: number })?.status ??
-      (isStructuredError(error)
-        ? (error as StructuredError).status
-        : undefined);
-
-    logApiError(
-      this.config,
-      new ApiErrorEvent(
-        errorResponseId,
-        model,
-        errorMessage,
-        durationMs,
-        prompt_id,
-        this.config.getAuthType(),
-        errorType,
-        errorStatus,
-      ),
-    );
+    // Telemetry logging removed
   }
 
   async generateContent(
