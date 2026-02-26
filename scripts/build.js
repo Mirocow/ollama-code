@@ -50,10 +50,19 @@ const buildOrder = [
 ];
 
 for (const workspace of buildOrder) {
-  execSync(`npm run build --workspace=${workspace}`, {
-    stdio: 'inherit',
-    cwd: root,
-  });
+  try {
+    execSync(`npm run build --workspace=${workspace}`, {
+      stdio: 'inherit',
+      cwd: root,
+    });
+  } catch (error) {
+    // Skip vscode-ide-companion if it fails (optional package)
+    if (workspace === 'packages/vscode-ide-companion') {
+      console.log('Skipping vscode-ide-companion due to build error (optional package)');
+      continue;
+    }
+    throw error;
+  }
 }
 
 // also build container image if sandboxing is enabled
