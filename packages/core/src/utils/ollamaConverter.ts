@@ -51,7 +51,7 @@ export function contentsToOllamaMessages(
     if (content.role === 'tool') {
       // Tool response - convert to assistant message with tool results
       for (const part of content.parts) {
-        if ('functionResponse' in part) {
+        if (part.functionResponse) {
           // Ollama uses tool role for responses
           messages.push({
             role: 'tool',
@@ -65,9 +65,9 @@ export function contentsToOllamaMessages(
       const toolCalls: OllamaToolCall[] = [];
 
       for (const part of content.parts) {
-        if ('text' in part && part.text) {
+        if (part.text) {
           textParts.push(part.text);
-        } else if ('functionCall' in part) {
+        } else if (part.functionCall) {
           toolCalls.push({
             function: {
               name: part.functionCall.name,
@@ -93,9 +93,9 @@ export function contentsToOllamaMessages(
       const images: string[] = [];
 
       for (const part of content.parts) {
-        if ('text' in part && part.text) {
+        if (part.text) {
           textParts.push(part.text);
-        } else if ('inlineData' in part && part.inlineData.mimeType.startsWith('image/')) {
+        } else if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
           images.push(part.inlineData.data);
         }
       }
@@ -210,8 +210,10 @@ export function toolsToOllamaTools(tools: Tool[]): OllamaTool[] {
   const ollamaTools: OllamaTool[] = [];
 
   for (const tool of tools) {
-    for (const func of tool.functionDeclarations) {
-      ollamaTools.push(functionDeclarationToOllamaTool(func));
+    if (tool.functionDeclarations) {
+      for (const func of tool.functionDeclarations) {
+        ollamaTools.push(functionDeclarationToOllamaTool(func));
+      }
     }
   }
 
@@ -366,10 +368,19 @@ export function generateParamsToOllamaRequest(
 
   // Add system instruction if provided
   if (params.systemInstruction) {
-    const systemText = params.systemInstruction.parts
-      .map((p) => ('text' in p ? p.text : ''))
-      .filter(Boolean)
-      .join('\n');
+    let systemText = '';
+    const sysInstr = params.systemInstruction;
+    
+    if (typeof sysInstr === 'string') {
+      systemText = sysInstr;
+    } else if ('parts' in sysInstr && Array.isArray(sysInstr.parts)) {
+      systemText = sysInstr.parts
+        .map((p: Part) => ('text' in p && p.text ? p.text : ''))
+        .filter(Boolean)
+        .join('\n');
+    } else if ('text' in sysInstr) {
+      systemText = String(sysInstr.text || '');
+    }
 
     if (systemText) {
       // Prepend system message

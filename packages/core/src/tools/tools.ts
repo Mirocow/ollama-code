@@ -168,7 +168,7 @@ export abstract class DeclarativeTool<
     return {
       name: this.name,
       description: this.description,
-      parametersJsonSchema: this.parameterSchema,
+      parametersJsonSchema: this.parameterSchema as Record<string, unknown> | undefined,
     };
   }
 

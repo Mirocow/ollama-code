@@ -16,10 +16,10 @@ import type {
   ThoughtSummary,
   ToolCallRequestInfo,
   OllamaErrorEventValue,
-
-  type Part,
-  type PartListUnion,
-  FinishReason} from '@ollama-code/ollama-code-core';
+  Part,
+  PartListUnion,
+} from '@ollama-code/ollama-code-core';
+import { FinishReason } from '@ollama-code/ollama-code-core';
 import {
   OllamaEventType as ServerOllamaEventType,
   createDebugLogger,
@@ -746,6 +746,8 @@ export const useOllamaStream = (
         [FinishReason.MAX_TOKENS]: 'Response truncated due to token limits.',
         [FinishReason.SAFETY]: 'Response stopped due to safety reasons.',
         [FinishReason.RECITATION]: 'Response stopped due to recitation policy.',
+        [FinishReason.TOOL_CALLS]: undefined, // Tool calls are normal, no message needed
+        [FinishReason.ERROR]: 'Response stopped due to an error.',
         [FinishReason.LANGUAGE]:
           'Response stopped due to unsupported language.',
         [FinishReason.BLOCKLIST]: 'Response stopped due to forbidden terms.',

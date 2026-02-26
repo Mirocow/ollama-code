@@ -857,7 +857,7 @@ export class Session implements SessionContext {
     const atPathCommandParts = parts.filter((part) => 'fileData' in part);
 
     if (atPathCommandParts.length === 0 && embeddedContext.length === 0) {
-      return parts;
+      return parts as Part[];
     }
 
     // Extract paths from @ commands - pass directly to readManyFiles without filtering

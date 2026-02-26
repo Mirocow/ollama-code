@@ -130,14 +130,15 @@ export class LoggingContentGenerator implements ContentGenerator {
     userPromptId: string,
   ): Promise<GenerateContentResponse> {
     const startTime = Date.now();
-    this.logApiRequest(this.toContents(req.contents), req.model, userPromptId);
+    const model = req.model ?? 'unknown';
+    this.logApiRequest(this.toContents(req.contents), model, userPromptId);
     try {
       const response = await this.wrapped.generateContent(req, userPromptId);
       const durationMs = Date.now() - startTime;
       this._logApiResponse(
         response.responseId ?? '',
         durationMs,
-        response.modelVersion || req.model,
+        response.modelVersion || model,
         userPromptId,
         response.usageMetadata,
         JSON.stringify(response),
@@ -145,7 +146,7 @@ export class LoggingContentGenerator implements ContentGenerator {
       return response;
     } catch (error) {
       const durationMs = Date.now() - startTime;
-      this._logApiError(undefined, durationMs, error, req.model, userPromptId);
+      this._logApiError(undefined, durationMs, error, model, userPromptId);
       throw error;
     }
   }
@@ -155,14 +156,15 @@ export class LoggingContentGenerator implements ContentGenerator {
     userPromptId: string,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     const startTime = Date.now();
-    this.logApiRequest(this.toContents(req.contents), req.model, userPromptId);
+    const model = req.model ?? 'unknown';
+    this.logApiRequest(this.toContents(req.contents), model, userPromptId);
 
     let stream: AsyncGenerator<GenerateContentResponse>;
     try {
       stream = await this.wrapped.generateContentStream(req, userPromptId);
     } catch (error) {
       const durationMs = Date.now() - startTime;
-      this._logApiError(undefined, durationMs, error, req.model, userPromptId);
+      this._logApiError(undefined, durationMs, error, model, userPromptId);
       throw error;
     }
 
@@ -170,7 +172,7 @@ export class LoggingContentGenerator implements ContentGenerator {
       stream,
       startTime,
       userPromptId,
-      req.model,
+      model,
     );
   }
 

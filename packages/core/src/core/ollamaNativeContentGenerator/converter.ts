@@ -142,8 +142,9 @@ export class OllamaContentConverter {
     if (!genaiTools) return [];
 
     const ollamaTools: OllamaTool[] = [];
+    const toolsArray = Array.isArray(genaiTools) ? genaiTools : [genaiTools];
 
-    for (const tool of genaiTools) {
+    for (const tool of toolsArray) {
       let actualTool: Tool;
 
       // Handle CallableTool vs Tool
@@ -196,8 +197,9 @@ export class OllamaContentConverter {
     if (!genaiTools) return [];
 
     const ollamaTools: OllamaTool[] = [];
+    const toolsArray = Array.isArray(genaiTools) ? genaiTools : [genaiTools];
 
-    for (const tool of genaiTools) {
+    for (const tool of toolsArray) {
       let actualTool: Tool;
 
       // Handle CallableTool vs Tool

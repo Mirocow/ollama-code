@@ -14,45 +14,75 @@
 // ============================================================================
 
 /**
+ * A part of a message - can be text, inline data, function call, or function response.
+ * This is a union type that allows any combination of these properties.
+ */
+export interface Part {
+  // Text content
+  text?: string;
+  thought?: boolean; // For thinking/reasoning models
+  
+  // Inline data (images, files)
+  inlineData?: {
+    mimeType: string;
+    data: string; // base64 encoded
+    displayName?: string; // Optional display name
+  };
+  
+  // File reference
+  fileData?: {
+    mimeType: string;
+    fileUri: string;
+  };
+  
+  // Function call (model wants to call a tool)
+  functionCall?: FunctionCall;
+  
+  // Function response (result of a tool call)
+  functionResponse?: FunctionResponse;
+}
+
+/**
  * A text part of a message.
  */
-export interface TextPart {
+export interface TextPart extends Part {
   text: string;
-  thought?: boolean; // For thinking/reasoning models
 }
 
 /**
  * An inline data part (images, files).
  */
-export interface InlineDataPart {
+export interface InlineDataPart extends Part {
   inlineData: {
     mimeType: string;
-    data: string; // base64 encoded
+    data: string;
   };
 }
 
 /**
  * A function call part - when the model wants to call a tool.
  */
-export interface FunctionCallPart {
+export interface FunctionCallPart extends Part {
   functionCall: FunctionCall;
 }
 
 /**
  * A function response part - the result of a tool call.
+ * Note: This type allows all Part properties for flexibility.
  */
-export interface FunctionResponsePart {
-  functionResponse: FunctionResponse;
+export interface FunctionResponsePart extends Part {
+  functionResponse?: FunctionResponse;
 }
 
 /**
- * Union type for all possible parts of a message.
+ * File data part for referencing files.
  */
-export type Part =
-  | TextPart
-  | InlineDataPart
-  | FunctionCallPart
-  | FunctionResponsePart;
+export interface FileDataPart extends Part {
+  fileData: {
+    mimeType: string;
+    fileUri: string;
+  };
+}
 
 /**
  * Union type for parts that can be used in user messages.
@@ -108,6 +138,7 @@ export interface Schema {
   anyOf?: Schema[];
   allOf?: Schema[];
   oneOf?: Schema[];
+  [key: string]: unknown; // Index signature for flexibility
 }
 
 /**
@@ -117,6 +148,7 @@ export interface FunctionDeclaration {
   name: string;
   description: string;
   parameters?: Schema;
+  parametersJsonSchema?: Record<string, unknown>; // For JSON Schema format
   response?: Schema;
 }
 
@@ -124,7 +156,7 @@ export interface FunctionDeclaration {
  * A tool definition containing function declarations.
  */
 export interface Tool {
-  functionDeclarations: FunctionDeclaration[];
+  functionDeclarations?: FunctionDeclaration[];
 }
 
 // ============================================================================
@@ -141,7 +173,7 @@ export type Role = 'user' | 'model' | 'system' | 'tool';
  * This is the main type used throughout the codebase.
  */
 export interface Content {
-  role: Role;
+  role: Role | string; // Allow string for flexibility
   parts: Part[];
 }
 
@@ -195,6 +227,9 @@ export interface GenerateContentConfig {
   responseMimeType?: string;
   responseSchema?: Schema;
   seed?: number;
+  systemInstruction?: Content | string | Part | Part[]; // System instruction - flexible type
+  abortSignal?: AbortSignal; // For aborting requests
+  tools?: Tool[]; // Tools for function calling
 }
 
 /**
@@ -205,20 +240,27 @@ export interface GenerateContentParameters {
   contents: Content[];
   tools?: Tool[];
   toolConfig?: ToolConfig;
-  systemInstruction?: Content;
+  config?: GenerateContentConfig; // Alias for generationConfig for compatibility
+  systemInstruction?: Content | string;
   generationConfig?: GenerateContentConfig;
   safetySettings?: SafetySetting[];
+  abortSignal?: AbortSignal;
 }
 
 /**
  * Configuration for tool usage.
  */
-export interface ToolConfig {
+export interface ToolCallingConfig {
   functionCallingConfig?: {
     mode?: 'AUTO' | 'ANY' | 'NONE';
     allowedFunctionNames?: string[];
   };
 }
+
+/**
+ * Alias for backward compatibility.
+ */
+export type ToolConfig = ToolCallingConfig;
 
 /**
  * Safety setting (kept for API compatibility).
@@ -232,6 +274,7 @@ export interface SafetySetting {
  * Reason for finishing generation.
  */
 export enum FinishReason {
+  FINISH_REASON_UNSPECIFIED = 'FINISH_REASON_UNSPECIFIED',
   STOP = 'STOP',
   MAX_TOKENS = 'MAX_TOKENS',
   SAFETY = 'SAFETY',
@@ -239,6 +282,16 @@ export enum FinishReason {
   TOOL_CALLS = 'TOOL_CALLS',
   ERROR = 'ERROR',
   OTHER = 'OTHER',
+  // Additional values for compatibility
+  LANGUAGE = 'LANGUAGE',
+  BLOCKLIST = 'BLOCKLIST',
+  PROHIBITED_CONTENT = 'PROHIBITED_CONTENT',
+  SPII = 'SPII',
+  MALFORMED_FUNCTION_CALL = 'MALFORMED_FUNCTION_CALL',
+  IMAGE_SAFETY = 'IMAGE_SAFETY',
+  UNEXPECTED_TOOL_CALL = 'UNEXPECTED_TOOL_CALL',
+  IMAGE_PROHIBITED_CONTENT = 'IMAGE_PROHIBITED_CONTENT',
+  NO_IMAGE = 'NO_IMAGE',
 }
 
 /**
@@ -276,6 +329,7 @@ export interface SafetyRating {
  */
 export interface CitationMetadata {
   citationSources: CitationSource[];
+  citations?: CitationSource[]; // Alias for compatibility
 }
 
 /**
@@ -286,6 +340,7 @@ export interface CitationSource {
   startIndex?: number;
   endIndex?: number;
   license?: string;
+  title?: string; // Title of the cited source
 }
 
 /**
@@ -305,6 +360,9 @@ export class GenerateContentResponse {
   responseId?: string;
   createTime?: string;
 
+  // For convenience - extracts function calls from candidates
+  functionCalls?: FunctionCall[];
+
   constructor(init?: Partial<GenerateContentResponse>) {
     if (init) {
       this.candidates = init.candidates ?? [];
@@ -313,6 +371,7 @@ export class GenerateContentResponse {
       this.promptFeedback = init.promptFeedback;
       this.responseId = init.responseId;
       this.createTime = init.createTime;
+      this.functionCalls = init.functionCalls;
     }
   }
 }
@@ -349,7 +408,8 @@ export interface CountTokensResponse {
  */
 export interface EmbedContentParameters {
   model?: string;
-  content: Content;
+  content?: Content;
+  contents?: Content[]; // Alias for batch embeddings
   taskType?:
     | 'RETRIEVAL_QUERY'
     | 'RETRIEVAL_DOCUMENT'
@@ -363,9 +423,10 @@ export interface EmbedContentParameters {
  * Response from embedding content.
  */
 export interface EmbedContentResponse {
-  embedding: {
+  embedding?: {
     values: number[];
   };
+  embeddings?: number[][]; // For batch embeddings
 }
 
 // ============================================================================
@@ -464,7 +525,12 @@ export function toolContent(
 /**
  * Union type for parts that can be in a list.
  */
-export type PartListUnion = Part | Part[] | string | string[];
+export type PartListUnion =
+  | Part
+  | Part[]
+  | string
+  | string[]
+  | (Part | string)[];
 
 /**
  * Normalize a part list union to an array of parts.
@@ -487,7 +553,19 @@ export function normalizeParts(parts: PartListUnion): Part[] {
 /**
  * Union type for parts in user content.
  */
-export type PartUnion = UserPart | string;
+export type PartUnion = Part | string;
+
+/**
+ * Union type for tool list.
+ */
+export type ToolListUnion = Tool | Tool[];
+
+/**
+ * Helper to convert ToolListUnion to an array.
+ */
+export function normalizeTools(tools: ToolListUnion): Tool[] {
+  return Array.isArray(tools) ? tools : [tools];
+}
 
 // ============================================================================
 // Additional Compatibility Types (for @google/genai compatibility)
@@ -524,6 +602,8 @@ export type ContentListUnion =
  */
 export interface GenerateContentResponseUsageMetadata extends UsageMetadata {
   cachedContentTokenCount?: number;
+  thoughtsTokenCount?: number; // For thinking models
+  toolUsePromptTokenCount?: number; // For tool use
 }
 
 /**
@@ -531,6 +611,7 @@ export interface GenerateContentResponseUsageMetadata extends UsageMetadata {
  */
 export interface CallableTool {
   tool(): Promise<Tool>;
+  callTool?(args: Record<string, unknown>): Promise<Part[]>;
 }
 
 /**
@@ -585,4 +666,13 @@ export function createModelContent(parts: PartListUnion): ModelContent {
     role: 'model',
     parts: normalizedParts as Array<TextPart | FunctionCallPart>,
   };
+}
+
+/**
+ * Parameters for sending a message stream.
+ */
+export interface SendMessageStreamParams {
+  message?: PartListUnion;
+  config?: GenerateContentConfig;
+  contents?: Content[];
 }

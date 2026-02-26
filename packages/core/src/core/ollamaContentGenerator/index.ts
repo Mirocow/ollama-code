@@ -164,8 +164,9 @@ export class OllamaContentGenerator {
   async embedContent(request: EmbedContentParameters): Promise<EmbedContentResponse> {
     const model = request.model ?? this.config.model;
 
-    // Extract text from content
-    const text = extractTextFromContents([request.content]);
+    // Extract text from content - handle both single and batch formats
+    const contents = request.contents ?? (request.content ? [request.content] : []);
+    const text = extractTextFromContents(contents);
 
     // Use the embeddings endpoint
     const response = await this.client.embeddings({

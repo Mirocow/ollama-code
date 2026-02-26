@@ -197,6 +197,8 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
   ): Promise<EmbedContentResponse> {
     // Extract text from contents
     let text = '';
+    
+    // Handle batch contents (Content[])
     if (Array.isArray(request.contents)) {
       text = request.contents
         .map((content) => {
@@ -215,13 +217,12 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
           return '';
         })
         .join(' ');
-    } else if (request.contents) {
-      if (typeof request.contents === 'string') {
-        text = request.contents;
-      } else if ('parts' in request.contents && request.contents.parts) {
-        text = request.contents.parts
-          .map((part) =>
-            typeof part === 'string' ? part : 'text' in part ? part.text : '',
+    } else if (request.content) {
+      // Handle single content
+      if ('parts' in request.content && request.content.parts) {
+        text = request.content.parts
+          .map((part: { text?: string }) =>
+            typeof part === 'string' ? part : (part.text ?? ''),
           )
           .join(' ');
       }
@@ -235,11 +236,9 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
       });
 
       return {
-        embeddings: [
-          {
-            values: embedding.embeddings[0],
-          },
-        ],
+        embedding: {
+          values: embedding.embeddings[0],
+        },
       };
     } catch (error) {
       debugLogger.error('Ollama embedding error:', error);

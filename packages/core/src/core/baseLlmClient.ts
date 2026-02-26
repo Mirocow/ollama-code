@@ -158,9 +158,14 @@ export class BaseLlmClient {
     if (!texts || texts.length === 0) {
       return [];
     }
+    // Convert string[] to Content[] format
+    const contents = texts.map((text) => ({
+      role: 'user' as const,
+      parts: [{ text }],
+    }));
     const embedModelParams: EmbedContentParameters = {
       model: this.config.getEmbeddingModel(),
-      contents: texts,
+      contents,
     };
 
     const embedContentResponse =
@@ -178,8 +183,15 @@ export class BaseLlmClient {
       );
     }
 
-    return embedContentResponse.embeddings.map((embedding, index) => {
-      const values = embedding.values;
+    // Handle embeddings response - could be number[][] or { values: number[] }[]
+    const embeddings = embedContentResponse.embeddings;
+    if (!embeddings) {
+      throw new Error('No embeddings array found in API response.');
+    }
+    
+    return embeddings.map((embedding, index) => {
+      // Handle both number[] and { values: number[] } formats
+      const values = Array.isArray(embedding) ? embedding : (embedding as { values: number[] }).values;
       if (!values || values.length === 0) {
         throw new Error(
           `API returned an empty embedding for input text at index ${index}: "${texts[index]}"`,
