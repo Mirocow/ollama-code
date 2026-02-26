@@ -211,7 +211,7 @@ export class ReadFileTool extends BaseDeclarativeTool<
     }
 
     const fileService = this.config.getFileService();
-    if (fileService.shouldQwenIgnoreFile(params.absolute_path)) {
+    if (fileService.shouldOllamaCodeIgnoreFile(params.absolute_path)) {
       return `File path '${filePath}' is ignored by .ollama-codeignore pattern(s).`;
     }
 

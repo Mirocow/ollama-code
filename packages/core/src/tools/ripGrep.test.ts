@@ -269,12 +269,15 @@ describe('RipGrepTool', () => {
     });
 
     it('should include .ollama-codeignore matches when disabled in config', async () => {
-      await fs.writeFile(path.join(tempRootDir, '.ollama-codeignore'), 'kept.txt\n');
+      await fs.writeFile(
+        path.join(tempRootDir, '.ollama-codeignore'),
+        'kept.txt\n',
+      );
       await fs.writeFile(path.join(tempRootDir, 'kept.txt'), 'keep me');
       Object.assign(mockConfig, {
         getFileFilteringOptions: () => ({
           respectGitIgnore: true,
-          respectQwenIgnore: false,
+          respectOllamaCodeIgnore: false,
         }),
       });
 
@@ -298,7 +301,7 @@ describe('RipGrepTool', () => {
       Object.assign(mockConfig, {
         getFileFilteringOptions: () => ({
           respectGitIgnore: false,
-          respectQwenIgnore: true,
+          respectOllamaCodeIgnore: true,
         }),
       });
 

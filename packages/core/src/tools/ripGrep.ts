@@ -192,7 +192,7 @@ class GrepToolInvocation extends BaseToolInvocation<
       rgArgs.push('--no-ignore-vcs');
     }
 
-    if (filteringOptions.respectQwenIgnore) {
+    if (filteringOptions.respectOllamaCodeIgnore) {
       const qwenIgnorePath = path.join(
         this.config.getTargetDir(),
         '.ollama-codeignore',
@@ -224,9 +224,9 @@ class GrepToolInvocation extends BaseToolInvocation<
       respectGitIgnore:
         options?.respectGitIgnore ??
         DEFAULT_FILE_FILTERING_OPTIONS.respectGitIgnore,
-      respectQwenIgnore:
-        options?.respectQwenIgnore ??
-        DEFAULT_FILE_FILTERING_OPTIONS.respectQwenIgnore,
+      respectOllamaCodeIgnore:
+        options?.respectOllamaCodeIgnore ??
+        DEFAULT_FILE_FILTERING_OPTIONS.respectOllamaCodeIgnore,
     };
   }
 

@@ -9,6 +9,9 @@ import * as os from 'node:os';
 import * as fs from 'node:fs';
 import { getProjectHash, OLLAMA_DIR } from '../utils/paths.js';
 
+// Re-export OLLAMA_DIR for other modules
+export { OLLAMA_DIR };
+
 export const GOOGLE_ACCOUNTS_FILENAME = 'google_accounts.json';
 export const OAUTH_FILE = 'oauth_creds.json';
 const TMP_DIR_NAME = 'tmp';
@@ -82,7 +85,10 @@ export class Storage {
 
   getProjectDir(): string {
     const projectId = this.sanitizeCwd(this.getProjectRoot());
-    const projectsDir = path.join(Storage.getGlobalOllamaDir(), PROJECT_DIR_NAME);
+    const projectsDir = path.join(
+      Storage.getGlobalOllamaDir(),
+      PROJECT_DIR_NAME,
+    );
     return path.join(projectsDir, projectId);
   }
 
