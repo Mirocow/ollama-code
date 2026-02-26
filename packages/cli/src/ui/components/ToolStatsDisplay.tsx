@@ -84,9 +84,9 @@ export const ToolStatsDisplay: React.FC<ToolStatsDisplayProps> = ({
 
   const totalDecisions = Object.values(tools.byName).reduce(
     (acc, tool) => {
-      acc.accept += tool.decisions.accept;
-      acc.reject += tool.decisions.reject;
-      acc.modify += tool.decisions.modify;
+      acc.accept += tool.decisions['accept'];
+      acc.reject += tool.decisions['reject'];
+      acc.modify += tool.decisions['modify'];
       return acc;
     },
     { accept: 0, reject: 0, modify: 0 },

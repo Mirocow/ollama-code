@@ -198,13 +198,11 @@ export const SessionStatsProvider: React.FC<{
   );
 
   useEffect(() => {
-    const handleUpdate = ({
-      metrics,
-      lastPromptTokenCount,
-    }: {
-      metrics: SessionMetrics;
-      lastPromptTokenCount: number;
-    }) => {
+    const handleUpdate = (data: unknown) => {
+      const { metrics, lastPromptTokenCount } = data as {
+        metrics: SessionMetrics;
+        lastPromptTokenCount: number;
+      };
       setStats((prevState) => {
         if (
           prevState.lastPromptTokenCount === lastPromptTokenCount &&
