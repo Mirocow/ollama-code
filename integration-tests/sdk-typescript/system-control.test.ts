@@ -10,7 +10,7 @@ import {
   isSDKSystemMessage,
   isSDKResultMessage,
   type SDKUserMessage,
-} from '@qwen-code/sdk';
+} from '@ollama-code/sdk';
 import {
   SDKTestHelper,
   createSharedTestOptions,

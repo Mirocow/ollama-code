@@ -22,7 +22,7 @@ import {
   isSDKSystemMessage,
   type SDKMessage,
   type SDKSystemMessage,
-} from '@qwen-code/sdk';
+} from '@ollama-code/sdk';
 import {
   SDKTestHelper,
   extractText,

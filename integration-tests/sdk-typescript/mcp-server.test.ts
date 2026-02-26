@@ -20,7 +20,7 @@ import {
   type ToolUseBlock,
   type SDKSystemMessage,
   type SDKUserMessage,
-} from '@qwen-code/sdk';
+} from '@ollama-code/sdk';
 import {
   SDKTestHelper,
   createMCPServer,

@@ -17,7 +17,7 @@ import {
   isSDKAssistantMessage,
   isSDKSystemMessage,
   type SDKMessage,
-} from '@qwen-code/sdk';
+} from '@ollama-code/sdk';
 import {
   SDKTestHelper,
   extractText,

@@ -15,7 +15,7 @@ import {
   type TextBlock,
   type ContentBlock,
   type SDKUserMessage,
-} from '@qwen-code/sdk';
+} from '@ollama-code/sdk';
 import {
   SDKTestHelper,
   createSharedTestOptions,

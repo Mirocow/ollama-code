@@ -18,7 +18,7 @@ import {
   isSDKResultMessage,
   type SDKMessage,
   type SDKUserMessage,
-} from '@qwen-code/sdk';
+} from '@ollama-code/sdk';
 import {
   SDKTestHelper,
   extractText,
