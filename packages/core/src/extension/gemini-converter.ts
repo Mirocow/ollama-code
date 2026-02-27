@@ -86,9 +86,9 @@ export async function convertGeminiExtensionPackage(
     }
 
     // Step 3: Create ollama-extension.json with converted config
-    const qwenConfigPath = path.join(tmpDir, 'ollama-extension.json');
+    const ollamaConfigPath = path.join(tmpDir, 'ollama-extension.json');
     fs.writeFileSync(
-      qwenConfigPath,
+      ollamaConfigPath,
       JSON.stringify(geminiConfig, null, 2),
       'utf-8',
     );
@@ -214,6 +214,6 @@ export function isGeminiExtensionConfig(extensionDir: string) {
     }
   }
 
-  // If it has Gemini-specific fields but not Qwen-specific fields, likely Gemini
+  // If it has Gemini-specific fields but not Ollama-specific fields, likely Gemini
   return true;
 }

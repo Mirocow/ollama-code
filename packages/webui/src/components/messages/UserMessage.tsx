@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -46,7 +46,7 @@ export const UserMessage: FC<UserMessageProps> = ({
 
   return (
     <div
-      className="qwen-message user-message-container flex gap-0 my-1 items-start text-left flex-col relative"
+      className="ollama-message user-message-container flex gap-0 my-1 items-start text-left flex-col relative"
       style={{ position: 'relative' }}
     >
       <div

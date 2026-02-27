@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { WriteToolCall } from './WriteToolCall.js';
+import type { WriteToolCall } from './WriteToolCall.js';
 /**
  * WriteToolCall displays file writing operations with line counts.
  */

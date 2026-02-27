@@ -5,35 +5,35 @@
  */
 
 /**
- * Stub for useQwenAuth - not needed for Ollama.
+ * Stub for useOllamaAuth - not needed for Ollama.
  * Ollama doesn't use OAuth authentication.
  */
 
 import type { AuthType } from '@ollama-code/ollama-code-core';
 
-export interface QwenAuthState {
+export interface OllamaAuthState {
   deviceAuth: null;
   authStatus: string;
   authMessage: string | null;
 }
 
-export function useQwenAuth(
+export function useOllamaAuth(
   _pendingAuthType: AuthType | undefined,
   _isAuthenticating: boolean,
 ): {
-  qwenAuthState: QwenAuthState;
-  cancelQwenAuth: () => void;
+  ollamaAuthState: OllamaAuthState;
+  cancelOllamaAuth: () => void;
 } {
   return {
-    qwenAuthState: {
+    ollamaAuthState: {
       deviceAuth: null,
       authStatus: 'not_applicable',
       authMessage: null,
     },
-    cancelQwenAuth: () => {
+    cancelOllamaAuth: () => {
       // No-op for Ollama
     },
   };
 }
 
-export type { QwenAuthState as QwenAuthStateType };
+export type { OllamaAuthState as OllamaAuthStateType };

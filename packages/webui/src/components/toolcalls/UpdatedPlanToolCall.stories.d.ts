@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { UpdatedPlanToolCall } from './UpdatedPlanToolCall.js';
+import type { UpdatedPlanToolCall } from './UpdatedPlanToolCall.js';
 /**
  * UpdatedPlanToolCall displays plan/todo list updates with checkboxes.
  */

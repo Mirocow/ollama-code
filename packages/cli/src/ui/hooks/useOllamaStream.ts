@@ -19,8 +19,7 @@ import type {
   Part,
   PartListUnion,
 } from '@ollama-code/ollama-code-core';
-import { FinishReason } from '@ollama-code/ollama-code-core';
-import {
+import { FinishReason ,
   OllamaEventType as ServerOllamaEventType,
   createDebugLogger,
   getErrorMessage,

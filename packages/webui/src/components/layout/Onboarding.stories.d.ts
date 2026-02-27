@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Onboarding } from './Onboarding.js';
+import type { Onboarding } from './Onboarding.js';
 /**
  * Onboarding is the welcome screen shown to new users.
  * It displays the app logo, welcome message, and a get started button.

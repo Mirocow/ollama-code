@@ -13,12 +13,12 @@ const logger = SdkLogger.createLogger('createQuery');
 export function query({ prompt, options = {}, }) {
     const spawnInfo = validateOptions(options);
     const isSingleTurn = typeof prompt === 'string';
-    const pathToQwenExecutable = options.pathToQwenExecutable;
+    const pathToOllamaExecutable = options.pathToOllamaExecutable;
     const abortController = options.abortController ?? new AbortController();
     // Generate or use provided session ID for SDK-CLI alignment
     const sessionId = options.resume ?? options.sessionId ?? randomUUID();
     const transport = new ProcessTransport({
-        pathToQwenExecutable,
+        pathToOllamaExecutable,
         spawnInfo,
         cwd: options.cwd,
         model: options.model,
@@ -97,11 +97,11 @@ function validateOptions(options) {
         validateSessionId(options.resume, 'resume');
     }
     try {
-        return prepareSpawnInfo(options.pathToQwenExecutable);
+        return prepareSpawnInfo(options.pathToOllamaExecutable);
     }
     catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        throw new Error(`Invalid pathToQwenExecutable: ${errorMessage}`);
+        throw new Error(`Invalid pathToOllamaExecutable: ${errorMessage}`);
     }
 }
 //# sourceMappingURL=createQuery.js.map

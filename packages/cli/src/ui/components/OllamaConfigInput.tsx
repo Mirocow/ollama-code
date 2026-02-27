@@ -188,7 +188,7 @@ export function OllamaConfigInput({
         currentField === 'model' ? currentValue : model,
         currentField === 'model',
         'llama3.2',
-        t('Model to use (e.g., llama3.2, qwen2.5-coder)'),
+        t('Model to use (e.g., llama3.2, llama3.2)'),
       )}
 
       {renderField(

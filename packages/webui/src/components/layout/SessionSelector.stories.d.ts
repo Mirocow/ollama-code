@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SessionSelector } from './SessionSelector.js';
+import type { SessionSelector } from './SessionSelector.js';
 /**
  * SessionSelector component displays a session list dropdown.
  * Shows sessions grouped by date with search and infinite scroll support.

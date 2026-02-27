@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ToolCallCard } from './LayoutComponents.js';
+import type { ToolCallCard } from './LayoutComponents.js';
 /**
  * ToolCallCard is a card-style container for displaying detailed tool call results.
  * Used when there's more content to show than fits in a compact container.

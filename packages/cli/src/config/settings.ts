@@ -167,7 +167,7 @@ export function getSystemSettingsPath(): string {
     return process.env['OLLAMA_CODE_SYSTEM_SETTINGS_PATH'];
   }
   if (platform() === 'darwin') {
-    return '/Library/Application Support/QwenCode/settings.json';
+    return '/Library/Application Support/OllamaCode/settings.json';
   } else if (platform() === 'win32') {
     return 'C:\\ProgramData\\ollama-code\\settings.json';
   } else {

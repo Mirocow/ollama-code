@@ -61,7 +61,7 @@ export class OllamaContentGenerator {
    */
   async generateContent(
     request: GenerateContentParameters,
-    userPromptId: string,
+    _userPromptId: string,
   ): Promise<GenerateContentResponse> {
     const ollamaRequest = generateParamsToOllamaRequest(
       request,
@@ -99,7 +99,7 @@ export class OllamaContentGenerator {
    */
   async *generateContentStream(
     request: GenerateContentParameters,
-    userPromptId: string,
+    _userPromptId: string,
   ): AsyncGenerator<GenerateContentResponse> {
     const ollamaRequest = generateParamsToOllamaRequest(
       request,

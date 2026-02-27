@@ -530,7 +530,7 @@ export type PartListUnion =
   | Part[]
   | string
   | string[]
-  | (Part | string)[];
+  | Array<Part | string>;
 
 /**
  * Normalize a part list union to an array of parts.

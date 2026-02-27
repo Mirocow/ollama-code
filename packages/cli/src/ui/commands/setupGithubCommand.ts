@@ -26,11 +26,11 @@ import { createDebugLogger } from '@ollama-code/ollama-code-core';
 const debugLogger = createDebugLogger('SETUP_GITHUB');
 
 export const GITHUB_WORKFLOW_PATHS = [
-  'qwen-dispatch/qwen-dispatch.yml',
-  'qwen-assistant/qwen-invoke.yml',
-  'issue-triage/qwen-triage.yml',
-  'issue-triage/qwen-scheduled-triage.yml',
-  'pr-review/qwen-review.yml',
+  'ollama-dispatch/ollama-dispatch.yml',
+  'ollama-assistant/ollama-invoke.yml',
+  'issue-triage/ollama-triage.yml',
+  'issue-triage/ollama-scheduled-triage.yml',
+  'pr-review/ollama-review.yml',
 ];
 
 // Generate OS-specific commands to open the GitHub pages needed for setup.
@@ -55,7 +55,7 @@ function getOpenUrlsCommands(readmeUrl: string): string[] {
 
 // Add Ollama Code specific entries to .gitignore file
 export async function updateGitignore(gitRepoRoot: string): Promise<void> {
-  const gitignoreEntries = ['.qwen/', 'gha-creds-*.json'];
+  const gitignoreEntries = ['/.ollama/', 'gha-creds-*.json'];
 
   const gitignorePath = path.join(gitRepoRoot, '.gitignore');
   try {
@@ -124,7 +124,7 @@ export const setupGithubCommand: SlashCommand = {
     // Get the latest release tag from GitHub
     const proxy = context?.services?.config?.getProxy();
     const releaseTag = await getLatestGitHubRelease(proxy);
-    const readmeUrl = `https://github.com/QwenLM/qwen-code-action/blob/${releaseTag}/README.md#quick-start`;
+    const readmeUrl = `https://github.com/ollama-code/ollama-code-action/blob/${releaseTag}/README.md#quick-start`;
 
     // Create the .github/workflows directory to download the files into
     const githubWorkflowsDir = path.join(gitRepoRoot, '.github', 'workflows');
@@ -146,7 +146,7 @@ export const setupGithubCommand: SlashCommand = {
     for (const workflow of GITHUB_WORKFLOW_PATHS) {
       downloads.push(
         (async () => {
-          const endpoint = `https://raw.githubusercontent.com/QwenLM/qwen-code-action/refs/tags/${releaseTag}/examples/workflows/${workflow}`;
+          const endpoint = `https://raw.githubusercontent.com/ollama-code/ollama-code-action/refs/tags/${releaseTag}/examples/workflows/${workflow}`;
           const response = await fetch(endpoint, {
             method: 'GET',
             dispatcher: proxy ? new ProxyAgent(proxy) : undefined,
@@ -207,7 +207,7 @@ export const setupGithubCommand: SlashCommand = {
       toolName: 'run_shell_command',
       toolArgs: {
         description:
-          'Setting up GitHub Actions to triage issues and review PRs with Qwen.',
+          'Setting up GitHub Actions to triage issues and review PRs with Ollama Code.',
         command,
         is_background: false,
       },

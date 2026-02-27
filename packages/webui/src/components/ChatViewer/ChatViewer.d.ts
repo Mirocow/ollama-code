@@ -1,12 +1,12 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { ToolCallData as BaseToolCallData } from '../toolcalls/index.js';
 import './ChatViewer.css';
 /**
- * Message part containing text content (Qwen format)
+ * Message part containing text content (Ollama Code format)
  */
 export interface MessagePart {
     text: string;
@@ -26,7 +26,7 @@ export interface ClaudeContentItem {
 export type ToolCallData = BaseToolCallData;
 /**
  * Single chat message from JSONL format
- * Supports both Qwen format and Claude format
+ * Supports both Ollama Code format and Claude format
  */
 export interface ChatMessageData {
     uuid: string;

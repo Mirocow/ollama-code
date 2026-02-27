@@ -143,18 +143,14 @@ const gitOperationHandlers: Record<
     return executeGitCommand(`git stash apply${stash}`, cwd);
   },
 
-  stash_list: (_args, cwd) => {
-    return executeGitCommand('git stash list', cwd);
-  },
+  stash_list: (_args, cwd) => executeGitCommand('git stash list', cwd),
 
   stash_drop: (args, cwd) => {
     const stash = args['stash'] ? ` ${args['stash']}` : '';
     return executeGitCommand(`git stash drop${stash}`, cwd);
   },
 
-  stash_clear: (_args, cwd) => {
-    return executeGitCommand('git stash clear', cwd);
-  },
+  stash_clear: (_args, cwd) => executeGitCommand('git stash clear', cwd),
 
   // ---- CHERRY-PICK OPERATIONS ----
   cherry_pick: (args, cwd) => {
@@ -170,13 +166,9 @@ const gitOperationHandlers: Record<
     );
   },
 
-  cherry_pick_continue: (_args, cwd) => {
-    return executeGitCommand('git cherry-pick --continue', cwd);
-  },
+  cherry_pick_continue: (_args, cwd) => executeGitCommand('git cherry-pick --continue', cwd),
 
-  cherry_pick_abort: (_args, cwd) => {
-    return executeGitCommand('git cherry-pick --abort', cwd);
-  },
+  cherry_pick_abort: (_args, cwd) => executeGitCommand('git cherry-pick --abort', cwd),
 
   // ---- REBASE OPERATIONS ----
   rebase_start: (args, cwd) => {
@@ -196,13 +188,9 @@ const gitOperationHandlers: Record<
     );
   },
 
-  rebase_continue: (_args, cwd) => {
-    return executeGitCommand('git rebase --continue', cwd);
-  },
+  rebase_continue: (_args, cwd) => executeGitCommand('git rebase --continue', cwd),
 
-  rebase_abort: (_args, cwd) => {
-    return executeGitCommand('git rebase --abort', cwd);
-  },
+  rebase_abort: (_args, cwd) => executeGitCommand('git rebase --abort', cwd),
 
   rebase_status: (_args, cwd) => {
     // Check if we're in the middle of a rebase
@@ -256,9 +244,7 @@ const gitOperationHandlers: Record<
     return executeGitCommand(`git bisect reset${commit}`, cwd);
   },
 
-  bisect_log: (_args, cwd) => {
-    return executeGitCommand('git bisect log', cwd);
-  },
+  bisect_log: (_args, cwd) => executeGitCommand('git bisect log', cwd),
 
   // ---- BLAME OPERATIONS ----
   blame: (args, cwd) => {

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -77,7 +77,7 @@ export async function getIdeClientName(
  * Handles different sandbox types including sandbox-exec and custom sandbox environments.
  * For bug reports, removes 'ollama-' or 'ollama-code-' prefixes from sandbox names.
  *
- * @param stripPrefix - Whether to strip 'qwen-' prefix (used for bug reports)
+ * @param stripPrefix - Whether to strip 'ollama-' prefix (used for bug reports)
  */
 export function getSandboxEnv(stripPrefix = false): string {
   const sandbox = process.env['SANDBOX'];
@@ -90,9 +90,9 @@ export function getSandboxEnv(stripPrefix = false): string {
     return 'no sandbox';
   }
 
-  // For bug reports, remove qwen- prefix
+  // For bug reports, remove ollama- prefix
   if (stripPrefix) {
-    return sandbox.replace(/^qwen-(?:code-)?/, '');
+    return sandbox.replace(/^ollama-(?:code-)?/, '');
   }
 
   return sandbox;

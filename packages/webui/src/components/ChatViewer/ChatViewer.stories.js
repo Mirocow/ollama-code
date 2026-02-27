@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import { useRef, useState, useCallback, useEffect } from 'react';
@@ -199,7 +199,7 @@ service-worker.js:207 Handshake timeout - no response from Native Host
 
 Cannot receive host info. Expected output:
 service-worker.js:150 [Native Event] host_info Object
-service-worker.js:552 [Qwen] host_info Object
+service-worker.js:552 [Ollama Code] host_info Object
 service-worker.js:617 [Host] Info Object
 service-worker.js:164 [Native Message] handshake_response Object
 service-worker.js:231 Handshake successful: Object`,
@@ -1237,7 +1237,7 @@ Paste your chat history JSON (array of messages) on the left, click "Render" to 
   "type": "user" | "assistant" | "tool_call",
   "message": {
     "role": "user" | "assistant",
-    "parts": [{ "text": "..." }],  // Qwen format
+    "parts": [{ "text": "..." }],  // Ollama Code format
     "content": "..."               // Claude format
   },
   "toolCall": {                    // For tool_call type

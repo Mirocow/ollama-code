@@ -14,7 +14,7 @@ const hasFileExtension = picomatch('**/*[*.]*');
 export interface LoadIgnoreRulesOptions {
   projectRoot: string;
   useGitignore: boolean;
-  useQwenignore: boolean;
+  useOllamaignore: boolean;
   ignoreDirs: string[];
 }
 
@@ -27,7 +27,7 @@ export function loadIgnoreRules(options: LoadIgnoreRulesOptions): Ignore {
     }
   }
 
-  if (options.useQwenignore) {
+  if (options.useOllamaignore) {
     const qwenignorePath = path.join(options.projectRoot, '.ollama-codeignore');
     if (fs.existsSync(qwenignorePath)) {
       ignorer.add(fs.readFileSync(qwenignorePath, 'utf8'));

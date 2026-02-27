@@ -16,7 +16,7 @@ export const UserMessage = ({ content, timestamp: _timestamp, onFileClick, fileC
         return fileName;
     };
     const fileContextDisplay = getFileContextDisplay();
-    return (_jsxs("div", { className: "qwen-message user-message-container flex gap-0 my-1 items-start text-left flex-col relative", style: { position: 'relative' }, children: [_jsx("div", { className: "inline-block relative whitespace-pre-wrap rounded-md max-w-full overflow-x-auto overflow-y-hidden select-text leading-[1.5]", style: {
+    return (_jsxs("div", { className: "ollama-message user-message-container flex gap-0 my-1 items-start text-left flex-col relative", style: { position: 'relative' }, children: [_jsx("div", { className: "inline-block relative whitespace-pre-wrap rounded-md max-w-full overflow-x-auto overflow-y-hidden select-text leading-[1.5]", style: {
                     border: '1px solid var(--app-input-border)',
                     borderRadius: 'var(--corner-radius-medium)',
                     backgroundColor: 'var(--app-input-background)',

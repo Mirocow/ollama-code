@@ -15,7 +15,7 @@ import {
 } from '../src/core/ollamaNativeClient.js';
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const TEST_MODEL = process.env.OLLAMA_TEST_MODEL || 'qwen2.5-coder';
+const TEST_MODEL = process.env.OLLAMA_TEST_MODEL || 'llama3.2';
 
 const client = createOllamaNativeClient({ baseUrl: OLLAMA_URL });
 

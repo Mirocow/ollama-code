@@ -102,7 +102,7 @@ export interface SDKSystemMessage {
     model?: string;
     permission_mode?: string;
     slash_commands?: string[];
-    qwen_code_version?: string;
+    ollama_code_version?: string;
     output_style?: string;
     agents?: string[];
     skills?: string[];
@@ -195,7 +195,7 @@ export type PermissionMode = 'default' | 'plan' | 'auto-edit' | 'yolo';
  * Authentication types supported by the CLI.
  * Aligns with CLI's --auth-type parameter.
  */
-export type AuthType = 'openai' | 'anthropic' | 'qwen-oauth' | 'gemini' | 'vertex-ai';
+export type AuthType = 'openai' | 'anthropic' | 'ollama-oauth' | 'gemini' | 'vertex-ai';
 /**
  * TODO: Align with `ToolCallConfirmationDetails`
  */
@@ -393,7 +393,7 @@ export interface SubagentConfig {
 }
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 /**

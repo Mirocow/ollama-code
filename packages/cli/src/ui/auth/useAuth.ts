@@ -230,7 +230,7 @@ export const useAuthCommand = (
     isAuthDialogOpen,
     isAuthenticating,
     pendingAuthType: AuthType.USE_OLLAMA,
-    qwenAuthState: undefined, // Not used for Ollama
+    ollamaAuthState: undefined, // Not used for Ollama
     handleAuthSelect,
     handleCodingPlanSubmit: async () => {
       // Not applicable for Ollama

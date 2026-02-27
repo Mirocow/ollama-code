@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { EmptyState } from './EmptyState.js';
+import type { EmptyState } from './EmptyState.js';
 /**
  * EmptyState component displays a welcome screen when no conversation is active.
  * Shows logo and welcome message based on authentication state.

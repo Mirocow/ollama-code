@@ -13,14 +13,15 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import type {
+  OllamaNativeClient} from './ollamaNativeClient.js';
 import {
-  OllamaNativeClient,
   createOllamaNativeClient,
 } from './ollamaNativeClient.js';
 
 // Check if Ollama server is running
 const OLLAMA_URL = process.env['OLLAMA_URL'] || 'http://localhost:11434';
-const TEST_MODEL = process.env['OLLAMA_TEST_MODEL'] || 'qwen2.5-coder';
+const TEST_MODEL = process.env['OLLAMA_TEST_MODEL'] || 'llama3.2';
 const SKIP_INTEGRATION = process.env['SKIP_INTEGRATION_TESTS'] === 'true';
 
 // Skip all tests if no server is available

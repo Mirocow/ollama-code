@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { CheckboxDisplay } from './CheckboxDisplay.js';
+import type { CheckboxDisplay } from './CheckboxDisplay.js';
 /**
  * CheckboxDisplay is a read-only checkbox for displaying plan entry status.
  */

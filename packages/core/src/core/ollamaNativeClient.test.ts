@@ -588,13 +588,11 @@ describe('OllamaNativeClient', () => {
         (abortError as any).name = 'AbortError';
 
         // Mock fetch to throw abort error when signal is aborted
-        mockFetch.mockImplementationOnce((_url: string, _options: any) => {
-          return new Promise((_resolve, reject) => {
+        mockFetch.mockImplementationOnce((_url: string, _options: any) => new Promise((_resolve, reject) => {
             setTimeout(() => {
               reject(abortError);
             }, 10);
-          });
-        });
+          }));
 
         // The abort signal should cause an error
         await expect(client.getVersion()).rejects.toThrow();

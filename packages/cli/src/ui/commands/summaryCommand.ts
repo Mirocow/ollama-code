@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -133,15 +133,15 @@ export const summaryCommand: SlashCommand = {
     }> => {
       // Ensure .ollama-code directory exists
       const projectRoot = config.getProjectRoot();
-      const qwenDir = path.join(projectRoot, '.ollama-code');
+      const ollamaDir = path.join(projectRoot, '.ollama-code');
       try {
-        await fsPromises.mkdir(qwenDir, { recursive: true });
+        await fsPromises.mkdir(ollamaDir, { recursive: true });
       } catch (_err) {
         // Directory might already exist, ignore error
       }
 
       // Save the summary to PROJECT_SUMMARY.md
-      const summaryPath = path.join(qwenDir, 'PROJECT_SUMMARY.md');
+      const summaryPath = path.join(ollamaDir, 'PROJECT_SUMMARY.md');
       const summaryContent = `${markdownSummary}
 
 ---

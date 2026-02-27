@@ -16,7 +16,7 @@ const startupTips = [
   'Switch auth type quickly with /auth.',
   'You can run any shell commands from Ollama Code using ! (e.g. !ls).',
   'Type / to open the command popup; Tab autocompletes slash commands and saved prompts.',
-  'You can resume a previous conversation by running qwen --continue or qwen --resume.',
+  'You can resume a previous conversation by running ollama-code --continue or ollama-code --resume.',
   process.platform === 'win32'
     ? 'You can switch permission mode quickly with Tab or /approval-mode.'
     : 'You can switch permission mode quickly with Shift+Tab or /approval-mode.',

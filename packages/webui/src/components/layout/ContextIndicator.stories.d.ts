@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ContextIndicator } from './ContextIndicator.js';
+import type { ContextIndicator } from './ContextIndicator.js';
 /**
  * ContextIndicator component shows context usage as a circular progress indicator.
  * Displays token usage information with tooltip on hover.

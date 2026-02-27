@@ -17,7 +17,7 @@ const navbar = (
     // ... Your additional navbar options
   />
 );
-const footer = <Footer>MIT {new Date().getFullYear()} © Qwen Team.</Footer>;
+const footer = <Footer>MIT {new Date().getFullYear()} © Ollama Code Team.</Footer>;
 
 export default async function RootLayout({ children }) {
   return (

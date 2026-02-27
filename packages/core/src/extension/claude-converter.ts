@@ -181,7 +181,7 @@ export function convertClaudeAgentConfig(
 
   // Convert model to modelConfig
   if (claudeAgent.model) {
-    // Map Claude model names to Qwen model config
+    // Map Claude model names to Ollama model config
     // Claude uses: sonnet, opus, haiku, inherit
     // We preserve the model name for now, the actual mapping will be handled at runtime
     ollamaAgent['modelConfig'] = {

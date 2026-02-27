@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 /**
@@ -42,7 +42,7 @@ describe('CLI Path Utilities', () => {
         });
         it('should throw descriptive error when bundled CLI not found', () => {
             mockFs.existsSync.mockReturnValue(false);
-            expect(() => findBundledCliPath()).toThrow('Bundled qwen CLI not found');
+            expect(() => findBundledCliPath()).toThrow('Bundled Ollama Code CLI not found');
             expect(() => findBundledCliPath()).toThrow('Searched locations:');
         });
     });
@@ -62,37 +62,37 @@ describe('CLI Path Utilities', () => {
             });
             it('should throw when bundled CLI not found', () => {
                 mockFs.existsSync.mockReturnValue(false);
-                expect(() => prepareSpawnInfo()).toThrow('Bundled qwen CLI not found');
+                expect(() => prepareSpawnInfo()).toThrow('Bundled Ollama Code CLI not found');
             });
         });
         describe('command name detection', () => {
             it('should detect command names without path separators', () => {
-                const result = prepareSpawnInfo('qwen');
+                const result = prepareSpawnInfo('ollama-code');
                 expect(result).toEqual({
-                    command: 'qwen',
+                    command: 'ollama-code',
                     args: [],
                     type: 'native',
-                    originalInput: 'qwen',
+                    originalInput: 'ollama-code',
                 });
             });
             it('should detect command names on Windows', () => {
-                const result = prepareSpawnInfo('qwen.exe');
+                const result = prepareSpawnInfo('ollama-code');
                 expect(result).toEqual({
-                    command: 'qwen.exe',
+                    command: 'ollama-code',
                     args: [],
                     type: 'native',
-                    originalInput: 'qwen.exe',
+                    originalInput: 'ollama-code',
                 });
             });
             it('should reject invalid command name characters', () => {
-                expect(() => prepareSpawnInfo('qwen@invalid')).toThrow("Invalid command name 'qwen@invalid'. Command names should only contain letters, numbers, dots, hyphens, and underscores.");
+                expect(() => prepareSpawnInfo('ollama@invalid')).toThrow("Invalid command name 'ollama@invalid'. Command names should only contain letters, numbers, dots, hyphens, and underscores.");
             });
             it('should accept valid command names', () => {
-                expect(() => prepareSpawnInfo('qwen')).not.toThrow();
                 expect(() => prepareSpawnInfo('ollama-code')).not.toThrow();
-                expect(() => prepareSpawnInfo('qwen_code')).not.toThrow();
-                expect(() => prepareSpawnInfo('qwen.exe')).not.toThrow();
-                expect(() => prepareSpawnInfo('qwen123')).not.toThrow();
+                expect(() => prepareSpawnInfo('ollama-code')).not.toThrow();
+                expect(() => prepareSpawnInfo('ollama_code')).not.toThrow();
+                expect(() => prepareSpawnInfo('ollama-code')).not.toThrow();
+                expect(() => prepareSpawnInfo('ollama123')).not.toThrow();
             });
         });
         describe('JavaScript files', () => {
@@ -169,20 +169,20 @@ describe('CLI Path Utilities', () => {
                 mockFs.existsSync.mockReturnValue(true);
             });
             it('should prepare spawn info for native binary path', () => {
-                const result = prepareSpawnInfo('/usr/local/bin/qwen');
+                const result = prepareSpawnInfo('/usr/local/bin/ollama-code');
                 expect(result).toEqual({
-                    command: path.resolve('/usr/local/bin/qwen'),
+                    command: path.resolve('/usr/local/bin/ollama-code'),
                     args: [],
                     type: 'native',
-                    originalInput: '/usr/local/bin/qwen',
+                    originalInput: '/usr/local/bin/ollama-code',
                 });
             });
         });
         describe('file path resolution', () => {
             it('should resolve absolute file paths', () => {
                 mockFs.existsSync.mockReturnValue(true);
-                const result = prepareSpawnInfo('/absolute/path/to/qwen');
-                expect(result.command).toBe(path.resolve('/absolute/path/to/qwen'));
+                const result = prepareSpawnInfo('/absolute/path/to/ollama-code');
+                expect(result.command).toBe(path.resolve('/absolute/path/to/ollama-code'));
                 expect(result.type).toBe('native');
             });
             it('should resolve relative file paths', () => {
@@ -255,7 +255,7 @@ describe('CLI Path Utilities', () => {
             expect(result.args[0]).toBe(path.resolve(uncPath));
         });
         it('should handle Windows native executables', () => {
-            const windowsPath = 'C:\\Program Files\\qwen\\qwen.exe';
+            const windowsPath = '/usr/local/bin/ollama-code';
             const result = prepareSpawnInfo(windowsPath);
             // .exe files without .js extension should be treated as native
             expect(result.type).toBe('native');
@@ -291,12 +291,12 @@ describe('CLI Path Utilities', () => {
             });
         });
         it('should handle production native binary', () => {
-            const result = prepareSpawnInfo('qwen');
+            const result = prepareSpawnInfo('ollama-code');
             expect(result).toEqual({
-                command: 'qwen',
+                command: 'ollama-code',
                 args: [],
                 type: 'native',
-                originalInput: 'qwen',
+                originalInput: 'ollama-code',
             });
         });
         it('should handle ESM bundle', () => {

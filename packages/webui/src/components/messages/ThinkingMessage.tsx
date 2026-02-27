@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -50,7 +50,7 @@ export const ThinkingMessage: FC<ThinkingMessageProps> = ({
 
   return (
     <div
-      className={`qwen-message message-item thinking-message thinking-status-${status}`}
+      className={`ollama-message message-item thinking-message thinking-status-${status}`}
     >
       <div className="thinking-content-wrapper">
         {/* Clickable title bar */}

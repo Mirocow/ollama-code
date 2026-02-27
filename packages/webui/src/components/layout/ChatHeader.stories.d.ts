@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ChatHeader } from './ChatHeader.js';
+import type { ChatHeader } from './ChatHeader.js';
 /**
  * ChatHeader component for displaying chat session information.
  * Shows current session title with navigation controls.

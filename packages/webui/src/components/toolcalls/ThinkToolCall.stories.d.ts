@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ThinkToolCall } from './ThinkToolCall.js';
+import type { ThinkToolCall } from './ThinkToolCall.js';
 /**
  * ThinkToolCall displays AI reasoning and thought processes.
  * Shows thoughts in compact or card format based on content length.
