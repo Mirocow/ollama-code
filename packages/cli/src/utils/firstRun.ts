@@ -13,7 +13,9 @@ import { Storage } from '@ollama-code/ollama-code-core';
  * 1. No ~/.ollama-code directory exists, OR
  * 2. No settings.json exists, OR
  * 3. settings.json exists but security.auth.selectedType is not set
- * @returns true if this is the first run (no auth configuration exists)
+ * 4. settings.json exists but model.name is not set
+ * 5. settings.json exists but security.auth.baseUrl is not set
+ * @returns true if this is the first run (no complete configuration exists)
  */
 export function isFirstRun(): boolean {
   const globalOllamaDir = Storage.getGlobalOllamaDir();
@@ -29,24 +31,42 @@ export function isFirstRun(): boolean {
     return true;
   }
 
-  // Check if authType is configured
+  // Check if configuration is complete
   try {
     const content = fs.readFileSync(settingsPath, 'utf-8');
     const settings = JSON.parse(content) as Record<string, unknown>;
 
-    // Check for security.auth.selectedType
-    const security = settings['security'];
-    if (typeof security === 'object' && security !== null) {
-      const auth = (security as Record<string, unknown>)['auth'];
-      if (typeof auth === 'object' && auth !== null) {
-        const selectedType = (auth as Record<string, unknown>)['selectedType'];
-        if (typeof selectedType === 'string') {
-          return false; // Auth is configured
-        }
-      }
+    // Check for model.name
+    const model = settings['model'];
+    if (typeof model !== 'object' || model === null) {
+      return true; // Model section not configured
+    }
+    const modelName = (model as Record<string, unknown>)['name'];
+    if (typeof modelName !== 'string' || modelName.trim() === '') {
+      return true; // Model name not configured
     }
 
-    return true; // Auth is not configured
+    // Check for security.auth.selectedType
+    const security = settings['security'];
+    if (typeof security !== 'object' || security === null) {
+      return true; // Security section not configured
+    }
+    const auth = (security as Record<string, unknown>)['auth'];
+    if (typeof auth !== 'object' || auth === null) {
+      return true; // Auth section not configured
+    }
+    const selectedType = (auth as Record<string, unknown>)['selectedType'];
+    if (typeof selectedType !== 'string') {
+      return true; // Auth type not configured
+    }
+
+    // Check for security.auth.baseUrl
+    const baseUrl = (auth as Record<string, unknown>)['baseUrl'];
+    if (typeof baseUrl !== 'string' || baseUrl.trim() === '') {
+      return true; // Base URL not configured
+    }
+
+    return false; // All required fields are configured
   } catch {
     // If parsing fails, consider it first run
     return true;
