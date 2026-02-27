@@ -100,6 +100,7 @@ export {
   type OllamaProgressEvent,
   type StreamCallback,
   type ProgressCallback,
+  type RequestOptions,
 } from './core/ollamaNativeClient.js';
 
 // ============================================================================

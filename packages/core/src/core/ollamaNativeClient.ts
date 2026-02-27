@@ -357,6 +357,14 @@ export type StreamCallback<T> = (chunk: T) => void;
  */
 export type ProgressCallback = (event: OllamaProgressEvent) => void;
 
+/**
+ * Options for generate and chat operations
+ */
+export interface RequestOptions {
+  /** External AbortSignal for cancellation */
+  signal?: AbortSignal;
+}
+
 // ============================================================================
 // OllamaNativeClient
 // ============================================================================
@@ -393,10 +401,16 @@ export class OllamaNativeClient {
     endpoint: string,
     method: 'GET' | 'POST' | 'DELETE' = 'GET',
     body?: unknown,
+    externalSignal?: AbortSignal,
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    // Combine external signal with timeout signal
+    const combinedSignal = externalSignal
+      ? AbortSignal.any([externalSignal, controller.signal])
+      : controller.signal;
 
     try {
       const response = await fetch(url, {
@@ -406,7 +420,7 @@ export class OllamaNativeClient {
           'Accept': 'application/json',
         },
         body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
+        signal: combinedSignal,
       });
 
       if (!response.ok) {
@@ -436,10 +450,16 @@ export class OllamaNativeClient {
     endpoint: string,
     body: unknown,
     callback: StreamCallback<T>,
+    externalSignal?: AbortSignal,
   ): Promise<void> {
     const url = `${this.baseUrl}${endpoint}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    // Combine external signal with timeout signal
+    const combinedSignal = externalSignal
+      ? AbortSignal.any([externalSignal, controller.signal])
+      : controller.signal;
 
     try {
       const response = await fetch(url, {
@@ -449,7 +469,7 @@ export class OllamaNativeClient {
           'Accept': 'application/x-ndjson',
         },
         body: JSON.stringify({ ...(body as Record<string, unknown>), stream: true }),
-        signal: controller.signal,
+        signal: combinedSignal,
       });
 
       if (!response.ok) {
@@ -656,10 +676,15 @@ export class OllamaNativeClient {
    * }, (chunk) => {
    *   process.stdout.write(chunk.response);
    * });
+   *
+   * // With abort signal
+   * const controller = new AbortController();
+   * await client.generate({ model: 'llama3.2', prompt: 'Hello' }, undefined, { signal: controller.signal });
    */
   async generate(
     request: OllamaGenerateRequest,
     streamCallback?: StreamCallback<OllamaGenerateResponse>,
+    options?: RequestOptions,
   ): Promise<OllamaGenerateResponse> {
     if (streamCallback) {
       let finalResponse: OllamaGenerateResponse | null = null;
@@ -672,6 +697,7 @@ export class OllamaNativeClient {
             finalResponse = chunk;
           }
         },
+        options?.signal,
       );
       if (!finalResponse) {
         throw new Error('Stream ended without final response');
@@ -682,7 +708,7 @@ export class OllamaNativeClient {
     return this.request<OllamaGenerateResponse>('/api/generate', 'POST', {
       ...request,
       stream: false,
-    });
+    }, options?.signal);
   }
 
   /**
@@ -697,10 +723,15 @@ export class OllamaNativeClient {
    *   ],
    * });
    * console.log(response.message.content);
+   *
+   * // With abort signal
+   * const controller = new AbortController();
+   * await client.chat({ model: 'llama3.2', messages: [...] }, undefined, { signal: controller.signal });
    */
   async chat(
     request: OllamaChatRequest,
     streamCallback?: StreamCallback<OllamaChatResponse>,
+    options?: RequestOptions,
   ): Promise<OllamaChatResponse> {
     if (streamCallback) {
       let finalResponse: OllamaChatResponse | null = null;
@@ -713,6 +744,7 @@ export class OllamaNativeClient {
             finalResponse = chunk;
           }
         },
+        options?.signal,
       );
       if (!finalResponse) {
         throw new Error('Stream ended without final response');
@@ -723,7 +755,7 @@ export class OllamaNativeClient {
     return this.request<OllamaChatResponse>('/api/chat', 'POST', {
       ...request,
       stream: false,
-    });
+    }, options?.signal);
   }
 
   // ========================================================================
