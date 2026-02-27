@@ -11,7 +11,7 @@
 - 🌐 **Веб-поиск** — интеграция с Tavily и Google Custom Search
 - 📦 **Расширения** — система расширений для добавления новых возможностей
 - 🐛 **Отладка** — встроенная поддержка отладки через VSCode
-- 🧠 **Thinking Models** — поддержка моделей с рассуждениями (DeepSeek R1, Qwen)
+- 🧠 **Thinking Models** — поддержка моделей с рассуждениями (DeepSeek R1)
 - 📊 **Code Analysis** — анализ качества кода с оценкой A-F
 - 🎨 **Diagram Generator** — создание Mermaid и PlantUML диаграмм
 - 🔀 **Git Advanced** — продвинутые git операции (stash, cherry-pick, rebase, bisect)
@@ -56,7 +56,7 @@ npm run debug
 
 ## Новые возможности v0.11.0
 
-### Thinking Models (DeepSeek R1, Qwen)
+### Thinking Models (DeepSeek R1)
 
 ```typescript
 // Модели с рассуждениями показывают процесс мышления
@@ -216,11 +216,11 @@ Options:
 
 | Модель | Назначение | Размер |
 |--------|------------|--------|
-| `qwen3-coder:30b` | Программирование | 30B |
-| `deepseek-r1:8b` | Рассуждения (thinking) | 8B |
 | `llama3.2` | Общего назначения | 3B |
+| `deepseek-r1:8b` | Рассуждения (thinking) | 8B |
 | `codellama` | Программирование | 7B+ |
 | `mistral` | Общего назначения | 7B |
+| `nomic-embed-text` | Эмбеддинги | 274M |
 
 ## Разработка
 

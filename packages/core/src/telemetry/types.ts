@@ -5,5 +5,11 @@
  */
 
 // Types - telemetry has been removed
+// This file provides type stubs for compatibility
 
-export type { TelemetryEvent } from './index.js';
+export interface TelemetryConfig {
+  enabled: boolean;
+  target?: string;
+}
+
+export type { SessionMetrics, ToolCallStats, ModelMetrics, FileMetrics } from './uiTelemetry.js';
