@@ -222,6 +222,9 @@ async function runFirstRunSetup(): Promise<{
   model: string;
 } | null> {
   return new Promise((resolve) => {
+    // Store render instance for cleanup
+    let instance: ReturnType<typeof render> | null = null;
+
     const handleSetupComplete = async (config: {
       baseUrl: string;
       model: string;
@@ -230,10 +233,20 @@ async function runFirstRunSetup(): Promise<{
       saveInitialConfig(config.baseUrl, config.model);
       // Set environment variables
       setConfigEnv(config.baseUrl, config.model);
+      // Unmount the setup UI before continuing
+      if (instance) {
+        instance.unmount();
+        instance = null;
+      }
       resolve(config);
     };
 
     const handleCancel = () => {
+      // Unmount before exit
+      if (instance) {
+        instance.unmount();
+        instance = null;
+      }
       writeStderrLine(
         'Setup cancelled. Please run ollama-code again to configure.',
       );
@@ -252,7 +265,8 @@ async function runFirstRunSetup(): Promise<{
       </KeypressProvider>
     );
 
-    render(<SetupWrapper />, { exitOnCtrlC: true });
+    // Store instance for cleanup, use exitOnCtrlC: false to handle it ourselves
+    instance = render(<SetupWrapper />, { exitOnCtrlC: false });
   });
 }
 
