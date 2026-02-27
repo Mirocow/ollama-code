@@ -44,13 +44,14 @@ export interface ResolvedCliGenerationConfig {
 
 export function getAuthTypeFromEnv(): AuthType | undefined {
   // Ollama is the only supported auth type
-  // Check for Ollama environment variables
+  // Check for Ollama environment variables - this indicates explicit configuration
   if (process.env['OLLAMA_BASE_URL'] || process.env['OLLAMA_HOST']) {
     return AuthType.USE_OLLAMA;
   }
 
-  // Default to Ollama
-  return AuthType.USE_OLLAMA;
+  // Return undefined if no explicit env vars are set
+  // This allows the auth dialog to show for first-time users
+  return undefined;
 }
 
 /**
