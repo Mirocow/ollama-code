@@ -12,6 +12,13 @@
  */
 
 import type { Config } from '../config/config.js';
+import {
+  OllamaApiError,
+  OllamaConnectionError,
+  OllamaTimeoutError,
+  OllamaAbortError,
+  detectOllamaError,
+} from '../utils/ollamaErrors.js';
 
 /**
  * Default Ollama base URL (native API, not OpenAI-compatible)
@@ -22,6 +29,21 @@ export const DEFAULT_OLLAMA_NATIVE_URL = 'http://localhost:11434';
  * Default timeout for API requests (5 minutes)
  */
 export const DEFAULT_OLLAMA_TIMEOUT = 300000;
+
+/**
+ * Default keep_alive duration (5 minutes)
+ * Controls how long the model stays loaded in memory after the request
+ */
+export const DEFAULT_KEEP_ALIVE = '5m';
+
+/**
+ * Default retry configuration
+ */
+export const DEFAULT_RETRY_CONFIG = {
+  maxRetries: 3,
+  retryDelayMs: 1000,
+  retryOnErrors: ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'network error'],
+};
 
 // ============================================================================
 // Types
@@ -363,6 +385,30 @@ export type ProgressCallback = (event: OllamaProgressEvent) => void;
 export interface RequestOptions {
   /** External AbortSignal for cancellation */
   signal?: AbortSignal;
+  /** Override keep_alive for this request */
+  keepAlive?: string | number;
+  /** Retry configuration for this request */
+  retry?: Partial<RetryConfig>;
+}
+
+/**
+ * Retry configuration
+ */
+export interface RetryConfig {
+  maxRetries: number;
+  retryDelayMs: number;
+  retryOnErrors: string[];
+}
+
+/**
+ * Client configuration options
+ */
+export interface OllamaClientOptions {
+  baseUrl?: string;
+  timeout?: number;
+  keepAlive?: string | number;
+  retry?: Partial<RetryConfig>;
+  config?: Config;
 }
 
 // ============================================================================
@@ -372,18 +418,33 @@ export interface RequestOptions {
 /**
  * Native Ollama API client.
  * Provides methods to interact with all Ollama REST API endpoints.
+ *
+ * @example
+ * const client = new OllamaNativeClient({
+ *   baseUrl: 'http://localhost:11434',
+ *   keepAlive: '5m',
+ * });
+ *
+ * // Chat with streaming
+ * await client.chat(
+ *   { model: 'llama3.2', messages: [{ role: 'user', content: 'Hello!' }] },
+ *   (chunk) => console.log(chunk.message.content),
+ * );
  */
 export class OllamaNativeClient {
   private baseUrl: string;
   private timeout: number;
+  private keepAlive: string | number;
+  private retryConfig: RetryConfig;
 
-  constructor(options?: {
-    baseUrl?: string;
-    timeout?: number;
-    config?: Config;
-  }) {
+  constructor(options?: OllamaClientOptions) {
     this.baseUrl = options?.baseUrl ?? DEFAULT_OLLAMA_NATIVE_URL;
     this.timeout = options?.timeout ?? DEFAULT_OLLAMA_TIMEOUT;
+    this.keepAlive = options?.keepAlive ?? DEFAULT_KEEP_ALIVE;
+    this.retryConfig = {
+      ...DEFAULT_RETRY_CONFIG,
+      ...options?.retry,
+    };
     // options.config is reserved for future use (e.g., proxy settings)
   }
 
@@ -395,6 +456,75 @@ export class OllamaNativeClient {
   }
 
   /**
+   * Get the default keep_alive value
+   */
+  getKeepAlive(): string | number {
+    return this.keepAlive;
+  }
+
+  /**
+   * Sleep utility for retry delays
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Check if error should trigger a retry
+   */
+  private shouldRetry(error: unknown): boolean {
+    if (error instanceof OllamaAbortError) {
+      return false;
+    }
+
+    const errorMessage =
+      error instanceof Error ? error.message.toLowerCase() : '';
+    const errorCode =
+      (error as NodeJS.ErrnoException)?.code?.toString().toLowerCase() ?? '';
+
+    return this.retryConfig.retryOnErrors.some(
+      (retryError) =>
+        errorMessage.includes(retryError.toLowerCase()) ||
+        errorCode.includes(retryError.toLowerCase()),
+    );
+  }
+
+  /**
+   * Execute a request with retry logic
+   */
+  private async withRetry<T>(
+    operation: () => Promise<T>,
+    retryConfig?: Partial<RetryConfig>,
+  ): Promise<T> {
+    const config = { ...this.retryConfig, ...retryConfig };
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+
+        // Don't retry on abort
+        if (error instanceof OllamaAbortError) {
+          throw error;
+        }
+
+        // Check if we should retry
+        if (attempt < config.maxRetries && this.shouldRetry(error)) {
+          const delay = config.retryDelayMs * Math.pow(2, attempt); // Exponential backoff
+          await this.sleep(delay);
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    throw lastError;
+  }
+
+  /**
    * Make an HTTP request to the Ollama API
    */
   private async request<T>(
@@ -402,45 +532,59 @@ export class OllamaNativeClient {
     method: 'GET' | 'POST' | 'DELETE' = 'GET',
     body?: unknown,
     externalSignal?: AbortSignal,
+    retryConfig?: Partial<RetryConfig>,
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    return this.withRetry(async () => {
+      const url = `${this.baseUrl}${endpoint}`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-    // Combine external signal with timeout signal
-    const combinedSignal = externalSignal
-      ? AbortSignal.any([externalSignal, controller.signal])
-      : controller.signal;
+      // Combine external signal with timeout signal
+      const combinedSignal = externalSignal
+        ? AbortSignal.any([externalSignal, controller.signal])
+        : controller.signal;
 
-    try {
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: body ? JSON.stringify(body) : undefined,
-        signal: combinedSignal,
-      });
+      try {
+        const response = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: body ? JSON.stringify(body) : undefined,
+          signal: combinedSignal,
+        });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = `Ollama API error: ${response.status} ${response.statusText}`;
-        try {
-          const errorJson = JSON.parse(errorText);
-          if (errorJson.error) {
-            errorMessage = errorJson.error;
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorMessage = `Ollama API error: ${response.status} ${response.statusText}`;
+          try {
+            const errorJson = JSON.parse(errorText);
+            if (errorJson.error) {
+              errorMessage = errorJson.error;
+            }
+          } catch {
+            // Use default error message
           }
-        } catch {
-          // Use default error message
+          throw detectOllamaError(new Error(errorMessage), {});
         }
-        throw new Error(errorMessage);
-      }
 
-      return await response.json() as T;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+        return (await response.json()) as T;
+      } catch (error) {
+        // Handle timeout
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new OllamaTimeoutError(this.timeout);
+        }
+        // Re-throw OllamaApiError as-is
+        if (error instanceof OllamaApiError) {
+          throw error;
+        }
+        // Wrap other errors
+        throw detectOllamaError(error, { timeoutMs: this.timeout });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }, retryConfig);
   }
 
   /**
@@ -466,9 +610,12 @@ export class OllamaNativeClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/x-ndjson',
+          Accept: 'application/x-ndjson',
         },
-        body: JSON.stringify({ ...(body as Record<string, unknown>), stream: true }),
+        body: JSON.stringify({
+          ...(body as Record<string, unknown>),
+          stream: true,
+        }),
         signal: combinedSignal,
       });
 
@@ -483,12 +630,12 @@ export class OllamaNativeClient {
         } catch {
           // Use default error message
         }
-        throw new Error(errorMessage);
+        throw detectOllamaError(new Error(errorMessage), {});
       }
 
       const reader = response.body?.getReader();
       if (!reader) {
-        throw new Error('Response body is not readable');
+        throw new OllamaConnectionError('Response body is not readable');
       }
 
       const decoder = new TextDecoder();
@@ -523,9 +670,33 @@ export class OllamaNativeClient {
           // Skip malformed JSON
         }
       }
+    } catch (error) {
+      // Handle timeout
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new OllamaTimeoutError(this.timeout);
+      }
+      // Re-throw OllamaApiError as-is
+      if (error instanceof OllamaApiError) {
+        throw error;
+      }
+      // Wrap other errors
+      throw detectOllamaError(error, { timeoutMs: this.timeout });
     } finally {
       clearTimeout(timeoutId);
     }
+  }
+
+  /**
+   * Apply default keep_alive to request body
+   */
+  private applyDefaults<T extends { keep_alive?: string | number }>(
+    body: T,
+    options?: RequestOptions,
+  ): T {
+    return {
+      ...body,
+      keep_alive: options?.keepAlive ?? body.keep_alive ?? this.keepAlive,
+    };
   }
 
   // ========================================================================
@@ -552,7 +723,9 @@ export class OllamaNativeClient {
    * const info = await client.showModel('llama3.2');
    * console.log(info.modelfile);
    */
-  async showModel(model: string | OllamaShowRequest): Promise<OllamaShowResponse> {
+  async showModel(
+    model: string | OllamaShowRequest,
+  ): Promise<OllamaShowResponse> {
     const body = typeof model === 'string' ? { model } : model;
     return this.request<OllamaShowResponse>('/api/show', 'POST', body);
   }
@@ -686,11 +859,13 @@ export class OllamaNativeClient {
     streamCallback?: StreamCallback<OllamaGenerateResponse>,
     options?: RequestOptions,
   ): Promise<OllamaGenerateResponse> {
+    const body = this.applyDefaults(request, options);
+
     if (streamCallback) {
       let finalResponse: OllamaGenerateResponse | null = null;
       await this.streamingRequest<OllamaGenerateResponse>(
         '/api/generate',
-        request,
+        body,
         (chunk) => {
           streamCallback(chunk);
           if (chunk.done) {
@@ -700,15 +875,21 @@ export class OllamaNativeClient {
         options?.signal,
       );
       if (!finalResponse) {
-        throw new Error('Stream ended without final response');
+        throw new OllamaApiError(
+          'Stream ended without final response',
+          'STREAM_ERROR',
+        );
       }
       return finalResponse;
     }
 
-    return this.request<OllamaGenerateResponse>('/api/generate', 'POST', {
-      ...request,
-      stream: false,
-    }, options?.signal);
+    return this.request<OllamaGenerateResponse>(
+      '/api/generate',
+      'POST',
+      { ...body, stream: false },
+      options?.signal,
+      options?.retry,
+    );
   }
 
   /**
@@ -733,11 +914,13 @@ export class OllamaNativeClient {
     streamCallback?: StreamCallback<OllamaChatResponse>,
     options?: RequestOptions,
   ): Promise<OllamaChatResponse> {
+    const body = this.applyDefaults(request, options);
+
     if (streamCallback) {
       let finalResponse: OllamaChatResponse | null = null;
       await this.streamingRequest<OllamaChatResponse>(
         '/api/chat',
-        request,
+        body,
         (chunk) => {
           streamCallback(chunk);
           if (chunk.done) {
@@ -747,15 +930,21 @@ export class OllamaNativeClient {
         options?.signal,
       );
       if (!finalResponse) {
-        throw new Error('Stream ended without final response');
+        throw new OllamaApiError(
+          'Stream ended without final response',
+          'STREAM_ERROR',
+        );
       }
       return finalResponse;
     }
 
-    return this.request<OllamaChatResponse>('/api/chat', 'POST', {
-      ...request,
-      stream: false,
-    }, options?.signal);
+    return this.request<OllamaChatResponse>(
+      '/api/chat',
+      'POST',
+      { ...body, stream: false },
+      options?.signal,
+      options?.retry,
+    );
   }
 
   // ========================================================================
@@ -774,7 +963,8 @@ export class OllamaNativeClient {
    * console.log(response.embeddings);
    */
   async embed(request: OllamaEmbedRequest): Promise<OllamaEmbedResponse> {
-    return this.request<OllamaEmbedResponse>('/api/embed', 'POST', request);
+    const body = this.applyDefaults(request);
+    return this.request<OllamaEmbedResponse>('/api/embed', 'POST', body);
   }
 
   /**
@@ -788,8 +978,15 @@ export class OllamaNativeClient {
    * });
    * console.log(response.embedding);
    */
-  async embeddings(request: OllamaEmbeddingsRequest): Promise<OllamaEmbeddingsResponse> {
-    return this.request<OllamaEmbeddingsResponse>('/api/embeddings', 'POST', request);
+  async embeddings(
+    request: OllamaEmbeddingsRequest,
+  ): Promise<OllamaEmbeddingsResponse> {
+    const body = this.applyDefaults(request);
+    return this.request<OllamaEmbeddingsResponse>(
+      '/api/embeddings',
+      'POST',
+      body,
+    );
   }
 
   // ========================================================================
@@ -880,6 +1077,38 @@ export class OllamaNativeClient {
       await this.pullModel(modelName, progressCallback);
     }
   }
+
+  /**
+   * Unload a model from memory.
+   * Uses keep_alive=0 to immediately unload.
+   *
+   * @example
+   * await client.unloadModel('llama3.2');
+   */
+  async unloadModel(modelName: string): Promise<void> {
+    await this.generate({
+      model: modelName,
+      prompt: '',
+      keep_alive: 0,
+    });
+  }
+
+  /**
+   * Keep a model loaded in memory.
+   *
+   * @example
+   * await client.keepModelLoaded('llama3.2', '10m');
+   */
+  async keepModelLoaded(
+    modelName: string,
+    duration: string | number = '10m',
+  ): Promise<void> {
+    await this.generate({
+      model: modelName,
+      prompt: '',
+      keep_alive: duration,
+    });
+  }
 }
 
 // ============================================================================
@@ -893,10 +1122,8 @@ export class OllamaNativeClient {
  * const client = createOllamaClient();
  * const models = await client.listModels();
  */
-export function createOllamaNativeClient(options?: {
-  baseUrl?: string;
-  timeout?: number;
-  config?: Config;
-}): OllamaNativeClient {
+export function createOllamaNativeClient(
+  options?: OllamaClientOptions,
+): OllamaNativeClient {
   return new OllamaNativeClient(options);
 }

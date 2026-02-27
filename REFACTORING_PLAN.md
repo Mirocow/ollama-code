@@ -3,6 +3,7 @@
 ## Статус: ЗАВЕРШЕНО ✅
 
 ## Цель
+
 Рефакторинг проекта для работы **только** с Ollama API.
 
 ---
@@ -11,64 +12,92 @@
 
 ### Основные методы
 
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| `chat()` | POST /api/chat | Чат с моделью |
-| `generate()` | POST /api/generate | Генерация текста |
-| `listModels()` | GET /api/tags | Список локальных моделей |
-| `showModel()` | POST /api/show | Информация о модели |
+| Метод          | Endpoint           | Описание                 |
+| -------------- | ------------------ | ------------------------ |
+| `chat()`       | POST /api/chat     | Чат с моделью            |
+| `generate()`   | POST /api/generate | Генерация текста         |
+| `listModels()` | GET /api/tags      | Список локальных моделей |
+| `showModel()`  | POST /api/show     | Информация о модели      |
 
 ### Дополнительные методы
 
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| `getVersion()` | GET /api/version | Версия Ollama |
-| `listRunningModels()` | GET /api/ps | Запущенные модели |
-| `embed()` | POST /api/embed | Эмбеддинги |
-| `embeddings()` | POST /api/embeddings | Эмбеддинги (legacy) |
-| `pullModel()` | POST /api/pull | Загрузка модели |
-| `pushModel()` | POST /api/push | Отправка модели |
-| `copyModel()` | POST /api/copy | Копирование модели |
-| `deleteModel()` | DELETE /api/delete | Удаление модели |
+| Метод                 | Endpoint             | Описание                   |
+| --------------------- | -------------------- | -------------------------- |
+| `getVersion()`        | GET /api/version     | Версия Ollama              |
+| `listRunningModels()` | GET /api/ps          | Запущенные модели          |
+| `embed()`             | POST /api/embed      | Эмбеддинги                 |
+| `embeddings()`        | POST /api/embeddings | Эмбеддинги (legacy)        |
+| `pullModel()`         | POST /api/pull       | Загрузка модели            |
+| `pushModel()`         | POST /api/push       | Отправка модели            |
+| `copyModel()`         | POST /api/copy       | Копирование модели         |
+| `deleteModel()`       | DELETE /api/delete   | Удаление модели            |
+| `unloadModel()`       | -                    | Выгрузка модели из памяти  |
+| `keepModelLoaded()`   | -                    | Держать модель загруженной |
 
 ---
 
 ## Архитектура
 
 ### OllamaNativeClient
+
 Расположение: `packages/core/src/core/ollamaNativeClient.ts`
 
 Нативный клиент для работы с Ollama REST API:
-- Поддержка streaming и non-streaming режимов
-- Поддержка tools (function calling)
-- Поддержка AbortSignal для отмены запросов
-- Обработка ошибок
-- Автоматический парсинг NDJSON
-- Поддержка keep_alive параметра
+
+- ✅ Поддержка streaming и non-streaming режимов
+- ✅ Поддержка tools (function calling)
+- ✅ Поддержка AbortSignal для отмены запросов
+- ✅ Улучшенная обработка ошибок с классами OllamaApiError
+- ✅ Автоматический retry с exponential backoff
+- ✅ Автоматический парсинг NDJSON
+- ✅ Поддержка keep_alive параметра (default: 5m)
+- ✅ Поддержка multimodal (изображения)
 
 ### OllamaNativeContentGenerator
+
 Расположение: `packages/core/src/core/ollamaNativeContentGenerator/`
 
 Генератор контента, использующий нативный Ollama API:
-- Конвертация форматов (GenAI ↔ Ollama)
-- Поддержка стриминга
-- Поддержка инструментов
-- Поддержка изображений (multimodal)
-- Оценка токенов
+
+- ✅ Конвертация форматов (GenAI ↔ Ollama)
+- ✅ Поддержка стриминга
+- ✅ Поддержка инструментов
+- ✅ Поддержка изображений (multimodal)
+- ✅ Оценка токенов
 
 ### Типы данных
+
 Расположение: `packages/core/src/types/content.ts`
 
 Нативные типы для Ollama Code:
+
 - `Content`, `Part`, `Role` - типы сообщений
 - `FunctionDeclaration`, `FunctionCall`, `FunctionResponse` - типы функций
 - `Tool`, `ToolConfig` - типы инструментов
 - `GenerateContentParameters`, `GenerateContentResponse` - типы генерации
 
+### Обработка ошибок
+
+Расположение: `packages/core/src/utils/ollamaErrors.ts`
+
+Классы ошибок для Ollama API:
+
+- `OllamaApiError` - базовый класс
+- `OllamaConnectionError` - ошибки подключения
+- `OllamaModelNotFoundError` - модель не найдена
+- `OllamaTimeoutError` - таймаут запроса
+- `OllamaAbortError` - отмена запроса
+- `OllamaContextLengthError` - превышен контекст
+- `OllamaResourceError` - нехватка ресурсов GPU
+- `detectOllamaError()` - автоматическое определение ошибки
+- `getFriendlyOllamaErrorMessage()` - дружелюбное сообщение
+
 ### ApiLogger
+
 Расположение: `packages/core/src/utils/apiLogger.ts`
 
 Логгер для API запросов:
+
 - Логирование запросов и ответов
 - Поддержка кастомных директорий
 - Обратная совместимость с OpenAILogger
@@ -84,11 +113,21 @@ import { createOllamaNativeClient } from '@ollama-code/ollama-code-core';
 
 const client = createOllamaNativeClient({
   baseUrl: 'http://localhost:11434',
+  keepAlive: '5m', // Default keep_alive
+  timeout: 300000, // 5 minutes
+  retry: {
+    // Retry configuration
+    maxRetries: 3,
+    retryDelayMs: 1000,
+  },
 });
 
 // Список моделей
 const { models } = await client.listModels();
-console.log('Available models:', models.map(m => m.name));
+console.log(
+  'Available models:',
+  models.map((m) => m.name),
+);
 
 // Информация о модели
 const info = await client.showModel('llama3.2');
@@ -98,7 +137,6 @@ console.log('Model details:', info.details);
 const response = await client.generate({
   model: 'llama3.2',
   prompt: 'Why is the sky blue?',
-  stream: false,
 });
 console.log(response.response);
 
@@ -109,7 +147,6 @@ const chatResponse = await client.chat({
     { role: 'system', content: 'You are a helpful assistant.' },
     { role: 'user', content: 'Hello!' },
   ],
-  stream: false,
 });
 console.log(chatResponse.message.content);
 ```
@@ -125,7 +162,7 @@ await client.generate(
   },
   (chunk) => {
     process.stdout.write(chunk.response);
-  }
+  },
 );
 
 // Чат со стримингом
@@ -138,95 +175,58 @@ await client.chat(
     if (chunk.message?.content) {
       process.stdout.write(chunk.message.content);
     }
-  }
+  },
 );
 ```
 
-### Отмена запросов (AbortSignal)
+### Retry с exponential backoff
 
 ```typescript
-const controller = new AbortController();
+const client = createOllamaNativeClient({
+  retry: {
+    maxRetries: 3, // Maximum retry attempts
+    retryDelayMs: 1000, // Initial delay (exponential backoff)
+    retryOnErrors: [
+      // Errors that trigger retry
+      'ECONNRESET',
+      'ETIMEDOUT',
+      'ENOTFOUND',
+    ],
+  },
+});
 
-// Отмена через 10 секунд
-setTimeout(() => controller.abort(), 10000);
+// Или per-request override
+await client.generate({ model: 'llama3.2', prompt: 'Hello' }, undefined, {
+  retry: { maxRetries: 5 },
+});
+```
+
+### Обработка ошибок
+
+```typescript
+import {
+  OllamaModelNotFoundError,
+  OllamaConnectionError,
+  detectOllamaError,
+  getFriendlyOllamaErrorMessage,
+} from '@ollama-code/ollama-code-core';
 
 try {
-  const response = await client.generate(
-    {
-      model: 'llama3.2',
-      prompt: 'Write a long story...',
-    },
-    undefined,
-    { signal: controller.signal }
-  );
+  const response = await client.chat({
+    model: 'unknown-model',
+    messages: [{ role: 'user', content: 'Hello!' }],
+  });
 } catch (error) {
-  if (error.name === 'AbortError') {
-    console.log('Request was cancelled');
+  const ollamaError = detectOllamaError(error, { modelName: 'unknown-model' });
+
+  if (ollamaError instanceof OllamaModelNotFoundError) {
+    console.log('Model not found. Run: ollama pull unknown-model');
+  } else if (ollamaError instanceof OllamaConnectionError) {
+    console.log('Cannot connect to Ollama. Is it running?');
   }
-}
-```
 
-### Keep Alive
-
-```typescript
-// Держать модель загруженной 5 минут
-await client.chat({
-  model: 'llama3.2',
-  messages: [{ role: 'user', content: 'Hello!' }],
-  keep_alive: '5m',
-});
-
-// Держать модель загруженной бесконечно
-await client.chat({
-  model: 'llama3.2',
-  messages: [{ role: 'user', content: 'Hello!' }],
-  keep_alive: -1,
-});
-
-// Выгрузить модель сразу после запроса
-await client.chat({
-  model: 'llama3.2',
-  messages: [{ role: 'user', content: 'Hello!' }],
-  keep_alive: 0,
-});
-```
-
-### Function Calling (Tools)
-
-```typescript
-const response = await client.chat({
-  model: 'llama3.2',
-  messages: [
-    { role: 'user', content: 'What is the weather in Tokyo?' },
-  ],
-  tools: [
-    {
-      type: 'function',
-      function: {
-        name: 'get_weather',
-        description: 'Get the current weather for a location',
-        parameters: {
-          type: 'object',
-          properties: {
-            location: {
-              type: 'string',
-              description: 'The city name',
-            },
-          },
-          required: ['location'],
-        },
-      },
-    },
-  ],
-  stream: false,
-});
-
-// Проверка на tool calls
-if (response.message.tool_calls) {
-  for (const toolCall of response.message.tool_calls) {
-    console.log('Tool:', toolCall.function.name);
-    console.log('Args:', toolCall.function.arguments);
-  }
+  // User-friendly message
+  console.log(getFriendlyOllamaErrorMessage(error));
 }
 ```
 
@@ -256,6 +256,26 @@ bash scripts/test-ollama-api.sh llama3.2
 
 ---
 
+## VSCode Debug
+
+Конфигурация для отладки в `.vscode/`:
+
+### launch.json
+
+- `Debug Ollama Code CLI` - базовая отладка
+- `Debug Ollama Code CLI (with args)` - с аргументами
+- `Debug Current Test File` - отладка теста
+- `Attach to Process` - подключение к процессу
+
+### tasks.json
+
+- `Build` - сборка всех пакетов
+- `Test` - запуск тестов
+- `Lint` - проверка кода
+- `Start (Debug)` - запуск с отладчиком
+
+---
+
 ## Конфигурация
 
 ### Переменные окружения
@@ -263,6 +283,7 @@ bash scripts/test-ollama-api.sh llama3.2
 ```bash
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_TIMEOUT=300000
+OLLAMA_KEEP_ALIVE=5m
 ```
 
 ### Файл настроек (~/.ollama-code/settings.json)
@@ -279,6 +300,7 @@ OLLAMA_TIMEOUT=300000
 ## Выполненные работы
 
 ### Фаза 1: Базовый рефакторинг
+
 1. ✅ Удалены зависимости от `@google/genai`
 2. ✅ Созданы нативные типы данных
 3. ✅ Реализован OllamaNativeClient
@@ -288,12 +310,24 @@ OLLAMA_TIMEOUT=300000
 7. ✅ Добавлена поддержка multimodal (изображения)
 
 ### Фаза 2: Улучшения API
+
 8. ✅ Обновлены комментарии в коде
 9. ✅ Написаны unit и integration тесты
 10. ✅ Создан ApiLogger (замена OpenAILogger)
 11. ✅ Добавлена поддержка AbortSignal
 12. ✅ Документирован keep_alive параметр
 13. ✅ Обновлена документация OLLAMA_API.md
+
+### Фаза 3: Улучшения проекта
+
+14. ✅ Исправлена совместимость react-devtools-core с ink
+15. ✅ Добавлена VSCode конфигурация (launch.json, tasks.json)
+16. ✅ Добавлены классы ошибок OllamaApiError
+17. ✅ Добавлен retry с exponential backoff
+18. ✅ Добавлен default keep_alive (5m)
+19. ✅ Написана документация для core и CLI пакетов
+20. ✅ Создан PROJECT_STRUCTURE.md с описанием файлов
+21. ✅ Добавлены методы unloadModel(), keepModelLoaded()
 
 ---
 
@@ -305,10 +339,20 @@ OLLAMA_TIMEOUT=300000
 4. `feat: add AbortSignal support to OllamaNativeClient`
 5. `docs: update OLLAMA_API.md with keep_alive and AbortSignal examples`
 6. `fix: update embedContent test to match actual API response`
+7. `feat: add improved error handling, VSCode debug config, and documentation`
+8. `docs: add comprehensive project structure documentation`
+9. `feat: add retry logic, keepAlive defaults, improved streaming`
+10. `docs: update OLLAMA_API.md with new features`
 
 ---
 
 ## Документация
 
-- [OLLAMA_API.md](docs/OLLAMA_API.md) - полное описание API
-- [REFACTORING_PLAN.md](REFACTORING_PLAN.md) - этот документ
+| Файл                                                         | Описание                      |
+| ------------------------------------------------------------ | ----------------------------- |
+| [README.md](README.md)                                       | Основная документация проекта |
+| [OLLAMA_API.md](docs/OLLAMA_API.md)                          | Полное описание API           |
+| [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)                 | Описание всех файлов проекта  |
+| [packages/core/docs/README.md](packages/core/docs/README.md) | Документация core пакета      |
+| [packages/cli/docs/README.md](packages/cli/docs/README.md)   | Документация CLI              |
+| [REFACTORING_PLAN.md](REFACTORING_PLAN.md)                   | Этот документ                 |
