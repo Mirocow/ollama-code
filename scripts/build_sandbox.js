@@ -93,7 +93,6 @@ const buildOrder = [
   'packages/cli',
   'packages/webui',
   'packages/sdk-typescript',
-  'packages/vscode-ide-companion',
 ];
 
 if (!argv.s) {

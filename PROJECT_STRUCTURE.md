@@ -546,21 +546,6 @@
 
 ---
 
-## 📁 packages/vscode-ide-companion/ - VSCode расширение
-
-| Файл | Описание |
-|------|----------|
-| `src/extension.ts` | Точка входа расширения |
-| `src/ide-server.ts` | IDE сервер |
-| `src/services/` | Сервисы (Session, Connection, Agent) |
-| `src/webview/` | WebView компоненты |
-| `src/types/` | Типы |
-| `src/constants/` | Константы |
-| `esbuild.js` | Сборка esbuild |
-| `package.json` | Манифест расширения VSCode |
-
----
-
 ## 📁 packages/test-utils/ - Утилиты для тестов
 
 | Файл | Описание |
