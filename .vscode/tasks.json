@@ -2,40 +2,99 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Build",
       "type": "npm",
       "script": "build",
+      "problemMatcher": ["$tsc"],
       "group": {
         "kind": "build",
         "isDefault": true
       },
-      "problemMatcher": [],
-      "label": "npm: build",
-      "detail": "scripts/build.sh"
+      "detail": "Build all packages"
     },
     {
+      "label": "Build: Core",
       "type": "npm",
       "script": "build",
-      "path": "packages/vscode-ide-companion",
-      "group": "build",
+      "path": "packages/core/",
+      "problemMatcher": ["$tsc"],
+      "detail": "Build core package only"
+    },
+    {
+      "label": "Build: CLI",
+      "type": "npm",
+      "script": "build",
+      "path": "packages/cli/",
+      "problemMatcher": ["$tsc"],
+      "detail": "Build CLI package only"
+    },
+    {
+      "label": "Lint",
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": ["$eslint-compact"],
+      "detail": "Run ESLint on all files"
+    },
+    {
+      "label": "Test",
+      "type": "npm",
+      "script": "test",
       "problemMatcher": [],
-      "label": "npm: build: vscode-ide-companion",
-      "detail": "npm run build -w packages/vscode-ide-companion"
+      "detail": "Run all tests"
     },
     {
-      "label": "copy: bundled-cli (dev)",
+      "label": "Test: Core",
+      "type": "npm",
+      "script": "test",
+      "path": "packages/core/",
+      "problemMatcher": [],
+      "detail": "Run core package tests"
+    },
+    {
+      "label": "Test: CLI",
+      "type": "npm",
+      "script": "test",
+      "path": "packages/cli/",
+      "problemMatcher": [],
+      "detail": "Run CLI package tests"
+    },
+    {
+      "label": "TypeCheck",
+      "type": "npm",
+      "script": "typecheck",
+      "problemMatcher": ["$tsc"],
+      "detail": "Run TypeScript type checking"
+    },
+    {
+      "label": "Clean",
+      "type": "npm",
+      "script": "clean",
+      "problemMatcher": [],
+      "detail": "Clean build artifacts"
+    },
+    {
+      "label": "Start (Dev)",
+      "type": "npm",
+      "script": "dev",
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "detail": "Start in development mode"
+    },
+    {
+      "label": "Start (Debug)",
       "type": "shell",
-      "command": "node",
-      "args": ["packages/vscode-ide-companion/scripts/copy-bundled-cli.js"],
-      "problemMatcher": []
-    },
-    {
-      "label": "launch: vscode-ide-companion (copy+build)",
-      "dependsOrder": "sequence",
-      "dependsOn": [
-        "copy: bundled-cli (dev)",
-        "npm: build: vscode-ide-companion"
-      ],
-      "problemMatcher": []
+      "command": "cross-env DEBUG=1 node --inspect-brk scripts/start.js",
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "detail": "Start with debugger attached"
     }
   ]
 }
