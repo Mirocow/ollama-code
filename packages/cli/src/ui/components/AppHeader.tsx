@@ -22,6 +22,7 @@ export const AppHeader = ({ version }: AppHeaderProps) => {
 
   const contentGeneratorConfig = config.getContentGeneratorConfig();
   const authType = contentGeneratorConfig?.authType;
+  const baseUrl = contentGeneratorConfig?.baseUrl;
   const model = uiState.currentModel;
   const targetDir = config.getTargetDir();
   const showBanner = !config.getScreenReader();
@@ -33,6 +34,7 @@ export const AppHeader = ({ version }: AppHeaderProps) => {
         <Header
           version={version}
           authType={authType}
+          baseUrl={baseUrl}
           model={model}
           workingDirectory={targetDir}
         />
