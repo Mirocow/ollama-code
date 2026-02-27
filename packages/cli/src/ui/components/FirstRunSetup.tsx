@@ -7,6 +7,7 @@
 import type React from 'react';
 import { useState } from 'react';
 import { Box, Text } from 'ink';
+import { DEFAULT_OLLAMA_MODEL } from '@ollama-code/ollama-code-core';
 import { theme } from '../semantic-colors.js';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { t } from '../../i18n/index.js';
@@ -19,14 +20,13 @@ interface FirstRunSetupProps {
 type InputField = 'baseUrl' | 'model';
 
 const DEFAULT_BASE_URL = 'http://localhost:11434';
-const DEFAULT_MODEL = 'qwen2.5-coder';
 
 export function FirstRunSetup({
   onSubmit,
   onCancel,
 }: FirstRunSetupProps): React.JSX.Element {
   const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL);
-  const [model, setModel] = useState(DEFAULT_MODEL);
+  const [model, setModel] = useState(DEFAULT_OLLAMA_MODEL);
   const [currentField, setCurrentField] = useState<InputField>('baseUrl');
   const [currentValue, setCurrentValue] = useState(baseUrl);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -207,7 +207,7 @@ export function FirstRunSetup({
           t('Model (OLLAMA_MODEL)'),
           currentField === 'model' ? currentValue : model,
           currentField === 'model',
-          DEFAULT_MODEL,
+          DEFAULT_OLLAMA_MODEL,
         )}
 
         {error && (
