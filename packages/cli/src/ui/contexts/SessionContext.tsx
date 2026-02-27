@@ -28,7 +28,15 @@ export enum ToolCallDecision {
   AUTO_ACCEPT = 'auto_accept',
 }
 
-function areModelMetricsEqual(a: ModelMetrics, b: ModelMetrics): boolean {
+function areModelMetricsEqual(
+  a: ModelMetrics | undefined,
+  b: ModelMetrics | undefined,
+): boolean {
+  // Handle undefined/null cases
+  if (!a || !b) return a === b;
+  if (!a.api || !b.api) return a.api === b.api;
+  if (!a.tokens || !b.tokens) return a.tokens === b.tokens;
+
   if (
     a.api.totalRequests !== b.api.totalRequests ||
     a.api.totalErrors !== b.api.totalErrors ||
@@ -124,15 +132,9 @@ function areMetricsEqual(a: SessionMetrics, b: SessionMetrics): boolean {
     }
   }
 
-  // Compare models
-  const modelsAKeys = Object.keys(a.models);
-  const modelsBKeys = Object.keys(b.models);
-  if (modelsAKeys.length !== modelsBKeys.length) return false;
-
-  for (const key of modelsAKeys) {
-    if (!b.models[key] || !areModelMetricsEqual(a.models[key], b.models[key])) {
-      return false;
-    }
+  // Compare models (SessionMetrics.models is a single ModelMetrics object, not a record)
+  if (!areModelMetricsEqual(a.models, b.models)) {
+    return false;
   }
 
   return true;
