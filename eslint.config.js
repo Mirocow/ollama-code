@@ -246,7 +246,17 @@ export default tseslint.config(
   // WebUI package - UI component library with Storybook
   {
     files: ['packages/webui/**/*.ts', 'packages/webui/**/*.tsx', 'packages/webui/**/*.js'],
-    rules: { 'no-console': 'off' },
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+    rules: { 
+      'no-console': 'off',
+      'no-undef': 'off',
+      'import/no-internal-modules': 'off',
+    },
   },
   // Specific CLI files that intentionally wrap console usage
   {
