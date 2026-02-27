@@ -15,6 +15,16 @@ import {
 import type { Settings } from '../config/settings.js';
 import { writeStderrLine } from './stdioHelpers.js';
 
+/**
+ * Normalize Ollama server URL
+ * Removes /v1 suffix if present (OpenAI-compatible path)
+ * Ollama native API uses /api/chat, /api/generate etc. directly
+ */
+function normalizeBaseUrl(url: string | undefined): string | undefined {
+  if (!url) return url;
+  return url.replace(/\/v1\/?$/, '');
+}
+
 export interface CliGenerationConfigInputs {
   argv: {
     model?: string | undefined;
@@ -108,12 +118,12 @@ export function resolveCliGenerationConfig(
     cli: {
       model: argv.model,
       apiKey: argv.ollamaApiKey,
-      baseUrl: argv.ollamaBaseUrl,
+      baseUrl: normalizeBaseUrl(argv.ollamaBaseUrl),
     },
     settings: {
       model: settings.model?.name,
       apiKey: settings.security?.auth?.apiKey,
-      baseUrl: settings.security?.auth?.baseUrl,
+      baseUrl: normalizeBaseUrl(settings.security?.auth?.baseUrl),
       generationConfig: settings.model?.generationConfig as
         | Partial<ContentGeneratorConfig>
         | undefined,
