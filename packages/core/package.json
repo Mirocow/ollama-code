@@ -71,6 +71,7 @@
   "devDependencies": {
     "@ollama-code/ollama-code-test-utils": "file:../test-utils",
     "@types/diff": "^7.0.2",
+    "@types/node": "^22.0.0",
     "@types/dotenv": "^6.1.1",
     "@types/fast-levenshtein": "^0.0.4",
     "@types/minimatch": "^5.1.2",
