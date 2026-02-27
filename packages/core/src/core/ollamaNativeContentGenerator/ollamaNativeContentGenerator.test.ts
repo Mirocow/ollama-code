@@ -347,9 +347,8 @@ describe('OllamaNativeContentGenerator', () => {
 
       const result = await generator.embedContent(request);
 
-      expect(result.embeddings).toBeDefined();
-      expect(result.embeddings).toHaveLength(1);
-      expect(result.embeddings?.[0]?.values).toEqual([0.1, 0.2, 0.3, 0.4]);
+      expect(result.embedding).toBeDefined();
+      expect(result.embedding?.values).toEqual([0.1, 0.2, 0.3, 0.4]);
     });
 
     it('should handle array contents', async () => {
