@@ -11,6 +11,11 @@
 - 🌐 **Веб-поиск** — интеграция с Tavily и Google Custom Search
 - 📦 **Расширения** — система расширений для добавления новых возможностей
 - 🐛 **Отладка** — встроенная поддержка отладки через VSCode
+- 🧠 **Thinking Models** — поддержка моделей с рассуждениями (DeepSeek R1, Qwen)
+- 📊 **Code Analysis** — анализ качества кода с оценкой A-F
+- 🎨 **Diagram Generator** — создание Mermaid и PlantUML диаграмм
+- 🔀 **Git Advanced** — продвинутые git операции (stash, cherry-pick, rebase, bisect)
+- 🌐 **API Tester** — тестирование REST API endpoints
 
 ## Требования
 
@@ -49,6 +54,70 @@ npm run start -- "Объясни, как работает async/await в JavaScr
 npm run debug
 ```
 
+## Новые возможности v0.11.0
+
+### Thinking Models (DeepSeek R1, Qwen)
+
+```typescript
+// Модели с рассуждениями показывают процесс мышления
+const response = await client.chat({
+  model: 'deepseek-r1:8b',
+  messages: [{ role: 'user', content: 'Реши задачу...' }],
+  think: true,
+});
+```
+
+### Structured Outputs (JSON Schema)
+
+```typescript
+// Структурированный вывод по схеме
+const response = await client.generate({
+  model: 'llama3.2',
+  prompt: 'Извлеки данные...',
+  format: {
+    type: 'object',
+    properties: {
+      name: { type: 'string' },
+      age: { type: 'number' },
+    },
+    required: ['name'],
+  },
+});
+```
+
+### Code Analyzer Tool
+
+```bash
+> Проанализируй файл src/index.ts на качество кода
+
+# Результат:
+# Score: 85/100 (Grade: B)
+# Issues: 2 warnings, 1 error
+# Recommendations: Добавить обработку ошибок
+```
+
+### Git Advanced Tool
+
+```bash
+> Сохрани изменения в stash с сообщением "WIP"
+> Перенеси коммит abc123 в текущую ветку
+> Найди баг с помощью bisect между v1.0 и HEAD
+```
+
+### API Tester Tool
+
+```bash
+> Протестируй GET https://api.example.com/users
+> Отправь POST на /api/users с данными {"name": "Test"}
+```
+
+### Diagram Generator
+
+```bash
+> Создай блок-схему процесса авторизации
+> Нарисуй sequence diagram для API запроса
+```
+
 ## Структура проекта
 
 ```
@@ -63,6 +132,17 @@ ollama-code/
 ├── integration-tests/  # Интеграционные тесты
 └── docs/              # Документация
 ```
+
+## Документация
+
+| Документ | Описание |
+|----------|----------|
+| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Руководство по использованию |
+| [EXAMPLES.md](./docs/EXAMPLES.md) | Примеры использования |
+| [TUTORIAL.md](./docs/TUTORIAL.md) | Туториал для начинающих |
+| [OLLAMA_API.md](./docs/OLLAMA_API.md) | Документация API |
+| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Структура проекта |
+| [ROADMAP.md](./ROADMAP.md) | План развития |
 
 ## Основные команды
 
@@ -96,6 +176,8 @@ Options:
 |------------|----------|
 | `OLLAMA_BASE_URL` | URL Ollama сервера |
 | `OLLAMA_API_KEY` | API ключ (опционально) |
+| `OLLAMA_MODEL` | Модель по умолчанию |
+| `OLLAMA_KEEP_ALIVE` | Время удержания модели в памяти (default: 5m) |
 | `DEBUG` | Включить режим отладки (1 или true) |
 | `OLLAMA_CODE_DEBUG_LOG_FILE` | Логирование в файл |
 
@@ -114,13 +196,31 @@ Options:
 
 Проект использует нативные API Ollama:
 
-- `GET /api/tags` — список локальных моделей
-- `POST /api/show` — информация о модели
-- `POST /api/generate` — генерация текста
-- `POST /api/chat` — чат с моделью
-- `POST /api/embed` — эмбеддинги
+### Основные endpoints
 
-Документация API: https://github.com/ollama/ollama/blob/main/docs/api.md
+| Endpoint | Метод | Описание |
+|----------|-------|----------|
+| `/api/tags` | GET | Список локальных моделей |
+| `/api/show` | POST | Информация о модели |
+| `/api/generate` | POST | Генерация текста |
+| `/api/chat` | POST | Чат с моделью |
+| `/api/embed` | POST | Эмбеддинги |
+| `/api/create` | POST | Создание модели |
+| `/api/pull` | POST | Загрузка модели |
+| `/api/ps` | GET | Запущенные модели |
+| `/api/version` | GET | Версия Ollama |
+
+Документация API: [OLLAMA_API.md](./docs/OLLAMA_API.md)
+
+## Рекомендуемые модели
+
+| Модель | Назначение | Размер |
+|--------|------------|--------|
+| `qwen3-coder:30b` | Программирование | 30B |
+| `deepseek-r1:8b` | Рассуждения (thinking) | 8B |
+| `llama3.2` | Общего назначения | 3B |
+| `codellama` | Программирование | 7B+ |
+| `mistral` | Общего назначения | 7B |
 
 ## Разработка
 
@@ -150,8 +250,8 @@ npm run test:integration:sandbox:none
 ### Добавление нового инструмента
 
 1. Создайте файл в `packages/core/src/tools/`
-2. Реализуйте интерфейс `Tool`
-3. Зарегистрируйте в `tool-registry.ts`
+2. Реализуйте класс, наследующий `BaseDeclarativeTool`
+3. Экспортируйте из `index.ts`
 
 ## Лицензия
 
