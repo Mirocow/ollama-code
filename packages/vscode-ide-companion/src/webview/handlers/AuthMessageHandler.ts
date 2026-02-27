@@ -62,7 +62,7 @@ export class AuthMessageHandler extends BaseMessageHandler {
         console.log('[AuthMessageHandler] Using fallback login method');
         // Fallback: show message and use command
         vscode.window.showInformationMessage(
-          'Please wait while we connect to Qwen Code...',
+          'Please wait while we connect to Ollama Code...',
         );
         await vscode.commands.executeCommand('ollama-code.login');
       }

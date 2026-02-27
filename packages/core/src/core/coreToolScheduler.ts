@@ -734,7 +734,7 @@ export class CoreToolScheduler {
 
             if (excludedMatch) {
               // The tool exists but is excluded - return permission error directly
-              const permissionErrorMessage = `Qwen Code requires permission to use ${excludedMatch}, but that permission was declined.`;
+              const permissionErrorMessage = `Ollama Code requires permission to use ${excludedMatch}, but that permission was declined.`;
               return {
                 status: 'error',
                 request: reqInfo,
@@ -867,7 +867,7 @@ export class CoreToolScheduler {
               this.config.getInputFormat() !== InputFormat.STREAM_JSON;
 
             if (shouldAutoDeny) {
-              const errorMessage = `Qwen Code requires permission to use "${reqInfo.name}", but that permission was declined.`;
+              const errorMessage = `Ollama Code requires permission to use "${reqInfo.name}", but that permission was declined.`;
               this.setStatusInternal(
                 reqInfo.callId,
                 'error',

@@ -25,7 +25,7 @@ export function getSystemInfoFields(
 ): SystemInfoDisplayField[] {
   const fields: SystemInfoDisplayField[] = [];
 
-  addField(fields, t('Qwen Code'), formatCliVersion(info));
+  addField(fields, t('Ollama Code'), formatCliVersion(info));
   addField(fields, t('Runtime'), formatRuntime(info));
   addField(fields, t('IDE Client'), info.ideClient);
   addField(fields, t('OS'), formatOs(info));
