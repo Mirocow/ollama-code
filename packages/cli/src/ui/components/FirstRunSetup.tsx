@@ -45,6 +45,12 @@ export function FirstRunSetup({
 
   useKeypress(
     (key) => {
+      // Handle Ctrl+C to cancel
+      if (key.ctrl && key.name === 'c') {
+        onCancel();
+        return;
+      }
+
       if (key.name === 'escape') {
         onCancel();
         return;
@@ -289,7 +295,7 @@ export function FirstRunSetup({
         <Box marginTop={1}>
           <Text color={theme.text.secondary} dimColor>
             {t(
-              '←→: move cursor • Tab/↑↓: switch • Enter: confirm • Esc: cancel',
+              '←→: move cursor • Tab/↑↓: switch • Enter: confirm • Esc/Ctrl+C: cancel',
             )}
           </Text>
         </Box>
