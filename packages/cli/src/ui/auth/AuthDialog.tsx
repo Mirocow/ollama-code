@@ -12,7 +12,6 @@ import Link from 'ink-link';
 import { theme } from '../semantic-colors.js';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { RadioButtonSelect } from '../components/shared/RadioButtonSelect.js';
-import { OllamaConfigInput } from '../components/OllamaConfigInput.js';
 import { useUIState } from '../contexts/UIStateContext.js';
 import { useUIActions } from '../contexts/UIActionsContext.js';
 import { useConfig } from '../contexts/ConfigContext.js';
@@ -32,16 +31,12 @@ function parseDefaultAuthType(
   return null;
 }
 
-// View level for navigation
-type ViewLevel = 'main' | 'config-input';
-
 export function AuthDialog(): React.JSX.Element {
   const { pendingAuthType, authError } = useUIState();
-  const { handleAuthSelect: onAuthSelect, onAuthError } = useUIActions();
+  const { handleAuthSelect, onAuthError } = useUIActions();
   const config = useConfig();
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [viewLevel, setViewLevel] = useState<ViewLevel>('main');
 
   // Main authentication entries - only Ollama
   const mainItems = [
@@ -85,40 +80,25 @@ export function AuthDialog(): React.JSX.Element {
     setErrorMessage(null);
     onAuthError(null);
 
-    // Show config input for Ollama
-    setViewLevel('config-input');
-  };
+    // Get current config values
+    const baseUrl =
+      config.getContentGeneratorConfig()?.baseUrl ||
+      process.env['OLLAMA_BASE_URL'] ||
+      process.env['OLLAMA_HOST'] ||
+      'http://localhost:11434';
 
-  const handleConfigSubmit = async (ollamaConfig: {
-    baseUrl?: string;
-    apiKey?: string;
-    model?: string;
-  }) => {
-    setErrorMessage(null);
-    // Convert to OllamaCredentials format
-    await onAuthSelect(AuthType.USE_OLLAMA, {
-      apiKey: ollamaConfig.apiKey,
-      baseUrl: ollamaConfig.baseUrl,
-      model: ollamaConfig.model,
+    const model = config.getContentGeneratorConfig()?.model;
+
+    // Directly authenticate with Ollama - config was already set in FirstRunSetup
+    await handleAuthSelect(AuthType.USE_OLLAMA, {
+      baseUrl,
+      model,
     });
-  };
-
-  const handleGoBack = () => {
-    setErrorMessage(null);
-    onAuthError(null);
-    if (viewLevel === 'config-input') {
-      setViewLevel('main');
-    }
   };
 
   useKeypress(
     (key) => {
       if (key.name === 'escape') {
-        if (viewLevel === 'config-input') {
-          handleGoBack();
-          return;
-        }
-
         // For main view
         if (errorMessage) {
           return;
@@ -131,7 +111,7 @@ export function AuthDialog(): React.JSX.Element {
           );
           return;
         }
-        onAuthSelect(undefined);
+        handleAuthSelect(undefined);
       }
     },
     { isActive: true },
@@ -160,33 +140,7 @@ export function AuthDialog(): React.JSX.Element {
     </>
   );
 
-  // Render Ollama configuration input
-  const renderConfigInputView = () => (
-    <Box marginTop={1}>
-      <OllamaConfigInput
-        onSubmit={handleConfigSubmit}
-        onCancel={handleGoBack}
-        defaultBaseUrl={
-          config.getContentGeneratorConfig()?.baseUrl ||
-          process.env['OLLAMA_BASE_URL'] ||
-          process.env['OLLAMA_HOST'] ||
-          'http://localhost:11434'
-        }
-        defaultModel={config.getContentGeneratorConfig()?.model}
-      />
-    </Box>
-  );
-
-  const getViewTitle = () => {
-    switch (viewLevel) {
-      case 'main':
-        return t('Get started with Ollama');
-      case 'config-input':
-        return t('Ollama Configuration');
-      default:
-        return t('Get started with Ollama');
-    }
-  };
+  const getViewTitle = () => t('Get started with Ollama');
 
   return (
     <Box
@@ -198,8 +152,7 @@ export function AuthDialog(): React.JSX.Element {
     >
       <Text bold>{getViewTitle()}</Text>
 
-      {viewLevel === 'main' && renderMainView()}
-      {viewLevel === 'config-input' && renderConfigInputView()}
+      {renderMainView()}
 
       {(authError || errorMessage) && (
         <Box marginTop={1}>
@@ -207,27 +160,21 @@ export function AuthDialog(): React.JSX.Element {
         </Box>
       )}
 
-      {viewLevel === 'main' && (
-        <>
-          <Box marginTop={1}>
-            <Text color={theme.text.accent}>
-              {t('(Use Enter to Set Auth)')}
-            </Text>
-          </Box>
-          <Box marginTop={1}>
-            <Text color={theme.text.secondary}>
-              {t('Requirements: Ollama must be installed and running locally.')}
-            </Text>
-          </Box>
-          <Box marginTop={1}>
-            <Link url={OLLAMA_DOCUMENTATION_URL} fallback={false}>
-              <Text color={theme.text.link} underline>
-                {OLLAMA_DOCUMENTATION_URL}
-              </Text>
-            </Link>
-          </Box>
-        </>
-      )}
+      <Box marginTop={1}>
+        <Text color={theme.text.accent}>{t('(Use Enter to Set Auth)')}</Text>
+      </Box>
+      <Box marginTop={1}>
+        <Text color={theme.text.secondary}>
+          {t('Requirements: Ollama must be installed and running locally.')}
+        </Text>
+      </Box>
+      <Box marginTop={1}>
+        <Link url={OLLAMA_DOCUMENTATION_URL} fallback={false}>
+          <Text color={theme.text.link} underline>
+            {OLLAMA_DOCUMENTATION_URL}
+          </Text>
+        </Link>
+      </Box>
     </Box>
   );
 }
