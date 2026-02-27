@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as GenAiLib from '@google/genai';
+import { mcpToTool, type CallableTool } from '../types/content.js';
 import * as ClientLib from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import * as SdkClientStdioLib from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -25,9 +25,14 @@ import type { ToolRegistry } from './tool-registry.js';
 
 vi.mock('@modelcontextprotocol/sdk/client/stdio.js');
 vi.mock('@modelcontextprotocol/sdk/client/index.js');
-vi.mock('@google/genai');
+
 vi.mock('../mcp/oauth-provider.js');
 vi.mock('../mcp/oauth-token-storage.js');
+vi.mock('../types/content.js', () => ({
+  mcpToTool: vi.fn(),
+}));
+
+const mockMcpToTool = vi.mocked(mcpToTool);
 
 describe('mcp-client', () => {
   afterEach(() => {
@@ -50,7 +55,7 @@ describe('mcp-client', () => {
       vi.spyOn(SdkClientStdioLib, 'StdioClientTransport').mockReturnValue(
         {} as SdkClientStdioLib.StdioClientTransport,
       );
-      const mockedMcpToTool = vi.mocked(GenAiLib.mcpToTool).mockReturnValue({
+      mockMcpToTool.mockReturnValue({
         tool: () => ({
           functionDeclarations: [
             {
@@ -58,7 +63,7 @@ describe('mcp-client', () => {
             },
           ],
         }),
-      } as unknown as GenAiLib.CallableTool);
+      } as unknown as CallableTool);
       const mockedToolRegistry = {
         registerTool: vi.fn(),
       } as unknown as ToolRegistry;
@@ -74,7 +79,7 @@ describe('mcp-client', () => {
       );
       await client.connect();
       await client.discover({} as Config);
-      expect(mockedMcpToTool).toHaveBeenCalledOnce();
+      expect(mockMcpToTool).toHaveBeenCalledOnce();
     });
 
     it('should not skip tools even if a parameter is missing a type', async () => {
@@ -93,7 +98,7 @@ describe('mcp-client', () => {
       vi.spyOn(SdkClientStdioLib, 'StdioClientTransport').mockReturnValue(
         {} as SdkClientStdioLib.StdioClientTransport,
       );
-      vi.mocked(GenAiLib.mcpToTool).mockReturnValue({
+      mockMcpToTool.mockReturnValue({
         tool: () =>
           Promise.resolve({
             functionDeclarations: [
@@ -117,7 +122,7 @@ describe('mcp-client', () => {
               },
             ],
           }),
-      } as unknown as GenAiLib.CallableTool);
+      } as unknown as CallableTool);
       const mockedToolRegistry = {
         registerTool: vi.fn(),
       } as unknown as ToolRegistry;
@@ -153,9 +158,9 @@ describe('mcp-client', () => {
       vi.spyOn(SdkClientStdioLib, 'StdioClientTransport').mockReturnValue(
         {} as SdkClientStdioLib.StdioClientTransport,
       );
-      vi.mocked(GenAiLib.mcpToTool).mockReturnValue({
+      mockMcpToTool.mockReturnValue({
         tool: () => Promise.resolve({ functionDeclarations: [] }),
-      } as unknown as GenAiLib.CallableTool);
+      } as unknown as CallableTool);
       const client = new McpClient(
         'test-server',
         {
