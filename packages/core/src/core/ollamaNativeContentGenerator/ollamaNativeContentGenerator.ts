@@ -198,17 +198,22 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
           yield chunkQueue.shift()!;
         } else if (!done) {
           // Wait for next chunk
-          yield new Promise<GenerateContentResponse>((resolve) => {
-            resolveNext = (result) => {
-              if (result.done) {
-                resolve(null as unknown as GenerateContentResponse);
-              } else {
-                resolve(result.value);
-              }
-            };
-          });
+          const nextValue = await new Promise<GenerateContentResponse | null>(
+            (resolve) => {
+              resolveNext = (result) => {
+                if (result.done) {
+                  resolve(null);
+                } else {
+                  resolve(result.value);
+                }
+              };
+            },
+          );
           // Check for null (stream ended)
-          if (chunkQueue.length === 0 && done) break;
+          if (nextValue === null && chunkQueue.length === 0 && done) break;
+          if (nextValue !== null) {
+            yield nextValue;
+          }
         }
       }
 

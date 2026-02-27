@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  GenerateContentResponse} from '../../types/content.js';
+import type { GenerateContentResponse } from '../../types/content.js';
 import {
   type Content,
   type CountTokensParameters,
@@ -113,12 +112,7 @@ export class LoggingContentGenerator implements ContentGenerator {
       throw error;
     }
 
-    return this.loggingStreamWrapper(
-      stream,
-      startTime,
-      userPromptId,
-      model,
-    );
+    return this.loggingStreamWrapper(stream, startTime, userPromptId, model);
   }
 
   private async *loggingStreamWrapper(
@@ -132,6 +126,7 @@ export class LoggingContentGenerator implements ContentGenerator {
     let lastUsageMetadata: GenerateContentResponseUsageMetadata | undefined;
     try {
       for await (const response of stream) {
+        if (!response) continue; // Skip null responses
         responses.push(response);
         if (response.usageMetadata) {
           lastUsageMetadata = response.usageMetadata;
