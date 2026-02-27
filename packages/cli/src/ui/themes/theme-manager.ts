@@ -17,6 +17,9 @@ import { ShadesOfPurple } from './shades-of-purple.js';
 import { XCode } from './xcode.js';
 import { OllamaLight } from './ollama-light.js';
 import { OllamaDark } from './ollama-dark.js';
+import { TokyoNight } from './tokyo-night.js';
+import { Nord } from './nord.js';
+import { Catppuccin } from './catppuccin.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -58,6 +61,9 @@ class ThemeManager {
       OllamaLight,
       OllamaDark,
       ShadesOfPurple,
+      TokyoNight,
+      Nord,
+      Catppuccin,
       XCode,
       ANSI,
       ANSILight,
