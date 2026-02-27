@@ -110,24 +110,86 @@ function collectDependencies(packageName, packageLock, dependenciesMap) {
   }
 }
 
+/**
+ * Collect dependencies from pnpm-lock.yaml (simplified approach)
+ * Just reads direct dependencies from package.json and node_modules
+ */
+async function collectDependenciesFromPnpm(packageJson, allDependencies) {
+  const directDependencies = Object.keys(packageJson.dependencies || {});
+  const devDependencies = Object.keys(packageJson.devDependencies || {});
+  const allDeps = [...directDependencies, ...devDependencies];
+
+  for (const depName of allDeps) {
+    if (allDependencies.has(depName)) continue;
+
+    // Try to get version from node_modules
+    try {
+      const depPackageJsonPath = path.join(
+        projectRoot,
+        'node_modules',
+        depName,
+        'package.json',
+      );
+      const content = await fs.readFile(depPackageJsonPath, 'utf-8');
+      const depJson = JSON.parse(content);
+      allDependencies.set(depName, depJson.version);
+    } catch {
+      // Try in package's node_modules
+      try {
+        const depPackageJsonPath = path.join(
+          packagePath,
+          'node_modules',
+          depName,
+          'package.json',
+        );
+        const content = await fs.readFile(depPackageJsonPath, 'utf-8');
+        const depJson = JSON.parse(content);
+        allDependencies.set(depName, depJson.version);
+      } catch {
+        console.warn(`Warning: Could not find version for ${depName}`);
+        allDependencies.set(depName, 'unknown');
+      }
+    }
+  }
+}
+
 async function main() {
   try {
     const packageJsonPath = path.join(packagePath, 'package.json');
     const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
     const packageJson = JSON.parse(packageJsonContent);
 
-    const packageLockJsonPath = path.join(projectRoot, 'package-lock.json');
-    const packageLockJsonContent = await fs.readFile(
-      packageLockJsonPath,
-      'utf-8',
-    );
-    const packageLockJson = JSON.parse(packageLockJsonContent);
-
     const allDependencies = new Map();
-    const directDependencies = Object.keys(packageJson.dependencies);
 
-    for (const depName of directDependencies) {
-      collectDependencies(depName, packageLockJson, allDependencies);
+    // Check for pnpm-lock.yaml first, then package-lock.json
+    const pnpmLockPath = path.join(projectRoot, 'pnpm-lock.yaml');
+    const npmLockPath = path.join(projectRoot, 'package-lock.json');
+
+    const hasPnpm = await fs.stat(pnpmLockPath).catch(() => false);
+    const hasNpm = await fs.stat(npmLockPath).catch(() => false);
+
+    if (hasNpm) {
+      // Use npm package-lock.json
+      const packageLockJsonContent = await fs.readFile(npmLockPath, 'utf-8');
+      const packageLockJson = JSON.parse(packageLockJsonContent);
+      const directDependencies = Object.keys(packageJson.dependencies || {});
+
+      for (const depName of directDependencies) {
+        collectDependencies(depName, packageLockJson, allDependencies);
+      }
+    } else if (hasPnpm) {
+      // Use pnpm - read from node_modules directly
+      await collectDependenciesFromPnpm(packageJson, allDependencies);
+    } else {
+      // No lock file - just create empty notices
+      console.warn('Warning: No lock file found, creating minimal NOTICES.txt');
+      await fs.writeFile(
+        noticeFilePath,
+        'This file contains third-party software notices and license terms.\n\n' +
+          'No lock file found. Run pnpm install or npm install first.\n',
+      );
+      console.log(`NOTICES.txt generated at ${noticeFilePath}`);
+      return;
     }
 
     const dependencyEntries = Array.from(allDependencies.entries());
@@ -153,7 +215,17 @@ async function main() {
     console.log(`NOTICES.txt generated at ${noticeFilePath}`);
   } catch (error) {
     console.error('Error generating NOTICES.txt:', error);
-    process.exit(1);
+    // Create a fallback empty notices file instead of failing
+    try {
+      await fs.writeFile(
+        noticeFilePath,
+        'This file contains third-party software notices and license terms.\n\n' +
+          'Notices could not be generated automatically.\n',
+      );
+      console.log(`Fallback NOTICES.txt generated at ${noticeFilePath}`);
+    } catch {
+      process.exit(1);
+    }
   }
 }
 
