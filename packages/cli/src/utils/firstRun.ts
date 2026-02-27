@@ -17,23 +17,23 @@ import { Storage } from '@ollama-code/ollama-code-core';
  */
 export function isFirstRun(): boolean {
   const globalOllamaDir = Storage.getGlobalOllamaDir();
-  
+
   // Check if directory exists
   if (!fs.existsSync(globalOllamaDir)) {
     return true;
   }
-  
+
   // Check if settings.json exists
   const settingsPath = Storage.getGlobalSettingsPath();
   if (!fs.existsSync(settingsPath)) {
     return true;
   }
-  
+
   // Check if authType is configured
   try {
     const content = fs.readFileSync(settingsPath, 'utf-8');
     const settings = JSON.parse(content) as Record<string, unknown>;
-    
+
     // Check for security.auth.selectedType
     const security = settings['security'];
     if (typeof security === 'object' && security !== null) {
@@ -45,7 +45,7 @@ export function isFirstRun(): boolean {
         }
       }
     }
-    
+
     return true; // Auth is not configured
   } catch {
     // If parsing fails, consider it first run
@@ -97,14 +97,17 @@ export function saveInitialConfig(baseUrl: string, model: string): void {
   if (!settings['security']) {
     settings['security'] = {};
   }
-  if (typeof settings['security'] === 'object' && settings['security'] !== null) {
+  if (
+    typeof settings['security'] === 'object' &&
+    settings['security'] !== null
+  ) {
     if (!(settings['security'] as Record<string, unknown>)['auth']) {
       (settings['security'] as Record<string, unknown>)['auth'] = {};
     }
     const auth = (settings['security'] as Record<string, unknown>)['auth'];
     if (typeof auth === 'object' && auth !== null) {
       (auth as Record<string, unknown>)['baseUrl'] = baseUrl;
-      (auth as Record<string, unknown>)['selectedType'] = 'USE_OLLAMA';
+      (auth as Record<string, unknown>)['selectedType'] = 'ollama';
     }
   }
 

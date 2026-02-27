@@ -216,9 +216,15 @@ export async function startInteractiveUI(
  * Run the first-run setup wizard
  * Returns true if setup was completed, false if cancelled
  */
-async function runFirstRunSetup(): Promise<{ baseUrl: string; model: string } | null> {
+async function runFirstRunSetup(): Promise<{
+  baseUrl: string;
+  model: string;
+} | null> {
   return new Promise((resolve) => {
-    const handleSetupComplete = async (config: { baseUrl: string; model: string }) => {
+    const handleSetupComplete = async (config: {
+      baseUrl: string;
+      model: string;
+    }) => {
       // Save configuration
       saveInitialConfig(config.baseUrl, config.model);
       // Set environment variables
@@ -227,7 +233,9 @@ async function runFirstRunSetup(): Promise<{ baseUrl: string; model: string } | 
     };
 
     const handleCancel = () => {
-      writeStderrLine('Setup cancelled. Please run ollama-code again to configure.');
+      writeStderrLine(
+        'Setup cancelled. Please run ollama-code again to configure.',
+      );
       process.exit(0);
     };
 
@@ -250,14 +258,25 @@ export async function main() {
     process.env['OLLAMA_BASE_URL'] ||
     process.env['OLLAMA_MODEL'];
 
-  if (isFirstRun() && !skipFirstRunSetup) {
+  // Debug output for first run detection
+  const firstRunResult = isFirstRun();
+
+  if (firstRunResult && !skipFirstRunSetup) {
     debugLogger.debug('First run detected, showing setup wizard');
     const setupResult = await runFirstRunSetup();
     if (!setupResult) {
       // User cancelled
       return;
     }
-    debugLogger.debug(`First run setup completed: ${setupResult.baseUrl}, ${setupResult.model}`);
+    debugLogger.debug(
+      `First run setup completed: ${setupResult.baseUrl}, ${setupResult.model}`,
+    );
+  } else if (firstRunResult && !process.stdin.isTTY) {
+    // Non-interactive first run: create default settings
+    const defaultBaseUrl = 'http://localhost:11434';
+    const defaultModel = 'qwen2.5-coder';
+    saveInitialConfig(defaultBaseUrl, defaultModel);
+    setConfigEnv(defaultBaseUrl, defaultModel);
   }
 
   const settings = loadSettings();
