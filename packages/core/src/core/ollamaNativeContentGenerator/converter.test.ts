@@ -11,7 +11,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { OllamaContentConverter } from './converter.js';
-import { FinishReason, Type } from '@google/genai';
+import { FinishReason, Type } from '../../types/content.js';
 import type { OllamaChatResponse } from '../ollamaNativeClient.js';
 
 describe('OllamaContentConverter', () => {

@@ -13,7 +13,7 @@ import {
   afterEach,
   type Mock,
 } from 'vitest';
-import type { Content } from '@google/genai';
+import type { Content } from '../types/content.js';
 import {
   getEnvironmentContext,
   getDirectoryContextString,
