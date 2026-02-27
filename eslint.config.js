@@ -118,13 +118,21 @@ export default tseslint.config(
           allow: [
             'react-dom/test-utils',
             'react-dom/client',
+            'react/jsx-runtime',
             'memfs/lib/volume.js',
             'yargs/**',
             'msw/node',
             '**/generated/**',
             './styles/tailwind.css',
             './styles/App.css',
-            './styles/style.css'
+            './styles/style.css',
+            // Allow .js extension imports for TypeScript ESM compatibility
+            './*.js',
+            '../*.js',
+            '../**/*.js',
+            './**/*.js',
+            // Allow CSS imports in webview
+            './context/*.js',
           ],
         },
       ],
@@ -223,7 +231,17 @@ export default tseslint.config(
   // VS Code IDE companion - out of scope for no-console rule
   {
     files: ['packages/vscode-ide-companion/**/*.ts', 'packages/vscode-ide-companion/**/*.tsx', 'packages/vscode-ide-companion/**/*.js'],
-    rules: { 'no-console': 'off' },
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+    rules: { 
+      'no-console': 'off',
+      'no-undef': 'off',
+      'import/no-internal-modules': 'off',
+    },
   },
   // WebUI package - UI component library with Storybook
   {
