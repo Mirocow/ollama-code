@@ -22,7 +22,7 @@ interface FirstRunSetupProps {
 type InputField = 'baseUrl' | 'model';
 
 const DEFAULT_BASE_URL = 'http://localhost:11434';
-const DEFAULT_MODEL = 'llama3.2';
+const DEFAULT_MODEL = 'qwen2.5-coder';
 
 export function FirstRunSetup({
   onSubmit,
