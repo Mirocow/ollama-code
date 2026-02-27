@@ -6,7 +6,7 @@
 
 /**
  * Type definitions for Ollama Code.
- * These types are compatible with Ollama API and replace @google/genai types.
+ * These types are compatible with Ollama API.
  */
 
 // Re-export Ollama API types from ollamaNativeClient

@@ -70,7 +70,7 @@ export function resolvePathFromEnv(envVar?: string): {
  * Processes a custom system instruction by appending user memory if available.
  * This function should only be used when there is actually a custom instruction.
  *
- * @param customInstruction - Custom system instruction (ContentUnion from @google/genai)
+ * @param customInstruction - Custom system instruction (ContentUnion)
  * @param userMemory - User memory to append
  * @returns Processed custom system instruction with user memory appended
  */
