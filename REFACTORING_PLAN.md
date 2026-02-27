@@ -1,120 +1,70 @@
-# Рефакторинг ollama-code для работы только с Ollama API
+# Рефакторинг ollama-code для работы с Ollama API
 
-## Статус: ЗАВЕРШЕН ✅
+## Статус: ЗАВЕРШЕНО ✅
 
-Рефакторинг успешно завершен. Проект теперь работает **только** с Ollama API.
+## Цель
+Рефакторинг проекта для работы **только** с Ollama API.
 
----
+## Поддерживаемые Ollama API методы
 
-## Выполненные изменения
+### Основные методы (реализованы)
 
-### Удаленные зависимости
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| `chat()` | POST /api/chat | Чат с моделью |
+| `generate()` | POST /api/generate | Генерация текста |
+| `listModels()` | GET /api/tags | Список локальных моделей |
+| `showModel()` | POST /api/show | Информация о модели |
 
-- ~~`@google/genai`~~ - заменено на локальные типы в `packages/core/src/types/content.ts`
-- ~~`openai` SDK~~ - не используется
-- ~~`@anthropic-ai/sdk`~~ - не используется
+### Дополнительные методы (реализованы)
 
-### Реализованные Ollama API методы
-
-Все 4 основных метода API реализованы в `OllamaNativeClient`:
-
-```bash
-# Генерация текста (POST /api/generate)
-curl http://localhost:11434/api/generate -d '{"model": "llama3.2", "prompt": "Why is the sky blue?"}'
-
-# Чат (POST /api/chat)
-curl http://localhost:11434/api/chat -d '{"model": "llama3.2", "messages": []}'
-
-# Список моделей (GET /api/tags)
-curl http://localhost:11434/api/tags
-
-# Информация о модели (POST /api/show)
-curl http://localhost:11434/api/show -d '{"model": "llava"}'
-```
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| `getVersion()` | GET /api/version | Версия Ollama |
+| `listRunningModels()` | GET /api/ps | Запущенные модели |
+| `embed()` | POST /api/embed | Эмбеддинги |
+| `embeddings()` | POST /api/embeddings | Эмбеддинги (legacy) |
+| `pullModel()` | POST /api/pull | Загрузка модели |
+| `pushModel()` | POST /api/push | Отправка модели |
+| `copyModel()` | POST /api/copy | Копирование модели |
+| `deleteModel()` | DELETE /api/delete | Удаление модели |
 
 ---
 
-## Ключевые файлы
+## Архитектура
 
-### API Клиент
+### OllamaNativeClient
+Расположение: `packages/core/src/core/ollamaNativeClient.ts`
 
-- `packages/core/src/core/ollamaNativeClient.ts` - нативный Ollama API клиент
+Нативный клиент для работы с Ollama REST API:
+- Поддержка streaming и non-streaming режимов
+- Поддержка tools (function calling)
+- Обработка ошибок
+- Автоматический парсинг NDJSON
 
-### Генератор контента
+### OllamaNativeContentGenerator
+Расположение: `packages/core/src/core/ollamaNativeContentGenerator/`
 
-- `packages/core/src/core/ollamaNativeContentGenerator/ollamaNativeContentGenerator.ts` - генератор
-- `packages/core/src/core/ollamaNativeContentGenerator/converter.ts` - конвертер типов
+Генератор контента, использующий нативный Ollama API:
+- Конвертация форматов (GenAI ↔ Ollama)
+- Поддержка стриминга
+- Поддержка инструментов
+- Поддержка изображений (multimodal)
 
-### Типы
+### Типы данных
+Расположение: `packages/core/src/types/content.ts`
 
-- `packages/core/src/types/content.ts` - типы контента (замена @google/genai)
-- `packages/core/src/ollama-types/index.ts` - экспорт типов Ollama
-
-### Конфигурация
-
-- `packages/core/src/core/contentGenerator.ts` - `AuthType.USE_OLLAMA` - единственный тип
-
----
-
-## Поддерживаемые функции
-
-### ✅ Генерация текста (/api/generate)
-
-- Streaming и non-streaming режимы
-- Опции модели (temperature, top_p, top_k, и т.д.)
-- Поддержка изображений (base64)
-
-### ✅ Чат (/api/chat)
-
-- Multi-turn диалоги
-- System prompts
-- Streaming и non-streaming режимы
-- Инструменты (tools/function calling)
-
-### ✅ Управление моделями
-
-- Список локальных моделей (/api/tags)
-- Информация о модели (/api/show)
-- Список запущенных моделей (/api/ps)
-- Pull/Push/Delete модели
-
-### ✅ Инструменты (Tools)
-
-- Определение инструментов (function declarations)
-- Вызов инструментов (tool calls)
-- Обработка ответов инструментов (function responses)
-
----
-
-## Тестирование
-
-### Unit тесты
-
-```bash
-cd packages/core
-npx vitest run src/core/ollamaNativeClient.test.ts
-npx vitest run src/core/ollamaNativeContentGenerator/converter.test.ts
-```
-
-### Интеграционные тесты (требуется запущенный Ollama)
-
-```bash
-cd packages/core
-OLLAMA_URL=http://localhost:11434 npx vitest run --reporter=verbose
-```
-
-### Ручное тестирование
-
-```bash
-cd packages/core
-npm run test:ollama
-```
+Нативные типы для Ollama Code:
+- `Content`, `Part`, `Role` - типы сообщений
+- `FunctionDeclaration`, `FunctionCall`, `FunctionResponse` - типы функций
+- `Tool`, `ToolConfig` - типы инструментов
+- `GenerateContentParameters`, `GenerateContentResponse` - типы генерации
 
 ---
 
 ## Использование
 
-### Пример кода
+### Базовый пример
 
 ```typescript
 import { createOllamaNativeClient } from '@ollama-code/ollama-code-core';
@@ -125,30 +75,91 @@ const client = createOllamaNativeClient({
 
 // Список моделей
 const { models } = await client.listModels();
+console.log('Available models:', models.map(m => m.name));
 
-// Чат с инструментами
+// Информация о модели
+const info = await client.showModel('llama3.2');
+console.log('Model details:', info.details);
+
+// Генерация текста
+const response = await client.generate({
+  model: 'llama3.2',
+  prompt: 'Why is the sky blue?',
+  stream: false,
+});
+console.log(response.response);
+
+// Чат
+const chatResponse = await client.chat({
+  model: 'llama3.2',
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'Hello!' },
+  ],
+  stream: false,
+});
+console.log(chatResponse.message.content);
+```
+
+### Стриминг
+
+```typescript
+// Генерация со стримингом
+await client.generate(
+  {
+    model: 'llama3.2',
+    prompt: 'Tell me a story',
+  },
+  (chunk) => {
+    process.stdout.write(chunk.response);
+  }
+);
+
+// Чат со стримингом
+await client.chat(
+  {
+    model: 'llama3.2',
+    messages: [{ role: 'user', content: 'Hello!' }],
+  },
+  (chunk) => {
+    if (chunk.message?.content) {
+      process.stdout.write(chunk.message.content);
+    }
+  }
+);
+```
+
+### Function Calling (Tools)
+
+```typescript
 const response = await client.chat({
   model: 'llama3.2',
-  messages: [{ role: 'user', content: 'What is the weather in Tokyo?' }],
+  messages: [
+    { role: 'user', content: 'What is the weather in Tokyo?' },
+  ],
   tools: [
     {
       type: 'function',
       function: {
         name: 'get_weather',
-        description: 'Get the current weather',
+        description: 'Get the current weather for a location',
         parameters: {
           type: 'object',
           properties: {
-            location: { type: 'string' },
+            location: {
+              type: 'string',
+              description: 'The city name',
+            },
           },
           required: ['location'],
         },
       },
     },
   ],
+  stream: false,
 });
 
-// Обработка tool calls
+// Проверка на tool calls
 if (response.message.tool_calls) {
   for (const toolCall of response.message.tool_calls) {
     console.log('Tool:', toolCall.function.name);
@@ -159,24 +170,52 @@ if (response.message.tool_calls) {
 
 ---
 
-## Завершенные этапы рефакторинга
+## Тестирование
 
-1. **Этап 1** ✅ - Создание типов Ollama API
-2. **Этап 2** ✅ - Создание OllamaNativeContentGenerator
-3. **Этап 3** ✅ - Замена типов @google/genai на локальные
-4. **Этап 4** ✅ - Удаление OpenAI SDK зависимостей
-5. **Этап 5** ✅ - Обновление OllamaNativeClient
-6. **Этап 6** ✅ - Упрощение AuthType до USE_OLLAMA
-7. **Этап 7** ✅ - Обновление тестов и документации
+### Запуск тестов
+
+```bash
+# Unit тесты
+cd packages/core
+npm test
+
+# Интеграционные тесты (требуется запущенный Ollama)
+OLLAMA_TEST_MODEL=llama3.2 npm run test:ollama
+
+# Скрипт тестирования API
+bash scripts/test-ollama-api.sh llama3.2
+```
 
 ---
 
-## История коммитов
+## Конфигурация
 
-1. `feat(types): add Ollama API types to replace @google/genai`
-2. `feat(core): add OllamaContentGenerator using native API`
-3. `refactor: replace @google/genai imports with local types`
-4. `refactor: remove OpenAI SDK dependency`
-5. `refactor: simplify AuthType to only support Ollama`
-6. `test: update tests for Ollama API`
-7. `docs: update documentation for Ollama-only usage`
+### Переменные окружения
+
+```bash
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_TIMEOUT=300000
+```
+
+### Файл настроек (~/.ollama-code/settings.json)
+
+```json
+{
+  "model": "llama3.2",
+  "baseUrl": "http://localhost:11434"
+}
+```
+
+---
+
+## Выполненные работы
+
+1. ✅ Удалены зависимости от `@google/genai`
+2. ✅ Созданы нативные типы данных
+3. ✅ Реализован OllamaNativeClient
+4. ✅ Реализован OllamaNativeContentGenerator
+5. ✅ Добавлена поддержка стриминга
+6. ✅ Добавлена поддержка function calling (tools)
+7. ✅ Добавлена поддержка multimodal (изображения)
+8. ✅ Обновлены комментарии и документация
+9. ✅ Написаны unit и integration тесты
