@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SkillTool, type SkillParams } from './skill.js';
-import type { PartListUnion } from '@google/genai';
+import type { PartListUnion } from '../types/content.js';
 import type { ToolResultDisplay } from './tools.js';
 import type { Config } from '../config/config.js';
 import { SkillManager } from '../skills/skill-manager.js';
