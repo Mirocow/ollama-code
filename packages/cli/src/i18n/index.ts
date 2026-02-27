@@ -122,23 +122,6 @@ async function loadTranslationsAsync(
             throw new Error('Module loaded but result is empty or invalid');
           }
         } catch {
-          // For builtin locales, try alternative import method (relative path)
-          if (!isUser) {
-            try {
-              const module = await import(`./locales/${lang}.js`);
-              const result = module.default || module;
-              if (
-                result &&
-                typeof result === 'object' &&
-                Object.keys(result).length > 0
-              ) {
-                translationCache[lang] = result;
-                return result;
-              }
-            } catch {
-              // Continue to next directory
-            }
-          }
           // If import failed, continue to next directory
           continue;
         }
