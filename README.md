@@ -205,8 +205,7 @@ ollama-code/
 │   ├── core/           # Ядро: Ollama клиент, инструменты, типы
 │   ├── cli/            # CLI интерфейс на базе Ink
 │   ├── webui/          # Веб-компоненты для UI
-│   ├── sdk-typescript/ # SDK для программного использования
-│   └── vscode-ide-companion/  # VSCode расширение
+│   └── sdk-typescript/ # SDK для программного использования
 ├── scripts/            # Скрипты сборки и запуска
 ├── integration-tests/  # Интеграционные тесты
 └── docs/              # Документация

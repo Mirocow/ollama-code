@@ -37,32 +37,21 @@ execSync('npm run generate', { stdio: 'inherit', cwd: root });
 // 1. test-utils (no internal dependencies)
 // 2. core (foundation package)
 // 3. cli (depends on core, test-utils)
-// 4. webui (shared UI components - used by vscode companion)
+// 4. webui (shared UI components)
 // 5. sdk (no internal dependencies)
-// 6. vscode-ide-companion (depends on webui)
 const buildOrder = [
   'packages/test-utils',
   'packages/core',
   'packages/cli',
   'packages/webui',
   'packages/sdk-typescript',
-  'packages/vscode-ide-companion',
 ];
 
 for (const workspace of buildOrder) {
-  try {
-    execSync(`npm run build --workspace=${workspace}`, {
-      stdio: 'inherit',
-      cwd: root,
-    });
-  } catch (error) {
-    // Skip vscode-ide-companion if it fails (optional package)
-    if (workspace === 'packages/vscode-ide-companion') {
-      console.log('Skipping vscode-ide-companion due to build error (optional package)');
-      continue;
-    }
-    throw error;
-  }
+  execSync(`npm run build --workspace=${workspace}`, {
+    stdio: 'inherit',
+    cwd: root,
+  });
 }
 
 // also build container image if sandboxing is enabled
