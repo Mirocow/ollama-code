@@ -62,13 +62,13 @@ export const AUTH_ENV_MAPPINGS = {
 } as const satisfies Record<AuthType, AuthEnvMapping>;
 
 export const DEFAULT_MODELS = {
-  ollama: 'qwen2.5-coder',
+  ollama: 'llama3.2',
 } as Partial<Record<AuthType, string>>;
 
 /**
  * Default Ollama model
  */
-export const DEFAULT_OLLAMA_MODEL = 'qwen2.5-coder';
+export const DEFAULT_OLLAMA_MODEL = 'llama3.2';
 
 /**
  * Default Ollama embedding model
@@ -127,30 +127,6 @@ export const OLLAMA_VISION_MODELS: ModelConfig[] = [
  * Popular Ollama models for local LLM inference.
  */
 export const OLLAMA_MODELS: ModelConfig[] = [
-  {
-    id: 'qwen3-coder:30b',
-    name: 'Qwen 3 Coder 30B',
-    description: 'Qwen 3 Coder 30B - latest coding model from Alibaba',
-    capabilities: { vision: false },
-  },
-  {
-    id: 'qwen3-coder',
-    name: 'Qwen 3 Coder',
-    description: 'Qwen 3 Coder - latest coding model from Alibaba',
-    capabilities: { vision: false },
-  },
-  {
-    id: 'qwen2.5-coder',
-    name: 'Qwen 2.5 Coder',
-    description: 'Qwen 2.5 Coder - excellent for coding tasks',
-    capabilities: { vision: false },
-  },
-  {
-    id: 'qwen2.5',
-    name: 'Qwen 2.5',
-    description: 'Qwen 2.5 - versatile model from Alibaba',
-    capabilities: { vision: false },
-  },
   {
     id: 'llama3.2',
     name: 'Llama 3.2',
