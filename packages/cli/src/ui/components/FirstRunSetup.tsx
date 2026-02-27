@@ -142,40 +142,35 @@ export function FirstRunSetup({
   };
 
   const renderField = (
-    field: InputField,
+    _field: InputField,
     label: string,
     value: string,
     isCurrent: boolean,
     placeholder: string,
-    helpText: string,
   ) => (
     <Box flexDirection="column" marginY={1}>
-      <Box>
+      <Box marginBottom={1}>
         <Text
           bold={isCurrent}
           color={isCurrent ? theme.text.accent : theme.text.secondary}
         >
-          {isCurrent ? '❯ ' : '  '}
           {label}
         </Text>
       </Box>
-      <Box paddingLeft={3}>
+      <Box
+        borderStyle="round"
+        borderColor={isCurrent ? theme.text.accent : theme.border.default}
+        paddingX={1}
+      >
         <Text color={isCurrent ? theme.text.primary : theme.text.secondary}>
           {isCurrent ? `${value}█` : value || placeholder}
         </Text>
       </Box>
-      {isCurrent && (
-        <Box paddingLeft={3}>
-          <Text color={theme.text.secondary} dimColor>
-            {helpText}
-          </Text>
-        </Box>
-      )}
     </Box>
   );
 
   return (
-    <Box flexDirection="column" padding={1}>
+    <Box flexDirection="column" paddingX={2} paddingY={1}>
       <Box marginBottom={1}>
         <Text bold color={theme.text.accent}>
           {t('Welcome to Ollama Code!')}
@@ -205,7 +200,6 @@ export function FirstRunSetup({
           currentField === 'baseUrl' ? currentValue : baseUrl,
           currentField === 'baseUrl',
           DEFAULT_BASE_URL,
-          t('Press Enter to confirm, Tab to switch field'),
         )}
 
         {renderField(
@@ -214,7 +208,6 @@ export function FirstRunSetup({
           currentField === 'model' ? currentValue : model,
           currentField === 'model',
           DEFAULT_MODEL,
-          t('Press Enter to save configuration'),
         )}
 
         {error && (
