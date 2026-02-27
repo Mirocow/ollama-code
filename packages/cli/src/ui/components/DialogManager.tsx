@@ -15,7 +15,6 @@ import { SettingInputPrompt } from './SettingInputPrompt.js';
 import { PluginChoicePrompt } from './PluginChoicePrompt.js';
 import { ThemeDialog } from './ThemeDialog.js';
 import { SettingsDialog } from './SettingsDialog.js';
-import { AuthDialog } from '../auth/AuthDialog.js';
 import { EditorSettingsDialog } from './EditorSettingsDialog.js';
 import { PermissionsModifyTrustDialog } from './PermissionsModifyTrustDialog.js';
 import { ModelDialog } from './ModelDialog.js';
@@ -229,16 +228,9 @@ export const DialogManager = ({
     return <ModelSwitchDialog onSelect={uiActions.handleVisionSwitchSelect} />;
   }
 
-  if (uiState.isAuthDialogOpen || uiState.authError) {
-    return (
-      <Box flexDirection="column">
-        <AuthDialog />
-      </Box>
-    );
-  }
-
+  // AuthDialog removed - authentication is handled by FirstRunSetup
+  // Show connecting message only when authenticating
   if (uiState.isAuthenticating) {
-    // Show authenticating message for Ollama
     return (
       <Box flexDirection="column" padding={1}>
         <Text color={theme.text.accent}>{t('Connecting to Ollama...')}</Text>
