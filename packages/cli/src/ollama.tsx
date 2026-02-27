@@ -240,7 +240,15 @@ async function runFirstRunSetup(): Promise<{
     };
 
     const SetupWrapper = () => (
-      <FirstRunSetup onSubmit={handleSetupComplete} onCancel={handleCancel} />
+      <KeypressProvider
+        kittyProtocolEnabled={false}
+        pasteWorkaround={
+          process.platform === 'win32' ||
+          parseInt(process.versions.node.split('.')[0], 10) < 20
+        }
+      >
+        <FirstRunSetup onSubmit={handleSetupComplete} onCancel={handleCancel} />
+      </KeypressProvider>
     );
 
     render(<SetupWrapper />, { exitOnCtrlC: true });
