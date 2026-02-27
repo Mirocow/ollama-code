@@ -60,6 +60,12 @@ import { computeWindowTitle } from './utils/windowTitle.js';
 import { validateNonInteractiveAuth } from './validateNonInterActiveAuth.js';
 import { showResumeSessionPicker } from './ui/components/StandaloneSessionPicker.js';
 import { initializeLlmOutputLanguage } from './utils/languageUtils.js';
+import {
+  isFirstRun,
+  saveInitialConfig,
+  setConfigEnv,
+} from './utils/firstRun.js';
+import { FirstRunSetup } from './ui/components/FirstRunSetup.js';
 
 const debugLogger = createDebugLogger('STARTUP');
 
@@ -206,8 +212,54 @@ export async function startInteractiveUI(
   registerCleanup(() => instance.unmount());
 }
 
+/**
+ * Run the first-run setup wizard
+ * Returns true if setup was completed, false if cancelled
+ */
+async function runFirstRunSetup(): Promise<{ baseUrl: string; model: string } | null> {
+  return new Promise((resolve) => {
+    const handleSetupComplete = async (config: { baseUrl: string; model: string }) => {
+      // Save configuration
+      saveInitialConfig(config.baseUrl, config.model);
+      // Set environment variables
+      setConfigEnv(config.baseUrl, config.model);
+      resolve(config);
+    };
+
+    const handleCancel = () => {
+      writeStderrLine('Setup cancelled. Please run ollama-code again to configure.');
+      process.exit(0);
+    };
+
+    const SetupWrapper = () => (
+      <FirstRunSetup onSubmit={handleSetupComplete} onCancel={handleCancel} />
+    );
+
+    render(<SetupWrapper />, { exitOnCtrlC: true });
+  });
+}
+
 export async function main() {
   setupUnhandledRejectionHandler();
+
+  // Check for first run before loading settings
+  // Skip first-run setup if not in interactive mode (TTY) or if explicitly configured via env
+  const skipFirstRunSetup =
+    !process.stdin.isTTY ||
+    process.env['OLLAMA_HOST'] ||
+    process.env['OLLAMA_BASE_URL'] ||
+    process.env['OLLAMA_MODEL'];
+
+  if (isFirstRun() && !skipFirstRunSetup) {
+    debugLogger.debug('First run detected, showing setup wizard');
+    const setupResult = await runFirstRunSetup();
+    if (!setupResult) {
+      // User cancelled
+      return;
+    }
+    debugLogger.debug(`First run setup completed: ${setupResult.baseUrl}, ${setupResult.model}`);
+  }
+
   const settings = loadSettings();
   await cleanupCheckpoints();
 
