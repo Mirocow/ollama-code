@@ -1279,7 +1279,7 @@ export const AppContainer = (props: AppContainerProps) => {
 
   useKeypress(handleGlobalKeypress, { isActive: true });
 
-  // Update terminal title with Qwen Code status and thoughts
+  // Update terminal title with Ollama Code status and thoughts
   useEffect(() => {
     // Respect both showStatusInTitle and hideWindowTitle settings
     if (
@@ -1306,7 +1306,7 @@ export const AppContainer = (props: AppContainerProps) => {
       lastTitleRef.current = paddedTitle;
       stdout.write(`\x1b]2;${paddedTitle}\x07`);
     }
-    // Note: We don't need to reset the window title on exit because Qwen Code is already doing that elsewhere
+    // Note: We don't need to reset the window title on exit because Ollama Code is already doing that elsewhere
   }, [
     streamingState,
     thought,

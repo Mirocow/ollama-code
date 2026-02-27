@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 /**
- * Loading messages from Qwen Code CLI
+ * Loading messages from Ollama Code CLI
  * Source: packages/cli/src/ui/hooks/usePhraseCycler.ts
  */
 export declare const WITTY_LOADING_PHRASES: string[];

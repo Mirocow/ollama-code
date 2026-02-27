@@ -29,7 +29,7 @@ export declare class PanelManager {
      */
     createPanel(): Promise<boolean>;
     /**
-     * Find the group and view column where the existing Qwen Code webview is located
+     * Find the group and view column where the existing Ollama Code webview is located
      * @returns The found group and view column, or undefined if not found
      */
     private findExistingQwenCodeGroup;
