@@ -9,7 +9,7 @@ import fs from 'node:fs/promises';
 import * as nodeFs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import type { PartListUnion } from '@google/genai';
+import type { PartListUnion } from '../types/content.js';
 import { readManyFiles } from './readManyFiles.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 import type { Config } from '../config/config.js';
