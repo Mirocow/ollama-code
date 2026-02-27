@@ -111,6 +111,7 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
 
   /**
    * Generate content stream using native Ollama API
+   * Yields chunks as they arrive from the server for true streaming behavior.
    */
   async generateContentStream(
     request: GenerateContentParameters,
@@ -135,24 +136,85 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
     const converter = this.converter;
     const handleError = this.handleError.bind(this);
 
-    // Create async generator
+    // Create async generator with queue-based streaming
     return (async function* (): AsyncGenerator<GenerateContentResponse> {
-      try {
-        // Use streaming API
-        let finalResponse: OllamaChatResponse | null = null;
+      // Queue for streaming chunks
+      const chunkQueue: GenerateContentResponse[] = [];
+      let resolveNext:
+        | ((value: IteratorResult<GenerateContentResponse>) => void)
+        | null = null;
+      let error: Error | null = null;
+      let done = false;
 
-        await client.chat(ollamaRequest, (chunk: OllamaChatResponse) => {
-          // Collect final response
-          if (chunk.done) {
-            finalResponse = chunk;
+      // Accumulate tool calls across chunks
+      const accumulatedToolCalls = new Map<
+        number,
+        { name: string; args: string }
+      >();
+
+      // Process streaming response
+      const streamPromise = client
+        .chat(ollamaRequest, (chunk: OllamaChatResponse) => {
+          // Convert each chunk to GenAI format and queue it
+          const genaiResponse = converter.convertOllamaChunkToGenAI(
+            chunk,
+            accumulatedToolCalls,
+          );
+          chunkQueue.push(genaiResponse);
+
+          // Resolve pending promise if any
+          if (resolveNext) {
+            const nextChunk = chunkQueue.shift()!;
+            resolveNext({ value: nextChunk, done: false });
+            resolveNext = null;
+          }
+        })
+        .then(() => {
+          done = true;
+          // Resolve any pending promise
+          if (resolveNext) {
+            resolveNext({
+              value: undefined as unknown as GenerateContentResponse,
+              done: true,
+            });
+            resolveNext = null;
+          }
+        })
+        .catch((err) => {
+          error = err;
+          done = true;
+          if (resolveNext) {
+            resolveNext({
+              value: undefined as unknown as GenerateContentResponse,
+              done: true,
+            });
+            resolveNext = null;
           }
         });
 
-        // Yield final response
-        if (finalResponse) {
-          yield converter.convertOllamaResponseToGenAI(finalResponse);
+      // Yield chunks as they become available
+      while (!done || chunkQueue.length > 0) {
+        if (chunkQueue.length > 0) {
+          yield chunkQueue.shift()!;
+        } else if (!done) {
+          // Wait for next chunk
+          yield new Promise<GenerateContentResponse>((resolve) => {
+            resolveNext = (result) => {
+              if (result.done) {
+                resolve(null as unknown as GenerateContentResponse);
+              } else {
+                resolve(result.value);
+              }
+            };
+          });
+          // Check for null (stream ended)
+          if (chunkQueue.length === 0 && done) break;
         }
-      } catch (error) {
+      }
+
+      // Wait for stream to complete and check for errors
+      await streamPromise;
+      if (error) {
         debugLogger.error('Ollama native streaming error:', error);
         throw handleError(error, request);
       }
@@ -197,7 +259,7 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
   ): Promise<EmbedContentResponse> {
     // Extract text from contents
     let text = '';
-    
+
     // Handle batch contents (Content[])
     if (Array.isArray(request.contents)) {
       text = request.contents
