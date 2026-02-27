@@ -515,7 +515,12 @@ export class OllamaNativeClient {
   private retryConfig: RetryConfig;
 
   constructor(options?: OllamaClientOptions) {
-    this.baseUrl = options?.baseUrl ?? DEFAULT_OLLAMA_NATIVE_URL;
+    // Normalize baseUrl: remove /v1 suffix if present (OpenAI-compatible path)
+    // Ollama native API uses /api/chat, /api/generate etc. directly
+    let url = options?.baseUrl ?? DEFAULT_OLLAMA_NATIVE_URL;
+    url = url.replace(/\/v1\/?$/, ''); // Remove trailing /v1 or /v1/
+
+    this.baseUrl = url;
     this.timeout = options?.timeout ?? DEFAULT_OLLAMA_TIMEOUT;
     this.keepAlive = options?.keepAlive ?? DEFAULT_KEEP_ALIVE;
     this.retryConfig = {
@@ -969,11 +974,10 @@ export class OllamaNativeClient {
       return finalResult;
     }
 
-    return this.request<OllamaCreateResult>(
-      '/api/create',
-      'POST',
-      { ...request, stream: false },
-    );
+    return this.request<OllamaCreateResult>('/api/create', 'POST', {
+      ...request,
+      stream: false,
+    });
   }
 
   /**
