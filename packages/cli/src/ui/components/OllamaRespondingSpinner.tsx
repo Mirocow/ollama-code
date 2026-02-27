@@ -21,7 +21,7 @@ interface OllamaRespondingSpinnerProps {
    * If not provided and not Responding, renders null.
    */
   nonRespondingDisplay?: string;
-  spinnerType?: 'dots' | 'line' | 'monkey';
+  spinnerType?: 'dots' | 'line' | 'monkey' | 'toggle';
 }
 
 export const OllamaRespondingSpinner: React.FC<
@@ -47,7 +47,7 @@ export const OllamaRespondingSpinner: React.FC<
 };
 
 interface OllamaSpinnerProps {
-  spinnerType?: 'dots' | 'line' | 'monkey';
+  spinnerType?: 'dots' | 'line' | 'monkey' | 'toggle';
   altText?: string;
 }
 
@@ -60,7 +60,7 @@ export const OllamaSpinner: React.FC<OllamaSpinnerProps> = ({
     <Text>{altText}</Text>
   ) : (
     <Text color={theme.text.primary}>
-      <Spinner type={spinnerType as 'dots' | 'line' | 'monkey'} />
+      <Spinner type={spinnerType as 'dots'} />
     </Text>
   );
 };
