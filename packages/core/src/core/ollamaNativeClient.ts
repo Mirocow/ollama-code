@@ -105,6 +105,24 @@ export interface OllamaPsResponse {
 }
 
 /**
+ * JSON Schema for structured outputs
+ */
+export interface OllamaJsonSchema {
+  type: string;
+  properties?: Record<string, OllamaJsonSchema>;
+  items?: OllamaJsonSchema;
+  required?: string[];
+  enum?: string[];
+  description?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Format parameter - can be 'json', a string, or a JSON Schema object
+ */
+export type OllamaFormat = 'json' | string | OllamaJsonSchema;
+
+/**
  * Request for /api/generate
  */
 export interface OllamaGenerateRequest {
@@ -117,9 +135,15 @@ export interface OllamaGenerateRequest {
   context?: number[];
   stream?: boolean;
   raw?: boolean;
-  format?: 'json' | string;
+  format?: OllamaFormat;
   keep_alive?: string | number;
   options?: OllamaModelOptions;
+  /** Enable thinking mode for thinking models (DeepSeek R1, Qwen, etc.) */
+  think?: boolean;
+  /** Image generation parameters (experimental) */
+  width?: number;
+  height?: number;
+  steps?: number;
 }
 
 /**
@@ -147,6 +171,8 @@ export interface OllamaChatMessage {
   content: string;
   images?: string[]; // base64 encoded
   tool_calls?: OllamaToolCall[];
+  /** Thinking content for thinking models */
+  thinking?: string;
 }
 
 /**
@@ -179,9 +205,11 @@ export interface OllamaChatRequest {
   messages: OllamaChatMessage[];
   tools?: OllamaTool[];
   stream?: boolean;
-  format?: 'json' | string;
+  format?: OllamaFormat;
   keep_alive?: string | number;
   options?: OllamaModelOptions;
+  /** Enable thinking mode for thinking models (DeepSeek R1, Qwen, etc.) */
+  think?: boolean;
 }
 
 /**
@@ -326,6 +354,55 @@ export interface OllamaCopyRequest {
  */
 export interface OllamaDeleteRequest {
   model: string;
+}
+
+/**
+ * Request for /api/create
+ * Create a model from a Modelfile
+ */
+export interface OllamaCreateRequest {
+  name: string;
+  modelfile?: string;
+  from?: string; // Base model to create from
+  stream?: boolean;
+  quantize?: string; // Quantization level (e.g., 'q4_0', 'q8_0')
+  /**
+   * Parameters to override in the model
+   */
+  parameters?: Record<string, unknown>;
+  /**
+   * System prompt to set for the model
+   */
+  system?: string;
+  /**
+   * Template to use for the model
+   */
+  template?: string;
+  /**
+   * License for the model
+   */
+  license?: string;
+}
+
+/**
+ * Response from /api/create (streaming)
+ */
+export interface OllamaCreateResponse {
+  status: string;
+  digest?: string;
+  total?: number;
+  completed?: number;
+}
+
+/**
+ * Response from /api/create (final)
+ */
+export interface OllamaCreateResult {
+  name: string;
+  digest: string;
+  created_at: string;
+  modified_at: string;
+  size: number;
 }
 
 /**
@@ -824,6 +901,129 @@ export class OllamaNativeClient {
     } else {
       await this.request<void>('/api/push', 'POST', { name, stream: false });
     }
+  }
+
+  /**
+   * Create a model from a Modelfile.
+   * POST /api/create
+   *
+   * @example
+   * // Create model from modelfile
+   * await client.createModel({
+   *   name: 'my-assistant',
+   *   modelfile: 'FROM llama3.2\nSYSTEM You are a helpful assistant.',
+   * });
+   *
+   * // Create model with streaming progress
+   * await client.createModel({
+   *   name: 'my-coder',
+   *   from: 'llama3.2',
+   *   system: 'You are an expert programmer.',
+   * }, (progress) => {
+   *   console.log(`${progress.status}: ${progress.percentage?.toFixed(1)}%`);
+   * });
+   */
+  async createModel(
+    request: OllamaCreateRequest,
+    progressCallback?: ProgressCallback,
+  ): Promise<OllamaCreateResult> {
+    if (progressCallback) {
+      let finalResult: OllamaCreateResult | null = null;
+      await this.streamingRequest<OllamaCreateResponse>(
+        '/api/create',
+        { ...request, stream: true },
+        (response) => {
+          const percentage = response.total
+            ? ((response.completed ?? 0) / response.total) * 100
+            : undefined;
+          progressCallback({
+            status: response.status,
+            digest: response.digest,
+            total: response.total,
+            completed: response.completed,
+            percentage,
+          });
+          // Check for completion
+          if (response.status === 'success' && response.digest) {
+            finalResult = {
+              name: request.name,
+              digest: response.digest,
+              created_at: new Date().toISOString(),
+              modified_at: new Date().toISOString(),
+              size: response.total ?? 0,
+            };
+          }
+        },
+      );
+      if (!finalResult) {
+        // Fallback: get model info after creation
+        const modelInfo = await this.showModel(request.name);
+        finalResult = {
+          name: request.name,
+          digest: modelInfo.details?.parent_model ?? '',
+          created_at: new Date().toISOString(),
+          modified_at: new Date().toISOString(),
+          size: 0,
+        };
+      }
+      return finalResult;
+    }
+
+    return this.request<OllamaCreateResult>(
+      '/api/create',
+      'POST',
+      { ...request, stream: false },
+    );
+  }
+
+  /**
+   * Create a model from a base model with custom settings.
+   * Convenience method for common use cases.
+   *
+   * @example
+   * const model = await client.createModelFrom('llama3.2', 'my-assistant', {
+   *   system: 'You are a helpful coding assistant.',
+   *   temperature: 0.7,
+   * });
+   */
+  async createModelFrom(
+    baseModel: string,
+    newName: string,
+    options?: {
+      system?: string;
+      template?: string;
+      parameters?: Record<string, unknown>;
+      quantize?: string;
+      license?: string;
+    },
+    progressCallback?: ProgressCallback,
+  ): Promise<OllamaCreateResult> {
+    // Build modelfile content
+    let modelfile = `FROM ${baseModel}\n`;
+
+    if (options?.system) {
+      modelfile += `SYSTEM ${options.system}\n`;
+    }
+    if (options?.template) {
+      modelfile += `TEMPLATE ${options.template}\n`;
+    }
+    if (options?.parameters) {
+      for (const [key, value] of Object.entries(options.parameters)) {
+        modelfile += `PARAMETER ${key} ${value}\n`;
+      }
+    }
+    if (options?.license) {
+      modelfile += `LICENSE ${options.license}\n`;
+    }
+
+    return this.createModel(
+      {
+        name: newName,
+        modelfile,
+        quantize: options?.quantize,
+      },
+      progressCallback,
+    );
   }
 
   // ========================================================================
