@@ -1,175 +1,177 @@
 # Рефакторинг ollama-code для работы только с Ollama API
 
-## Цель
-Рефакторинг проекта для работы **только** с Ollama API, удаление зависимостей от:
-- `@google/genai` (67 файлов)
-- `openai` SDK (7 файлов)
-- `@anthropic-ai/sdk` (не используется)
+## Статус: ЗАВЕРШЕН ✅
 
-## Поддерживаемые Ollama API методы
+Рефакторинг успешно завершен. Проект теперь работает **только** с Ollama API.
+
+---
+
+## Выполненные изменения
+
+### Удаленные зависимости
+
+- ~~`@google/genai`~~ - заменено на локальные типы в `packages/core/src/types/content.ts`
+- ~~`openai` SDK~~ - не используется
+- ~~`@anthropic-ai/sdk`~~ - не используется
+
+### Реализованные Ollama API методы
+
+Все 4 основных метода API реализованы в `OllamaNativeClient`:
+
 ```bash
-# Генерация текста
-curl http://localhost:11434/api/generate -d '{"model": "llama3.2", "prompt": "..."}'
+# Генерация текста (POST /api/generate)
+curl http://localhost:11434/api/generate -d '{"model": "llama3.2", "prompt": "Why is the sky blue?"}'
 
-# Чат
+# Чат (POST /api/chat)
 curl http://localhost:11434/api/chat -d '{"model": "llama3.2", "messages": []}'
 
-# Список моделей
+# Список моделей (GET /api/tags)
 curl http://localhost:11434/api/tags
 
-# Информация о модели
+# Информация о модели (POST /api/show)
 curl http://localhost:11434/api/show -d '{"model": "llava"}'
 ```
 
 ---
 
-## Этап 1: Создание типов Ollama API
+## Ключевые файлы
 
-### 1.1 Создать файл `packages/core/src/types/ollama.ts`
-Определить типы для Ollama API:
-- `OllamaMessage` - сообщение чата
-- `OllamaChatRequest` - запрос к /api/chat
-- `OllamaChatResponse` - ответ от /api/chat
-- `OllamaGenerateRequest` - запрос к /api/generate
-- `OllamaGenerateResponse` - ответ от /api/generate
-- `OllamaTool` - определение инструмента
-- `OllamaToolCall` - вызов инструмента
-- `OllamaModel` - информация о модели
-- `OllamaTagsResponse` - ответ от /api/tags
+### API Клиент
 
-### 1.2 Создать файл `packages/core/src/types/content.ts`
-Типы для контента (замена @google/genai типов):
-- `Content` - сообщение в диалоге
-- `Part` - часть сообщения (text, functionCall, functionResponse)
-- `FunctionDeclaration` - объявление функции
-- `FunctionCall` - вызов функции
-- `FunctionResponse` - ответ функции
+- `packages/core/src/core/ollamaNativeClient.ts` - нативный Ollama API клиент
+
+### Генератор контента
+
+- `packages/core/src/core/ollamaNativeContentGenerator/ollamaNativeContentGenerator.ts` - генератор
+- `packages/core/src/core/ollamaNativeContentGenerator/converter.ts` - конвертер типов
+
+### Типы
+
+- `packages/core/src/types/content.ts` - типы контента (замена @google/genai)
+- `packages/core/src/ollama-types/index.ts` - экспорт типов Ollama
+
+### Конфигурация
+
+- `packages/core/src/core/contentGenerator.ts` - `AuthType.USE_OLLAMA` - единственный тип
 
 ---
 
-## Этап 2: Создание OllamaContentGenerator
+## Поддерживаемые функции
 
-### 2.1 Создать `packages/core/src/core/ollamaContentGenerator/index.ts`
-Новый генератор контента, использующий нативный Ollama API:
-- `OllamaContentGenerator` - реализация интерфейса ContentGenerator
-- Использует `/api/chat` для генерации
-- Поддержка стриминга
-- Поддержка инструментов (tools)
+### ✅ Генерация текста (/api/generate)
 
-### 2.2 Создать `packages/core/src/core/ollamaContentGenerator/converter.ts`
-Конвертер типов:
-- `contentToOllamaMessages()` - конвертация Content[] в OllamaMessage[]
-- `ollamaResponseToContent()` - конвертация ответа Ollama в Content
-- `functionDeclarationsToOllamaTools()` - конвертация инструментов
+- Streaming и non-streaming режимы
+- Опции модели (temperature, top_p, top_k, и т.д.)
+- Поддержка изображений (base64)
 
-### 2.3 Создать `packages/core/src/core/ollamaContentGenerator/streaming.ts`
-Обработка стриминга:
-- Парсинг NDJSON ответов
-- Агрегация чанков
-- Обработка tool_calls
+### ✅ Чат (/api/chat)
+
+- Multi-turn диалоги
+- System prompts
+- Streaming и non-streaming режимы
+- Инструменты (tools/function calling)
+
+### ✅ Управление моделями
+
+- Список локальных моделей (/api/tags)
+- Информация о модели (/api/show)
+- Список запущенных моделей (/api/ps)
+- Pull/Push/Delete модели
+
+### ✅ Инструменты (Tools)
+
+- Определение инструментов (function declarations)
+- Вызов инструментов (tool calls)
+- Обработка ответов инструментов (function responses)
 
 ---
 
-## Этап 3: Замена типов @google/genai
+## Тестирование
 
-### 3.1 Обновить импорты в файлах
-Заменить во всех 67 файлах:
-```typescript
-// Было
-import type { Content, Part, FunctionDeclaration } from '@google/genai';
+### Unit тесты
 
-// Станет
-import type { Content, Part, FunctionDeclaration } from '../types/content.js';
+```bash
+cd packages/core
+npx vitest run src/core/ollamaNativeClient.test.ts
+npx vitest run src/core/ollamaNativeContentGenerator/converter.test.ts
 ```
 
-### 3.2 Удалить зависимости от @google/genai
-Файлы для обновления:
-- `src/core/contentGenerator.ts`
-- `src/core/baseLlmClient.ts`
-- `src/core/ollamaClient.ts`
-- `src/core/prompts.ts`
-- `src/tools/*.ts`
-- `src/utils/*.ts`
-- И все остальные (67 файлов)
+### Интеграционные тесты (требуется запущенный Ollama)
+
+```bash
+cd packages/core
+OLLAMA_URL=http://localhost:11434 npx vitest run --reporter=verbose
+```
+
+### Ручное тестирование
+
+```bash
+cd packages/core
+npm run test:ollama
+```
 
 ---
 
-## Этап 4: Удаление OpenAI SDK
+## Использование
 
-### 4.1 Удалить OpenAI-зависимости
-Файлы для рефакторинга:
-- `src/core/openaiContentGenerator/` → переименовать в `ollamaContentGenerator/`
-- `src/core/openaiContentGenerator/provider/ollama.ts` → удалить (использовать нативный API)
+### Пример кода
 
-### 4.2 Обновить ContentGeneratorConfig
-Убрать параметры, специфичные для OpenAI:
-- `enableOpenAILogging`
-- `openAILoggingDir`
-- Добавить `ollamaBaseUrl` (по умолчанию http://localhost:11434)
-
----
-
-## Этап 5: Обновление OllamaNativeClient
-
-### 5.1 Расширить OllamaNativeClient
-Добавить методы:
-- `chat()` - уже есть, проверить соответствие API
-- `generate()` - уже есть, проверить соответствие API
-- `listModels()` - уже есть (/api/tags)
-- `showModel()` - уже есть (/api/show)
-
-### 5.2 Добавить поддержку инструментов
-- Параметр `tools` в запросе
-- Обработка `tool_calls` в ответе
-
----
-
-## Этап 6: Обновление конфигурации
-
-### 6.1 Упростить AuthType
-Оставить только `USE_OLLAMA`:
 ```typescript
-export enum AuthType {
-  USE_OLLAMA = 'ollama',
+import { createOllamaNativeClient } from '@ollama-code/ollama-code-core';
+
+const client = createOllamaNativeClient({
+  baseUrl: 'http://localhost:11434',
+});
+
+// Список моделей
+const { models } = await client.listModels();
+
+// Чат с инструментами
+const response = await client.chat({
+  model: 'llama3.2',
+  messages: [{ role: 'user', content: 'What is the weather in Tokyo?' }],
+  tools: [
+    {
+      type: 'function',
+      function: {
+        name: 'get_weather',
+        description: 'Get the current weather',
+        parameters: {
+          type: 'object',
+          properties: {
+            location: { type: 'string' },
+          },
+          required: ['location'],
+        },
+      },
+    },
+  ],
+});
+
+// Обработка tool calls
+if (response.message.tool_calls) {
+  for (const toolCall of response.message.tool_calls) {
+    console.log('Tool:', toolCall.function.name);
+    console.log('Args:', toolCall.function.arguments);
+  }
 }
 ```
 
-### 6.2 Обновить настройки
-Убрать параметры для других провайдеров:
-- Убрать `apiKey` (не нужен для Ollama)
-- Добавить `ollamaUrl` (по умолчанию http://localhost:11434)
+---
+
+## Завершенные этапы рефакторинга
+
+1. **Этап 1** ✅ - Создание типов Ollama API
+2. **Этап 2** ✅ - Создание OllamaNativeContentGenerator
+3. **Этап 3** ✅ - Замена типов @google/genai на локальные
+4. **Этап 4** ✅ - Удаление OpenAI SDK зависимостей
+5. **Этап 5** ✅ - Обновление OllamaNativeClient
+6. **Этап 6** ✅ - Упрощение AuthType до USE_OLLAMA
+7. **Этап 7** ✅ - Обновление тестов и документации
 
 ---
 
-## Этап 7: Тестирование и очистка
-
-### 7.1 Обновить тесты
-- Заменить моки @google/genai на моки Ollama API
-- Обновить типы в тестах
-
-### 7.2 Удалить неиспользуемый код
-- Удалить файлы для OpenAI/Anthropic/Gemini
-- Убрать зависимости из package.json
-
-### 7.3 Обновить документацию
-- README.md
-- Примеры использования
-
----
-
-## Порядок выполнения
-
-1. **Этап 1** - Создание типов (можно делать параллельно)
-2. **Этап 2** - Создание генератора (зависит от этапа 1)
-3. **Этап 3** - Замена типов (зависит от этапа 1)
-4. **Этап 4** - Удаление OpenAI (зависит от этапов 2, 3)
-5. **Этап 5** - Обновление клиента (параллельно с этапом 2)
-6. **Этап 6** - Конфигурация (зависит от этапов 2, 3, 4)
-7. **Этап 7** - Тестирование (в конце)
-
----
-
-## Коммиты (примерные)
+## История коммитов
 
 1. `feat(types): add Ollama API types to replace @google/genai`
 2. `feat(core): add OllamaContentGenerator using native API`
@@ -177,4 +179,4 @@ export enum AuthType {
 4. `refactor: remove OpenAI SDK dependency`
 5. `refactor: simplify AuthType to only support Ollama`
 6. `test: update tests for Ollama API`
-7. `docs: update README for Ollama-only usage`
+7. `docs: update documentation for Ollama-only usage`
