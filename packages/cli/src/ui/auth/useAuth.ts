@@ -171,6 +171,14 @@ export const useAuthCommand = (
       setIsAuthenticating(true);
 
       if (credentials) {
+        // Save OLLAMA_HOST and OLLAMA_MODEL to environment
+        if (credentials.baseUrl) {
+          process.env['OLLAMA_HOST'] = credentials.baseUrl;
+        }
+        if (credentials.model) {
+          process.env['OLLAMA_MODEL'] = credentials.model;
+        }
+
         const settingsGenerationConfig = settings.merged.model
           ?.generationConfig as Partial<ContentGeneratorConfig> | undefined;
         config.updateCredentials(
