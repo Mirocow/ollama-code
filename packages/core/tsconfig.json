@@ -7,6 +7,6 @@
     "types": ["node", "vitest/globals"],
     "skipLibCheck": true
   },
-  "include": ["index.ts", "src/**/*.ts", "src/**/*.json"],
+  "include": ["index.ts", "src/**/*.ts", "src/**/*.json", "src/types/*.d.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }
