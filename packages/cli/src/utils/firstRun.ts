@@ -64,6 +64,15 @@ export function createGlobalConfigDir(): void {
 }
 
 /**
+ * Normalize Ollama server URL
+ * Removes /v1 suffix if present (OpenAI-compatible path)
+ * Ollama native API uses /api/chat, /api/generate etc. directly
+ */
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/v1\/?$/, ''); // Remove trailing /v1 or /v1/
+}
+
+/**
  * Save initial configuration for first run
  * @param baseUrl Ollama server URL (OLLAMA_HOST)
  * @param model Model name (OLLAMA_MODEL)
@@ -72,6 +81,9 @@ export function saveInitialConfig(baseUrl: string, model: string): void {
   createGlobalConfigDir();
 
   const settingsPath = Storage.getGlobalSettingsPath();
+
+  // Normalize the base URL
+  const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
 
   // Read existing settings or create new
   let settings: Record<string, unknown> = {};
@@ -106,7 +118,7 @@ export function saveInitialConfig(baseUrl: string, model: string): void {
     }
     const auth = (settings['security'] as Record<string, unknown>)['auth'];
     if (typeof auth === 'object' && auth !== null) {
-      (auth as Record<string, unknown>)['baseUrl'] = baseUrl;
+      (auth as Record<string, unknown>)['baseUrl'] = normalizedBaseUrl;
       (auth as Record<string, unknown>)['selectedType'] = 'ollama';
     }
   }
@@ -125,9 +137,10 @@ export function saveInitialConfig(baseUrl: string, model: string): void {
  * @param model Model name
  */
 export function setConfigEnv(baseUrl: string, model: string): void {
+  const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
   if (!process.env['OLLAMA_HOST'] && !process.env['OLLAMA_BASE_URL']) {
-    process.env['OLLAMA_HOST'] = baseUrl;
-    process.env['OLLAMA_BASE_URL'] = baseUrl;
+    process.env['OLLAMA_HOST'] = normalizedBaseUrl;
+    process.env['OLLAMA_BASE_URL'] = normalizedBaseUrl;
   }
   if (!process.env['OLLAMA_MODEL']) {
     process.env['OLLAMA_MODEL'] = model;
