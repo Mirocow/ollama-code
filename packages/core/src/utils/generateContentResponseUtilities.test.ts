@@ -18,8 +18,8 @@ import type {
   GenerateContentResponse,
   Part,
   SafetyRating,
-} from '@google/genai';
-import { FinishReason } from '@google/genai';
+} from '../types/content.js';
+import { FinishReason } from '../types/content.js';
 
 const mockTextPart = (text: string): Part => ({ text });
 const mockFunctionCallPart = (

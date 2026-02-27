@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { RequestTokenizer } from './requestTokenizer.js';
-import type { CountTokensParameters } from '@google/genai';
+import type { CountTokensParameters } from '../types/content.js';
 
 describe('RequestTokenEstimator', () => {
   let tokenizer: RequestTokenizer;

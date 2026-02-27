@@ -31,7 +31,7 @@ import {
   convertToFunctionResponse,
   truncateAndSaveToFile,
 } from './coreToolScheduler.js';
-import type { Part, PartListUnion } from '@google/genai';
+import type { Part, PartListUnion } from '../types/content.js';
 import {
   MockModifiableTool,
   MockTool,

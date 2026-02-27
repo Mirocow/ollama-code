@@ -13,7 +13,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OllamaNativeContentGenerator } from './ollamaNativeContentGenerator.js';
 import { AuthType, type ContentGeneratorConfig } from '../contentGenerator.js';
 import type { Config } from '../../config/config.js';
-import type { GenerateContentParameters } from '@google/genai';
+import type { GenerateContentParameters } from '../types/content.js';
 
 // Create mock functions
 const mockChat = vi.fn();

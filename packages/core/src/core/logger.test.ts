@@ -24,7 +24,7 @@ import { Storage } from '../config/storage.js';
 import { getProjectHash } from '../utils/paths.js';
 import { promises as fs, existsSync } from 'node:fs';
 import path from 'node:path';
-import type { Content } from '@google/genai';
+import type { Content } from '../types/content.js';
 
 import os from 'node:os';
 
