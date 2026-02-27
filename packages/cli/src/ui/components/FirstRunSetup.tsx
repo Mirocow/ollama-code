@@ -12,10 +12,7 @@ import { useKeypress } from '../hooks/useKeypress.js';
 import { t } from '../../i18n/index.js';
 
 interface FirstRunSetupProps {
-  onSubmit: (config: {
-    baseUrl: string;
-    model: string;
-  }) => Promise<void>;
+  onSubmit: (config: { baseUrl: string; model: string }) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -52,6 +49,12 @@ export function FirstRunSetup({
         return;
       }
 
+      // Handle paste (Ctrl+V)
+      if (key.paste && key.sequence) {
+        setCurrentValue(currentValue + key.sequence);
+        return;
+      }
+
       if (key.name === 'return' || key.name === 'enter') {
         // Save current field value and move to next or submit
         fieldSetters[currentField](currentValue);
@@ -65,6 +68,7 @@ export function FirstRunSetup({
           setCurrentField(fields[currentIndex + 1]);
           setCurrentValue(fieldValues[fields[currentIndex + 1]]);
         }
+        return;
       }
 
       if (key.name === 'tab' || key.name === 'down') {
@@ -74,6 +78,7 @@ export function FirstRunSetup({
         const nextIndex = (currentIndex + 1) % fields.length;
         setCurrentField(fields[nextIndex]);
         setCurrentValue(fieldValues[fields[nextIndex]]);
+        return;
       }
 
       if (key.name === 'up') {
@@ -83,13 +88,21 @@ export function FirstRunSetup({
         const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
         setCurrentField(fields[prevIndex]);
         setCurrentValue(fieldValues[fields[prevIndex]]);
+        return;
       }
 
       if (key.name === 'backspace') {
         setCurrentValue(currentValue.slice(0, -1));
-      } else if (key.name === 'delete') {
+        return;
+      }
+
+      if (key.name === 'delete') {
         setCurrentValue('');
-      } else if (key.sequence && key.sequence.length === 1) {
+        return;
+      }
+
+      // Regular character input
+      if (key.sequence && key.sequence.length === 1 && !key.ctrl && !key.meta) {
         setCurrentValue(currentValue + key.sequence);
       }
     },
@@ -133,10 +146,10 @@ export function FirstRunSetup({
     label: string,
     value: string,
     isCurrent: boolean,
-    placeholder?: string,
-    helpText?: string,
+    placeholder: string,
+    helpText: string,
   ) => (
-    <Box flexDirection="column" marginTop={1}>
+    <Box flexDirection="column" marginY={1}>
       <Box>
         <Text
           bold={isCurrent}
@@ -144,14 +157,15 @@ export function FirstRunSetup({
         >
           {isCurrent ? '❯ ' : '  '}
           {label}
-          {': '}
-        </Text>
-        <Text color={theme.text.primary}>
-          {isCurrent ? `${value}|` : (value || placeholder)}
         </Text>
       </Box>
-      {helpText && isCurrent && (
-        <Box paddingLeft={2}>
+      <Box paddingLeft={3}>
+        <Text color={isCurrent ? theme.text.primary : theme.text.secondary}>
+          {isCurrent ? `${value}█` : value || placeholder}
+        </Text>
+      </Box>
+      {isCurrent && (
+        <Box paddingLeft={3}>
           <Text color={theme.text.secondary} dimColor>
             {helpText}
           </Text>
@@ -174,7 +188,13 @@ export function FirstRunSetup({
         </Text>
       </Box>
 
-      <Box flexDirection="column" borderStyle="round" borderColor={theme.border.default} padding={1}>
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor={theme.border.default}
+        paddingX={2}
+        paddingY={1}
+      >
         <Box marginBottom={1}>
           <Text bold>{t('Configure Ollama Connection')}</Text>
         </Box>
@@ -185,7 +205,7 @@ export function FirstRunSetup({
           currentField === 'baseUrl' ? currentValue : baseUrl,
           currentField === 'baseUrl',
           DEFAULT_BASE_URL,
-          t('Ollama server URL (default: http://localhost:11434)'),
+          t('Press Enter to confirm, Tab to switch field'),
         )}
 
         {renderField(
@@ -194,7 +214,7 @@ export function FirstRunSetup({
           currentField === 'model' ? currentValue : model,
           currentField === 'model',
           DEFAULT_MODEL,
-          t('Model to use (e.g., llama3.2, codellama, mistral)'),
+          t('Press Enter to save configuration'),
         )}
 
         {error && (
@@ -205,20 +225,24 @@ export function FirstRunSetup({
 
         <Box marginTop={1}>
           <Text color={theme.text.secondary} dimColor>
-            {t('Use Tab/↑↓ to navigate, Enter to submit, Esc to cancel')}
+            {t('Tab/↑↓: switch • Enter: confirm • Esc: cancel • Ctrl+V: paste')}
           </Text>
         </Box>
 
         {isSubmitting && (
           <Box marginTop={1}>
-            <Text color={theme.text.accent}>{t('Saving configuration...')}</Text>
+            <Text color={theme.text.accent}>
+              {t('Saving configuration...')}
+            </Text>
           </Box>
         )}
       </Box>
 
       <Box marginTop={1}>
         <Text color={theme.text.secondary} dimColor>
-          {t('Make sure Ollama is installed and running. Visit: https://ollama.ai')}
+          {t(
+            'Make sure Ollama is installed and running. Visit: https://ollama.ai',
+          )}
         </Text>
       </Box>
     </Box>
