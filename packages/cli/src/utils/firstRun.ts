@@ -32,18 +32,21 @@ export function isFirstRun(): boolean {
   // Check if authType is configured
   try {
     const content = fs.readFileSync(settingsPath, 'utf-8');
-    const settings = JSON.parse(content);
+    const settings = JSON.parse(content) as Record<string, unknown>;
     
     // Check for security.auth.selectedType
-    const authType = (settings as Record<string, unknown>)?.security as Record<string, unknown> | undefined;
-    const selectedType = authType?.auth as Record<string, unknown> | undefined;
-    
-    // If selectedType is not set, this is first run
-    if (!selectedType?.selectedType) {
-      return true;
+    const security = settings['security'];
+    if (typeof security === 'object' && security !== null) {
+      const auth = (security as Record<string, unknown>)['auth'];
+      if (typeof auth === 'object' && auth !== null) {
+        const selectedType = (auth as Record<string, unknown>)['selectedType'];
+        if (typeof selectedType === 'string') {
+          return false; // Auth is configured
+        }
+      }
     }
     
-    return false;
+    return true; // Auth is not configured
   } catch {
     // If parsing fails, consider it first run
     return true;
