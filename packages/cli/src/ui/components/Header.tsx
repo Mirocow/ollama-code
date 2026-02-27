@@ -22,6 +22,7 @@ interface HeaderProps {
   version: string;
   authType?: AuthType;
   model: string;
+  baseUrl?: string;
   workingDirectory: string;
 }
 
@@ -57,6 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
   version,
   authType,
   model,
+  baseUrl,
   workingDirectory,
 }) => {
   const { columns: terminalWidth } = useTerminalSize();
@@ -101,7 +103,13 @@ export const Header: React.FC<HeaderProps> = ({
     0,
     availableInfoPanelWidth - infoPanelChromeWidth,
   );
-  const authModelText = `${formattedAuthType} | ${model}`;
+
+  // Format server URL (show only host:port, hide http:// prefix for brevity)
+  const displayBaseUrl = baseUrl
+    ? baseUrl.replace(/^https?:\/\//, '')
+    : 'localhost:11434';
+
+  const authModelText = `${formattedAuthType} | ${displayBaseUrl} | ${model}`;
   const modelHintText = ' (/model to change)';
   const showModelHint =
     infoPanelContentWidth > 0 &&
