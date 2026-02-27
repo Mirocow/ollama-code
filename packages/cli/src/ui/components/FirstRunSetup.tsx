@@ -29,6 +29,7 @@ export function FirstRunSetup({
   const [model, setModel] = useState(DEFAULT_OLLAMA_MODEL);
   const [currentField, setCurrentField] = useState<InputField>('baseUrl');
   const [currentValue, setCurrentValue] = useState(baseUrl);
+  const [cursorPos, setCursorPos] = useState(baseUrl.length);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,7 +52,12 @@ export function FirstRunSetup({
 
       // Handle paste (Ctrl+V)
       if (key.paste && key.sequence) {
-        setCurrentValue(currentValue + key.sequence);
+        const newValue =
+          currentValue.slice(0, cursorPos) +
+          key.sequence +
+          currentValue.slice(cursorPos);
+        setCurrentValue(newValue);
+        setCursorPos(cursorPos + key.sequence.length);
         return;
       }
 
@@ -65,8 +71,10 @@ export function FirstRunSetup({
           handleSubmit();
         } else {
           // Move to next field
-          setCurrentField(fields[currentIndex + 1]);
-          setCurrentValue(fieldValues[fields[currentIndex + 1]]);
+          const nextField = fields[currentIndex + 1];
+          setCurrentField(nextField);
+          setCurrentValue(fieldValues[nextField]);
+          setCursorPos(fieldValues[nextField].length);
         }
         return;
       }
@@ -76,8 +84,10 @@ export function FirstRunSetup({
         fieldSetters[currentField](currentValue);
         const currentIndex = fields.indexOf(currentField);
         const nextIndex = (currentIndex + 1) % fields.length;
-        setCurrentField(fields[nextIndex]);
-        setCurrentValue(fieldValues[fields[nextIndex]]);
+        const nextField = fields[nextIndex];
+        setCurrentField(nextField);
+        setCurrentValue(fieldValues[nextField]);
+        setCursorPos(fieldValues[nextField].length);
         return;
       }
 
@@ -86,24 +96,69 @@ export function FirstRunSetup({
         fieldSetters[currentField](currentValue);
         const currentIndex = fields.indexOf(currentField);
         const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
-        setCurrentField(fields[prevIndex]);
-        setCurrentValue(fieldValues[fields[prevIndex]]);
+        const prevField = fields[prevIndex];
+        setCurrentField(prevField);
+        setCurrentValue(fieldValues[prevField]);
+        setCursorPos(fieldValues[prevField].length);
+        return;
+      }
+
+      // Cursor navigation
+      if (key.name === 'left') {
+        if (cursorPos > 0) {
+          setCursorPos(cursorPos - 1);
+        }
+        return;
+      }
+
+      if (key.name === 'right') {
+        if (cursorPos < currentValue.length) {
+          setCursorPos(cursorPos + 1);
+        }
+        return;
+      }
+
+      // Home - go to beginning
+      if (key.name === 'home' || (key.ctrl && key.name === 'a')) {
+        setCursorPos(0);
+        return;
+      }
+
+      // End - go to end
+      if (key.name === 'end' || (key.ctrl && key.name === 'e')) {
+        setCursorPos(currentValue.length);
         return;
       }
 
       if (key.name === 'backspace') {
-        setCurrentValue(currentValue.slice(0, -1));
+        if (cursorPos > 0) {
+          const newValue =
+            currentValue.slice(0, cursorPos - 1) +
+            currentValue.slice(cursorPos);
+          setCurrentValue(newValue);
+          setCursorPos(cursorPos - 1);
+        }
         return;
       }
 
       if (key.name === 'delete') {
-        setCurrentValue('');
+        if (cursorPos < currentValue.length) {
+          const newValue =
+            currentValue.slice(0, cursorPos) +
+            currentValue.slice(cursorPos + 1);
+          setCurrentValue(newValue);
+        }
         return;
       }
 
       // Regular character input
       if (key.sequence && key.sequence.length === 1 && !key.ctrl && !key.meta) {
-        setCurrentValue(currentValue + key.sequence);
+        const newValue =
+          currentValue.slice(0, cursorPos) +
+          key.sequence +
+          currentValue.slice(cursorPos);
+        setCurrentValue(newValue);
+        setCursorPos(cursorPos + 1);
       }
     },
     { isActive: !isSubmitting },
@@ -147,27 +202,40 @@ export function FirstRunSetup({
     value: string,
     isCurrent: boolean,
     placeholder: string,
-  ) => (
-    <Box flexDirection="column" marginY={1}>
-      <Box marginBottom={1}>
-        <Text
-          bold={isCurrent}
-          color={isCurrent ? theme.text.accent : theme.text.secondary}
+    cursorPosition: number,
+  ) => {
+    // Render value with cursor at correct position
+    let displayValue: string;
+    if (isCurrent) {
+      const beforeCursor = value.slice(0, cursorPosition);
+      const afterCursor = value.slice(cursorPosition);
+      displayValue = `${beforeCursor}█${afterCursor}`;
+    } else {
+      displayValue = value || placeholder;
+    }
+
+    return (
+      <Box flexDirection="column" marginY={1}>
+        <Box marginBottom={1}>
+          <Text
+            bold={isCurrent}
+            color={isCurrent ? theme.text.accent : theme.text.secondary}
+          >
+            {label}
+          </Text>
+        </Box>
+        <Box
+          borderStyle="round"
+          borderColor={isCurrent ? theme.text.accent : theme.border.default}
+          paddingX={1}
         >
-          {label}
-        </Text>
+          <Text color={isCurrent ? theme.text.primary : theme.text.secondary}>
+            {displayValue}
+          </Text>
+        </Box>
       </Box>
-      <Box
-        borderStyle="round"
-        borderColor={isCurrent ? theme.text.accent : theme.border.default}
-        paddingX={1}
-      >
-        <Text color={isCurrent ? theme.text.primary : theme.text.secondary}>
-          {isCurrent ? `${value}█` : value || placeholder}
-        </Text>
-      </Box>
-    </Box>
-  );
+    );
+  };
 
   return (
     <Box flexDirection="column" paddingX={2} paddingY={1}>
@@ -200,6 +268,7 @@ export function FirstRunSetup({
           currentField === 'baseUrl' ? currentValue : baseUrl,
           currentField === 'baseUrl',
           DEFAULT_BASE_URL,
+          currentField === 'baseUrl' ? cursorPos : baseUrl.length,
         )}
 
         {renderField(
@@ -208,6 +277,7 @@ export function FirstRunSetup({
           currentField === 'model' ? currentValue : model,
           currentField === 'model',
           DEFAULT_OLLAMA_MODEL,
+          currentField === 'model' ? cursorPos : model.length,
         )}
 
         {error && (
@@ -218,7 +288,9 @@ export function FirstRunSetup({
 
         <Box marginTop={1}>
           <Text color={theme.text.secondary} dimColor>
-            {t('Tab/↑↓: switch • Enter: confirm • Esc: cancel • Ctrl+V: paste')}
+            {t(
+              '←→: move cursor • Tab/↑↓: switch • Enter: confirm • Esc: cancel',
+            )}
           </Text>
         </Box>
 
