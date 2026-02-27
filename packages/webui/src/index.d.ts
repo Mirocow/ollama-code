@@ -75,6 +75,6 @@ export type { ToolCallStatus, ToolCallLocation } from './components/toolcalls';
 export type { CompletionItem, CompletionItemType } from './types/completion';
 export { groupSessionsByDate, getTimeAgo } from './utils/sessionGrouping';
 export type { SessionGroup } from './utils/sessionGrouping';
-export { adaptJSONLMessages, adaptACPMessages, filterEmptyMessages, isToolCallData, isMessageData, } from './adapters';
-export type { UnifiedMessage, UnifiedMessageType, JSONLMessage, ACPMessage, ACPMessageData, } from './adapters';
+export { adaptJSONLMessages, filterEmptyMessages, } from './adapters';
+export type { UnifiedMessage, UnifiedMessageType, JSONLMessage, } from './adapters';
 export { default as WebviewContainer } from './components/WebviewContainer';

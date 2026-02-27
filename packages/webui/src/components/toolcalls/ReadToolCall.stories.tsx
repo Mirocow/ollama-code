@@ -162,7 +162,7 @@ export const LongFilePath: Story = {
       status: 'completed',
       locations: [
         {
-          path: 'packages/vscode-ide-companion/src/webview/components/messages/toolcalls/ReadToolCall.tsx',
+          path: 'packages/cli/src/ui/components/OllamaConfigInput.tsx',
           line: 42,
         },
       ],

@@ -153,7 +153,6 @@ export * from './services/fileSystemService.js';
 // Export IDE specific logic
 export * from './ide/ide-client.js';
 export * from './ide/ideContext.js';
-export * from './ide/ide-installer.js';
 export {
   IDE_DEFINITIONS,
   detectIdeFromEnv,
