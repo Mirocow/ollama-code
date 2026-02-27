@@ -5,9 +5,11 @@
 ## Цель
 Рефакторинг проекта для работы **только** с Ollama API.
 
+---
+
 ## Поддерживаемые Ollama API методы
 
-### Основные методы (реализованы)
+### Основные методы
 
 | Метод | Endpoint | Описание |
 |-------|----------|----------|
@@ -16,7 +18,7 @@
 | `listModels()` | GET /api/tags | Список локальных моделей |
 | `showModel()` | POST /api/show | Информация о модели |
 
-### Дополнительные методы (реализованы)
+### Дополнительные методы
 
 | Метод | Endpoint | Описание |
 |-------|----------|----------|
@@ -39,8 +41,10 @@
 Нативный клиент для работы с Ollama REST API:
 - Поддержка streaming и non-streaming режимов
 - Поддержка tools (function calling)
+- Поддержка AbortSignal для отмены запросов
 - Обработка ошибок
 - Автоматический парсинг NDJSON
+- Поддержка keep_alive параметра
 
 ### OllamaNativeContentGenerator
 Расположение: `packages/core/src/core/ollamaNativeContentGenerator/`
@@ -50,6 +54,7 @@
 - Поддержка стриминга
 - Поддержка инструментов
 - Поддержка изображений (multimodal)
+- Оценка токенов
 
 ### Типы данных
 Расположение: `packages/core/src/types/content.ts`
@@ -59,6 +64,14 @@
 - `FunctionDeclaration`, `FunctionCall`, `FunctionResponse` - типы функций
 - `Tool`, `ToolConfig` - типы инструментов
 - `GenerateContentParameters`, `GenerateContentResponse` - типы генерации
+
+### ApiLogger
+Расположение: `packages/core/src/utils/apiLogger.ts`
+
+Логгер для API запросов:
+- Логирование запросов и ответов
+- Поддержка кастомных директорий
+- Обратная совместимость с OpenAILogger
 
 ---
 
@@ -129,6 +142,55 @@ await client.chat(
 );
 ```
 
+### Отмена запросов (AbortSignal)
+
+```typescript
+const controller = new AbortController();
+
+// Отмена через 10 секунд
+setTimeout(() => controller.abort(), 10000);
+
+try {
+  const response = await client.generate(
+    {
+      model: 'llama3.2',
+      prompt: 'Write a long story...',
+    },
+    undefined,
+    { signal: controller.signal }
+  );
+} catch (error) {
+  if (error.name === 'AbortError') {
+    console.log('Request was cancelled');
+  }
+}
+```
+
+### Keep Alive
+
+```typescript
+// Держать модель загруженной 5 минут
+await client.chat({
+  model: 'llama3.2',
+  messages: [{ role: 'user', content: 'Hello!' }],
+  keep_alive: '5m',
+});
+
+// Держать модель загруженной бесконечно
+await client.chat({
+  model: 'llama3.2',
+  messages: [{ role: 'user', content: 'Hello!' }],
+  keep_alive: -1,
+});
+
+// Выгрузить модель сразу после запроса
+await client.chat({
+  model: 'llama3.2',
+  messages: [{ role: 'user', content: 'Hello!' }],
+  keep_alive: 0,
+});
+```
+
 ### Function Calling (Tools)
 
 ```typescript
@@ -186,6 +248,12 @@ OLLAMA_TEST_MODEL=llama3.2 npm run test:ollama
 bash scripts/test-ollama-api.sh llama3.2
 ```
 
+### Результаты тестов
+
+- OllamaNativeClient: 40 тестов (29 passed, 11 skipped)
+- OllamaNativeContentGenerator: 19 тестов (все passed)
+- OllamaContentConverter: 27 тестов (все passed)
+
 ---
 
 ## Конфигурация
@@ -210,6 +278,7 @@ OLLAMA_TIMEOUT=300000
 
 ## Выполненные работы
 
+### Фаза 1: Базовый рефакторинг
 1. ✅ Удалены зависимости от `@google/genai`
 2. ✅ Созданы нативные типы данных
 3. ✅ Реализован OllamaNativeClient
@@ -217,5 +286,29 @@ OLLAMA_TIMEOUT=300000
 5. ✅ Добавлена поддержка стриминга
 6. ✅ Добавлена поддержка function calling (tools)
 7. ✅ Добавлена поддержка multimodal (изображения)
-8. ✅ Обновлены комментарии и документация
+
+### Фаза 2: Улучшения API
+8. ✅ Обновлены комментарии в коде
 9. ✅ Написаны unit и integration тесты
+10. ✅ Создан ApiLogger (замена OpenAILogger)
+11. ✅ Добавлена поддержка AbortSignal
+12. ✅ Документирован keep_alive параметр
+13. ✅ Обновлена документация OLLAMA_API.md
+
+---
+
+## Коммиты
+
+1. `refactor: remove @google/genai references from comments`
+2. `docs: update REFACTORING_PLAN with final status`
+3. `feat: add ApiLogger, refactor OpenAILogger for backward compatibility`
+4. `feat: add AbortSignal support to OllamaNativeClient`
+5. `docs: update OLLAMA_API.md with keep_alive and AbortSignal examples`
+6. `fix: update embedContent test to match actual API response`
+
+---
+
+## Документация
+
+- [OLLAMA_API.md](docs/OLLAMA_API.md) - полное описание API
+- [REFACTORING_PLAN.md](REFACTORING_PLAN.md) - этот документ
