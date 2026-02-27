@@ -8,12 +8,46 @@ import * as fs from 'node:fs';
 import { Storage } from '@ollama-code/ollama-code-core';
 
 /**
- * Check if this is the first run (no ~/.ollama-code directory exists)
- * @returns true if this is the first run
+ * Check if this is the first run.
+ * Returns true if:
+ * 1. No ~/.ollama-code directory exists, OR
+ * 2. No settings.json exists, OR
+ * 3. settings.json exists but security.auth.selectedType is not set
+ * @returns true if this is the first run (no auth configuration exists)
  */
 export function isFirstRun(): boolean {
   const globalOllamaDir = Storage.getGlobalOllamaDir();
-  return !fs.existsSync(globalOllamaDir);
+  
+  // Check if directory exists
+  if (!fs.existsSync(globalOllamaDir)) {
+    return true;
+  }
+  
+  // Check if settings.json exists
+  const settingsPath = Storage.getGlobalSettingsPath();
+  if (!fs.existsSync(settingsPath)) {
+    return true;
+  }
+  
+  // Check if authType is configured
+  try {
+    const content = fs.readFileSync(settingsPath, 'utf-8');
+    const settings = JSON.parse(content);
+    
+    // Check for security.auth.selectedType
+    const authType = (settings as Record<string, unknown>)?.security as Record<string, unknown> | undefined;
+    const selectedType = authType?.auth as Record<string, unknown> | undefined;
+    
+    // If selectedType is not set, this is first run
+    if (!selectedType?.selectedType) {
+      return true;
+    }
+    
+    return false;
+  } catch {
+    // If parsing fails, consider it first run
+    return true;
+  }
 }
 
 /**
