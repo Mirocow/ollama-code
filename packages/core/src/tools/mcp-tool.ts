@@ -197,7 +197,7 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
     updateOutput?: (output: ToolResultDisplay) => void,
   ): Promise<ToolResult> {
     // Use direct MCP client if available (supports progress notifications),
-    // otherwise fall back to the @google/genai mcpToTool wrapper.
+    // otherwise fall back to the CallableTool wrapper.
     if (this.mcpClient) {
       return this.executeWithDirectClient(signal, updateOutput);
     }
@@ -271,7 +271,7 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
   }
 
   /**
-   * Fallback: execute using the @google/genai CallableTool wrapper.
+   * Fallback: execute using the CallableTool wrapper.
    * This path does NOT support progress notifications.
    */
   private async executeWithCallableTool(
@@ -412,7 +412,7 @@ export class DiscoveredMCPTool extends BaseDeclarativeTool<
 /**
  * Wraps a raw MCP CallToolResult into the Part[] format that the
  * existing transform/display functions expect. This bridges the gap
- * between the raw MCP SDK response and the @google/genai Part format.
+ * between the raw MCP SDK response and the internal Part format.
  */
 function wrapMcpCallToolResultAsParts(
   toolName: string,
