@@ -68,7 +68,25 @@ export function resolveCliGenerationConfig(
   const { argv, settings, selectedAuthType } = inputs;
   const env = inputs.env ?? (process.env as Record<string, string | undefined>);
 
-  const authType = selectedAuthType || AuthType.USE_OLLAMA;
+  // Check if we have any credentials configured (explicit configuration)
+  // This determines whether to show the auth dialog on first run
+  const hasExplicitConfiguration =
+    argv.ollamaBaseUrl ||
+    argv.ollamaApiKey ||
+    argv.model ||
+    settings.security?.auth?.baseUrl ||
+    settings.security?.auth?.apiKey ||
+    settings.model?.name ||
+    env['OLLAMA_BASE_URL'] ||
+    env['OLLAMA_HOST'] ||
+    env['OLLAMA_API_KEY'] ||
+    env['OLLAMA_MODEL'];
+
+  // Only set authType if we have explicit configuration or it was explicitly provided
+  // This allows the auth dialog to show for first-time users without configuration
+  const authType =
+    selectedAuthType ||
+    (hasExplicitConfiguration ? AuthType.USE_OLLAMA : undefined);
 
   // Find modelProvider from settings.modelProviders based on authType and model
   let modelProvider: ProviderModelConfig | undefined;
