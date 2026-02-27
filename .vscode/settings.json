@@ -1,17 +1,46 @@
 {
-  "typescript.tsserver.experimental.enableProjectDiagnostics": true,
-  "editor.tabSize": 2,
-  "editor.rulers": [80],
-  "editor.detectIndentation": false,
-  "editor.insertSpaces": true,
-  "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
   },
-  "[json]": {
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.git": true,
+    "**/*.tsbuildinfo": true,
+    "**/*.js.map": true,
+    "**/*.d.ts": false
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/.git": true
+  },
+  "eslint.workingDirectories": [
+    "./packages/core",
+    "./packages/cli",
+    "./packages/webui",
+    "./packages/sdk-typescript",
+    "./packages/vscode-ide-companion"
+  ],
+  "vitest.enable": true,
+  "vitest.packagePath": "./node_modules/vitest",
+  "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "vitest.disableWorkspaceWarning": true
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }

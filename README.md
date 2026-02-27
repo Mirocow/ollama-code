@@ -1,234 +1,162 @@
-<div align="center">
+# Ollama Code
 
-[![License](https://img.shields.io/github/license/ollama-code/ollama-code.svg)](./LICENSE)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
+**Ollama Code** — это CLI-инструмент для работы с AI-ассистентом по программированию, использующий локальные модели Ollama. Проект предоставляет полный контроль над кодом и данными, работая полностью офлайн.
 
-**An open-source AI agent that runs locally with Ollama.**
+## Возможности
 
-</div>
+- 🚀 **Полностью локальная работа** — все модели запускаются локально через Ollama
+- 💻 **CLI-интерфейс** — удобный терминальный интерфейс на базе Ink (React for CLI)
+- 🔧 **Инструменты для кода** — чтение, редактирование, поиск файлов, выполнение команд
+- 🔌 **MCP поддержка** — интеграция с Model Context Protocol серверами
+- 🌐 **Веб-поиск** — интеграция с Tavily и Google Custom Search
+- 📦 **Расширения** — система расширений для добавления новых возможностей
+- 🐛 **Отладка** — встроенная поддержка отладки через VSCode
 
-Ollama Code is an open-source AI agent for the terminal that works entirely with local LLM models through [Ollama](https://ollama.ai). No API keys required, no internet connection needed - your code stays private.
+## Требования
 
-![](https://gw.alicdn.com/imgextra/i1/O1CN01D2DviS1wwtEtMwIzJ_!!6000000006373-2-tps-1600-900.png)
+- **Node.js** >= 20.0.0
+- **Ollama** установленный и запущенный (https://ollama.ai)
 
-## Why Ollama Code?
+## Быстрый старт
 
-- **100% Local**: Run AI models on your machine - no cloud, no API keys, complete privacy
-- **Free Forever**: No per-request costs, no rate limits, no subscriptions
-- **Open-source**: Both the framework and the models are open-source
-- **Agentic workflow**: Rich built-in tools for a full agentic workflow
-- **Terminal-first**: Built for developers who live in the command line
-
-## Installation
-
-### Prerequisites
-
-1. **Node.js 20+**: Download from [nodejs.org](https://nodejs.org/en/download)
-2. **Ollama**: Install from [ollama.ai](https://ollama.ai)
-
-### Install Ollama
+### Установка зависимостей
 
 ```bash
-# Linux / macOS
-curl -fsSL https://ollama.ai/install.sh | sh
-
-# Or download from https://ollama.ai
-```
-
-### Install Ollama Code
-
-```bash
-# Clone the repository
+# Клонировать репозиторий
 git clone <repository-url>
 cd ollama-code
 
-# Install dependencies
+# Установить зависимости
 npm install
 
-# Build the project
+# Собрать проект
 npm run build
-
-# Run
-node dist/cli.js
 ```
 
-## Quick Start
-
-### 1. Download a Model
+### Запуск
 
 ```bash
-# Recommended: Qwen 2.5 Coder (excellent for coding)
-ollama pull qwen2.5-coder
+# Интерактивный режим
+npm run start
 
-# Alternatives
-ollama pull llama3.2
-ollama pull codellama
-ollama pull deepseek-coder-v2
-ollama pull mistral
-ollama pull codestral
+# С указанием модели
+npm run start -- --model llama3.2
+
+# Одноразовый запрос
+npm run start -- "Объясни, как работает async/await в JavaScript"
+
+# Режим отладки
+npm run debug
 ```
 
-### 2. Run Ollama Code
+## Структура проекта
+
+```
+ollama-code/
+├── packages/
+│   ├── core/           # Ядро: Ollama клиент, инструменты, типы
+│   ├── cli/            # CLI интерфейс на базе Ink
+│   ├── webui/          # Веб-компоненты для UI
+│   ├── sdk-typescript/ # SDK для программного использования
+│   └── vscode-ide-companion/  # VSCode расширение
+├── scripts/            # Скрипты сборки и запуска
+├── integration-tests/  # Интеграционные тесты
+└── docs/              # Документация
+```
+
+## Основные команды
+
+| Команда | Описание |
+|---------|----------|
+| `npm run build` | Собрать все пакеты |
+| `npm run start` | Запустить CLI |
+| `npm run dev` | Запуск в режиме разработки |
+| `npm run debug` | Запуск с отладчиком |
+| `npm run test` | Запустить тесты |
+| `npm run lint` | Проверить код линтером |
+| `npm run typecheck` | Проверка типов TypeScript |
+
+## Параметры CLI
+
+```
+Options:
+  -d, --debug                     Режим отладки
+  -m, --model                     Указать модель
+  -s, --sandbox                   Запуск в песочнице
+  -y, --yolo                      Автоматическое подтверждение всех действий
+      --approval-mode             Режим подтверждения: plan, default, auto-edit, yolo
+      --experimental-lsp          Включить экспериментальную поддержку LSP
+      --ollama-base-url           URL Ollama сервера (по умолчанию: http://localhost:11434)
+      --ollama-api-key            API ключ для удалённых инстансов
+```
+
+## Переменные окружения
+
+| Переменная | Описание |
+|------------|----------|
+| `OLLAMA_BASE_URL` | URL Ollama сервера |
+| `OLLAMA_API_KEY` | API ключ (опционально) |
+| `DEBUG` | Включить режим отладки (1 или true) |
+| `OLLAMA_CODE_DEBUG_LOG_FILE` | Логирование в файл |
+
+## Отладка в VSCode
+
+Проект включает готовые конфигурации VSCode для отладки:
+
+1. Откройте проект в VSCode
+2. Нажмите F5 или выберите "Run and Debug"
+3. Выберите конфигурацию:
+   - **Debug Ollama Code CLI** — базовая отладка
+   - **Debug Ollama Code CLI (with args)** — с аргументами
+   - **Debug Current Test File** — отладка текущего теста
+
+## API Ollama
+
+Проект использует нативные API Ollama:
+
+- `GET /api/tags` — список локальных моделей
+- `POST /api/show` — информация о модели
+- `POST /api/generate` — генерация текста
+- `POST /api/chat` — чат с моделью
+- `POST /api/embed` — эмбеддинги
+
+Документация API: https://github.com/ollama/ollama/blob/main/docs/api.md
+
+## Разработка
+
+### Сборка отдельного пакета
 
 ```bash
-# Set the model (optional, defaults to qwen2.5-coder)
-export OLLAMA_MODEL=qwen2.5-coder
+# Сборка core
+npm run build --workspace=packages/core
 
-# Run
-node dist/cli.js
+# Сборка cli
+npm run build --workspace=packages/cli
 ```
 
-### 3. Start Coding
-
-```
-What does this project do?
-Explain the codebase structure.
-Help me refactor this function.
-Generate unit tests for this module.
-```
-
-## Available Models
-
-| Model | Description | Best For |
-|-------|-------------|----------|
-| `qwen2.5-coder` | Qwen 2.5 Coder | Coding tasks (default) |
-| `llama3.2` | Meta Llama 3.2 | General purpose |
-| `llama3.1` | Meta Llama 3.1 | Powerful general model |
-| `codellama` | Code Llama | Code generation |
-| `deepseek-coder-v2` | DeepSeek Coder V2 | Coding tasks |
-| `mistral` | Mistral | Fast inference |
-| `codestral` | Codestral | Mistral AI code model |
-| `phi3` | Microsoft Phi-3 | Lightweight model |
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OLLAMA_BASE_URL` | Ollama API endpoint | `http://localhost:11434/v1` |
-| `OLLAMA_MODEL` | Default model name | `qwen2.5-coder` |
-| `OLLAMA_API_KEY` | API key (for remote Ollama) | `ollama` |
-
-### Settings File
-
-Create `~/.ollama-code/settings.json`:
-
-```json
-{
-  "modelProviders": {
-    "ollama": [
-      {
-        "id": "qwen2.5-coder",
-        "name": "Qwen 2.5 Coder",
-        "baseUrl": "http://localhost:11434/v1",
-        "description": "Qwen 2.5 Coder - excellent for coding tasks"
-      },
-      {
-        "id": "llama3.2",
-        "name": "Llama 3.2",
-        "baseUrl": "http://localhost:11434/v1",
-        "description": "Meta Llama 3.2 - versatile model"
-      }
-    ]
-  },
-  "model": {
-    "name": "qwen2.5-coder"
-  }
-}
-```
-
-## Remote Ollama
-
-Connect to a remote Ollama instance:
+### Запуск тестов
 
 ```bash
-export OLLAMA_BASE_URL=http://your-server:11434/v1
-export OLLAMA_API_KEY=your-key  # if authentication is required
-node dist/cli.js
-```
-
-## Usage
-
-### Interactive Mode
-
-```bash
-cd your-project/
-node dist/cli.js
-```
-
-Use `@` to reference local files (e.g., `@src/main.ts`).
-
-### Headless Mode
-
-```bash
-node dist/cli.js -p "Explain the architecture of this project"
-```
-
-## Commands & Shortcuts
-
-### Session Commands
-
-- `/help` - Display available commands
-- `/clear` - Clear conversation history
-- `/compress` - Compress history to save tokens
-- `/stats` - Show current session information
-- `/model` - Switch between available models
-- `/exit` or `/quit` - Exit Ollama Code
-
-### Keyboard Shortcuts
-
-- `Ctrl+C` - Cancel current operation
-- `Ctrl+D` - Exit (on empty line)
-- `Up/Down` - Navigate command history
-
-## Development
-
-```bash
-# Install dependencies
-npm install
-
-# Run TypeScript check
-npm run typecheck
-
-# Build
-npm run build
-
-# Run tests
+# Все тесты
 npm run test
+
+# Тесты core пакета
+npm run test --workspace=packages/core
+
+# Интеграционные тесты
+npm run test:integration:sandbox:none
 ```
 
-## Troubleshooting
+### Добавление нового инструмента
 
-### Ollama not found
+1. Создайте файл в `packages/core/src/tools/`
+2. Реализуйте интерфейс `Tool`
+3. Зарегистрируйте в `tool-registry.ts`
 
-Make sure Ollama is installed and running:
+## Лицензия
 
-```bash
-ollama serve
-```
+Apache License 2.0
 
-### Model not found
+## Содействие
 
-Download the model first:
-
-```bash
-ollama pull qwen2.5-coder
-```
-
-### Connection refused
-
-Check if Ollama is running on the correct port:
-
-```bash
-# Default: http://localhost:11434
-curl http://localhost:11434/api/tags
-```
-
-## License
-
-Apache-2.0
-
-## Acknowledgments
-
-This project is based on [Google Gemini CLI](https://github.com/google-gemini/gemini-cli) and [Qwen Code](https://github.com/QwenLM/qwen-code), adapted to work exclusively with Ollama for local LLM inference.
+См. [CONTRIBUTING.md](./CONTRIBUTING.md) для руководства по участию в разработке.
