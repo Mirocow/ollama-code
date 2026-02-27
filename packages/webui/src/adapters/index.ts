@@ -11,18 +11,9 @@ export type {
   UnifiedMessage,
   UnifiedMessageType,
   JSONLMessage,
-  ACPMessage,
-  ACPMessageData,
   ToolCallData,
   FileContext,
 } from './types.js';
 
 // JSONL Adapter (for ChatViewer)
 export { adaptJSONLMessages, filterEmptyMessages } from './JSONLAdapter.js';
-
-// ACP Adapter (for vscode-ide-companion)
-export {
-  adaptACPMessages,
-  isToolCallData,
-  isMessageData,
-} from './ACPAdapter.js';

@@ -228,21 +228,6 @@ export default tseslint.config(
   // ==================== no-console allowlist ====================
   // The following files/packages are allowed to use console.*
 
-  // VS Code IDE companion - out of scope for no-console rule
-  {
-    files: ['packages/vscode-ide-companion/**/*.ts', 'packages/vscode-ide-companion/**/*.tsx', 'packages/vscode-ide-companion/**/*.js'],
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
-    },
-    rules: { 
-      'no-console': 'off',
-      'no-undef': 'off',
-      'import/no-internal-modules': 'off',
-    },
-  },
   // WebUI package - UI component library with Storybook
   {
     files: ['packages/webui/**/*.ts', 'packages/webui/**/*.tsx', 'packages/webui/**/*.js'],
@@ -265,22 +250,6 @@ export default tseslint.config(
       'packages/cli/src/utils/stdioHelpers.ts',            // wraps console.clear()
     ],
     rules: { 'no-console': 'off' },
-  },
-  // Specific esbuild configs not covered by scripts pattern
-  {
-    files: ['packages/vscode-ide-companion/esbuild.js'],
-    languageOptions: {
-      globals: {
-        ...globals.node,
-        process: 'readonly',
-        console: 'readonly',
-      },
-    },
-    rules: {
-      'no-restricted-syntax': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
-      'no-console': 'off',
-    },
   },
   // Settings for export-html assets
   {

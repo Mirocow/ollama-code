@@ -12,7 +12,7 @@ import type { FileContext } from '../components/messages/UserMessage.js';
  */
 export type UnifiedMessageType = 'user' | 'assistant' | 'tool_call' | 'thinking';
 /**
- * Unified message format - normalized from ACP or JSONL sources
+ * Unified message format - normalized from JSONL sources
  */
 export interface UnifiedMessage {
     /** Unique identifier */
@@ -51,21 +51,5 @@ export interface JSONLMessage {
     };
     model?: string;
     toolCall?: ToolCallData;
-}
-/**
- * ACP message format (vscode-ide-companion input)
- */
-export interface ACPMessage {
-    type: 'message' | 'in-progress-tool-call' | 'completed-tool-call';
-    data: ACPMessageData | ToolCallData;
-}
-/**
- * ACP text message data
- */
-export interface ACPMessageData {
-    role: 'user' | 'assistant' | 'thinking';
-    content: string;
-    timestamp?: number;
-    fileContext?: FileContext[];
 }
 export type { ToolCallData };

@@ -7,6 +7,4 @@
  */
 // JSONL Adapter (for ChatViewer)
 export { adaptJSONLMessages, filterEmptyMessages } from './JSONLAdapter.js';
-// ACP Adapter (for vscode-ide-companion)
-export { adaptACPMessages, isToolCallData, isMessageData, } from './ACPAdapter.js';
 //# sourceMappingURL=index.js.map
