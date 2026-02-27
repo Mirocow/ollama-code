@@ -16,7 +16,7 @@ import type {
   SettingInputRequest,
   PluginChoiceRequest,
 } from '../types.js';
-import type { QwenAuthState } from '../hooks/useQwenAuth.js';
+import type { OllamaAuthState } from '../hooks/useOllamaAuth.js';
 import type { CommandContext, SlashCommand } from '../commands/types.js';
 import type { TextBuffer } from '../components/shared/text-buffer.js';
 import type {
@@ -44,7 +44,7 @@ export interface UIState {
   isAuthDialogOpen: boolean;
   pendingAuthType: AuthType | undefined;
   // Ollama auth state (optional - not used for Ollama)
-  qwenAuthState?: QwenAuthState;
+  ollamaAuthState?: OllamaAuthState;
   editorError: string | null;
   isEditorDialogOpen: boolean;
   debugMessage: string;

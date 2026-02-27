@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,7 +11,7 @@ import { t } from '../../../../i18n/index.js';
 
 interface GenerationOption {
   label: string;
-  value: 'qwen' | 'manual';
+  value: 'ollama' | 'manual';
 }
 
 const generationOptions: GenerationOption[] = [
@@ -19,7 +19,7 @@ const generationOptions: GenerationOption[] = [
     get label() {
       return t('Generate with Ollama Code (Recommended)');
     },
-    value: 'qwen',
+    value: 'ollama',
   },
   {
     get label() {
@@ -39,7 +39,7 @@ export function GenerationMethodSelector({
   onPrevious: _onPrevious,
 }: WizardStepProps) {
   const handleSelect = (selectedValue: string) => {
-    const method = selectedValue as 'qwen' | 'manual';
+    const method = selectedValue as 'ollama' | 'manual';
     dispatch({ type: 'SET_GENERATION_METHOD', method });
     onNext();
   };

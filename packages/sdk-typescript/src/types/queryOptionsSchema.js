@@ -109,7 +109,7 @@ export const QueryOptionsSchema = z
     .object({
     cwd: z.string().optional(),
     model: z.string().optional(),
-    pathToQwenExecutable: z.string().optional(),
+    pathToOllamaExecutable: z.string().optional(),
     env: z.record(z.string(), z.string()).optional(),
     permissionMode: z.enum(['default', 'plan', 'auto-edit', 'yolo']).optional(),
     canUseTool: z
@@ -129,7 +129,7 @@ export const QueryOptionsSchema = z
     excludeTools: z.array(z.string()).optional(),
     allowedTools: z.array(z.string()).optional(),
     authType: z
-        .enum(['openai', 'anthropic', 'qwen-oauth', 'gemini', 'vertex-ai'])
+        .enum(['openai', 'anthropic', 'ollama-oauth', 'gemini', 'vertex-ai'])
         .optional(),
     agents: z
         .array(z.custom((val) => val &&

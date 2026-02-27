@@ -27,7 +27,7 @@ export const AVAILABLE_MODELS_OLLAMA: AvailableModel[] = [
     id: MAINLINE_CODER,
     label: MAINLINE_CODER,
     get description() {
-      return t('Qwen 2.5 Coder — excellent for coding tasks');
+      return t('Llama 3.2 — excellent for coding tasks');
     },
   },
   {

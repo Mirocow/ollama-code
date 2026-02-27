@@ -163,7 +163,7 @@ export async function handleAtCommand({
   const contentLabelsForDisplay: string[] = [];
   const ignoredByReason: Record<string, string[]> = {
     git: [],
-    qwen: [],
+    ollama: [],
     both: [],
   };
 
@@ -204,23 +204,23 @@ export async function handleAtCommand({
         respectGitIgnore: true,
         respectOllamaCodeIgnore: false,
       });
-    const qwenIgnored =
+    const ollamaIgnored =
       respectFileIgnore.respectOllamaCodeIgnore &&
       fileDiscovery.shouldIgnoreFile(pathName, {
         respectGitIgnore: false,
         respectOllamaCodeIgnore: true,
       });
 
-    if (gitIgnored || qwenIgnored) {
+    if (gitIgnored || ollamaIgnored) {
       const reason =
-        gitIgnored && qwenIgnored ? 'both' : gitIgnored ? 'git' : 'qwen';
+        gitIgnored && ollamaIgnored ? 'both' : gitIgnored ? 'git' : 'ollama';
       ignoredByReason[reason].push(pathName);
       const reasonText =
         reason === 'both'
-          ? 'ignored by both git and qwen'
+          ? 'ignored by both git and ollama'
           : reason === 'git'
             ? 'git-ignored'
-            : 'qwen-ignored';
+            : 'ollama-ignored';
       onDebugMessage(`Path ${pathName} is ${reasonText} and will be skipped.`);
       continue;
     }
@@ -309,7 +309,7 @@ export async function handleAtCommand({
   // Inform user about ignored paths
   const totalIgnored =
     ignoredByReason['git'].length +
-    ignoredByReason['qwen'].length +
+    ignoredByReason['ollama'].length +
     ignoredByReason['both'].length;
 
   if (totalIgnored > 0) {
@@ -317,8 +317,8 @@ export async function handleAtCommand({
     if (ignoredByReason['git'].length) {
       messages.push(`Git-ignored: ${ignoredByReason['git'].join(', ')}`);
     }
-    if (ignoredByReason['qwen'].length) {
-      messages.push(`Qwen-ignored: ${ignoredByReason['qwen'].join(', ')}`);
+    if (ignoredByReason['ollama'].length) {
+      messages.push(`Ollama-ignored: ${ignoredByReason['ollama'].join(', ')}`);
     }
     if (ignoredByReason['both'].length) {
       messages.push(`Ignored by both: ${ignoredByReason['both'].join(', ')}`);

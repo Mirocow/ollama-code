@@ -189,7 +189,7 @@ export interface GitCoAuthorSettings {
   email?: string;
 }
 
-export type ExtensionOriginSource = 'QwenCode' | 'Claude' | 'Gemini';
+export type ExtensionOriginSource = 'OllamaCode' | 'Claude' | 'Gemini';
 
 export interface ExtensionInstallMetadata {
   source: string;

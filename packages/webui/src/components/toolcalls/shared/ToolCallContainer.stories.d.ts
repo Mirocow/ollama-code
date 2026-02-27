@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ToolCallContainer } from './LayoutComponents.js';
+import type { ToolCallContainer } from './LayoutComponents.js';
 /**
  * ToolCallContainer is the base container for displaying tool call results.
  * It shows a status indicator bullet and supports various status states.

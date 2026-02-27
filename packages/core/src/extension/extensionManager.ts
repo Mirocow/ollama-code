@@ -10,10 +10,10 @@ import type {
   SkillConfig,
   SubagentConfig,
   ClaudeMarketplaceConfig,
-} from '../index.js';
+
+  Config} from '../index.js';
 import {
-  Storage,
-  Config,
+  Storage
 } from '../index.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -224,7 +224,7 @@ async function convertGeminiOrClaudeExtension(
   pluginName?: string,
 ): Promise<{ extensionDir: string; originSource: ExtensionOriginSource }> {
   let newExtensionDir = extensionDir;
-  let originSource: ExtensionOriginSource = 'QwenCode';
+  let originSource: ExtensionOriginSource = 'OllamaCode';
   const configFilePath = path.join(extensionDir, EXTENSIONS_CONFIG_FILENAME);
   if (fs.existsSync(configFilePath)) {
     newExtensionDir = extensionDir;
@@ -998,7 +998,7 @@ export class ExtensionManager {
         const installMetadata: ExtensionInstallMetadata = {
           source: extension.path,
           type: 'local',
-          originSource: extension.installMetadata?.originSource || 'QwenCode',
+          originSource: extension.installMetadata?.originSource || 'OllamaCode',
         };
         await this.installExtension(
           installMetadata,

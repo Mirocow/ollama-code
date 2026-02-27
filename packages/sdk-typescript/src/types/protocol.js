@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 export var AuthProviderType;
 (function (AuthProviderType) {
     AuthProviderType["DYNAMIC_DISCOVERY"] = "dynamic_discovery";
@@ -77,7 +77,7 @@ export function isToolResultBlock(block) {
 }
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 /**

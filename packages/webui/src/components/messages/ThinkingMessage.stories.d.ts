@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ThinkingMessage } from './ThinkingMessage.js';
+import type { ThinkingMessage } from './ThinkingMessage.js';
 /**
  * ThinkingMessage component displays the AI's internal thinking process.
  * Supports collapse/expand functionality, collapsed by default, click to expand and view details.

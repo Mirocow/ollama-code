@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ShellToolCall } from './ShellToolCall.js';
+import type { ShellToolCall } from './ShellToolCall.js';
 /**
  * ShellToolCall displays bash/execute command operations.
  * Shows command input (IN) and output (OUT) in a card layout.

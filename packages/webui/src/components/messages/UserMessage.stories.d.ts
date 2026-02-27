@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { UserMessage } from './UserMessage.js';
+import type { UserMessage } from './UserMessage.js';
 /**
  * UserMessage component displays messages from the user.
  * Supports file context display with line numbers.

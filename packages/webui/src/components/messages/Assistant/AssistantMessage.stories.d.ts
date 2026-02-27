@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { AssistantMessage } from './AssistantMessage.js';
+import type { AssistantMessage } from './AssistantMessage.js';
 /**
  * AssistantMessage displays AI responses with markdown formatting.
  * Supports different status states for timeline bullet coloring.

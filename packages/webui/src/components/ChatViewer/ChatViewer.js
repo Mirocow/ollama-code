@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, } from 'react';
@@ -11,12 +11,12 @@ import { ThinkingMessage } from '../messages/ThinkingMessage.js';
 import { GenericToolCall, ThinkToolCall, SaveMemoryToolCall, EditToolCall, WriteToolCall, SearchToolCall, UpdatedPlanToolCall, ShellToolCall, ReadToolCall, WebFetchToolCall, shouldShowToolCall, } from '../toolcalls/index.js';
 import './ChatViewer.css';
 /**
- * Extract text content from message (supports both Qwen and Claude formats)
+ * Extract text content from message (supports both Ollama Code and Claude formats)
  */
 function extractContent(message) {
     if (!message)
         return '';
-    // Qwen format: message.parts[].text
+    // Ollama Code format: message.parts[].text
     if (message.parts && Array.isArray(message.parts)) {
         return message.parts.map((part) => part.text || '').join('');
     }

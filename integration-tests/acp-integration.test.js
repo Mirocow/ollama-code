@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import { spawn } from 'node:child_process';
@@ -167,7 +167,7 @@ function setupAcpTest(rig, options) {
                 },
             });
             expect(initResult).toBeDefined();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             
             expect(initResult.agentInfo.version).toBeDefined();
             await sendRequest('authenticate', { methodId: 'openai' });
             const newSession = (await sendRequest('session/new', {

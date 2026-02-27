@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 import type { CanUseTool } from './types.js';
 import type { SubagentConfig } from './protocol.js';
 /**
@@ -433,7 +433,7 @@ export declare const TimeoutConfigSchema: z.ZodObject<{
 export declare const QueryOptionsSchema: z.ZodObject<{
     cwd: z.ZodOptional<z.ZodString>;
     model: z.ZodOptional<z.ZodString>;
-    pathToQwenExecutable: z.ZodOptional<z.ZodString>;
+    pathToOllamaExecutable: z.ZodOptional<z.ZodString>;
     env: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
     permissionMode: z.ZodOptional<z.ZodEnum<["default", "plan", "auto-edit", "yolo"]>>;
     canUseTool: z.ZodOptional<z.ZodType<CanUseTool, z.ZodTypeDef, CanUseTool>>;
@@ -582,7 +582,7 @@ export declare const QueryOptionsSchema: z.ZodObject<{
     coreTools: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
     excludeTools: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
     allowedTools: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    authType: z.ZodOptional<z.ZodEnum<["openai", "anthropic", "qwen-oauth", "gemini", "vertex-ai"]>>;
+    authType: z.ZodOptional<z.ZodEnum<["openai", "anthropic", "ollama-oauth", "gemini", "vertex-ai"]>>;
     agents: z.ZodOptional<z.ZodArray<z.ZodType<SubagentConfig, z.ZodTypeDef, SubagentConfig>, "many">>;
     includePartialMessages: z.ZodOptional<z.ZodBoolean>;
     resume: z.ZodOptional<z.ZodString>;
@@ -617,7 +617,7 @@ export declare const QueryOptionsSchema: z.ZodObject<{
     excludeTools?: string[] | undefined;
     resume?: string | undefined;
     env?: Record<string, string> | undefined;
-    authType?: "openai" | "gemini" | "qwen-oauth" | "anthropic" | "vertex-ai" | undefined;
+    authType?: "openai" | "gemini" | "ollama-oauth" | "anthropic" | "vertex-ai" | undefined;
     agents?: SubagentConfig[] | undefined;
     stderr?: ((message: string) => void) | undefined;
     allowedTools?: string[] | undefined;
@@ -664,7 +664,7 @@ export declare const QueryOptionsSchema: z.ZodObject<{
     coreTools?: string[] | undefined;
     maxSessionTurns?: number | undefined;
     abortController?: AbortController | undefined;
-    pathToQwenExecutable?: string | undefined;
+    pathToOllamaExecutable?: string | undefined;
     logLevel?: "error" | "info" | "debug" | "warn" | undefined;
     canUseTool?: CanUseTool | undefined;
 }, {
@@ -681,7 +681,7 @@ export declare const QueryOptionsSchema: z.ZodObject<{
     excludeTools?: string[] | undefined;
     resume?: string | undefined;
     env?: Record<string, string> | undefined;
-    authType?: "openai" | "gemini" | "qwen-oauth" | "anthropic" | "vertex-ai" | undefined;
+    authType?: "openai" | "gemini" | "ollama-oauth" | "anthropic" | "vertex-ai" | undefined;
     agents?: SubagentConfig[] | undefined;
     stderr?: ((message: string) => void) | undefined;
     allowedTools?: string[] | undefined;
@@ -728,7 +728,7 @@ export declare const QueryOptionsSchema: z.ZodObject<{
     coreTools?: string[] | undefined;
     maxSessionTurns?: number | undefined;
     abortController?: AbortController | undefined;
-    pathToQwenExecutable?: string | undefined;
+    pathToOllamaExecutable?: string | undefined;
     logLevel?: "error" | "info" | "debug" | "warn" | undefined;
     canUseTool?: CanUseTool | undefined;
 }>;

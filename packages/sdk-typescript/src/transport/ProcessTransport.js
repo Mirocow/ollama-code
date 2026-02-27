@@ -37,7 +37,7 @@ export class ProcessTransport {
             const cwd = this.options.cwd ?? process.cwd();
             const env = { ...process.env, ...this.options.env };
             const spawnInfo = this.options.spawnInfo ??
-                prepareSpawnInfo(this.options.pathToQwenExecutable);
+                prepareSpawnInfo(this.options.pathToOllamaExecutable);
             const stderrMode = this.options.debug || this.options.stderr ? 'pipe' : 'ignore';
             // Check if we should use fork for Electron integration
             const useFork = env.FORK_MODE === '1';

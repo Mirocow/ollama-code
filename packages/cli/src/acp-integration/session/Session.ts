@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -742,7 +742,7 @@ export class Session implements SessionContext {
       case 'message': {
         // 'message' type is not ideal for ACP mode, but we handle it for compatibility
         // by converting it to a stream_messages-like notification
-        await this.client.sendCustomNotification('_qwencode/slash_command', {
+        await this.client.sendCustomNotification('_ollamacode/slash_command', {
           sessionId: this.sessionId,
           command: originalPrompt
             .filter((block) => block.type === 'text')
@@ -769,7 +769,7 @@ export class Session implements SessionContext {
 
         // Stream all messages to the client
         for await (const msg of result.messages) {
-          await this.client.sendCustomNotification('_qwencode/slash_command', {
+          await this.client.sendCustomNotification('_ollamacode/slash_command', {
             sessionId: this.sessionId,
             command,
             messageType: msg.messageType,

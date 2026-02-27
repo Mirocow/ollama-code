@@ -15,9 +15,9 @@
 export class OllamaApiError extends Error {
   constructor(
     message: string,
-    public readonly code: string,
-    public readonly statusCode?: number,
-    public readonly details?: unknown,
+    readonly code: string,
+    readonly statusCode?: number,
+    readonly details?: unknown,
   ) {
     super(message);
     this.name = 'OllamaApiError';
@@ -56,7 +56,7 @@ export class OllamaApiError extends Error {
  * Error thrown when connection to Ollama server fails.
  */
 export class OllamaConnectionError extends OllamaApiError {
-  public override readonly cause?: Error;
+  override readonly cause?: Error;
 
   constructor(
     message: string = 'Failed to connect to Ollama server',
@@ -104,7 +104,7 @@ export class OllamaModelLoadError extends OllamaApiError {
 export class OllamaGenerationError extends OllamaApiError {
   constructor(
     message: string = 'Generation failed',
-    public readonly partialResponse?: string,
+    readonly partialResponse?: string,
   ) {
     super(message, 'GENERATION_ERROR', undefined, { partialResponse });
     this.name = 'OllamaGenerationError';
@@ -147,7 +147,7 @@ export class OllamaAbortError extends OllamaApiError {
 export class OllamaInvalidResponseError extends OllamaApiError {
   constructor(
     message: string = 'Invalid response from Ollama server',
-    public readonly rawData?: unknown,
+    readonly rawData?: unknown,
   ) {
     super(message, 'INVALID_RESPONSE', undefined, { rawData });
     this.name = 'OllamaInvalidResponseError';
@@ -170,7 +170,7 @@ export class OllamaAuthenticationError extends OllamaApiError {
 export class OllamaStreamingError extends OllamaApiError {
   constructor(
     message: string = 'Streaming error',
-    public readonly lastValidChunk?: unknown,
+    readonly lastValidChunk?: unknown,
   ) {
     super(message, 'STREAMING_ERROR', undefined, { lastValidChunk });
     this.name = 'OllamaStreamingError';
@@ -182,8 +182,8 @@ export class OllamaStreamingError extends OllamaApiError {
  */
 export class OllamaContextLengthError extends OllamaApiError {
   constructor(
-    public readonly tokenCount: number,
-    public readonly maxTokens: number,
+    readonly tokenCount: number,
+    readonly maxTokens: number,
   ) {
     super(
       `Context length exceeded: ${tokenCount} tokens > ${maxTokens} max tokens`,
@@ -201,8 +201,8 @@ export class OllamaContextLengthError extends OllamaApiError {
 export class OllamaResourceError extends OllamaApiError {
   constructor(
     message: string = 'Insufficient GPU/memory resources',
-    public readonly requiredMemory?: number,
-    public readonly availableMemory?: number,
+    readonly requiredMemory?: number,
+    readonly availableMemory?: number,
   ) {
     super(message, 'RESOURCE_ERROR', undefined, {
       requiredMemory,

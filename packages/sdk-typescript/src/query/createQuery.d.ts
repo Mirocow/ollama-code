@@ -2,7 +2,7 @@
  * Factory function for creating Query instances.
  */
 import type { SDKUserMessage } from '../types/protocol.js';
-import { Query } from './Query.js';
+import type { Query } from './Query.js';
 import type { QueryOptions } from '../types/types.js';
 export type { QueryOptions };
 export declare function query({ prompt, options, }: {

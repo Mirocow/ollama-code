@@ -326,7 +326,7 @@ const SETTINGS_SCHEMA = {
         label: 'Theme',
         category: 'UI',
         requiresRestart: false,
-        default: 'Qwen Dark' as string,
+        default: 'Ollama Dark' as string,
         description: 'The color theme for the UI.',
         showInDialog: true,
       },
@@ -411,7 +411,7 @@ const SETTINGS_SCHEMA = {
         requiresRestart: false,
         default: true,
         description:
-          'Show optional feedback dialog after conversations to help improve Qwen performance.',
+          'Show optional feedback dialog after conversations to help improve Ollama Code performance.',
         showInDialog: true,
       },
       accessibility: {
@@ -1182,7 +1182,7 @@ const SETTINGS_SCHEMA = {
         requiresRestart: false,
         default: true,
         description:
-          'Enable vision model support and auto-switching functionality. When disabled, vision models like qwen-vl-max-latest will be hidden and auto-switching will not occur.',
+          'Enable vision model support and auto-switching functionality. When disabled, vision models like llava:latest will be hidden and auto-switching will not occur.',
         showInDialog: false,
       },
       vlmSwitchMode: {

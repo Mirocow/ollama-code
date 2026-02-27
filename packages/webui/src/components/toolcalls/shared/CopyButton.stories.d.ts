@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { CopyButton } from './copyUtils.js';
+import type { CopyButton } from './copyUtils.js';
 /**
  * CopyButton displays a copy icon that copies text to clipboard.
  * Note: Parent element needs 'group' class for hover effect.

@@ -6,7 +6,7 @@
 
 /**
  * Stub for useCodingPlanUpdates - not needed for Ollama.
- * Coding Plan was a Qwen-specific feature.
+ * Coding Plan was a Ollama-specific feature.
  */
 
 import type { AuthType, Config } from '@ollama-code/ollama-code-core';
@@ -17,7 +17,7 @@ export function useCodingPlanUpdates(
   _settings: unknown,
 ): void {
   // No-op for Ollama
-  // Coding Plan updates were specific to Qwen OAuth
+  // Coding Plan updates were specific to Ollama OAuth
 }
 
 export type { AuthType };

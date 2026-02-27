@@ -170,7 +170,7 @@ export async function parseArguments(): Promise<CliArgs> {
   // hack: if the first argument is the CLI entry point, remove it
   if (
     rawArgv.length > 0 &&
-    (rawArgv[0].endsWith('/dist/qwen-cli/cli.js') ||
+    (rawArgv[0].endsWith('/dist/ollama-code/cli.js') ||
       rawArgv[0].endsWith('/dist/cli.js') ||
       rawArgv[0].endsWith('/dist/cli/cli.js'))
   ) {
@@ -179,9 +179,9 @@ export async function parseArguments(): Promise<CliArgs> {
 
   const yargsInstance = yargs(rawArgv)
     .locale('en')
-    .scriptName('qwen')
+    .scriptName('ollama-code')
     .usage(
-      'Usage: qwen [options] [command]\n\nOllama Code - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
+      'Usage: ollama-code [options] [command]\n\nOllama Code - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
     )
     .option('debug', {
       alias: 'd',
@@ -823,7 +823,7 @@ export async function loadCliConfig(
       sessionId = argv.resume;
       sessionData = await sessionService.loadSession(argv.resume);
       if (!sessionData) {
-        const message = `No saved session found with ID ${argv.resume}. Run \`qwen --resume\` without an ID to choose from existing sessions.`;
+        const message = `No saved session found with ID ${argv.resume}. Run \`ollama-code --resume\` without an ID to choose from existing sessions.`;
         writeStderrLine(message);
         process.exit(1);
       }

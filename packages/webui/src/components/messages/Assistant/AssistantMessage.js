@@ -27,7 +27,7 @@ export const AssistantMessage = ({ content, timestamp: _timestamp, onFileClick, 
                 return 'assistant-message-default';
         }
     };
-    return (_jsx("div", { className: `qwen-message message-item assistant-message-container ${getStatusClass()}`, "data-first": isFirst, "data-last": isLast, style: {
+    return (_jsx("div", { className: `ollama-message message-item assistant-message-container ${getStatusClass()}`, "data-first": isFirst, "data-last": isLast, style: {
             width: '100%',
             alignItems: 'flex-start',
             paddingLeft: '30px',

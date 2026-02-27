@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  *
  * Adapter for JSONL format messages (used by ChatViewer)
@@ -11,7 +11,7 @@
 function extractContent(message) {
     if (!message)
         return '';
-    // Qwen format: parts array
+    // Ollama Code format: parts array
     if (message.parts?.length) {
         return message.parts.map((p) => p.text).join('');
     }

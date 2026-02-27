@@ -149,10 +149,10 @@ export function extensionConsentString(
   commands: string[] = [],
   skills: SkillConfig[] = [],
   subagents: SubagentConfig[] = [],
-  originSource: string = 'QwenCode',
+  originSource: string = 'OllamaCode',
 ): string {
   const output: string[] = [];
-  if (originSource !== 'QwenCode') {
+  if (originSource !== 'OllamaCode') {
     output.push(
       t(
         'You are installing an extension from {{originSource}}. Some features may not work perfectly with Ollama Code.',
@@ -231,7 +231,7 @@ export const requestConsentOrFail = async (
   if (!options) return;
   const {
     extensionConfig,
-    originSource = 'QwenCode',
+    originSource = 'OllamaCode',
     commands = [],
     skills = [],
     subagents = [],

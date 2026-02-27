@@ -35,7 +35,7 @@ const CHECKPOINT_FILE_NAME = 'checkpoint.json';
 
 const projectDir = process.cwd();
 const hash = getProjectHash(projectDir);
-const TEST_HOME_DIR = path.join(os.tmpdir(), 'qwen-core-logger-home');
+const TEST_HOME_DIR = path.join(os.tmpdir(), 'ollama-core-logger-home');
 
 let originalHome: string | undefined;
 let testGeminiDir: string;

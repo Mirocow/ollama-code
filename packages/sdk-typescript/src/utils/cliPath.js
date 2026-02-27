@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 /**
@@ -167,11 +167,11 @@ export function findBundledCliPath() {
         return bundledCli;
     }
     const candidates = getBundledCliCandidatePaths();
-    throw new Error('Bundled qwen CLI not found. The CLI should be included in the SDK package.\n' +
+    throw new Error('Bundled Ollama Code CLI not found. The CLI should be included in the SDK package.\n' +
         'Searched locations:\n' +
         candidates.map((c) => `  - ${c}`).join('\n') +
         '\n\nIf you need to use a custom CLI, provide explicit path:\n' +
-        '  • query({ pathToQwenExecutable: "/path/to/cli.js" })');
+        '  • query({ pathToOllamaExecutable: "/path/to/cli.js" })');
 }
 /**
  * Validate file exists and is a file

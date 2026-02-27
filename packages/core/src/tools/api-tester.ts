@@ -145,12 +145,12 @@ export interface ValidationResult {
   /** Schema validation errors (if any) */
   schemaErrors?: string[];
   /** Header validation results */
-  headerValidation?: {
+  headerValidation?: Array<{
     header: string;
     expected: string | RegExp;
     actual: string;
     valid: boolean;
-  }[];
+  }>;
   /** Overall validation passed */
   passed: boolean;
 }
@@ -280,8 +280,8 @@ function validateSchema(body: unknown, schema: object): { valid: boolean; errors
 function validateHeaders(
   actualHeaders: Record<string, string>,
   expectedHeaders: Record<string, string | RegExp>,
-): { header: string; expected: string | RegExp; actual: string; valid: boolean }[] {
-  const results: { header: string; expected: string | RegExp; actual: string; valid: boolean }[] = [];
+): Array<{ header: string; expected: string | RegExp; actual: string; valid: boolean }> {
+  const results: Array<{ header: string; expected: string | RegExp; actual: string; valid: boolean }> = [];
 
   for (const [header, expected] of Object.entries(expectedHeaders)) {
     const actual = actualHeaders[header.toLowerCase()] || '';

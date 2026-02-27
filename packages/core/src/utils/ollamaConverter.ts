@@ -488,7 +488,7 @@ export function hasFunctionCalls(content: Content): boolean {
 /**
  * Get all function calls from content.
  */
-export function getFunctionCalls(content: Content): import('../types/content.js').FunctionCall[] {
+export function getFunctionCalls(content: Content): Array<import('../types/content.js').FunctionCall> {
   return content.parts
     .filter((p): p is FunctionCallPart => 'functionCall' in p)
     .map((p) => p.functionCall);

@@ -1,7 +1,7 @@
 import { jsx as _jsx } from "react/jsx-runtime";
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 import { createContext, useContext } from 'react';
