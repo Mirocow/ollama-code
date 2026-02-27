@@ -54,7 +54,77 @@ npm run start -- "Объясни, как работает async/await в JavaScr
 npm run debug
 ```
 
-## Новые возможности v0.11.0
+## Новые возможности v0.12.0
+
+### UI/UX Улучшения
+
+```typescript
+// Прогресс-бар для загрузки моделей
+<ProgressBar
+  progress={45}
+  label="Downloading model"
+  speed="5.2 MB/s"
+  eta="2m 30s"
+/>
+
+// Thinking indicator для thinking моделей
+<ThinkingIndicator
+  message="Analyzing code..."
+  elapsedTime={45}
+  showContent
+/>
+
+// Token usage display
+<TokenUsageDisplay
+  totalTokens={1500}
+  promptTokens={500}
+  completionTokens={1000}
+  tokensPerSecond={45}
+/>
+
+// GPU/Memory indicator
+<GPUUsage
+  name="NVIDIA RTX 4090"
+  utilization={85}
+  memoryUsed={20 * 1024 * 1024 * 1024}
+  memoryTotal={24 * 1024 * 1024 * 1024}
+/>
+```
+
+### Database Tool
+
+```bash
+> Выполни SELECT * FROM users LIMIT 10 в SQLite базе data.db
+> Сохрани backup базы в /backup/db.sql
+> Покажи схему таблицы users
+```
+
+### Docker Tool
+
+```bash
+> Запусти контейнер nginx на порту 8080
+> Покажи логи контейнера my-app
+> Останови все контейнеры
+> Собери Docker образ из текущей директории
+```
+
+### Redis Tool
+
+```bash
+> Получи значение ключа session:user:123
+> Установи cache:data со сроком 1 час
+> Опубликуй сообщение в канал notifications
+> Покажи все ключи с префиксом user:
+```
+
+### Performance
+
+- **Response Caching**: Кэширование ответов LLM с LRU eviction
+- **Embedding Caching**: Кэширование эмбеддингов для быстрого поиска
+
+---
+
+## Возможности v0.11.0
 
 ### Thinking Models (DeepSeek R1)
 
@@ -135,26 +205,26 @@ ollama-code/
 
 ## Документация
 
-| Документ | Описание |
-|----------|----------|
-| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Руководство по использованию |
-| [EXAMPLES.md](./docs/EXAMPLES.md) | Примеры использования |
-| [TUTORIAL.md](./docs/TUTORIAL.md) | Туториал для начинающих |
-| [OLLAMA_API.md](./docs/OLLAMA_API.md) | Документация API |
-| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Структура проекта |
-| [ROADMAP.md](./ROADMAP.md) | План развития |
+| Документ                                       | Описание                     |
+| ---------------------------------------------- | ---------------------------- |
+| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md)        | Руководство по использованию |
+| [EXAMPLES.md](./docs/EXAMPLES.md)              | Примеры использования        |
+| [TUTORIAL.md](./docs/TUTORIAL.md)              | Туториал для начинающих      |
+| [OLLAMA_API.md](./docs/OLLAMA_API.md)          | Документация API             |
+| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Структура проекта            |
+| [ROADMAP.md](./ROADMAP.md)                     | План развития                |
 
 ## Основные команды
 
-| Команда | Описание |
-|---------|----------|
-| `npm run build` | Собрать все пакеты |
-| `npm run start` | Запустить CLI |
-| `npm run dev` | Запуск в режиме разработки |
-| `npm run debug` | Запуск с отладчиком |
-| `npm run test` | Запустить тесты |
-| `npm run lint` | Проверить код линтером |
-| `npm run typecheck` | Проверка типов TypeScript |
+| Команда             | Описание                   |
+| ------------------- | -------------------------- |
+| `npm run build`     | Собрать все пакеты         |
+| `npm run start`     | Запустить CLI              |
+| `npm run dev`       | Запуск в режиме разработки |
+| `npm run debug`     | Запуск с отладчиком        |
+| `npm run test`      | Запустить тесты            |
+| `npm run lint`      | Проверить код линтером     |
+| `npm run typecheck` | Проверка типов TypeScript  |
 
 ## Параметры CLI
 
@@ -172,14 +242,14 @@ Options:
 
 ## Переменные окружения
 
-| Переменная | Описание |
-|------------|----------|
-| `OLLAMA_BASE_URL` | URL Ollama сервера |
-| `OLLAMA_API_KEY` | API ключ (опционально) |
-| `OLLAMA_MODEL` | Модель по умолчанию |
-| `OLLAMA_KEEP_ALIVE` | Время удержания модели в памяти (default: 5m) |
-| `DEBUG` | Включить режим отладки (1 или true) |
-| `OLLAMA_CODE_DEBUG_LOG_FILE` | Логирование в файл |
+| Переменная                   | Описание                                      |
+| ---------------------------- | --------------------------------------------- |
+| `OLLAMA_BASE_URL`            | URL Ollama сервера                            |
+| `OLLAMA_API_KEY`             | API ключ (опционально)                        |
+| `OLLAMA_MODEL`               | Модель по умолчанию                           |
+| `OLLAMA_KEEP_ALIVE`          | Время удержания модели в памяти (default: 5m) |
+| `DEBUG`                      | Включить режим отладки (1 или true)           |
+| `OLLAMA_CODE_DEBUG_LOG_FILE` | Логирование в файл                            |
 
 ## Отладка в VSCode
 
@@ -198,29 +268,29 @@ Options:
 
 ### Основные endpoints
 
-| Endpoint | Метод | Описание |
-|----------|-------|----------|
-| `/api/tags` | GET | Список локальных моделей |
-| `/api/show` | POST | Информация о модели |
-| `/api/generate` | POST | Генерация текста |
-| `/api/chat` | POST | Чат с моделью |
-| `/api/embed` | POST | Эмбеддинги |
-| `/api/create` | POST | Создание модели |
-| `/api/pull` | POST | Загрузка модели |
-| `/api/ps` | GET | Запущенные модели |
-| `/api/version` | GET | Версия Ollama |
+| Endpoint        | Метод | Описание                 |
+| --------------- | ----- | ------------------------ |
+| `/api/tags`     | GET   | Список локальных моделей |
+| `/api/show`     | POST  | Информация о модели      |
+| `/api/generate` | POST  | Генерация текста         |
+| `/api/chat`     | POST  | Чат с моделью            |
+| `/api/embed`    | POST  | Эмбеддинги               |
+| `/api/create`   | POST  | Создание модели          |
+| `/api/pull`     | POST  | Загрузка модели          |
+| `/api/ps`       | GET   | Запущенные модели        |
+| `/api/version`  | GET   | Версия Ollama            |
 
 Документация API: [OLLAMA_API.md](./docs/OLLAMA_API.md)
 
 ## Рекомендуемые модели
 
-| Модель | Назначение | Размер |
-|--------|------------|--------|
-| `llama3.2` | Общего назначения | 3B |
-| `deepseek-r1:8b` | Рассуждения (thinking) | 8B |
-| `codellama` | Программирование | 7B+ |
-| `mistral` | Общего назначения | 7B |
-| `nomic-embed-text` | Эмбеддинги | 274M |
+| Модель             | Назначение             | Размер |
+| ------------------ | ---------------------- | ------ |
+| `llama3.2`         | Общего назначения      | 3B     |
+| `deepseek-r1:8b`   | Рассуждения (thinking) | 8B     |
+| `codellama`        | Программирование       | 7B+    |
+| `mistral`          | Общего назначения      | 7B     |
+| `nomic-embed-text` | Эмбеддинги             | 274M   |
 
 ## Разработка
 
