@@ -11,6 +11,7 @@ import {
   Storage,
   type Config,
   createDebugLogger,
+  DEFAULT_OLLAMA_MODEL,
 } from '@ollama-code/ollama-code-core';
 import { render } from 'ink';
 import dns from 'node:dns';
@@ -282,9 +283,8 @@ export async function main() {
   } else if (firstRunResult && !process.stdin.isTTY) {
     // Non-interactive first run: create default settings
     const defaultBaseUrl = 'http://localhost:11434';
-    const defaultModel = 'qwen2.5-coder';
-    saveInitialConfig(defaultBaseUrl, defaultModel);
-    setConfigEnv(defaultBaseUrl, defaultModel);
+    saveInitialConfig(defaultBaseUrl, DEFAULT_OLLAMA_MODEL);
+    setConfigEnv(defaultBaseUrl, DEFAULT_OLLAMA_MODEL);
   }
 
   const settings = loadSettings();
