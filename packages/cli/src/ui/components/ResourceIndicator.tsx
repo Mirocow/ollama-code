@@ -15,11 +15,6 @@ import { theme } from '../semantic-colors.js';
 import { t } from '../../i18n/index.js';
 
 /**
- * Resource usage levels
- */
-type _UsageLevel = 'low' | 'medium' | 'high' | 'critical';
-
-/**
  * Get color for usage level
  */
 function getUsageColor(percentage: number): string {
@@ -294,64 +289,64 @@ export const ModelMemory: React.FC<ModelMemoryProps> = ({
   layersLoaded,
   layersTotal,
 }) => (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor={theme.border.default}
-      paddingX={1}
-    >
-      {/* Header */}
-      <Box>
-        <Text bold color={theme.text.accent}>
-          📦 {modelName}
-        </Text>
-        {quantization && (
-          <Box marginLeft={1}>
-            <Text color={theme.text.secondary}>({quantization})</Text>
-          </Box>
-        )}
-      </Box>
-
-      {/* Model size */}
-      <Box marginTop={1}>
-        <Text color={theme.text.secondary}>
-          {t('Size')}:{' '}
-          <Text color={theme.text.primary}>{formatBytes(modelSize)}</Text>
-        </Text>
-      </Box>
-
-      {/* Memory usage */}
-      <Box>
-        <Text color={theme.text.secondary}>
-          {t('Memory')}:{' '}
-          <Text color={theme.text.primary}>{formatBytes(memoryUsed)}</Text>
-        </Text>
-        {vramUsed !== undefined && (
-          <Box marginLeft={2}>
-            <Text color={theme.text.secondary}>
-              {t('VRAM')}:{' '}
-              <Text color={theme.text.accent}>{formatBytes(vramUsed)}</Text>
-            </Text>
-          </Box>
-        )}
-      </Box>
-
-      {/* Layer progress */}
-      {layersLoaded !== undefined && layersTotal !== undefined && (
-        <Box alignItems="center">
-          <Text color={theme.text.secondary}>
-            {t('Layers')}: {layersLoaded}/{layersTotal}
-          </Text>
-          <Box marginLeft={1}>
-            <UsageBar
-              percentage={Math.round((layersLoaded / layersTotal) * 100)}
-              width={15}
-            />
-          </Box>
+  <Box
+    flexDirection="column"
+    borderStyle="round"
+    borderColor={theme.border.default}
+    paddingX={1}
+  >
+    {/* Header */}
+    <Box>
+      <Text bold color={theme.text.accent}>
+        📦 {modelName}
+      </Text>
+      {quantization && (
+        <Box marginLeft={1}>
+          <Text color={theme.text.secondary}>({quantization})</Text>
         </Box>
       )}
     </Box>
-  );
+
+    {/* Model size */}
+    <Box marginTop={1}>
+      <Text color={theme.text.secondary}>
+        {t('Size')}:{' '}
+        <Text color={theme.text.primary}>{formatBytes(modelSize)}</Text>
+      </Text>
+    </Box>
+
+    {/* Memory usage */}
+    <Box>
+      <Text color={theme.text.secondary}>
+        {t('Memory')}:{' '}
+        <Text color={theme.text.primary}>{formatBytes(memoryUsed)}</Text>
+      </Text>
+      {vramUsed !== undefined && (
+        <Box marginLeft={2}>
+          <Text color={theme.text.secondary}>
+            {t('VRAM')}:{' '}
+            <Text color={theme.text.accent}>{formatBytes(vramUsed)}</Text>
+          </Text>
+        </Box>
+      )}
+    </Box>
+
+    {/* Layer progress */}
+    {layersLoaded !== undefined && layersTotal !== undefined && (
+      <Box alignItems="center">
+        <Text color={theme.text.secondary}>
+          {t('Layers')}: {layersLoaded}/{layersTotal}
+        </Text>
+        <Box marginLeft={1}>
+          <UsageBar
+            percentage={Math.round((layersLoaded / layersTotal) * 100)}
+            width={15}
+          />
+        </Box>
+      </Box>
+    )}
+  </Box>
+);
 
 /**
  * Usage Bar Component

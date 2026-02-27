@@ -71,7 +71,7 @@ const Section: React.FC<SectionProps> = ({ title, children }) => (
 );
 
 const ModelUsageTable: React.FC<{
-  models: Record<string, ModelMetrics>;
+  models: ModelMetrics;
   totalCachedTokens: number;
   cacheEfficiency: number;
 }> = ({ models, totalCachedTokens, cacheEfficiency }) => {
@@ -79,6 +79,9 @@ const ModelUsageTable: React.FC<{
   const requestsWidth = 8;
   const inputTokensWidth = 15;
   const outputTokensWidth = 15;
+
+  // Use byModel for per-model breakdown, or empty object if not available
+  const modelsByModel = models.byModel || {};
 
   return (
     <Box flexDirection="column" marginTop={1}>
@@ -116,29 +119,48 @@ const ModelUsageTable: React.FC<{
         width={nameWidth + requestsWidth + inputTokensWidth + outputTokensWidth}
       ></Box>
 
-      {/* Rows */}
-      {Object.entries(models).map(([name, modelMetrics]) => (
-        <Box key={name}>
+      {/* Rows - show byModel data or aggregate if empty */}
+      {Object.keys(modelsByModel).length > 0 ? (
+        Object.entries(modelsByModel).map(([name, modelMetrics]) => (
+          <Box key={name}>
+            <Box width={nameWidth}>
+              <Text color={theme.text.primary}>{name.replace('-001', '')}</Text>
+            </Box>
+            <Box width={requestsWidth} justifyContent="flex-end">
+              <Text color={theme.text.primary}>{models.api.totalRequests}</Text>
+            </Box>
+            <Box width={inputTokensWidth} justifyContent="flex-end">
+              <Text color={theme.status.warning}>
+                {modelMetrics.promptTokens.toLocaleString()}
+              </Text>
+            </Box>
+            <Box width={outputTokensWidth} justifyContent="flex-end">
+              <Text color={theme.status.warning}>
+                {modelMetrics.generatedTokens.toLocaleString()}
+              </Text>
+            </Box>
+          </Box>
+        ))
+      ) : (
+        <Box>
           <Box width={nameWidth}>
-            <Text color={theme.text.primary}>{name.replace('-001', '')}</Text>
+            <Text color={theme.text.primary}>{t('Total')}</Text>
           </Box>
           <Box width={requestsWidth} justifyContent="flex-end">
-            <Text color={theme.text.primary}>
-              {modelMetrics.api.totalRequests}
-            </Text>
+            <Text color={theme.text.primary}>{models.api.totalRequests}</Text>
           </Box>
           <Box width={inputTokensWidth} justifyContent="flex-end">
             <Text color={theme.status.warning}>
-              {modelMetrics.tokens.prompt.toLocaleString()}
+              {models.tokens.prompt.toLocaleString()}
             </Text>
           </Box>
           <Box width={outputTokensWidth} justifyContent="flex-end">
             <Text color={theme.status.warning}>
-              {modelMetrics.tokens.candidates.toLocaleString()}
+              {models.tokens.candidates.toLocaleString()}
             </Text>
           </Box>
         </Box>
-      ))}
+      )}
       {cacheEfficiency > 0 && (
         <Box flexDirection="column" marginTop={1}>
           <Text color={theme.text.primary}>
@@ -286,7 +308,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         </SubStatRow>
       </Section>
 
-      {Object.keys(models).length > 0 && (
+      {models.api.totalRequests > 0 && (
         <ModelUsageTable
           models={models}
           totalCachedTokens={computed.totalCachedTokens}

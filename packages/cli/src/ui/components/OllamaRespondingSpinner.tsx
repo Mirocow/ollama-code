@@ -7,7 +7,6 @@
 import type React from 'react';
 import { Text, useIsScreenReaderEnabled } from 'ink';
 import Spinner from 'ink-spinner';
-import type { SpinnerName } from 'cli-spinners';
 import { useStreamingContext } from '../contexts/StreamingContext.js';
 import { StreamingState } from '../types.js';
 import {
@@ -22,7 +21,7 @@ interface OllamaRespondingSpinnerProps {
    * If not provided and not Responding, renders null.
    */
   nonRespondingDisplay?: string;
-  spinnerType?: SpinnerName;
+  spinnerType?: 'dots' | 'line' | 'monkey';
 }
 
 export const OllamaRespondingSpinner: React.FC<
@@ -48,7 +47,7 @@ export const OllamaRespondingSpinner: React.FC<
 };
 
 interface OllamaSpinnerProps {
-  spinnerType?: SpinnerName;
+  spinnerType?: 'dots' | 'line' | 'monkey';
   altText?: string;
 }
 
@@ -61,7 +60,7 @@ export const OllamaSpinner: React.FC<OllamaSpinnerProps> = ({
     <Text>{altText}</Text>
   ) : (
     <Text color={theme.text.primary}>
-      <Spinner type={spinnerType} />
+      <Spinner type={spinnerType as 'dots' | 'line' | 'monkey'} />
     </Text>
   );
 };
