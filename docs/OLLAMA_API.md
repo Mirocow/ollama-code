@@ -210,6 +210,59 @@ const response = await client.generate({
 });
 ```
 
+### Keep Alive
+
+Control how long models stay loaded in memory:
+
+```typescript
+// Keep model loaded for 5 minutes after last request
+await client.chat({
+  model: 'llama3.2',
+  messages: [{ role: 'user', content: 'Hello!' }],
+  keep_alive: '5m',
+});
+
+// Keep model loaded indefinitely (until manually unloaded)
+await client.chat({
+  model: 'llama3.2',
+  messages: [{ role: 'user', content: 'Hello!' }],
+  keep_alive: -1,
+});
+
+// Unload model immediately after request
+await client.chat({
+  model: 'llama3.2',
+  messages: [{ role: 'user', content: 'Hello!' }],
+  keep_alive: 0,
+});
+```
+
+### Request Cancellation
+
+Cancel long-running requests using AbortSignal:
+
+```typescript
+const controller = new AbortController();
+
+// Cancel after 10 seconds
+setTimeout(() => controller.abort(), 10000);
+
+try {
+  const response = await client.generate(
+    {
+      model: 'llama3.2',
+      prompt: 'Write a very long story...',
+    },
+    undefined, // No streaming callback
+    { signal: controller.signal }
+  );
+} catch (error) {
+  if (error.name === 'AbortError') {
+    console.log('Request was cancelled');
+  }
+}
+```
+
 ## Configuration
 
 ### Environment Variables
@@ -288,8 +341,8 @@ new OllamaNativeClient(options?: {
 | `listModels()` | - | `Promise<OllamaTagsResponse>` | List local models |
 | `showModel(model)` | `string \| OllamaShowRequest` | `Promise<OllamaShowResponse>` | Show model info |
 | `listRunningModels()` | - | `Promise<OllamaPsResponse>` | List running models |
-| `generate(request, callback?)` | `OllamaGenerateRequest, StreamCallback?` | `Promise<OllamaGenerateResponse>` | Generate text |
-| `chat(request, callback?)` | `OllamaChatRequest, StreamCallback?` | `Promise<OllamaChatResponse>` | Chat with model |
+| `generate(request, callback?, options?)` | `OllamaGenerateRequest, StreamCallback?, RequestOptions?` | `Promise<OllamaGenerateResponse>` | Generate text |
+| `chat(request, callback?, options?)` | `OllamaChatRequest, StreamCallback?, RequestOptions?` | `Promise<OllamaChatResponse>` | Chat with model |
 | `embed(request)` | `OllamaEmbedRequest` | `Promise<OllamaEmbedResponse>` | Generate embeddings |
 | `pullModel(name, callback?)` | `string, ProgressCallback?` | `Promise<void>` | Pull a model |
 | `pushModel(name, callback?)` | `string, ProgressCallback?` | `Promise<void>` | Push a model |
@@ -298,3 +351,11 @@ new OllamaNativeClient(options?: {
 | `isServerRunning()` | - | `Promise<boolean>` | Check if server is running |
 | `isModelAvailable(name)` | `string` | `Promise<boolean>` | Check if model exists |
 | `ensureModelAvailable(name, callback?)` | `string, ProgressCallback?` | `Promise<void>` | Pull model if needed |
+
+#### RequestOptions
+
+```typescript
+interface RequestOptions {
+  signal?: AbortSignal;  // For request cancellation
+}
+```
