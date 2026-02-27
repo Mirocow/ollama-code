@@ -1,184 +1,117 @@
 # Ollama Code - Roadmap развития
 
-## Версия 0.11.0 (Текущая разработка)
+## Версия 0.11.0 (Текущая)
 
-### 1. Новые Ollama API Endpoints
+### ✅ Выполнено
 
-#### 1.1 Create Model (POST /api/create)
-```typescript
-// Создание модели из Modelfile
-await client.createModel({
-  name: 'my-custom-model',
-  modelfile: 'FROM llama3.2\nSYSTEM You are a coding assistant.',
-  stream: true
-}, (progress) => {
-  console.log(progress.status);
-});
-```
-
-#### 1.2 Thinking Models Support (DeepSeek R1, Qwen)
-```typescript
-// Поддержка thinking моделей
-await client.chat({
-  model: 'deepseek-r1:8b',
-  messages: [{ role: 'user', content: 'Solve this problem' }],
-  think: true, // Включить thinking mode
-});
-```
-
-#### 1.3 Structured Outputs (JSON Schema)
-```typescript
-// Структурированный вывод с JSON Schema
-await client.generate({
-  model: 'llama3.2',
-  prompt: 'Extract person info',
-  format: {
-    type: 'object',
-    properties: {
-      name: { type: 'string' },
-      age: { type: 'number' },
-      email: { type: 'string' }
-    },
-    required: ['name', 'age']
-  }
-});
-```
-
-#### 1.4 Image Generation (Experimental)
-```typescript
-// Генерация изображений
-await client.generateImage({
-  model: 'stable-diffusion',
-  prompt: 'A beautiful sunset over mountains',
-  width: 512,
-  height: 512,
-  steps: 30
-});
-```
-
----
-
-### 2. Новые инструменты
-
-#### 2.1 Code Analyzer Tool
-```typescript
-// Анализ кода
-{
-  name: 'code_analyzer',
-  description: 'Analyze code for complexity, patterns, and issues',
-  parameters: {
-    file: 'path/to/file.ts',
-    analysis: ['complexity', 'security', 'performance', 'style']
-  }
-}
-```
-
-#### 2.2 Diagram Generator Tool
-```typescript
-// Генерация диаграмм
-{
-  name: 'diagram_generator',
-  description: 'Generate diagrams from code or descriptions',
-  parameters: {
-    type: 'mermaid' | 'plantuml',
-    content: 'classDiagram\n  Animal <|-- Dog',
-    output: 'path/to/diagram.svg'
-  }
-}
-```
-
-#### 2.3 Git Advanced Tool
-```typescript
-// Продвинутые git операции
-{
-  name: 'git_advanced',
-  description: 'Advanced git operations',
-  operations: ['stash', 'cherry-pick', 'rebase', 'bisect', 'blame']
-}
-```
-
-#### 2.4 API Tester Tool
-```typescript
-// Тестирование API
-{
-  name: 'api_tester',
-  description: 'Test REST API endpoints',
-  parameters: {
-    url: 'http://api.example.com/endpoint',
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
-    headers: {},
-    body: {},
-    validateResponse: {}
-  }
-}
-```
-
----
-
-### 3. UI/UX Улучшения
-
-#### 3.1 Прогресс-бары
-- Прогресс загрузки моделей
-- Прогресс генерации
-- Прогресс выполнения инструментов
-
-#### 3.2 Улучшенные индикаторы
-- Thinking indicator для thinking моделей
-- Token usage display
-- Memory usage in real-time
-- GPU usage indicator
-
-#### 3.3 Новые темы
-- Tokyo Night
-- Nord
-- Gruvbox
-- Catppuccin
-
-#### 3.4 Анимации
-- Плавные переходы
-- Typewriter effect для ответов
-- Particle effects для thinking
+| Задача | Статус |
+|--------|--------|
+| Create Model API (/api/create) | ✅ |
+| Thinking Models Support (think parameter) | ✅ |
+| Structured Outputs (JSON Schema) | ✅ |
+| Code Analyzer Tool | ✅ |
+| Diagram Generator Tool | ✅ |
+| Git Advanced Tool | ✅ |
+| API Tester Tool | ✅ |
+| Tokyo Night, Nord, Catppuccin темы | ✅ |
+| Документация (EXAMPLES.md, TUTORIAL.md) | ✅ |
+| Удалена телеметрия | ✅ |
 
 ---
 
 ## Версия 0.12.0 (Планируется)
 
-### 4. MCP Protocol Extensions
+### UI/UX Улучшения
 
-#### 4.1 Resource Support
-- Чтение/запись ресурсов через MCP
-- Мониторинг изменений
+- [ ] Прогресс-бары для загрузки моделей
+- [ ] Thinking indicator для thinking моделей
+- [ ] Token usage display в реальном времени
+- [ ] GPU/Memory usage indicator
+- [ ] Typewriter effect для ответов
 
-#### 4.2 Prompts Registry
-- Шаблоны промптов
-- Пользовательские промпты
+### Новые инструменты
 
----
+- [ ] Database Tool - работа с базами данных
+- [ ] Docker Tool - управление контейнерами
+- [ ] Kubernetes Tool - работа с k8s
+- [ ] Redis Tool - кэширование и очереди
 
-### 5. Performance Improvements
+### Performance
 
-#### 5.1 Streaming Optimizations
-- Chunked transfer encoding
-- Compression support
-
-#### 5.2 Caching Layer
-- Response caching
-- Embedding caching
-- Model metadata caching
+- [ ] Response caching
+- [ ] Embedding caching
+- [] Streaming optimizations
 
 ---
 
-## Приоритеты реализации
+## Версия 0.13.0
 
-| Задача | Приоритет | Сложность | Версия |
-|--------|-----------|-----------|--------|
-| Create Model API | High | Medium | 0.11.0 |
-| Thinking Models | High | Low | 0.11.0 |
-| Structured Outputs | High | Medium | 0.11.0 |
-| Code Analyzer Tool | Medium | High | 0.11.0 |
-| Progress Bars | High | Low | 0.11.0 |
-| New Themes | Medium | Low | 0.11.0 |
-| Image Generation | Low | High | 0.12.0 |
-| Diagram Generator | Medium | Medium | 0.12.0 |
-| Git Advanced | Medium | Medium | 0.12.0 |
-| API Tester | Low | Medium | 0.12.0 |
+### MCP Extensions
+
+- [ ] Resource support
+- [ ] Prompts registry
+- [ ] Server management UI
+
+### Integrations
+
+- [ ] JetBrains IDE plugin
+- [ ] Vim/Neovim plugin
+- [ ] Emacs integration
+
+---
+
+## Архитектура
+
+### OllamaNativeClient
+
+Расположение: `packages/core/src/core/ollamaNativeClient.ts`
+
+Поддерживаемые методы:
+- `chat()` - чат с моделью
+- `generate()` - генерация текста
+- `embed()` - эмбеддинги
+- `createModel()` - создание моделей
+- `pullModel()` - загрузка моделей
+- `listModels()` - список моделей
+- и другие...
+
+### Инструменты
+
+| Инструмент | Файл | Описание |
+|------------|------|----------|
+| Code Analyzer | `code-analyzer.ts` | Анализ качества кода |
+| Diagram Generator | `diagram-generator.ts` | Mermaid/PlantUML диаграммы |
+| Git Advanced | `git-advanced.ts` | Продвинутые git операции |
+| API Tester | `api-tester.ts` | Тестирование REST API |
+
+### Темы
+
+| Тема | Файл | Тип |
+|------|------|-----|
+| Ollama Dark | `ollama-dark.ts` | Dark |
+| Ollama Light | `ollama-light.ts` | Light |
+| Tokyo Night | `tokyo-night.ts` | Dark |
+| Nord | `nord.ts` | Dark |
+| Catppuccin | `catppuccin.ts` | Dark |
+| Dracula | `dracula.ts` | Dark |
+| GitHub Dark | `github-dark.ts` | Dark |
+| GitHub Light | `github-light.ts` | Light |
+
+---
+
+## Документация
+
+| Документ | Путь | Описание |
+|----------|------|----------|
+| README.md | `/` | Основная документация |
+| OLLAMA_API.md | `/docs` | API документация |
+| EXAMPLES.md | `/docs` | Примеры использования |
+| TUTORIAL.md | `/docs` | Туториал |
+| PROJECT_STRUCTURE.md | `/` | Структура проекта |
+
+---
+
+## Удалено
+
+- ❌ Телеметрия (полностью удалена)
+- ❌ Упоминания qwen (заменены на llama/ollama)
