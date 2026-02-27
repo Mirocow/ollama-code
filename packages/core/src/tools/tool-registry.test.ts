@@ -11,8 +11,8 @@ import type { ConfigParameters } from '../config/config.js';
 import { Config, ApprovalMode } from '../config/config.js';
 import { ToolRegistry, DiscoveredTool } from './tool-registry.js';
 import { DiscoveredMCPTool } from './mcp-tool.js';
-import type { FunctionDeclaration, CallableTool } from '@google/genai';
-import { mcpToTool } from '@google/genai';
+import type { FunctionDeclaration, CallableTool } from '../types/content.js';
+import { mcpToTool } from '../types/content.js';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import { MockTool } from '../test-utils/mock-tool.js';
@@ -73,12 +73,11 @@ vi.mock('@modelcontextprotocol/sdk/client/sse.js', () => {
   return { SSEClientTransport: MockSSEClientTransport };
 });
 
-// Mock @google/genai mcpToTool
-vi.mock('@google/genai', async () => {
-  const actualGenai =
-    await vi.importActual<typeof import('@google/genai')>('@google/genai');
+// Mock mcpToTool from local types
+vi.mock('../types/content.js', async () => {
+  const actualModule = await vi.importActual('../types/content.js');
   return {
-    ...actualGenai,
+    ...actualModule,
     mcpToTool: vi.fn().mockImplementation(() => ({
       tool: vi.fn().mockResolvedValue({ functionDeclarations: [] }),
       callTool: vi.fn(),
