@@ -56,8 +56,14 @@ export async function initializeApp(
   }
   const themeError = validateTheme(settings);
 
+  // Check if auth is already configured in settings
+  // If authType is already set (from FirstRunSetup or previous session), don't show dialog
+  const hasAuthInSettings =
+    settings.merged.security?.auth?.selectedType !== undefined;
   const shouldOpenAuthDialog =
-    !config.getModelsConfig().wasAuthTypeExplicitlyProvided() || !!authError;
+    (!config.getModelsConfig().wasAuthTypeExplicitlyProvided() &&
+      !hasAuthInSettings) ||
+    !!authError;
 
   if (config.getIdeMode()) {
     const ideClient = await IdeClient.getInstance();
