@@ -26,6 +26,9 @@ export const ToolNames = {
   WEB_SEARCH: 'web_search',
   LS: 'list_directory',
   LSP: 'lsp',
+  PYTHON: 'python_dev',
+  NODEJS: 'nodejs_dev',
+  GOLANG: 'golang_dev',
 } as const;
 
 export type ToolName = (typeof ToolNames)[keyof typeof ToolNames];
@@ -52,6 +55,9 @@ export const ToolDisplayNames = {
   WEB_SEARCH: 'WebSearch',
   LS: 'ListFiles',
   LSP: 'Lsp',
+  PYTHON: 'PythonDev',
+  NODEJS: 'NodeJsDev',
+  GOLANG: 'GolangDev',
 } as const;
 
 // Migration from old tool names to new tool names
@@ -139,6 +145,23 @@ export const ToolAliases: Record<string, ToolName> = {
   // Exit plan mode aliases
   exit_plan: ToolNames.EXIT_PLAN_MODE,
   plan_done: ToolNames.EXIT_PLAN_MODE,
+
+  // Python dev aliases
+  python: ToolNames.PYTHON,
+  py: ToolNames.PYTHON,
+  pip: ToolNames.PYTHON,
+  pytest: ToolNames.PYTHON,
+
+  // Node.js dev aliases
+  node: ToolNames.NODEJS,
+  npm: ToolNames.NODEJS,
+  yarn: ToolNames.NODEJS,
+  pnpm: ToolNames.NODEJS,
+  bun: ToolNames.NODEJS,
+
+  // Golang dev aliases
+  go: ToolNames.GOLANG,
+  golang: ToolNames.GOLANG,
 };
 
 /**
@@ -158,8 +181,11 @@ export function resolveToolAlias(name: string): string {
 
   // Check if it matches any canonical name directly
   const canonicalNames = Object.values(ToolNames);
-  if (canonicalNames.includes(normalizedName as ToolName)) {
-    return normalizedName;
+  const matchingName = canonicalNames.find(
+    (name) => name.toLowerCase() === normalizedName,
+  );
+  if (matchingName) {
+    return matchingName;
   }
 
   // Return original name if no alias found
