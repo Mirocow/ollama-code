@@ -28,7 +28,7 @@ export type {
   ModelCapabilities,
   ModelDefinition,
   ModelFamilyDefinition,
-  OutputFormat,
+  ToolCallFormat,
 } from './types.js';
 
 // Registry
@@ -37,7 +37,7 @@ export {
   findModelFamily,
   getModelCapabilities,
   getModelDefinition,
-  getOutputFormat,
+  getToolCallFormat,
   supportsThinking,
   supportsTools,
   supportsVision,
