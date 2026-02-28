@@ -48,10 +48,7 @@ export class ModelRegistry {
   constructor(modelProvidersConfig?: ModelProvidersConfig) {
     this.modelsByAuthType = new Map();
 
-    // Always register Ollama models (hard-coded defaults for local LLM)
-    this.registerAuthTypeModels(AuthType.USE_OLLAMA, OLLAMA_MODELS);
-
-    // Register user-configured models
+    // Register user-configured models first (they take precedence)
     if (modelProvidersConfig) {
       for (const [rawKey, models] of Object.entries(modelProvidersConfig)) {
         const authType = validateAuthTypeKey(rawKey);
@@ -66,6 +63,27 @@ export class ModelRegistry {
         this.registerAuthTypeModels(authType, models);
       }
     }
+
+    // Then register default Ollama models (only if not already registered by user)
+    this.registerDefaultOllamaModels();
+  }
+
+  /**
+   * Register default Ollama models (only if not already configured by user)
+   */
+  private registerDefaultOllamaModels(): void {
+    const existingModels = this.modelsByAuthType.get(AuthType.USE_OLLAMA);
+    const modelMap = existingModels || new Map<string, ResolvedModelConfig>();
+
+    for (const config of OLLAMA_MODELS) {
+      // Only add if not already registered by user
+      if (!modelMap.has(config.id)) {
+        const resolved = this.resolveModelConfig(config, AuthType.USE_OLLAMA);
+        modelMap.set(config.id, resolved);
+      }
+    }
+
+    this.modelsByAuthType.set(AuthType.USE_OLLAMA, modelMap);
   }
 
   /**
@@ -178,14 +196,10 @@ export class ModelRegistry {
    * Reload models from updated configuration.
    */
   reloadModels(modelProvidersConfig?: ModelProvidersConfig): void {
-    // Clear existing models except Ollama
-    for (const authType of this.modelsByAuthType.keys()) {
-      if (authType !== AuthType.USE_OLLAMA) {
-        this.modelsByAuthType.delete(authType);
-      }
-    }
+    // Clear all existing models
+    this.modelsByAuthType.clear();
 
-    // Re-register user-configured models
+    // Register user-configured models first (they take precedence)
     if (modelProvidersConfig) {
       for (const [rawKey, models] of Object.entries(modelProvidersConfig)) {
         const authType = validateAuthTypeKey(rawKey);
@@ -197,13 +211,11 @@ export class ModelRegistry {
           continue;
         }
 
-        // Skip Ollama as it uses hard-coded models
-        if (authType === AuthType.USE_OLLAMA) {
-          continue;
-        }
-
         this.registerAuthTypeModels(authType, models);
       }
     }
+
+    // Then register default Ollama models (only if not already configured by user)
+    this.registerDefaultOllamaModels();
   }
 }
