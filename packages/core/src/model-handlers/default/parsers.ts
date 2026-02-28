@@ -12,68 +12,17 @@
  */
 
 import type { IToolCallTextParser, ToolCallParseResult, ParsedToolCall } from '../types.js';
-
-/**
- * Utility functions for parsers.
- */
-function findMatchingBrace(str: string, start: number): number {
-  if (str[start] !== '{') return -1;
-  let depth = 0;
-  let inString = false;
-  let escapeNext = false;
-
-  for (let i = start; i < str.length; i++) {
-    const char = str[i];
-    if (escapeNext) { escapeNext = false; continue; }
-    if (char === '\\' && inString) { escapeNext = true; continue; }
-    if (char === '"') { inString = !inString; continue; }
-    if (!inString) {
-      if (char === '{') depth++;
-      else if (char === '}') { depth--; if (depth === 0) return i; }
-    }
-  }
-  return -1;
-}
-
-function tryParseJsonAt(str: string, start: number): { json: unknown; end: number } | null {
-  if (str[start] !== '{') return null;
-  const end = findMatchingBrace(str, start);
-  if (end === -1) return null;
-  try {
-    return { json: JSON.parse(str.slice(start, end + 1)), end };
-  } catch { return null; }
-}
-
-function extractToolCall(parsed: unknown): ParsedToolCall | null {
-  if (typeof parsed !== 'object' || parsed === null) return null;
-  const obj = parsed as Record<string, unknown>;
-
-  if (obj['name'] && typeof obj['name'] === 'string' && !obj['type']) {
-    return { name: obj['name'], args: (obj['arguments'] || obj['args'] || {}) as Record<string, unknown> };
-  }
-
-  if (obj['type'] === 'function' && obj['function']) {
-    const func = obj['function'] as Record<string, unknown>;
-    if (func['name'] && typeof func['name'] === 'string') {
-      let args = {};
-      if (typeof func['arguments'] === 'string') {
-        try { args = JSON.parse(func['arguments']); } catch { args = {}; }
-      } else if (typeof func['arguments'] === 'object') {
-        args = func['arguments'] as Record<string, unknown>;
-      }
-      return { name: func['name'] as string, args };
-    }
-  }
-  return null;
-}
-
-function hasToolCall(toolCalls: ParsedToolCall[], name: string): boolean {
-  return toolCalls.some((tc) => tc.name === name);
-}
+import {
+  tryParseJsonAt,
+  extractToolCall,
+  hasToolCall,
+} from '../utils/parserUtils.js';
 
 /**
  * Parser for <tool_call=...> format.
  * Used by Qwen and similar models.
+ *
+ * Example: <tool_call={"name": "list_directory", "arguments": {"path": "/home"}}>
  */
 export class ToolCallTagParser implements IToolCallTextParser {
   readonly name = 'tool-call-tag';
@@ -98,7 +47,10 @@ export class ToolCallTagParser implements IToolCallTextParser {
           toolCalls.push(toolCall);
           const closingAngle = content.indexOf('>', result.end);
           if (closingAngle !== -1) {
-            cleanedContent = cleanedContent.replace(content.slice(match.index, closingAngle + 1), '');
+            cleanedContent = cleanedContent.replace(
+              content.slice(match.index, closingAngle + 1),
+              '',
+            );
           }
         }
       }
