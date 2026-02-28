@@ -61,7 +61,7 @@ export class OllamaChat {
     // Remove thought parts from history
     this.history = this.history.map((content) => ({
       ...content,
-      parts: content.parts?.filter((part) => !('thought' in part)) || [],
+      parts: content.parts?.filter((part) => typeof part === 'string' || !('thought' in part)) || [],
     }));
   }
 
