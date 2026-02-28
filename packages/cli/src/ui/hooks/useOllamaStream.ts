@@ -327,10 +327,6 @@ export const useOllamaStream = (
     if (turnCancelledRef.current) {
       return;
     }
-    // eslint-disable-next-line no-console
-    console.error(
-      `[${new Date().toISOString()}] [CANCEL] cancelOngoingRequest called - aborting request`,
-    );
     turnCancelledRef.current = true;
     isSubmittingQueryRef.current = false;
     abortControllerRef.current?.abort();
@@ -998,20 +994,6 @@ export const useOllamaStream = (
 
       abortControllerRef.current = new AbortController();
       const abortSignal = abortControllerRef.current.signal;
-
-      // Log when abort signal is triggered
-      abortSignal.addEventListener('abort', () => {
-        // eslint-disable-next-line no-console
-        console.error(
-          `[${new Date().toISOString()}] [ABORT] AbortSignal triggered! reason:`,
-          abortSignal.reason,
-        );
-      });
-
-      // eslint-disable-next-line no-console
-      console.error(
-        `[${new Date().toISOString()}] [SUBMIT] Created new AbortController for request`,
-      );
 
       turnCancelledRef.current = false;
 
