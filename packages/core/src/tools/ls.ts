@@ -269,11 +269,12 @@ export class LSTool extends BaseDeclarativeTool<LSToolParams, ToolResult> {
         properties: {
           path: {
             description:
-              'The absolute path to the directory to list (must be absolute, not relative)',
+              'REQUIRED: The absolute path to the directory to list. Must be an absolute path, not relative. Example: "/home/user/project/src" or "/Users/name/workspace".',
             type: 'string',
           },
           ignore: {
-            description: 'List of glob patterns to ignore',
+            description:
+              'OPTIONAL: List of glob patterns to ignore. Example: ["node_modules", "*.log", ".git"]. Omit to use defaults.',
             items: {
               type: 'string',
             },
@@ -281,17 +282,17 @@ export class LSTool extends BaseDeclarativeTool<LSToolParams, ToolResult> {
           },
           file_filtering_options: {
             description:
-              'Optional: Whether to respect ignore patterns from .gitignore or .ollama-codeignore',
+              'OPTIONAL: Whether to respect ignore patterns from .gitignore or .ollama-codeignore',
             type: 'object',
             properties: {
               respect_git_ignore: {
                 description:
-                  'Optional: Whether to respect .gitignore patterns when listing files. Only available in git repositories. Defaults to true.',
+                  'OPTIONAL: Whether to respect .gitignore patterns when listing files. Only available in git repositories. Defaults to true.',
                 type: 'boolean',
               },
               respect_qwen_ignore: {
                 description:
-                  'Optional: Whether to respect .ollama-codeignore patterns when listing files. Defaults to true.',
+                  'OPTIONAL: Whether to respect .ollama-codeignore patterns when listing files. Defaults to true.',
                 type: 'boolean',
               },
             },
