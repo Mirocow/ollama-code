@@ -741,17 +741,61 @@ export class OllamaNativeClient {
     const url = `${this.baseUrl}${endpoint}`;
     const controller = new AbortController();
 
+    // Log when timeout controller aborts
+    controller.signal.addEventListener('abort', () => {
+      // eslint-disable-next-line no-console
+      console.error(
+        `[${new Date().toISOString()}] [OLLAMA_CLIENT] TIMEOUT controller aborted!`,
+      );
+    });
+
     // Use a refreshable timeout that resets on each chunk
-    let timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    let timeoutId = setTimeout(() => {
+      // eslint-disable-next-line no-console
+      console.error(
+        `[${new Date().toISOString()}] [OLLAMA_CLIENT] TIMEOUT fired after ${this.timeout}ms`,
+      );
+      controller.abort();
+    }, this.timeout);
     const refreshTimeout = () => {
       clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => controller.abort(), this.timeout);
+      timeoutId = setTimeout(() => {
+        // eslint-disable-next-line no-console
+        console.error(
+          `[${new Date().toISOString()}] [OLLAMA_CLIENT] TIMEOUT fired after ${this.timeout}ms`,
+        );
+        controller.abort();
+      }, this.timeout);
     };
 
     // Combine external signal with timeout signal
     const combinedSignal = externalSignal
       ? AbortSignal.any([externalSignal, controller.signal])
       : controller.signal;
+
+    // Log when combined signal aborts
+    combinedSignal.addEventListener('abort', () => {
+      // eslint-disable-next-line no-console
+      console.error(
+        `[${new Date().toISOString()}] [OLLAMA_CLIENT] COMBINED signal aborted! reason:`,
+        combinedSignal.reason,
+      );
+    });
+
+    // Log external signal status
+    if (externalSignal) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `[${new Date().toISOString()}] [OLLAMA_CLIENT] External signal provided, already aborted: ${externalSignal.aborted}`,
+      );
+      externalSignal.addEventListener('abort', () => {
+        // eslint-disable-next-line no-console
+        console.error(
+          `[${new Date().toISOString()}] [OLLAMA_CLIENT] EXTERNAL signal aborted! reason:`,
+          externalSignal.reason,
+        );
+      });
+    }
 
     const requestBody = JSON.stringify({
       ...(body as Record<string, unknown>),
