@@ -647,7 +647,9 @@ export class OllamaContentConverter {
         count: accumulatedToolCalls.size,
         tools: [...accumulatedToolCalls.values()].map((tc) => tc.name),
       });
-      for (const [, toolCall] of accumulatedToolCalls) {
+      console.error('\n[CONVERTER] Emitting %d accumulated tool_calls:', accumulatedToolCalls.size);
+      for (const [idx, toolCall] of accumulatedToolCalls) {
+        console.error('  [%d] %s(%s)', idx, toolCall.name, toolCall.args);
         parts.push({
           functionCall: {
             id: `call_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
