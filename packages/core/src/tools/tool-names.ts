@@ -27,6 +27,8 @@ export const ToolNames = {
   LSP: 'lsp',
 } as const;
 
+export type ToolName = (typeof ToolNames)[keyof typeof ToolNames];
+
 /**
  * Tool display name constants to avoid circular dependencies.
  * These constants are used across multiple files and should be kept in sync
@@ -65,3 +67,94 @@ export const ToolDisplayNamesMigration = {
   FindFiles: ToolDisplayNames.GLOB, // Old display name for Glob
   ReadFolder: ToolDisplayNames.LS, // Old display name for ListFiles
 } as const;
+
+/**
+ * Tool aliases - short names that can be used instead of canonical tool names.
+ * This allows models to use shorter, more intuitive names for common tools.
+ * For example: 'run' instead of 'run_shell_command'
+ */
+export const ToolAliases: Record<string, ToolName> = {
+  // Shell tool aliases
+  run: ToolNames.SHELL,
+  shell: ToolNames.SHELL,
+  exec: ToolNames.SHELL,
+  cmd: ToolNames.SHELL,
+
+  // Edit tool aliases
+  edit: ToolNames.EDIT,
+  replace: ToolNames.EDIT,
+
+  // Write file aliases
+  write: ToolNames.WRITE_FILE,
+  create: ToolNames.WRITE_FILE,
+
+  // Read file aliases
+  read: ToolNames.READ_FILE,
+
+  // Grep aliases
+  grep: ToolNames.GREP,
+  search: ToolNames.GREP,
+  find: ToolNames.GREP,
+
+  // Glob aliases
+  glob: ToolNames.GLOB,
+  files: ToolNames.GLOB,
+
+  // List directory aliases
+  ls: ToolNames.LS,
+  list: ToolNames.LS,
+  dir: ToolNames.LS,
+
+  // Todo aliases
+  todo: ToolNames.TODO_WRITE,
+  todos: ToolNames.TODO_WRITE,
+
+  // Memory aliases
+  memory: ToolNames.MEMORY,
+  save: ToolNames.MEMORY,
+
+  // Web search aliases
+  websearch: ToolNames.WEB_SEARCH,
+  web: ToolNames.WEB_SEARCH,
+
+  // Web fetch aliases
+  webfetch: ToolNames.WEB_FETCH,
+  fetch: ToolNames.WEB_FETCH,
+  url: ToolNames.WEB_FETCH,
+
+  // Task aliases
+  agent: ToolNames.TASK,
+  subagent: ToolNames.TASK,
+
+  // Skill aliases
+  skills: ToolNames.SKILL,
+
+  // Exit plan mode aliases
+  exit_plan: ToolNames.EXIT_PLAN_MODE,
+  plan_done: ToolNames.EXIT_PLAN_MODE,
+};
+
+/**
+ * Resolves a tool name or alias to its canonical tool name.
+ * If the name is not found in aliases, returns the original name.
+ *
+ * @param name - The tool name or alias to resolve
+ * @returns The canonical tool name
+ */
+export function resolveToolAlias(name: string): string {
+  const normalizedName = name.trim().toLowerCase();
+
+  // Check if it's a direct alias
+  if (normalizedName in ToolAliases) {
+    return ToolAliases[normalizedName];
+  }
+
+  // Check if it matches any canonical name directly
+  const canonicalNames = Object.values(ToolNames);
+  if (canonicalNames.includes(normalizedName as ToolName)) {
+    return normalizedName;
+  }
+
+  // Return original name if no alias found
+  return name;
+}

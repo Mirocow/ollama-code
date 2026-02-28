@@ -24,6 +24,7 @@ import { safeJsonStringify } from '../utils/safeJsonStringify.js';
 import type { EventEmitter } from 'node:events';
 import { createDebugLogger } from '../utils/debugLogger.js';
 import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
+import { resolveToolAlias } from './tool-names.js';
 
 type ToolParams = Record<string, unknown>;
 
@@ -471,9 +472,12 @@ export class ToolRegistry {
 
   /**
    * Get the definition of a specific tool.
+   * Supports tool aliases - short names that resolve to canonical tool names.
+   * For example: 'run' resolves to 'run_shell_command'
    */
   getTool(name: string): AnyDeclarativeTool | undefined {
-    return this.tools.get(name);
+    const resolvedName = resolveToolAlias(name);
+    return this.tools.get(resolvedName);
   }
 
   async readMcpResource(

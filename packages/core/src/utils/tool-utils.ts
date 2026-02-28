@@ -11,9 +11,12 @@ import {
   ToolDisplayNames,
   ToolNamesMigration,
   ToolDisplayNamesMigration,
+  ToolAliases,
+  type ToolName,
 } from '../tools/tool-names.js';
 
-export type ToolName = (typeof ToolNames)[keyof typeof ToolNames];
+// Re-export ToolName for backward compatibility
+export type { ToolName };
 
 const normalizeIdentifier = (identifier: string): string =>
   identifier.trim().replace(/^_+/, '');
@@ -50,6 +53,13 @@ const TOOL_ALIAS_MAP: Map<ToolName, Set<string>> = (() => {
     )) {
       if (mappedDisplay === displayName) {
         addAlias(aliases, legacyDisplay);
+      }
+    }
+
+    // Add new short aliases from ToolAliases
+    for (const [aliasName, mappedName] of Object.entries(ToolAliases)) {
+      if (mappedName === canonicalName) {
+        addAlias(aliases, aliasName);
       }
     }
 
