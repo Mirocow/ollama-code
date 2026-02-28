@@ -758,8 +758,10 @@ export class OllamaNativeClient {
       body: JSON.stringify(body).slice(0, 500),
     });
 
+    let response: Response;
     try {
-      const response = await fetch(url, {
+      debugLog('debug', 'Sending fetch request...');
+      response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -771,7 +773,21 @@ export class OllamaNativeClient {
         }),
         signal: combinedSignal,
       });
+      debugLog('debug', 'Fetch response received', {
+        status: response.status,
+        ok: response.ok,
+        contentType: response.headers.get('content-type'),
+      });
+    } catch (fetchError) {
+      debugLog('error', 'Fetch request failed', {
+        error:
+          fetchError instanceof Error ? fetchError.message : String(fetchError),
+        name: fetchError instanceof Error ? fetchError.name : 'Unknown',
+      });
+      throw fetchError;
+    }
 
+    try {
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = `Ollama API error: ${response.status} ${response.statusText}`;
@@ -790,26 +806,43 @@ export class OllamaNativeClient {
         throw detectOllamaError(new Error(errorMessage), {});
       }
 
+      debugLog('debug', 'Getting reader from response body...');
       const reader = response.body?.getReader();
       if (!reader) {
+        debugLog('error', 'Response body is not readable');
         throw new OllamaConnectionError('Response body is not readable');
       }
+      debugLog('debug', 'Reader obtained, starting to read chunks...');
 
       const decoder = new TextDecoder();
       let buffer = '';
       let chunkCount = 0;
+      let bytesRead = 0;
 
       while (true) {
+        debugLog('debug', 'Waiting for next chunk...');
         const { done, value } = await reader.read();
 
         if (done) {
-          debugLog('debug', 'Streaming completed', { totalChunks: chunkCount });
+          debugLog('info', 'Streaming completed', {
+            totalChunks: chunkCount,
+            totalBytes: bytesRead,
+          });
           break;
         }
 
         // Refresh timeout on each chunk to handle long-running generations
         refreshTimeout();
         chunkCount++;
+        bytesRead += value?.length ?? 0;
+
+        // Log chunk details for debugging (first 5 and every 10th)
+        if (chunkCount <= 5 || chunkCount % 10 === 0) {
+          debugLog('debug', `Received chunk #${chunkCount}`, {
+            size: value?.length ?? 0,
+            totalBytes: bytesRead,
+          });
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
@@ -827,6 +860,13 @@ export class OllamaNativeClient {
                   error: errorMsg,
                 });
                 throw new OllamaStreamingError(errorMsg, parsed);
+              }
+
+              // Log first few parsed chunks for debugging
+              if (chunkCount <= 3) {
+                debugLog('debug', `Parsed chunk #${chunkCount}`, {
+                  preview: JSON.stringify(parsed).slice(0, 200),
+                });
               }
 
               callback(parsed);
