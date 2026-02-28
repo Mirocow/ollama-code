@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.10.6
+
+### New Features
+
+#### Development Tools
+- **Python Development Tool** (`python_dev`): Comprehensive Python development support including:
+  - Run Python scripts with arguments
+  - Execute pytest with test patterns
+  - Run pylint, mypy, and black for code quality
+  - Manage virtual environments (create, activate)
+  - pip operations (install, list, freeze)
+  - Support for custom Python interpreter paths
+
+- **Node.js Development Tool** (`nodejs_dev`): Full Node.js/JavaScript development support including:
+  - Auto-detection of package manager (npm, yarn, pnpm, bun)
+  - Run Node.js scripts
+  - Package management (install, add, remove, update)
+  - Run package.json scripts (test, build, dev, lint)
+  - Execute npx/yarn dlx/bunx commands
+  - Background execution for dev servers
+  - Clean operation for node_modules and lock files
+
+- **Golang Development Tool** (`golang_dev`): Complete Go development support including:
+  - Run and build Go programs
+  - Run tests with coverage and benchmarks
+  - Code quality tools (fmt, vet, golangci-lint)
+  - Module management (init, tidy, download, verify, graph)
+  - Package management (get, install)
+  - Race detector support
+
+#### Documentation
+- **Tools Reference Documentation**: Complete bilingual documentation for all tools
+  - English version: `docs/TOOLS.md`
+  - Russian version: `docs/TOOLS.ru.md`
+  - Covers all 20+ tools with parameters, examples, and best practices
+
+### Tool Aliases Updates
+Added development tool aliases:
+
+| Alias | Canonical Tool |
+|-------|----------------|
+| `py`, `python`, `pip`, `pytest` | `python_dev` |
+| `node`, `npm`, `yarn`, `pnpm`, `bun` | `nodejs_dev` |
+| `go`, `golang` | `golang_dev` |
+
+### Improvements
+- Enhanced tool registry with development tools integration
+- Improved shell execution for development commands
+- Better timeout handling for long-running operations
+
 ## 0.10.5
 
 ### New Features
