@@ -13,6 +13,7 @@ export const ToolNames = {
   EDIT: 'edit',
   WRITE_FILE: 'write_file',
   READ_FILE: 'read_file',
+  READ_MANY_FILES: 'read_many_files',
   GREP: 'grep_search',
   GLOB: 'glob',
   SHELL: 'run_shell_command',
@@ -38,6 +39,7 @@ export const ToolDisplayNames = {
   EDIT: 'Edit',
   WRITE_FILE: 'WriteFile',
   READ_FILE: 'ReadFile',
+  READ_MANY_FILES: 'ReadManyFiles',
   GREP: 'Grep',
   GLOB: 'Glob',
   SHELL: 'Shell',
@@ -90,6 +92,11 @@ export const ToolAliases: Record<string, ToolName> = {
 
   // Read file aliases
   read: ToolNames.READ_FILE,
+
+  // Read many files aliases
+  readmany: ToolNames.READ_MANY_FILES,
+  read_all: ToolNames.READ_MANY_FILES,
+  cat: ToolNames.READ_MANY_FILES,
 
   // Grep aliases
   grep: ToolNames.GREP,
