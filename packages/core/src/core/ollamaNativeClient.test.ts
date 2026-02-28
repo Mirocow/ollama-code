@@ -15,6 +15,25 @@ import {
   DEFAULT_OLLAMA_NATIVE_URL,
   createOllamaNativeClient,
 } from './ollamaNativeClient.js';
+import { apiLogger } from '../utils/apiLogger.js';
+
+// Mock apiLogger
+const mockApiLogger = {
+  logInteraction: vi.fn().mockResolvedValue('/logs/test-log.json'),
+  initialize: vi.fn().mockResolvedValue(undefined),
+  getLogFiles: vi.fn().mockResolvedValue([]),
+  readLogFile: vi.fn().mockResolvedValue({}),
+};
+
+// Replace the imported apiLogger with mock
+vi.mock('../utils/apiLogger.js', () => ({
+  apiLogger: {
+    logInteraction: vi.fn().mockResolvedValue('/logs/test-log.json'),
+    initialize: vi.fn().mockResolvedValue(undefined),
+    getLogFiles: vi.fn().mockResolvedValue([]),
+    readLogFile: vi.fn().mockResolvedValue({}),
+  },
+}));
 
 // Test configuration
 const OLLAMA_TEST_URL = process.env['OLLAMA_URL'] || 'http://localhost:11434';
@@ -69,6 +88,7 @@ describe('OllamaNativeClient', () => {
 
     beforeEach(() => {
       mockFetch.mockReset();
+      (apiLogger.logInteraction as any).mockClear();
     });
 
     describe('/api/generate', () => {
@@ -128,6 +148,8 @@ describe('OllamaNativeClient', () => {
 
         mockFetch.mockResolvedValueOnce({
           ok: true,
+          status: 200,
+          headers: { get: () => 'application/x-ndjson' },
           body: { getReader: () => mockReader },
         });
 
@@ -418,6 +440,8 @@ describe('OllamaNativeClient', () => {
 
         mockFetch.mockResolvedValueOnce({
           ok: true,
+          status: 200,
+          headers: { get: () => 'application/x-ndjson' },
           body: { getReader: () => mockReader },
         });
 
@@ -660,6 +684,154 @@ describe('OllamaNativeClient', () => {
 
         const isAvailable = await client.isModelAvailable('nonexistent');
         expect(isAvailable).toBe(false);
+      });
+    });
+
+    describe('API Logging', () => {
+      it('should log request to apiLogger for non-streaming request', async () => {
+        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            model: 'llama3.2',
+            message: { role: 'assistant', content: 'Hello!' },
+            done: true,
+          }),
+        });
+
+        await client.chat({
+          model: 'llama3.2',
+          messages: [{ role: 'user', content: 'Hello!' }],
+        });
+
+        // Check that apiLogger.logInteraction was called
+        expect(apiLogger.logInteraction).toHaveBeenCalled();
+
+        // Check that the request was logged
+        const callArgs = (apiLogger.logInteraction as any).mock.calls[0];
+        expect(callArgs[0]).toMatchObject({
+          type: 'request',
+          method: 'POST',
+          endpoint: '/api/chat',
+        });
+      });
+
+      it('should log response to apiLogger for non-streaming request', async () => {
+        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
+
+        const responseData = {
+          model: 'llama3.2',
+          message: { role: 'assistant', content: 'Hello!' },
+          done: true,
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => responseData,
+        });
+
+        await client.chat({
+          model: 'llama3.2',
+          messages: [{ role: 'user', content: 'Hello!' }],
+        });
+
+        // Check that apiLogger.logInteraction was called with response
+        const calls = (apiLogger.logInteraction as any).mock.calls;
+        const responseCall = calls.find((call: any[]) => call[1]?.type === 'response');
+        expect(responseCall).toBeDefined();
+        expect(responseCall[1]).toMatchObject({
+          type: 'response',
+          status: 200,
+        });
+      });
+
+      it('should log error to apiLogger on failed request', async () => {
+        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
+
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+          text: async () => '{"error": "model not found"}',
+        });
+
+        try {
+          await client.showModel('nonexistent');
+        } catch {
+          // Expected to throw
+        }
+
+        // Check that apiLogger.logInteraction was called with error
+        const calls = (apiLogger.logInteraction as any).mock.calls;
+        const errorCall = calls.find((call: any[]) => call[2] instanceof Error);
+        expect(errorCall).toBeDefined();
+      });
+
+      it('should log streaming request to apiLogger', async () => {
+        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
+
+        const mockReader = {
+          read: vi.fn()
+            .mockResolvedValueOnce({
+              done: false,
+              value: new TextEncoder().encode('{"model":"llama3.2","message":{"role":"assistant","content":"Hello"},"done":false}\n'),
+            })
+            .mockResolvedValueOnce({
+              done: false,
+              value: new TextEncoder().encode('{"model":"llama3.2","message":{"role":"assistant","content":"!"},"done":true}\n'),
+            })
+            .mockResolvedValue({ done: true, value: undefined }),
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: { get: () => 'application/x-ndjson' },
+          body: { getReader: () => mockReader },
+        });
+
+        const chunks: any[] = [];
+        await client.chat(
+          { model: 'llama3.2', messages: [{ role: 'user', content: 'Hi' }] },
+          (chunk) => chunks.push(chunk)
+        );
+
+        // Check that apiLogger.logInteraction was called
+        expect(apiLogger.logInteraction).toHaveBeenCalled();
+
+        // Check that streaming response was logged with chunks
+        const calls = (apiLogger.logInteraction as any).mock.calls;
+        const streamingCall = calls.find((call: any[]) => call[1]?.type === 'streaming_response');
+        expect(streamingCall).toBeDefined();
+        expect(streamingCall[1]).toHaveProperty('chunks');
+        expect(streamingCall[1]).toHaveProperty('totalChunks');
+      });
+
+      it('should log request body in log data', async () => {
+        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            model: 'llama3.2',
+            message: { role: 'assistant', content: 'Hi!' },
+            done: true,
+          }),
+        });
+
+        await client.chat({
+          model: 'llama3.2',
+          messages: [{ role: 'user', content: 'Hello' }],
+        });
+
+        // Check that request body was logged
+        const callArgs = (apiLogger.logInteraction as any).mock.calls[0];
+        expect(callArgs[0].body).toMatchObject({
+          model: 'llama3.2',
+          messages: [{ role: 'user', content: 'Hello' }],
+        });
       });
     });
   });
