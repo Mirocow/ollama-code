@@ -193,6 +193,9 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
         { name: string; args: string }
       >();
 
+      // Accumulate text content for text-based tool call parsing
+      const accumulatedContent = { text: '' };
+
       // Process streaming response
       const streamPromise = client
         .chat(ollamaRequest, (chunk: OllamaChatResponse) => {
@@ -205,6 +208,7 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
           const genaiResponse = converter.convertOllamaChunkToGenAI(
             chunk,
             accumulatedToolCalls,
+            accumulatedContent,
           );
           chunkQueue.push(genaiResponse);
 

@@ -580,4 +580,139 @@ describe('OllamaContentConverter', () => {
       expect(result.messages[0].images).toContain('img');
     });
   });
+
+  describe('Text-based Tool Call Parsing', () => {
+    it('should parse tool call from <tool_call=...> format', () => {
+      const ollamaResponse: OllamaChatResponse = {
+        model: 'qwen3-coder',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: '<tool_call={"name": "list_directory", "arguments": {"path": "/home"}}>',
+        },
+        done: true,
+      };
+
+      const result = converter.convertOllamaResponseToGenAI(ollamaResponse);
+
+      const functionCalls = result.functionCalls;
+      expect(functionCalls).toBeDefined();
+      expect(functionCalls).toHaveLength(1);
+      expect(functionCalls?.[0].name).toBe('list_directory');
+      expect(functionCalls?.[0].args).toEqual({ path: '/home' });
+    });
+
+    it('should parse tool call from <tool_call_start>...<tool_call_end> format', () => {
+      const ollamaResponse: OllamaChatResponse = {
+        model: 'qwen3-coder',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: '<tool_call_start>{"name": "read_file", "arguments": {"path": "/test.txt"}}<tool_call_end>',
+        },
+        done: true,
+      };
+
+      const result = converter.convertOllamaResponseToGenAI(ollamaResponse);
+
+      const functionCalls = result.functionCalls;
+      expect(functionCalls).toBeDefined();
+      expect(functionCalls).toHaveLength(1);
+      expect(functionCalls?.[0].name).toBe('read_file');
+      expect(functionCalls?.[0].args).toEqual({ path: '/test.txt' });
+    });
+
+    it('should parse tool call from function call JSON format', () => {
+      const ollamaResponse: OllamaChatResponse = {
+        model: 'qwen3-coder',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: '{"type": "function", "function": {"name": "run_shell_command", "arguments": "{\\"command\\": \\"ls\\"}"}}',
+        },
+        done: true,
+      };
+
+      const result = converter.convertOllamaResponseToGenAI(ollamaResponse);
+
+      const functionCalls = result.functionCalls;
+      expect(functionCalls).toBeDefined();
+      expect(functionCalls).toHaveLength(1);
+      expect(functionCalls?.[0].name).toBe('run_shell_command');
+    });
+
+    it('should parse tool call from simple JSON with name/arguments', () => {
+      const ollamaResponse: OllamaChatResponse = {
+        model: 'qwen3-coder',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: 'Let me help you with that.\n{"name": "edit", "arguments": {"path": "/file.ts"}}',
+        },
+        done: true,
+      };
+
+      const result = converter.convertOllamaResponseToGenAI(ollamaResponse);
+
+      const functionCalls = result.functionCalls;
+      expect(functionCalls).toBeDefined();
+      expect(functionCalls).toHaveLength(1);
+      expect(functionCalls?.[0].name).toBe('edit');
+      expect(functionCalls?.[0].args).toEqual({ path: '/file.ts' });
+    });
+
+    it('should clean text content after parsing tool calls', () => {
+      const ollamaResponse: OllamaChatResponse = {
+        model: 'qwen3-coder',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: 'I will list the directory for you.\n<tool_call={"name": "list_directory", "arguments": {"path": "/home"}}>',
+        },
+        done: true,
+      };
+
+      const result = converter.convertOllamaResponseToGenAI(ollamaResponse);
+
+      // Should have both text and function call
+      const parts = result.candidates?.[0]?.content?.parts;
+      expect(parts).toBeDefined();
+
+      // Should have function call
+      expect(result.functionCalls).toBeDefined();
+      expect(result.functionCalls).toHaveLength(1);
+
+      // Text should be cleaned (tool call removed)
+      const textPart = parts?.find((p) => 'text' in p);
+      expect(textPart?.text).toContain('I will list the directory');
+      expect(textPart?.text).not.toContain('<tool_call');
+    });
+
+    it('should prefer structured tool_calls over text parsing', () => {
+      const ollamaResponse: OllamaChatResponse = {
+        model: 'qwen3-coder',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: 'Some text content',
+          tool_calls: [
+            {
+              function: {
+                name: 'structured_call',
+                arguments: { test: true },
+              },
+            },
+          ],
+        },
+        done: true,
+      };
+
+      const result = converter.convertOllamaResponseToGenAI(ollamaResponse);
+
+      // Should only have the structured tool call
+      expect(result.functionCalls).toBeDefined();
+      expect(result.functionCalls).toHaveLength(1);
+      expect(result.functionCalls?.[0].name).toBe('structured_call');
+    });
+  });
 });
