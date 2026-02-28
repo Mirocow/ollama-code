@@ -178,7 +178,8 @@ export class StandaloneJsonParser implements IToolCallTextParser {
   readonly priority = 30;
 
   canParse(content: string): boolean {
-    return content.includes('{') && content.includes('"name"');
+    // Check for JSON object with "name" field, but not a function call format
+    return content.includes('{') && content.includes('"name"') && !content.includes('"type"');
   }
 
   parse(content: string): ToolCallParseResult {
