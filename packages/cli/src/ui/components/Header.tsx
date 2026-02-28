@@ -25,6 +25,7 @@ interface HeaderProps {
   model: string;
   baseUrl?: string;
   workingDirectory: string;
+  sessionId?: string;
 }
 
 function titleizeAuthType(value: string): string {
@@ -61,6 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
   model,
   baseUrl,
   workingDirectory,
+  sessionId,
 }) => {
   const { columns: terminalWidth } = useTerminalSize();
 
@@ -191,6 +193,13 @@ export const Header: React.FC<HeaderProps> = ({
             <Text color={theme.text.secondary}>{modelHintText}</Text>
           )}
         </Text>
+        {/* Session ID line (if available) */}
+        {sessionId && (
+          <Text color={theme.text.secondary}>
+            Session:{' '}
+            {sessionId.length > 12 ? sessionId.slice(0, 12) + '...' : sessionId}
+          </Text>
+        )}
         {/* Directory line */}
         <Text color={theme.text.secondary}>{displayPath}</Text>
       </Box>
