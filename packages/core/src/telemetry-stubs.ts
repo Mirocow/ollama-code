@@ -5,20 +5,11 @@
  */
 
 /**
- * Telemetry module - session statistics and backward compatibility stubs.
+ * Telemetry stubs for backward compatibility.
  * All external telemetry has been removed.
  */
 
-// Re-export UI telemetry from services
-export {
-  uiTelemetryService,
-  type SessionMetrics,
-  type ToolCallStats,
-  type ModelMetrics,
-  type FileMetrics,
-} from '../services/uiTelemetry.js';
-
-// Backward compatibility stubs
+// Enum stubs
 export enum TelemetryTarget {
   GCP = 'gcp',
   LOCAL = 'local',
@@ -28,6 +19,7 @@ export enum TelemetryTarget {
 export const DEFAULT_TELEMETRY_TARGET = TelemetryTarget.LOCAL;
 export const DEFAULT_OTLP_ENDPOINT = 'http://localhost:4317';
 
+// Initialization stubs
 export function initializeTelemetry(): void {}
 export function shutdownTelemetry(): Promise<void> {
   return Promise.resolve();

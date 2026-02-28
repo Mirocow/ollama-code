@@ -26,7 +26,7 @@ export {
 } from './config/models.js';
 export {
   type AvailableModel,
-  type ModelCapabilities,
+  type ModelCapabilities as ProviderModelCapabilities,
   type ModelConfig as ProviderModelConfig,
   type ModelConfigCliInput,
   type ModelConfigResolutionResult,
@@ -259,10 +259,19 @@ export * from './skills/index.js';
 export * from './subagents/index.js';
 
 // ============================================================================
-// Telemetry (stubs)
+// Telemetry (UI metrics + backward compatibility stubs)
 // ============================================================================
 
-export * from './telemetry/index.js';
+export {
+  uiTelemetryService,
+  type SessionMetrics,
+  type ToolCallStats,
+  type ModelMetrics,
+  type FileMetrics,
+} from './services/uiTelemetry.js';
+
+// Telemetry stubs for backward compatibility
+export * from './telemetry-stubs.js';
 
 // ============================================================================
 // Utilities
@@ -313,7 +322,18 @@ export { makeFakeConfig } from './test-utils/config.js';
 export * from './test-utils/index.js';
 
 // ============================================================================
-// Model Handlers
+// Model Definitions
 // ============================================================================
 
-export { getModelCapabilities } from './model-handlers/index.js';
+export {
+  getModelCapabilities,
+  getModelDefinition,
+  supportsTools,
+  supportsVision,
+  supportsThinking,
+  getOutputFormat,
+  type ModelCapabilities as ModelCapabilitiesInfo,
+  type ModelDefinition,
+  type ModelFamilyDefinition,
+  type OutputFormat,
+} from './model-definitions/index.js';
