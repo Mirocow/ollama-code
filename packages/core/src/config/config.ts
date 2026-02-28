@@ -66,6 +66,11 @@ import { PythonTool } from '../tools/python.js';
 import { NodeJsTool } from '../tools/nodejs.js';
 import { GolangTool } from '../tools/golang.js';
 import { PHPTool } from '../tools/php.js';
+import { JavaTool } from '../tools/java.js';
+import { CppTool } from '../tools/cpp.js';
+import { RustTool } from '../tools/rust.js';
+import { SwiftTool } from '../tools/swift.js';
+import { TypeScriptTool } from '../tools/typescript.js';
 
 // Other modules
 import { ideContextStore } from '../ide/ideContext.js';
@@ -1610,11 +1615,16 @@ export class Config {
       registerCoreTool(LspTool, this);
     }
 
-    // Register development tools for Python, Node.js, Golang, and PHP
+    // Register development tools for Python, Node.js, Golang, PHP, Java, C/C++, Rust, Swift, and TypeScript
     registerCoreTool(PythonTool, this);
     registerCoreTool(NodeJsTool, this);
     registerCoreTool(GolangTool, this);
     registerCoreTool(PHPTool, this);
+    registerCoreTool(JavaTool, this);
+    registerCoreTool(CppTool, this);
+    registerCoreTool(RustTool, this);
+    registerCoreTool(SwiftTool, this);
+    registerCoreTool(TypeScriptTool, this);
 
     await registry.discoverAllTools();
     this.debugLogger.debug(
