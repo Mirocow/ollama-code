@@ -14,6 +14,10 @@ import {
 } from './types.js';
 import { DEFAULT_OLLAMA_MODEL, OLLAMA_MODELS } from './constants.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
+import {
+  getModelCapabilities,
+  supportsVision,
+} from '../model-definitions/index.js';
 
 const debugLogger = createDebugLogger('MODEL_REGISTRY');
 
@@ -118,15 +122,19 @@ export class ModelRegistry {
     const models = this.modelsByAuthType.get(authType);
     if (!models) return [];
 
-    return Array.from(models.values()).map((model) => ({
-      id: model.id,
-      label: model.name,
-      description: model.description,
-      capabilities: model.capabilities,
-      authType: model.authType,
-      isVision: model.capabilities?.vision ?? false,
-      contextWindowSize: model.generationConfig.contextWindowSize,
-    }));
+    return Array.from(models.values()).map((model) => {
+      // Use dynamic capabilities detection from model-definitions
+      const dynamicCapabilities = getModelCapabilities(model.id);
+      return {
+        id: model.id,
+        label: model.name,
+        description: model.description,
+        capabilities: dynamicCapabilities,
+        authType: model.authType,
+        isVision: supportsVision(model.id),
+        contextWindowSize: model.generationConfig.contextWindowSize,
+      };
+    });
   }
 
   /**
