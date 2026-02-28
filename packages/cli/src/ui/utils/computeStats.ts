@@ -37,8 +37,8 @@ export const computeSessionStats = (
   const { models, tools, files } = metrics;
 
   // models is a single ModelMetrics object, not a record
-  // Use models.byModel for per-model stats if needed
-  const totalApiTime = models.api?.totalLatencyMs ?? 0;
+  // Handle cases where models or models.api might be undefined
+  const totalApiTime = models?.api?.totalLatencyMs ?? 0;
   const totalToolTime = tools.totalDurationMs;
   const agentActiveTime = totalApiTime + totalToolTime;
   const apiTimePercent =
@@ -46,8 +46,8 @@ export const computeSessionStats = (
   const toolTimePercent =
     agentActiveTime > 0 ? (totalToolTime / agentActiveTime) * 100 : 0;
 
-  const totalCachedTokens = models.tokens?.cached ?? 0;
-  const totalPromptTokens = models.tokens?.prompt ?? 0;
+  const totalCachedTokens = models?.tokens?.cached ?? 0;
+  const totalPromptTokens = models?.tokens?.prompt ?? 0;
   const cacheEfficiency =
     totalPromptTokens > 0 ? (totalCachedTokens / totalPromptTokens) * 100 : 0;
 

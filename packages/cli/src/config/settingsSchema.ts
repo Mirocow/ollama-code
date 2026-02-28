@@ -617,18 +617,20 @@ const SETTINGS_SCHEMA = {
         category: 'Model',
         requiresRestart: false,
         default: undefined as Record<string, unknown> | undefined,
-        description: 'Generation configuration settings.',
-        showInDialog: false,
+        description:
+          'Generation configuration settings including timeout, retries, and cache control.',
+        showInDialog: true,
         properties: {
           timeout: {
             type: 'number',
-            label: 'Timeout',
+            label: 'API Timeout (ms)',
             category: 'Generation Configuration',
             requiresRestart: false,
-            default: undefined as number | undefined,
-            description: 'Request timeout in milliseconds.',
+            default: 300000, // 5 minutes default
+            description:
+              'Request timeout in milliseconds. Default is 300000 (5 minutes). Increase this value if you experience timeout errors with slow models or large requests.',
             parentKey: 'generationConfig',
-            showInDialog: false,
+            showInDialog: true,
           },
           maxRetries: {
             type: 'number',

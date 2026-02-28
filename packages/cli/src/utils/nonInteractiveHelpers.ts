@@ -167,15 +167,10 @@ export function computeUsageFromMetrics(metrics: SessionMetrics): Usage {
   const stats = computeSessionStats(metrics);
   const { models } = metrics;
 
-  // Sum up output tokens (candidates) and total tokens across all models
-  const totalOutputTokens = Object.values(models).reduce(
-    (acc, model) => acc + model.tokens.candidates,
-    0,
-  );
-  const totalTokens = Object.values(models).reduce(
-    (acc, model) => acc + model.tokens.total,
-    0,
-  );
+  // models is a single ModelMetrics object, not a record
+  // Handle cases where models or models.tokens might be undefined
+  const totalOutputTokens = models?.tokens?.candidates ?? 0;
+  const totalTokens = models?.tokens?.total ?? 0;
 
   const usage: Usage = {
     input_tokens: stats.totalPromptTokens,
