@@ -12,7 +12,14 @@
  * - Various JSON formats when in text mode
  */
 
-import type { IToolCallTextParser, ToolCallParseResult, ParsedToolCall } from '../types.js';
+import type {
+  IToolCallTextParser,
+  ToolCallParseResult,
+  ParsedToolCall,
+} from '../types.js';
+import { createDebugLogger } from '../../utils/debugLogger.js';
+
+const debugLogger = createDebugLogger('LLAMA_PARSER');
 
 /**
  * Parser for Llama's function call format.
@@ -44,12 +51,26 @@ export class LlamaFunctionCallParser implements IToolCallTextParser {
           if (func['name'] && typeof func['name'] === 'string') {
             let args = {};
             if (typeof func['arguments'] === 'string') {
-              try { args = JSON.parse(func['arguments']); } catch { args = {}; }
+              try {
+                args = JSON.parse(func['arguments']);
+              } catch {
+                args = {};
+              }
             } else if (typeof func['arguments'] === 'object') {
               args = func['arguments'] as Record<string, unknown>;
             }
-            toolCalls.push({ name: func['name'] as string, args });
-            cleanedContent = cleanedContent.slice(0, jsonStart) + cleanedContent.slice(result.end + 1);
+            const toolCall: ParsedToolCall = {
+              name: func['name'] as string,
+              args,
+            };
+            debugLogger.debug('Parsed function call', {
+              name: toolCall.name,
+              args: toolCall.args,
+            });
+            toolCalls.push(toolCall);
+            cleanedContent =
+              cleanedContent.slice(0, jsonStart) +
+              cleanedContent.slice(result.end + 1);
             searchPos = jsonStart;
             continue;
           }
@@ -57,6 +78,14 @@ export class LlamaFunctionCallParser implements IToolCallTextParser {
       }
       searchPos = jsonStart + 1;
     }
+
+    if (toolCalls.length > 0) {
+      debugLogger.info('LlamaFunctionCallParser result', {
+        count: toolCalls.length,
+        toolCalls: toolCalls.map((tc) => ({ name: tc.name, args: tc.args })),
+      });
+    }
+
     return { toolCalls, cleanedContent: cleanedContent.trim() };
   }
 
@@ -68,24 +97,41 @@ export class LlamaFunctionCallParser implements IToolCallTextParser {
 
     for (let i = start; i < str.length; i++) {
       const char = str[i];
-      if (escapeNext) { escapeNext = false; continue; }
-      if (char === '\\' && inString) { escapeNext = true; continue; }
-      if (char === '"') { inString = !inString; continue; }
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+      if (char === '\\' && inString) {
+        escapeNext = true;
+        continue;
+      }
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
       if (!inString) {
         if (char === '{') depth++;
-        else if (char === '}') { depth--; if (depth === 0) return i; }
+        else if (char === '}') {
+          depth--;
+          if (depth === 0) return i;
+        }
       }
     }
     return -1;
   }
 
-  private tryParseJsonAt(str: string, start: number): { json: unknown; end: number } | null {
+  private tryParseJsonAt(
+    str: string,
+    start: number,
+  ): { json: unknown; end: number } | null {
     if (str[start] !== '{') return null;
     const end = this.findMatchingBrace(str, start);
     if (end === -1) return null;
     try {
       return { json: JSON.parse(str.slice(start, end + 1)), end };
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 }
 
