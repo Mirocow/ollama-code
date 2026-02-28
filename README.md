@@ -66,6 +66,36 @@ npm run start -- "Explain how async/await works in JavaScript"
 npm run debug
 ```
 
+## What's New in v0.10.6
+
+### Development Tools
+
+Three new comprehensive development tools have been added:
+
+| Tool | Aliases | Description |
+|------|---------|-------------|
+| `python_dev` | `py`, `python`, `pip`, `pytest` | Python development (run, test, lint, venv, pip) |
+| `nodejs_dev` | `node`, `npm`, `yarn`, `pnpm`, `bun` | Node.js development with auto-detected package manager |
+| `golang_dev` | `go`, `golang` | Go development (run, build, test, mod) |
+| `php_dev` | `php`, `composer`, `phpunit`, `artisan` | PHP development with Composer and Laravel support |
+
+### Environment Notification
+
+The model now receives detailed environment information at session start, including:
+- Ollama configuration (base URL, model, API key status)
+- System information (Node.js version, platform, working directory)
+- Debug settings
+
+### Enhanced Documentation
+
+New comprehensive documentation:
+- [FEATURES.md](./docs/FEATURES.md) - Complete feature reference
+- [TOOLS.md](./docs/TOOLS.md) - Detailed tools reference
+- [FEATURES.ru.md](./docs/FEATURES.ru.md) - Russian feature reference
+- [TOOLS.ru.md](./docs/TOOLS.ru.md) - Russian tools reference
+
+---
+
 ## What's New in v0.10.5
 
 ### Tool Alias System
@@ -161,14 +191,31 @@ ollama-code/
 
 ## Documentation
 
+### Quick Reference
+
 | Document | Description |
 |----------|-------------|
+| [FEATURES.md](./docs/FEATURES.md) | **Complete feature reference** |
+| [TOOLS.md](./docs/TOOLS.md) | **Detailed tools reference** |
 | [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Usage guide |
 | [EXAMPLES.md](./docs/EXAMPLES.md) | Usage examples |
-| [TUTORIAL.md](./docs/TUTORIAL.md) | Beginner tutorial |
 | [OLLAMA_API.md](./docs/OLLAMA_API.md) | API documentation |
+
+### Russian Documentation (Русская документация)
+
+| Документ | Описание |
+|----------|-------------|
+| [FEATURES.ru.md](./docs/FEATURES.ru.md) | **Полный справочник функций** |
+| [TOOLS.ru.md](./docs/TOOLS.ru.md) | **Справочник инструментов** |
+| [README.ru.md](./README.ru.md) | README на русском |
+
+### Project Resources
+
+| Document | Description |
+|----------|-------------|
 | [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Project structure |
 | [ROADMAP.md](./ROADMAP.md) | Development roadmap |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution guidelines |
 
 ## Commands
 

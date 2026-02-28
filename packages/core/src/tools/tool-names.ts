@@ -29,6 +29,7 @@ export const ToolNames = {
   PYTHON: 'python_dev',
   NODEJS: 'nodejs_dev',
   GOLANG: 'golang_dev',
+  PHP: 'php_dev',
 } as const;
 
 export type ToolName = (typeof ToolNames)[keyof typeof ToolNames];
@@ -58,6 +59,7 @@ export const ToolDisplayNames = {
   PYTHON: 'PythonDev',
   NODEJS: 'NodeJsDev',
   GOLANG: 'GolangDev',
+  PHP: 'PHPDev',
 } as const;
 
 // Migration from old tool names to new tool names
@@ -162,6 +164,12 @@ export const ToolAliases: Record<string, ToolName> = {
   // Golang dev aliases
   go: ToolNames.GOLANG,
   golang: ToolNames.GOLANG,
+
+  // PHP dev aliases
+  php: ToolNames.PHP,
+  composer: ToolNames.PHP,
+  phpunit: ToolNames.PHP,
+  artisan: ToolNames.PHP,
 };
 
 /**
