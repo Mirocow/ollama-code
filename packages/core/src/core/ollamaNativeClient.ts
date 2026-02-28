@@ -758,6 +758,24 @@ export class OllamaNativeClient {
       stream: true,
     });
 
+    // Log to console directly for immediate visibility
+    // eslint-disable-next-line no-console
+    console.error(`\n${'='.repeat(80)}`);
+    // eslint-disable-next-line no-console
+    console.error(
+      `[${new Date().toISOString()}] [OLLAMA_CLIENT] START streamingRequest`,
+    );
+    // eslint-disable-next-line no-console
+    console.error(`[${new Date().toISOString()}] [OLLAMA_CLIENT] URL: ${url}`);
+    // eslint-disable-next-line no-console
+    console.error(
+      `[${new Date().toISOString()}] [OLLAMA_CLIENT] Body size: ${(requestBody.length / 1024).toFixed(1)}KB`,
+    );
+    // eslint-disable-next-line no-console
+    console.error(
+      `[${new Date().toISOString()}] [OLLAMA_CLIENT] Timeout: ${this.timeout}ms`,
+    );
+
     debugLog('info', 'Starting streaming request', {
       url,
       bodySize: `${(requestBody.length / 1024).toFixed(1)}KB`,
@@ -766,7 +784,10 @@ export class OllamaNativeClient {
 
     let response: Response;
     try {
-      debugLog('debug', 'Sending fetch request...');
+      // eslint-disable-next-line no-console
+      console.error(
+        `[${new Date().toISOString()}] [OLLAMA_CLIENT] Calling fetch()...`,
+      );
       const fetchStartTime = Date.now();
       response = await fetch(url, {
         method: 'POST',
@@ -778,6 +799,11 @@ export class OllamaNativeClient {
         signal: combinedSignal,
       });
       const fetchDuration = Date.now() - fetchStartTime;
+      // eslint-disable-next-line no-console
+      console.error(
+        `[${new Date().toISOString()}] [OLLAMA_CLIENT] Fetch response received in ${fetchDuration}ms, status: ${response.status}`,
+      );
+
       debugLog('info', 'Fetch response received', {
         status: response.status,
         ok: response.ok,
@@ -785,6 +811,11 @@ export class OllamaNativeClient {
         fetchDuration: `${fetchDuration}ms`,
       });
     } catch (fetchError) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `[${new Date().toISOString()}] [OLLAMA_CLIENT] Fetch FAILED:`,
+        fetchError,
+      );
       debugLog('error', 'Fetch request failed', {
         error:
           fetchError instanceof Error ? fetchError.message : String(fetchError),
