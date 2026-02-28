@@ -7,6 +7,8 @@
 import {
   AuthType,
   DEFAULT_OLLAMA_MODEL,
+  DEFAULT_VISION_MODEL,
+  supportsVision,
   type Config,
   type AvailableModel as CoreAvailableModel,
 } from '@ollama-code/ollama-code-core';
@@ -19,15 +21,22 @@ export type AvailableModel = {
   isVision?: boolean;
 };
 
-export const MAINLINE_VLM = 'llava';
+export const MAINLINE_VLM = DEFAULT_VISION_MODEL;
 export const MAINLINE_CODER = DEFAULT_OLLAMA_MODEL;
 
+/**
+ * Predefined list of popular Ollama models for UI display.
+ * isVision is computed dynamically using supportsVision() from model-definitions.
+ */
 export const AVAILABLE_MODELS_OLLAMA: AvailableModel[] = [
   {
     id: MAINLINE_CODER,
     label: MAINLINE_CODER,
     get description() {
       return t('Llama 3.2 — excellent for coding tasks');
+    },
+    get isVision() {
+      return supportsVision(MAINLINE_CODER);
     },
   },
   {
@@ -36,6 +45,9 @@ export const AVAILABLE_MODELS_OLLAMA: AvailableModel[] = [
     get description() {
       return t('Meta Llama 3.2 — versatile model');
     },
+    get isVision() {
+      return supportsVision('llama3.2');
+    },
   },
   {
     id: MAINLINE_VLM,
@@ -43,7 +55,9 @@ export const AVAILABLE_MODELS_OLLAMA: AvailableModel[] = [
     get description() {
       return t('LLaVA — vision-language model for image understanding');
     },
-    isVision: true,
+    get isVision() {
+      return supportsVision(MAINLINE_VLM);
+    },
   },
   {
     id: 'deepseek-coder-v2',
@@ -51,12 +65,18 @@ export const AVAILABLE_MODELS_OLLAMA: AvailableModel[] = [
     get description() {
       return t('DeepSeek Coder V2 — powerful coding model');
     },
+    get isVision() {
+      return supportsVision('deepseek-coder-v2');
+    },
   },
   {
     id: 'mistral',
     label: 'mistral',
     get description() {
       return t('Mistral — fast and efficient model');
+    },
+    get isVision() {
+      return supportsVision('mistral');
     },
   },
 ];
@@ -85,6 +105,9 @@ export function getOllamaAvailableModelFromEnv(): AvailableModel | null {
         get description() {
           return t('Configured via OLLAMA_MODEL environment variable');
         },
+        get isVision() {
+          return supportsVision(id);
+        },
       }
     : null;
 }
@@ -99,7 +122,10 @@ function convertCoreModelToCliModel(
     id: coreModel.id,
     label: coreModel.label,
     description: coreModel.description,
-    isVision: coreModel.isVision ?? coreModel.capabilities?.vision ?? false,
+    isVision:
+      coreModel.isVision ??
+      coreModel.capabilities?.vision ??
+      supportsVision(coreModel.id),
   };
 }
 
@@ -138,15 +164,8 @@ export function getAvailableModelsForAuthType(
   return AVAILABLE_MODELS_OLLAMA;
 }
 
-/**
- * Default vision model for Ollama
- */
-export function getDefaultVisionModel(): string {
-  return MAINLINE_VLM;
-}
-
-export function isVisionModel(modelId: string): boolean {
-  return AVAILABLE_MODELS_OLLAMA.some(
-    (model) => model.id === modelId && model.isVision,
-  );
-}
+// Re-export from core for backward compatibility
+export {
+  getDefaultVisionModel,
+  supportsVision as isVisionModel,
+} from '@ollama-code/ollama-code-core';

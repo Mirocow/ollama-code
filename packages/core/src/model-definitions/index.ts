@@ -33,8 +33,10 @@ export type {
 
 // Registry
 export {
+  DEFAULT_VISION_MODEL,
   MODEL_FAMILIES,
   findModelFamily,
+  getDefaultVisionModel,
   getModelCapabilities,
   getModelDefinition,
   getToolCallFormat,

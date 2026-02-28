@@ -326,12 +326,14 @@ export * from './test-utils/index.js';
 // ============================================================================
 
 export {
+  DEFAULT_VISION_MODEL,
   getModelCapabilities,
   getModelDefinition,
+  getDefaultVisionModel,
+  getToolCallFormat,
+  supportsThinking,
   supportsTools,
   supportsVision,
-  supportsThinking,
-  getToolCallFormat,
   type ModelCapabilities as ModelCapabilitiesInfo,
   type ModelDefinition,
   type ModelFamilyDefinition,
