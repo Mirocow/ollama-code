@@ -94,121 +94,296 @@ export const ToolDisplayNamesMigration = {
  * For example: 'run' instead of 'run_shell_command'
  */
 export const ToolAliases: Record<string, ToolName> = {
-  // Shell tool aliases
+  // ═══════════════════════════════════════════════════════════════════════
+  // Shell tool aliases (run_shell_command)
+  // ═══════════════════════════════════════════════════════════════════════
   run: ToolNames.SHELL,
   shell: ToolNames.SHELL,
   exec: ToolNames.SHELL,
   cmd: ToolNames.SHELL,
+  shell_dev: ToolNames.SHELL,
+  bash: ToolNames.SHELL,
+  zsh: ToolNames.SHELL,
+  terminal: ToolNames.SHELL,
+  command: ToolNames.SHELL,
+  bash_dev: ToolNames.SHELL,
+  zsh_dev: ToolNames.SHELL,
+  cli: ToolNames.SHELL,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Edit tool aliases
+  // ═══════════════════════════════════════════════════════════════════════
   edit: ToolNames.EDIT,
   replace: ToolNames.EDIT,
+  modify: ToolNames.EDIT,
+  patch: ToolNames.EDIT,
+  sed: ToolNames.EDIT,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Write file aliases
+  // ═══════════════════════════════════════════════════════════════════════
   write: ToolNames.WRITE_FILE,
   create: ToolNames.WRITE_FILE,
+  write_file: ToolNames.WRITE_FILE,
+  save_file: ToolNames.WRITE_FILE,
+  new_file: ToolNames.WRITE_FILE,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Read file aliases
+  // ═══════════════════════════════════════════════════════════════════════
   read: ToolNames.READ_FILE,
+  read_file: ToolNames.READ_FILE,
+  cat_file: ToolNames.READ_FILE,
+  open: ToolNames.READ_FILE,
+  view: ToolNames.READ_FILE,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Read many files aliases
+  // ═══════════════════════════════════════════════════════════════════════
   readmany: ToolNames.READ_MANY_FILES,
   read_all: ToolNames.READ_MANY_FILES,
   cat: ToolNames.READ_MANY_FILES,
+  read_many: ToolNames.READ_MANY_FILES,
+  read_files: ToolNames.READ_MANY_FILES,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Grep aliases
+  // ═══════════════════════════════════════════════════════════════════════
   grep: ToolNames.GREP,
   search: ToolNames.GREP,
   find: ToolNames.GREP,
+  grep_search: ToolNames.GREP,
+  search_content: ToolNames.GREP,
+  search_text: ToolNames.GREP,
+  rg: ToolNames.GREP,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Glob aliases
+  // ═══════════════════════════════════════════════════════════════════════
   glob: ToolNames.GLOB,
   files: ToolNames.GLOB,
+  find_files: ToolNames.GLOB,
+  glob_search: ToolNames.GLOB,
+  pattern: ToolNames.GLOB,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // List directory aliases
+  // ═══════════════════════════════════════════════════════════════════════
   ls: ToolNames.LS,
   list: ToolNames.LS,
   dir: ToolNames.LS,
+  list_directory: ToolNames.LS,
+  list_dir: ToolNames.LS,
+  list_files: ToolNames.LS,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Todo aliases
+  // ═══════════════════════════════════════════════════════════════════════
   todo: ToolNames.TODO_WRITE,
   todos: ToolNames.TODO_WRITE,
+  todo_write: ToolNames.TODO_WRITE,
+  task_list: ToolNames.TODO_WRITE,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Memory aliases
+  // ═══════════════════════════════════════════════════════════════════════
   memory: ToolNames.MEMORY,
   save: ToolNames.MEMORY,
+  save_memory: ToolNames.MEMORY,
+  remember: ToolNames.MEMORY,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Web search aliases
+  // ═══════════════════════════════════════════════════════════════════════
   websearch: ToolNames.WEB_SEARCH,
   web: ToolNames.WEB_SEARCH,
+  web_search: ToolNames.WEB_SEARCH,
+  search_web: ToolNames.WEB_SEARCH,
+  google: ToolNames.WEB_SEARCH,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Web fetch aliases
+  // ═══════════════════════════════════════════════════════════════════════
   webfetch: ToolNames.WEB_FETCH,
   fetch: ToolNames.WEB_FETCH,
   url: ToolNames.WEB_FETCH,
+  web_fetch: ToolNames.WEB_FETCH,
+  curl: ToolNames.WEB_FETCH,
+  wget: ToolNames.WEB_FETCH,
+  http: ToolNames.WEB_FETCH,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Task aliases
+  // ═══════════════════════════════════════════════════════════════════════
   agent: ToolNames.TASK,
   subagent: ToolNames.TASK,
+  task: ToolNames.TASK,
+  delegate: ToolNames.TASK,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Skill aliases
+  // ═══════════════════════════════════════════════════════════════════════
   skills: ToolNames.SKILL,
+  skill: ToolNames.SKILL,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Exit plan mode aliases
+  // ═══════════════════════════════════════════════════════════════════════
   exit_plan: ToolNames.EXIT_PLAN_MODE,
   plan_done: ToolNames.EXIT_PLAN_MODE,
+  exit_plan_mode: ToolNames.EXIT_PLAN_MODE,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Python dev aliases
+  // ═══════════════════════════════════════════════════════════════════════
   python: ToolNames.PYTHON,
   py: ToolNames.PYTHON,
   pip: ToolNames.PYTHON,
   pytest: ToolNames.PYTHON,
+  python_dev: ToolNames.PYTHON,
+  python3: ToolNames.PYTHON,
+  py3: ToolNames.PYTHON,
+  pip3: ToolNames.PYTHON,
+  python3_dev: ToolNames.PYTHON,
+  venv: ToolNames.PYTHON,
+  poetry: ToolNames.PYTHON,
+  conda: ToolNames.PYTHON,
+  black: ToolNames.PYTHON,
+  flake8: ToolNames.PYTHON,
+  mypy: ToolNames.PYTHON,
+  pylint: ToolNames.PYTHON,
 
-  // Node.js dev aliases
+  // ═══════════════════════════════════════════════════════════════════════
+  // Node.js / JavaScript dev aliases
+  // ═══════════════════════════════════════════════════════════════════════
   node: ToolNames.NODEJS,
   npm: ToolNames.NODEJS,
   yarn: ToolNames.NODEJS,
   pnpm: ToolNames.NODEJS,
   bun: ToolNames.NODEJS,
+  nodejs: ToolNames.NODEJS,
+  nodejs_dev: ToolNames.NODEJS,
+  node_dev: ToolNames.NODEJS,
+  javascript: ToolNames.NODEJS,
+  javascript_dev: ToolNames.NODEJS,
+  js: ToolNames.NODEJS,
+  js_dev: ToolNames.NODEJS,
+  npx: ToolNames.NODEJS,
+  vite: ToolNames.NODEJS,
+  webpack: ToolNames.NODEJS,
+  rollup: ToolNames.NODEJS,
+  esbuild: ToolNames.NODEJS,
+  eslint: ToolNames.NODEJS,
+  prettier: ToolNames.NODEJS,
+  jest: ToolNames.NODEJS,
+  mocha: ToolNames.NODEJS,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Golang dev aliases
+  // ═══════════════════════════════════════════════════════════════════════
   go: ToolNames.GOLANG,
   golang: ToolNames.GOLANG,
+  golang_dev: ToolNames.GOLANG,
+  go_dev: ToolNames.GOLANG,
+  gofmt: ToolNames.GOLANG,
+  goimports: ToolNames.GOLANG,
+  golint: ToolNames.GOLANG,
+  go_vet: ToolNames.GOLANG,
+  'go-vet': ToolNames.GOLANG,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // PHP dev aliases
+  // ═══════════════════════════════════════════════════════════════════════
   php: ToolNames.PHP,
   composer: ToolNames.PHP,
   phpunit: ToolNames.PHP,
   artisan: ToolNames.PHP,
+  php_dev: ToolNames.PHP,
+  laravel: ToolNames.PHP,
+  phpcs: ToolNames.PHP,
+  phpstan: ToolNames.PHP,
+  psalm: ToolNames.PHP,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Java dev aliases
+  // ═══════════════════════════════════════════════════════════════════════
   java: ToolNames.JAVA,
   javac: ToolNames.JAVA,
   maven: ToolNames.JAVA,
   gradle: ToolNames.JAVA,
+  java_dev: ToolNames.JAVA,
+  mvn: ToolNames.JAVA,
+  gradlew: ToolNames.JAVA,
+  junit: ToolNames.JAVA,
+  spring: ToolNames.JAVA,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // C/C++ dev aliases
+  // ═══════════════════════════════════════════════════════════════════════
   cpp: ToolNames.CPP,
   'c++': ToolNames.CPP,
   gcc: ToolNames.CPP,
   'g++': ToolNames.CPP,
   cmake: ToolNames.CPP,
   make: ToolNames.CPP,
+  cpp_dev: ToolNames.CPP,
+  c_dev: ToolNames.CPP,
+  clang: ToolNames.CPP,
+  'clang++': ToolNames.CPP,
+  cc: ToolNames.CPP,
+  c: ToolNames.CPP,
+  clang_format: ToolNames.CPP,
+  cppcheck: ToolNames.CPP,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Rust dev aliases
+  // ═══════════════════════════════════════════════════════════════════════
   rust: ToolNames.RUST,
   cargo: ToolNames.RUST,
   rustc: ToolNames.RUST,
+  rust_dev: ToolNames.RUST,
+  rustup: ToolNames.RUST,
+  rustfmt: ToolNames.RUST,
+  clippy: ToolNames.RUST,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // Swift dev aliases
+  // ═══════════════════════════════════════════════════════════════════════
   swift: ToolNames.SWIFT,
   swiftc: ToolNames.SWIFT,
   spm: ToolNames.SWIFT,
+  swift_dev: ToolNames.SWIFT,
+  swift_package: ToolNames.SWIFT,
+  xcodebuild: ToolNames.SWIFT,
 
+  // ═══════════════════════════════════════════════════════════════════════
   // TypeScript dev aliases
+  // ═══════════════════════════════════════════════════════════════════════
   ts: ToolNames.TYPESCRIPT,
   tsc: ToolNames.TYPESCRIPT,
   typescript: ToolNames.TYPESCRIPT,
+  typescript_dev: ToolNames.TYPESCRIPT,
+  ts_dev: ToolNames.TYPESCRIPT,
+  tsx: ToolNames.TYPESCRIPT,
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // LSP aliases
+  // ═══════════════════════════════════════════════════════════════════════
+  lsp: ToolNames.LSP,
+  language_server: ToolNames.LSP,
+  intellisense: ToolNames.LSP,
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Git aliases (redirects to run_shell_command for git commands)
+  // Models often hallucinate git_dev, git_tool, etc.
+  // ═══════════════════════════════════════════════════════════════════════
+  git: ToolNames.SHELL,
+  git_dev: ToolNames.SHELL,
+  git_tool: ToolNames.SHELL,
+  git_cmd: ToolNames.SHELL,
+  version_control: ToolNames.SHELL,
+  vcs: ToolNames.SHELL,
+  scm: ToolNames.SHELL,
 };
 
 /**
