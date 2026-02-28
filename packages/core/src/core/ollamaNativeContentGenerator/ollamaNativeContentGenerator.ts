@@ -122,6 +122,15 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
       userPromptId,
     });
 
+    // Log user messages for debugging
+    if (request.contents) {
+      const userMessages = request.contents
+        .flatMap((c) => ('parts' in c ? c.parts : []))
+        .filter((p) => typeof p === 'string' || ('text' in p && p.text))
+        .map((p) => (typeof p === 'string' ? p : (p as { text: string }).text));
+      debugLogger.info('User messages:', userMessages.join('\n---\n'));
+    }
+
     // Convert request once
     const ollamaRequest = this.converter.convertGenAIRequestToOllama(request);
     if (request.config?.tools) {
