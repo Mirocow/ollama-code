@@ -92,6 +92,15 @@ export class QwenModelHandler implements IModelHandler {
     return false;
   }
 
+  supportsThinking(modelName: string): boolean {
+    const name = modelName.toLowerCase();
+    // QwQ is a reasoning model
+    if (/qwq/i.test(name)) return true;
+    // Qwen3 models can output think tags
+    if (/qwen[-_]?3/i.test(name)) return true;
+    return false;
+  }
+
   parseToolCalls(content: string): ToolCallParseResult {
     const allToolCalls: Array<{ name: string; args: Record<string, unknown> }> =
       [];

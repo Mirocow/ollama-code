@@ -32,6 +32,7 @@ export class DeepSeekModelHandler implements IModelHandler {
     supportsStructuredToolCalls: true,
     supportsTextToolCalls: true,
     supportsTools: true,
+    supportsThinking: true, // DeepSeek R1 supports thinking
     maxContextLength: 128000,
   };
 
@@ -77,6 +78,12 @@ export class DeepSeekModelHandler implements IModelHandler {
     }
 
     return false;
+  }
+
+  supportsThinking(modelName: string): boolean {
+    const name = modelName.toLowerCase();
+    // DeepSeek R1 is a reasoning model with <think tags
+    return /deepseek[-_]?r1/i.test(name);
   }
 
   parseToolCalls(content: string): ToolCallParseResult {

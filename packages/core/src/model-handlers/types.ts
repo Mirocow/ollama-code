@@ -46,6 +46,9 @@ export interface ModelHandlerConfig {
   /** Whether the model supports function calling at all */
   supportsTools?: boolean;
 
+  /** Whether the model supports thinking/reasoning (outputs <think tags) */
+  supportsThinking?: boolean;
+
   /** Maximum context length (if known) */
   maxContextLength?: number;
 
@@ -118,6 +121,15 @@ export interface IModelHandler {
    * @returns true if the model supports tools
    */
   supportsTools?(modelName: string): boolean;
+
+  /**
+   * Check if this model supports thinking/reasoning.
+   * Thinking models output their reasoning in <think...> tags.
+   *
+   * @param modelName - The model name to check (e.g., 'deepseek-r1:70b')
+   * @returns true if the model supports thinking
+   */
+  supportsThinking?(modelName: string): boolean;
 
   /**
    * Optional: Pre-process request before sending to model.

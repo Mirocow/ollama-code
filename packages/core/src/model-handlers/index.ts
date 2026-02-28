@@ -74,11 +74,24 @@ export {
 } from './utils/parserUtils.js';
 
 // Factory
+import { getModelHandlerFactory as getFactory } from './modelHandlerFactory.js';
 export {
   ModelHandlerFactory,
   getModelHandlerFactory,
   resetModelHandlerFactory,
 } from './modelHandlerFactory.js';
+
+// Helper function to get model capabilities
+export function getModelCapabilities(modelName: string): {
+  supportsTools: boolean;
+  supportsThinking: boolean;
+} {
+  const factory = getFactory();
+  return {
+    supportsTools: factory.supportsTools(modelName),
+    supportsThinking: factory.supportsThinking(modelName),
+  };
+}
 
 // Default handler
 export { DefaultModelHandler } from './default/index.js';
