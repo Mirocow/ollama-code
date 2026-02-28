@@ -1,133 +1,257 @@
 # Ollama Code - Roadmap развития
 
-## Версия 0.11.0 (Текущая)
+## Версия 0.10.5 (Текущая)
 
 ### ✅ Выполнено
 
-| Задача                                    | Статус |
-| ----------------------------------------- | ------ |
-| Create Model API (/api/create)            | ✅     |
-| Thinking Models Support (think parameter) | ✅     |
-| Structured Outputs (JSON Schema)          | ✅     |
-| Code Analyzer Tool                        | ✅     |
-| Diagram Generator Tool                    | ✅     |
-| Git Advanced Tool                         | ✅     |
-| API Tester Tool                           | ✅     |
-| Tokyo Night, Nord, Catppuccin темы        | ✅     |
-| Документация (EXAMPLES.md, TUTORIAL.md)   | ✅     |
-| Удалена телеметрия                        | ✅     |
+| Задача | Статус |
+|--------|--------|
+| Tool Alias System | ✅ |
+| Session ID Display | ✅ |
+| UTF-8 Locale Check | ✅ |
+| Bilingual Documentation (EN/RU) | ✅ |
 
 ---
 
-## Версия 0.12.0 (Текущая)
+## Сравнение с оригинальным репозиторием tcsenpai/ollama-code
 
-### ✅ UI/UX Улучшения
+### ✅ Реализованные инструменты (оригинал)
 
-| Задача                                  | Статус |
-| --------------------------------------- | ------ |
-| Прогресс-бары для загрузки моделей      | ✅     |
-| Thinking indicator для thinking моделей | ✅     |
-| Token usage display в реальном времени  | ✅     |
-| GPU/Memory usage indicator              | ✅     |
-| Typewriter effect для ответов           | ✅     |
+| Инструмент | Оригинал | Локальный | Статус |
+|------------|----------|-----------|--------|
+| `edit.ts` | ✅ | ✅ | ✅ Совпадает |
+| `glob.ts` | ✅ | ✅ | ✅ Совпадает |
+| `grep.ts` | ✅ | ✅ | ✅ Совпадает |
+| `ls.ts` | ✅ | ✅ | ✅ Совпадает |
+| `mcp-client.ts` | ✅ | ✅ | ✅ Совпадает |
+| `mcp-tool.ts` | ✅ | ✅ | ✅ Совпадает |
+| `memoryTool.ts` | ✅ | ✅ | ✅ Совпадает |
+| `modifiable-tool.ts` | ✅ | ✅ | ✅ Совпадает |
+| `read-file.ts` | ✅ | ✅ | ✅ Совпадает |
+| `shell.ts` | ✅ | ✅ | ✅ Совпадает |
+| `tool-registry.ts` | ✅ | ✅ | ✅ Совпадает |
+| `tools.ts` | ✅ | ✅ | ✅ Совпадает |
+| `web-fetch.ts` | ✅ | ✅ | ✅ Совпадает |
+| `write-file.ts` | ✅ | ✅ | ✅ Совпадает |
+| `web-search.ts` | ✅ Gemini API | ✅ Tavily/Google | ⚡ Улучшен |
+| `read-many-files.ts` | ✅ Tool | ❌ Utils only | 🔴 Нужно добавить |
 
-### ✅ Новые инструменты
+### 🆕 Дополнительные инструменты (расширения)
 
-| Задача                                 | Статус |
-| -------------------------------------- | ------ |
-| Database Tool - работа с базами данных | ✅     |
-| Docker Tool - управление контейнерами  | ✅     |
-| Redis Tool - кэширование и очереди     | ✅     |
-
-### ✅ Performance
-
-| Задача                  | Статус |
-| ----------------------- | ------ |
-| Response caching        | ✅     |
-| Embedding caching       | ✅     |
-| Streaming optimizations | 🔄     |
+| Инструмент | Файл | Описание |
+|------------|------|----------|
+| Code Analyzer | `code-analyzer.ts` | Анализ качества кода (A-F) |
+| Database | `database.ts` | SQLite/PostgreSQL/MySQL |
+| Diagram Generator | `diagram-generator.ts` | Mermaid/PlantUML |
+| Docker | `docker.ts` | Управление контейнерами |
+| Exit Plan Mode | `exitPlanMode.ts` | Выход из режима планирования |
+| Git Advanced | `git-advanced.ts` | Stash, cherry-pick, rebase, bisect |
+| LSP | `lsp.ts` | Language Server Protocol |
+| Redis | `redis.ts` | Кэширование и очереди |
+| RipGrep | `ripGrep.ts` | Быстрый поиск |
+| Skill | `skill.ts` | Система навыков |
+| Task | `task.ts` | Подагенты |
+| TodoWrite | `todoWrite.ts` | Управление задачами |
+| API Tester | `api-tester.ts` | Тестирование REST API |
 
 ---
 
-## Версия 0.13.0 (Планируется)
+## План улучшений
+
+### Приоритет 1: Критические улучшления
+
+#### 1.1 ReadManyFiles Tool
+**Проблема:** В оригинале `read-many-files` это инструмент, у нас - только утилита.
+
+**Решение:**
+```typescript
+// packages/core/src/tools/read-many-files.ts
+export class ReadManyFilesTool extends BaseDeclarativeTool<
+  ReadManyFilesParams,
+  ReadManyFilesResult
+> {
+  static readonly Name = 'read_many_files';
+  // ... реализация
+}
+```
+
+**Статус:** 🔴 Не начато
+
+#### 1.2 Timeout Configuration
+**Проблема:** Timeout hardcoded (5 минут), нужен в настройках.
+
+**Решение:**
+```typescript
+// settings.json
+{
+  "api": {
+    "timeout": 300000,  // 5 минут по умолчанию
+    "retryAttempts": 3,
+    "retryDelay": 1000
+  }
+}
+```
+
+**Статус:** 🔴 Не начато
+
+#### 1.3 Error Messages Improvement
+**Проблема:** Сообщения об ошибках недостаточно информативны.
+
+**Решение:** Добавить error codes и подробные сообщения:
+```typescript
+export enum ToolErrorCode {
+  FILE_NOT_FOUND = 'FILE_NOT_FOUND',
+  PERMISSION_DENIED = 'PERMISSION_DENIED',
+  TIMEOUT = 'TIMEOUT',
+  // ...
+}
+```
+
+**Статус:** 🔄 В процессе
+
+---
+
+### Приоритет 2: Архитектурные улучшения
+
+#### 2.1 Tool Interface Unification
+**Проблема:** Разные стили инструментов (BaseTool vs BaseDeclarativeTool).
+
+**Решение:**
+- Мигрировать все инструменты на `BaseDeclarativeTool`
+- Унифицировать интерфейс `ToolInvocation`
+
+**Статус:** 🔄 Частично
+
+#### 2.2 Tool Registry Enhancement
+**Проблема:** Нет динамической регистрации инструментов.
+
+**Решение:**
+```typescript
+class ToolRegistry {
+  registerToolFromPath(path: string): void;
+  unregisterTool(name: string): void;
+  getToolMetadata(name: string): ToolMetadata;
+}
+```
+
+**Статус:** 🔴 Не начато
+
+#### 2.3 Plugin System
+**Проблема:** Нет системы плагинов для сторонних инструментов.
+
+**Решение:**
+```typescript
+interface ToolPlugin {
+  name: string;
+  version: string;
+  tools: AnyDeclarativeTool[];
+  onLoad?(): Promise<void>;
+  onUnload?(): Promise<void>;
+}
+```
+
+**Статус:** 🔴 Не начато
+
+---
+
+### Приоритет 3: Новые возможности
+
+#### 3.1 Streaming Improvements
+**Задачи:**
+- [ ] Chunk validation для streaming
+- [ ] Backpressure handling
+- [ ] Cancellation tokens
+
+#### 3.2 Caching System
+**Задачи:**
+- [ ] Response caching с LRU eviction
+- [ ] Embedding caching
+- [ ] Tool result caching
+
+#### 3.3 Observability
+**Задачи:**
+- [ ] OpenTelemetry integration
+- [ ] Metrics export (Prometheus)
+- [ ] Distributed tracing
+
+---
+
+## Версия 0.11.0 (Планируется)
 
 ### Новые инструменты
 
-- [ ] Kubernetes Tool - работа с k8s
-- [ ] GraphQL Tool - запросы к GraphQL API
-- [ ] WebSocket Tool - real-time коммуникации
-
----
-
-## Версия 0.13.0
+| Инструмент | Описание | Приоритет |
+|------------|----------|-----------|
+| Kubernetes | Управление k8s кластерами | Medium |
+| GraphQL | Запросы к GraphQL API | Low |
+| WebSocket | Real-time коммуникации | Low |
 
 ### MCP Extensions
 
-- [ ] Resource support
-- [ ] Prompts registry
-- [ ] Server management UI
-
-### Integrations
-
-- [ ] JetBrains IDE plugin
-- [ ] Vim/Neovim plugin
-- [ ] Emacs integration
+| Возможность | Описание | Приоритет |
+|-------------|----------|-----------|
+| Resources | MCP resources support | High |
+| Prompts | Prompts registry | Medium |
+| Server UI | Управление серверами | Medium |
 
 ---
 
 ## Архитектура
 
-### OllamaNativeClient
+### Система алиасов инструментов
 
-Расположение: `packages/core/src/core/ollamaNativeClient.ts`
+```
+Alias → Canonical Name
+─────────────────────────
+run    → run_shell_command
+read   → read_file
+write  → write_file
+grep   → grep_search
+ls     → list_directory
+...
+```
 
-Поддерживаемые методы:
-
-- `chat()` - чат с моделью
-- `generate()` - генерация текста
-- `embed()` - эмбеддинги
-- `createModel()` - создание моделей
-- `pullModel()` - загрузка моделей
-- `listModels()` - список моделей
-- и другие...
+**Файл:** `packages/core/src/tools/tool-names.ts`
 
 ### Инструменты
 
-| Инструмент        | Файл                   | Описание                   |
-| ----------------- | ---------------------- | -------------------------- |
-| Code Analyzer     | `code-analyzer.ts`     | Анализ качества кода       |
-| Diagram Generator | `diagram-generator.ts` | Mermaid/PlantUML диаграммы |
-| Git Advanced      | `git-advanced.ts`      | Продвинутые git операции   |
-| API Tester        | `api-tester.ts`        | Тестирование REST API      |
-
-### Темы
-
-| Тема         | Файл              | Тип   |
-| ------------ | ----------------- | ----- |
-| Ollama Dark  | `ollama-dark.ts`  | Dark  |
-| Ollama Light | `ollama-light.ts` | Light |
-| Tokyo Night  | `tokyo-night.ts`  | Dark  |
-| Nord         | `nord.ts`         | Dark  |
-| Catppuccin   | `catppuccin.ts`   | Dark  |
-| Dracula      | `dracula.ts`      | Dark  |
-| GitHub Dark  | `github-dark.ts`  | Dark  |
-| GitHub Light | `github-light.ts` | Light |
+| Инструмент | Файл | Категория |
+|------------|------|-----------|
+| Code Analyzer | `code-analyzer.ts` | Analysis |
+| Database | `database.ts` | Data |
+| Diagram Generator | `diagram-generator.ts` | Visual |
+| Docker | `docker.ts` | DevOps |
+| Git Advanced | `git-advanced.ts` | VCS |
+| Redis | `redis.ts` | Data |
+| Task | `task.ts` | Agents |
 
 ---
 
 ## Документация
 
-| Документ             | Путь    | Описание              |
-| -------------------- | ------- | --------------------- |
-| README.md            | `/`     | Основная документация |
-| OLLAMA_API.md        | `/docs` | API документация      |
-| EXAMPLES.md          | `/docs` | Примеры использования |
-| TUTORIAL.md          | `/docs` | Туториал              |
-| PROJECT_STRUCTURE.md | `/`     | Структура проекта     |
+| Документ | Язык | Путь |
+|----------|------|------|
+| README.md | English | `/` |
+| README.ru.md | Русский | `/` |
+| CHANGELOG.md | Bilingual | `/` |
+| USAGE_GUIDE.md | English | `/docs` |
+| OLLAMA_API.md | English | `/docs` |
+
+---
+
+## Метрики проекта
+
+| Показатель | Значение |
+|------------|----------|
+| Инструментов | 25+ |
+| Тестов | 2700+ |
+| Покрытие кода | 80%+ |
+| Языков документации | 2 (EN, RU) |
 
 ---
 
 ## Удалено
 
 - ❌ Телеметрия (полностью удалена)
-- ❌ Упоминания qwen (заменены на llama/ollama)
+- ❌ Упоминания qwen (заменены на ollama)
+- ❌ Gemini API зависимости (заменены на Ollama Native API)
