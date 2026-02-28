@@ -29,9 +29,13 @@ const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8'));
 // Parse command line arguments
 const args = process.argv.slice(2);
 const hasDebugFlag = args.includes('--debug') || args.includes('-d');
+const hasInspectFlag = args.includes('--inspect') || args.includes('-i');
 
-// Remove --debug flag from args if present
-const filteredArgs = args.filter(arg => arg !== '--debug' && arg !== '-d');
+// Remove debug/inspect flags from args if present
+const filteredArgs = args.filter(
+  (arg) =>
+    arg !== '--debug' && arg !== '-d' && arg !== '--inspect' && arg !== '-i',
+);
 
 // check build status, write warnings to file for app to display if needed
 execSync('node ./scripts/check-build-status.js', {
@@ -50,10 +54,11 @@ try {
 } catch {
   // ignore
 }
-// if debugging is enabled and sandboxing is disabled, use --inspect-brk flag
-// note with sandboxing this flag is passed to the binary inside the sandbox
-// inside sandbox SANDBOX should be set and sandbox_command.js should fail
-if ((process.env.DEBUG || hasDebugFlag) && !sandboxCommand) {
+
+// Only add --inspect-brk if explicitly requested with --inspect flag or INSPECT env
+// DEBUG env alone just enables logging, not the inspector
+const shouldInspect = hasInspectFlag || process.env.INSPECT === '1';
+if (shouldInspect && !sandboxCommand) {
   if (process.env.SANDBOX) {
     const port = process.env.DEBUG_PORT || '9229';
     nodeArgs.push(`--inspect-brk=0.0.0.0:${port}`);
@@ -78,7 +83,9 @@ if (process.env.DEBUG || hasDebugFlag) {
   env.OLLAMA_CODE_NO_RELAUNCH = 'true';
   // Enable debug log file
   env.OLLAMA_CODE_DEBUG_LOG_FILE = '1';
-  console.log('[DEBUG] Debug logging enabled. Logs will be saved to ~/.ollama-code/debug/');
+  console.log(
+    '[DEBUG] Debug logging enabled. Logs will be saved to ~/.ollama-code/debug/',
+  );
 }
 // Use process.cwd() to inherit the working directory from launch.json cwd setting
 // This allows debugging from a specific directory (e.g., .todo)
