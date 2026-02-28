@@ -19,9 +19,9 @@ export interface ModelCapabilities {
 }
 
 /**
- * Output format for tool calls.
+ * Tool call output format - how models format tool calls in text.
  */
-export type OutputFormat =
+export type ToolCallFormat =
   | 'native' // Native Ollama tool_calls format
   | 'qwen' // <tool_call=...>
   | 'mistral' // [TOOL_CALLS] [...]
@@ -49,7 +49,7 @@ export interface ModelFamilyDefinition {
   defaultCapabilities: Partial<ModelCapabilities>;
 
   /** Default output format for this family */
-  defaultOutputFormat: OutputFormat;
+  defaultOutputFormat: ToolCallFormat;
 
   /** Model-specific capability overrides */
   modelOverrides?: Array<{
@@ -75,5 +75,5 @@ export interface ModelDefinition {
   capabilities: ModelCapabilities;
 
   /** Output format */
-  outputFormat: OutputFormat;
+  outputFormat: ToolCallFormat;
 }

@@ -331,9 +331,9 @@ export {
   supportsTools,
   supportsVision,
   supportsThinking,
-  getOutputFormat,
+  getToolCallFormat,
   type ModelCapabilities as ModelCapabilitiesInfo,
   type ModelDefinition,
   type ModelFamilyDefinition,
-  type OutputFormat,
+  type ToolCallFormat,
 } from './model-definitions/index.js';

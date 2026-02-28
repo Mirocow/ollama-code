@@ -8,7 +8,7 @@ import type {
   ModelCapabilities,
   ModelDefinition,
   ModelFamilyDefinition,
-  OutputFormat,
+  ToolCallFormat,
 } from './types.js';
 
 /**
@@ -459,8 +459,8 @@ export function supportsThinking(modelName: string): boolean {
 }
 
 /**
- * Get output format for model.
+ * Get tool call format for model.
  */
-export function getOutputFormat(modelName: string): OutputFormat {
+export function getToolCallFormat(modelName: string): ToolCallFormat {
   return getModelDefinition(modelName).outputFormat;
 }
