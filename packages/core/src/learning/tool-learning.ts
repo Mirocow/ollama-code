@@ -92,7 +92,8 @@ const DYNAMIC_ALIASES_FILE = 'dynamic_aliases.json';
 const STATS_FILE = 'tool_learning_stats.json';
 
 // Threshold for auto-creating dynamic aliases
-const AUTO_ALIAS_THRESHOLD = 3; // Create alias after N occurrences of same error
+// Set to 1 to create alias immediately after first error
+const AUTO_ALIAS_THRESHOLD = 1;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Helper Functions
