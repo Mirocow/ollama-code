@@ -11,7 +11,11 @@
  * They can be reused by specific model handlers.
  */
 
-import type { IToolCallTextParser, ToolCallParseResult, ParsedToolCall } from '../types.js';
+import type {
+  IToolCallTextParser,
+  ToolCallParseResult,
+  ParsedToolCall,
+} from '../types.js';
 import {
   tryParseJsonAt,
   extractToolCall,
@@ -84,7 +88,9 @@ export class ToolCallStartEndParser implements IToolCallTextParser {
           toolCalls.push(toolCall);
           cleanedContent = cleanedContent.replace(match[0], '');
         }
-      } catch { /* skip */ }
+      } catch {
+        /* skip */
+      }
     }
     return { toolCalls, cleanedContent: cleanedContent.trim() };
   }
@@ -116,7 +122,44 @@ export class ThinkTagParser implements IToolCallTextParser {
           toolCalls.push(toolCall);
           cleanedContent = cleanedContent.replace(match[0], '');
         }
-      } catch { /* not JSON, keep the think block */ }
+      } catch {
+        /* not JSON, keep the think block */
+      }
+    }
+    return { toolCalls, cleanedContent: cleanedContent.trim() };
+  }
+}
+
+/**
+ * Parser for tool calls in markdown code blocks.
+ * Handles ```json ... ``` or ``` ... ``` format.
+ */
+export class MarkdownCodeBlockParser implements IToolCallTextParser {
+  readonly name = 'markdown-code-block';
+  readonly priority = 5; // High priority
+
+  canParse(content: string): boolean {
+    return /```(?:json)?\s*\n?\s*\{[\s\S]*?\n?\s*```/i.test(content);
+  }
+
+  parse(content: string): ToolCallParseResult {
+    const toolCalls: ParsedToolCall[] = [];
+    let cleanedContent = content;
+    // Match ```json or ``` followed by JSON object
+    const pattern = /```(?:json)?\s*\n?\s*(\{[\s\S]*?\})\s*\n?\s*```/gi;
+    let match;
+
+    while ((match = pattern.exec(content)) !== null) {
+      try {
+        const parsed = JSON.parse(match[1].trim());
+        const toolCall = extractToolCall(parsed);
+        if (toolCall && !hasToolCall(toolCalls, toolCall.name)) {
+          toolCalls.push(toolCall);
+          cleanedContent = cleanedContent.replace(match[0], '');
+        }
+      } catch {
+        /* not valid JSON */
+      }
     }
     return { toolCalls, cleanedContent: cleanedContent.trim() };
   }
@@ -131,7 +174,11 @@ export class StandaloneJsonParser implements IToolCallTextParser {
 
   canParse(content: string): boolean {
     // Check for JSON object with "name" field, but not a function call format
-    return content.includes('{') && content.includes('"name"') && !content.includes('"type"');
+    return (
+      content.includes('{') &&
+      content.includes('"name"') &&
+      !content.includes('"type"')
+    );
   }
 
   parse(content: string): ToolCallParseResult {
@@ -146,14 +193,23 @@ export class StandaloneJsonParser implements IToolCallTextParser {
       const result = tryParseJsonAt(cleanedContent, jsonStart);
       if (result) {
         const parsed = result.json as Record<string, unknown>;
-        if (parsed['name'] && typeof parsed['name'] === 'string' && !parsed['type']) {
+        if (
+          parsed['name'] &&
+          typeof parsed['name'] === 'string' &&
+          !parsed['type']
+        ) {
           if (!hasToolCall(toolCalls, parsed['name'])) {
             toolCalls.push({
               name: parsed['name'],
-              args: (parsed['arguments'] || parsed['args'] || {}) as Record<string, unknown>,
+              args: (parsed['arguments'] || parsed['args'] || {}) as Record<
+                string,
+                unknown
+              >,
             });
           }
-          cleanedContent = cleanedContent.slice(0, jsonStart) + cleanedContent.slice(result.end + 1);
+          cleanedContent =
+            cleanedContent.slice(0, jsonStart) +
+            cleanedContent.slice(result.end + 1);
           searchPos = jsonStart;
           continue;
         }
@@ -189,7 +245,9 @@ export class FunctionCallParser implements IToolCallTextParser {
         const toolCall = extractToolCall(result.json);
         if (toolCall && !hasToolCall(toolCalls, toolCall.name)) {
           toolCalls.push(toolCall);
-          cleanedContent = cleanedContent.slice(0, jsonStart) + cleanedContent.slice(result.end + 1);
+          cleanedContent =
+            cleanedContent.slice(0, jsonStart) +
+            cleanedContent.slice(result.end + 1);
           searchPos = jsonStart;
           continue;
         }
@@ -207,6 +265,7 @@ export const defaultParsers: IToolCallTextParser[] = [
   new ToolCallTagParser(),
   new ToolCallStartEndParser(),
   new ThinkTagParser(),
+  new MarkdownCodeBlockParser(),
   new StandaloneJsonParser(),
   new FunctionCallParser(),
 ];

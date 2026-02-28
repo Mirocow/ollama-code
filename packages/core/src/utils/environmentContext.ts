@@ -7,6 +7,7 @@
 import type { Content, Part } from '../types/content.js';
 import type { Config } from '../config/config.js';
 import { getFolderStructure } from './getFolderStructure.js';
+import os from 'os';
 
 /**
  * Generates a string describing the current workspace directories and their structures.
@@ -57,12 +58,14 @@ export async function getEnvironmentContext(config: Config): Promise<Part[]> {
     day: 'numeric',
   });
   const platform = process.platform;
+  const homeDirectory = os.homedir();
   const directoryContext = await getDirectoryContextString(config);
 
   const context = `
 This is the Ollama Code. We are setting up the context for our chat.
 Today's date is ${today} (formatted according to the user's locale).
 My operating system is: ${platform}
+My home directory is: ${homeDirectory}
 ${directoryContext}
         `.trim();
 

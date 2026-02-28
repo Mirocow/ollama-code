@@ -509,6 +509,10 @@ export class OllamaContentConverter {
         debugLogger.info('Parsed tool calls from text content', {
           count: parsedToolCalls.length,
           tools: parsedToolCalls.map((tc) => tc.name),
+          arguments: parsedToolCalls.map((tc) => ({
+            name: tc.name,
+            args: tc.args,
+          })),
         });
 
         for (const tc of parsedToolCalls) {
@@ -666,6 +670,10 @@ export class OllamaContentConverter {
         debugLogger.info('Parsed tool calls from streaming text content', {
           count: parsedToolCalls.length,
           tools: parsedToolCalls.map((tc) => tc.name),
+          arguments: parsedToolCalls.map((tc) => ({
+            name: tc.name,
+            args: tc.args,
+          })),
         });
 
         for (const tc of parsedToolCalls) {
