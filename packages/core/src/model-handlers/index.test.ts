@@ -17,6 +17,12 @@ import {
   GemmaModelHandler,
   PhiModelHandler,
   CommandModelHandler,
+  YiModelHandler,
+  LlavaModelHandler,
+  SolarModelHandler,
+  StarCoderModelHandler,
+  DbrxModelHandler,
+  GraniteModelHandler,
 } from './index.js';
 
 describe('Model Handlers', () => {
@@ -293,6 +299,147 @@ describe('Model Handlers', () => {
       expect(handler.supportsTools!('command-r-plus:104b')).toBe(true);
     });
   });
+
+  describe('YiModelHandler', () => {
+    const handler = new YiModelHandler();
+
+    it('should have correct config', () => {
+      expect(handler.name).toBe('yi');
+      expect(handler.config.displayName).toBe('Yi');
+    });
+
+    it('should handle yi models', () => {
+      expect(handler.canHandle('yi-34b')).toBe(true);
+      expect(handler.canHandle('yi-coder:9b')).toBe(true);
+      expect(handler.canHandle('yi-large')).toBe(true);
+      expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should support tools for Yi-Coder and Yi-Large', () => {
+      expect(handler.supportsTools!('yi-coder:9b')).toBe(true);
+      expect(handler.supportsTools!('yi-large')).toBe(true);
+      expect(handler.supportsTools!('yi-chat:34b')).toBe(true);
+    });
+
+    it('should NOT support tools for base Yi models', () => {
+      expect(handler.supportsTools!('yi-34b')).toBe(false);
+    });
+  });
+
+  describe('LlavaModelHandler', () => {
+    const handler = new LlavaModelHandler();
+
+    it('should have correct config', () => {
+      expect(handler.name).toBe('llava');
+      expect(handler.config.displayName).toBe('LLaVA');
+    });
+
+    it('should handle llava and vision models', () => {
+      expect(handler.canHandle('llava:13b')).toBe(true);
+      expect(handler.canHandle('llava-v1.6')).toBe(true);
+      expect(handler.canHandle('bakllava')).toBe(true);
+      expect(handler.canHandle('moondream')).toBe(true);
+      expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should NOT support tools for vision models', () => {
+      expect(handler.supportsTools!('llava:13b')).toBe(false);
+      expect(handler.supportsTools!('moondream')).toBe(false);
+    });
+  });
+
+  describe('SolarModelHandler', () => {
+    const handler = new SolarModelHandler();
+
+    it('should have correct config', () => {
+      expect(handler.name).toBe('solar');
+      expect(handler.config.displayName).toBe('Solar');
+    });
+
+    it('should handle solar models', () => {
+      expect(handler.canHandle('solar-10.7b')).toBe(true);
+      expect(handler.canHandle('solar-pro')).toBe(true);
+      expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should support tools for Solar Pro and instruct variants', () => {
+      expect(handler.supportsTools!('solar-pro')).toBe(true);
+      expect(handler.supportsTools!('solar-10.7b-instruct')).toBe(true);
+    });
+
+    it('should NOT support tools for base Solar', () => {
+      expect(handler.supportsTools!('solar-10.7b')).toBe(false);
+    });
+  });
+
+  describe('StarCoderModelHandler', () => {
+    const handler = new StarCoderModelHandler();
+
+    it('should have correct config', () => {
+      expect(handler.name).toBe('starcoder');
+      expect(handler.config.displayName).toBe('StarCoder');
+    });
+
+    it('should handle starcoder models', () => {
+      expect(handler.canHandle('starcoder2:15b')).toBe(true);
+      expect(handler.canHandle('stable-code:7b')).toBe(true);
+      expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should NOT support tools for code models', () => {
+      expect(handler.supportsTools!('starcoder2:15b')).toBe(false);
+      expect(handler.supportsTools!('stable-code:7b')).toBe(false);
+    });
+  });
+
+  describe('DbrxModelHandler', () => {
+    const handler = new DbrxModelHandler();
+
+    it('should have correct config', () => {
+      expect(handler.name).toBe('dbrx');
+      expect(handler.config.displayName).toBe('DBRX');
+    });
+
+    it('should handle dbrx models', () => {
+      expect(handler.canHandle('dbrx:132b')).toBe(true);
+      expect(handler.canHandle('dbrx-instruct')).toBe(true);
+      expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should support tools for DBRX instruct', () => {
+      expect(handler.supportsTools!('dbrx-instruct')).toBe(true);
+    });
+
+    it('should NOT support tools for base DBRX', () => {
+      expect(handler.supportsTools!('dbrx:132b')).toBe(false);
+    });
+  });
+
+  describe('GraniteModelHandler', () => {
+    const handler = new GraniteModelHandler();
+
+    it('should have correct config', () => {
+      expect(handler.name).toBe('granite');
+      expect(handler.config.displayName).toBe('Granite');
+    });
+
+    it('should handle granite models', () => {
+      expect(handler.canHandle('granite-3b')).toBe(true);
+      expect(handler.canHandle('granite-code:34b')).toBe(true);
+      expect(handler.canHandle('granite-3.0-instruct')).toBe(true);
+      expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should support tools for Granite code and instruct', () => {
+      expect(handler.supportsTools!('granite-code:34b')).toBe(true);
+      expect(handler.supportsTools!('granite-instruct')).toBe(true);
+      expect(handler.supportsTools!('granite-3.0:8b')).toBe(true);
+    });
+
+    it('should NOT support tools for base Granite', () => {
+      expect(handler.supportsTools!('granite-7b')).toBe(false);
+    });
+  });
 });
 
 describe('ModelHandlerFactory', () => {
@@ -317,6 +464,12 @@ describe('ModelHandlerFactory', () => {
       expect(names).toContain('gemma');
       expect(names).toContain('phi');
       expect(names).toContain('command');
+      expect(names).toContain('yi');
+      expect(names).toContain('llava');
+      expect(names).toContain('solar');
+      expect(names).toContain('starcoder');
+      expect(names).toContain('dbrx');
+      expect(names).toContain('granite');
     });
   });
 
@@ -359,6 +512,36 @@ describe('ModelHandlerFactory', () => {
     it('should return Command handler for command models', () => {
       const handler = factory.getHandler('command-r:35b');
       expect(handler.name).toBe('command');
+    });
+
+    it('should return Yi handler for yi models', () => {
+      const handler = factory.getHandler('yi-34b');
+      expect(handler.name).toBe('yi');
+    });
+
+    it('should return LLaVA handler for llava models', () => {
+      const handler = factory.getHandler('llava:13b');
+      expect(handler.name).toBe('llava');
+    });
+
+    it('should return Solar handler for solar models', () => {
+      const handler = factory.getHandler('solar-10.7b');
+      expect(handler.name).toBe('solar');
+    });
+
+    it('should return StarCoder handler for starcoder models', () => {
+      const handler = factory.getHandler('starcoder2:15b');
+      expect(handler.name).toBe('starcoder');
+    });
+
+    it('should return DBRX handler for dbrx models', () => {
+      const handler = factory.getHandler('dbrx-instruct');
+      expect(handler.name).toBe('dbrx');
+    });
+
+    it('should return Granite handler for granite models', () => {
+      const handler = factory.getHandler('granite-3b');
+      expect(handler.name).toBe('granite');
     });
 
     it('should return default handler for unknown models', () => {

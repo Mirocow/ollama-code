@@ -105,3 +105,21 @@ export { phiParsers } from './phi/parsers.js';
 
 export { CommandModelHandler } from './command/index.js';
 export { commandParsers } from './command/parsers.js';
+
+export { YiModelHandler } from './yi/index.js';
+export { yiParsers } from './yi/parsers.js';
+
+export { LlavaModelHandler } from './llava/index.js';
+export { llavaParsers } from './llava/parsers.js';
+
+export { SolarModelHandler } from './solar/index.js';
+export { solarParsers } from './solar/parsers.js';
+
+export { StarCoderModelHandler } from './starcoder/index.js';
+export { starcoderParsers } from './starcoder/parsers.js';
+
+export { DbrxModelHandler } from './dbrx/index.js';
+export { dbrxParsers } from './dbrx/parsers.js';
+
+export { GraniteModelHandler } from './granite/index.js';
+export { graniteParsers } from './granite/parsers.js';
