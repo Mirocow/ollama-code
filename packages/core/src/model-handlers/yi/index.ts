@@ -11,40 +11,18 @@ import {
 
 /**
  * Yi model handler configuration.
+ *
+ * Note: Capabilities (tools, thinking, vision) are defined in model-definitions.
+ * This handler focuses on parsing tool calls from text output.
  */
 const yiConfig: ModelHandlerConfig = {
-  modelPattern: /\byi\b/i, // Match yi but not yi- in other model names
+  modelPattern: /\byi\b/i,
   displayName: 'Yi',
   description: '01.ai Yi models (yi, yi-chat, yi-coder, yi-large)',
   supportsStructuredToolCalls: true,
   supportsTextToolCalls: true,
-  supportsTools: false, // Determined per model
-  maxContextLength: 200000, // yi-large
+  maxContextLength: 200000,
 };
-
-/**
- * Check if Yi model supports tools.
- */
-function supportsTools(modelName: string): boolean {
-  const name = modelName.toLowerCase();
-
-  // Yi-Coder - supports function calling
-  if (/yi[-_]?coder/i.test(name)) return true;
-
-  // Yi-Large - supports function calling
-  if (/yi[-_]?large/i.test(name)) return true;
-
-  // Yi-Chat variants - support tools
-  if (/yi[-_]?chat/i.test(name)) return true;
-
-  // Yi 1.5+ with instruct
-  if (/yi[-_]?1\.?5/i.test(name)) {
-    return /instruct|chat/i.test(name);
-  }
-
-  // Base Yi models - no native tools
-  return false;
-}
 
 /**
  * Yi model handler.
@@ -58,6 +36,4 @@ function supportsTools(modelName: string): boolean {
  * Yi models are known for strong reasoning and Chinese/English bilingual support.
  * Yi-Coder and Yi-Large support function calling.
  */
-export const YiModelHandler = createModelHandler('yi', yiConfig, {
-  supportsToolsFn: supportsTools,
-});
+export const YiModelHandler = createModelHandler('yi', yiConfig);

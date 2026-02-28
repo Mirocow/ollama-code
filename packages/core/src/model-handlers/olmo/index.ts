@@ -11,6 +11,9 @@ import {
 
 /**
  * OLMo model handler configuration.
+ *
+ * Note: Capabilities (tools, thinking, vision) are defined in model-definitions.
+ * This handler focuses on parsing tool calls from text output.
  */
 const olmoConfig: ModelHandlerConfig = {
   modelPattern: /olmo/i,
@@ -18,21 +21,8 @@ const olmoConfig: ModelHandlerConfig = {
   description: 'AllenAI OLMo open language models',
   supportsStructuredToolCalls: false,
   supportsTextToolCalls: true,
-  supportsTools: true,
   maxContextLength: 4096,
 };
-
-/**
- * Check if OLMo model supports tools.
- */
-function supportsTools(modelName: string): boolean {
-  const name = modelName.toLowerCase();
-  // OLMo 2 has improved tool support
-  if (/olmo[-_]?2/i.test(name)) return true;
-  // OLMo Instruct variants support tools
-  if (/olmo.*instruct/i.test(name)) return true;
-  return false;
-}
 
 /**
  * OLMo model handler.
@@ -43,6 +33,4 @@ function supportsTools(modelName: string): boolean {
  * OLMo (Open Language Model) is a fully open-source LLM from AllenAI,
  * designed for research and transparency in AI.
  */
-export const OlmoModelHandler = createModelHandler('olmo', olmoConfig, {
-  supportsToolsFn: supportsTools,
-});
+export const OlmoModelHandler = createModelHandler('olmo', olmoConfig);

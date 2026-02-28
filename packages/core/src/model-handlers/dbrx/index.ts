@@ -11,6 +11,9 @@ import {
 
 /**
  * DBRX model handler configuration.
+ *
+ * Note: Capabilities (tools, thinking, vision) are defined in model-definitions.
+ * This handler focuses on parsing tool calls from text output.
  */
 const dbrxConfig: ModelHandlerConfig = {
   modelPattern: /dbrx/i,
@@ -18,25 +21,8 @@ const dbrxConfig: ModelHandlerConfig = {
   description: 'Databricks DBRX models',
   supportsStructuredToolCalls: true,
   supportsTextToolCalls: true,
-  supportsTools: true,
   maxContextLength: 32768,
 };
-
-/**
- * Check if DBRX model supports tools.
- */
-function supportsTools(modelName: string): boolean {
-  const name = modelName.toLowerCase();
-
-  // DBRX Instruct - supports tools
-  if (/dbrx[-_]?instruct/i.test(name)) return true;
-
-  // Base DBRX with instruct tag
-  if (/dbrx/i.test(name) && /instruct/i.test(name)) return true;
-
-  // Base DBRX - limited tools
-  return false;
-}
 
 /**
  * DBRX model handler.
@@ -46,6 +32,4 @@ function supportsTools(modelName: string): boolean {
  *
  * DBRX is a large MoE model optimized for enterprise use with strong tool calling support.
  */
-export const DbrxModelHandler = createModelHandler('dbrx', dbrxConfig, {
-  supportsToolsFn: supportsTools,
-});
+export const DbrxModelHandler = createModelHandler('dbrx', dbrxConfig);
