@@ -582,6 +582,228 @@ describe('OllamaContentConverter', () => {
       expect(result2.functionCalls?.[0].args).toEqual({ path: '/home' });
       expect(candidate?.finishReason).toBe(FinishReason.TOOL_CALLS);
     });
+
+    it('should emit multiple tool calls when done chunk comes separately', () => {
+      // Test for multiple tool calls accumulated before done chunk
+      const toolCallAccumulator = new Map<number, { name: string; args: string }>();
+
+      // Chunk with multiple tool_calls
+      const chunk1: OllamaChatResponse = {
+        model: 'llama3.2',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: '',
+          tool_calls: [
+            {
+              function: {
+                name: 'read_file',
+                arguments: { path: '/file1.txt' },
+              },
+            },
+            {
+              function: {
+                name: 'read_file',
+                arguments: { path: '/file2.txt' },
+              },
+            },
+          ],
+        },
+        done: false,
+      };
+
+      const result1 = converter.convertOllamaChunkToGenAI(chunk1, toolCallAccumulator);
+      expect(toolCallAccumulator.size).toBe(2);
+      expect(result1.functionCalls).toBeUndefined();
+
+      // Done chunk
+      const chunk2: OllamaChatResponse = {
+        model: 'llama3.2',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: '',
+        },
+        done: true,
+      };
+
+      const result2 = converter.convertOllamaChunkToGenAI(chunk2, toolCallAccumulator);
+
+      expect(result2.functionCalls).toBeDefined();
+      expect(result2.functionCalls).toHaveLength(2);
+      expect(result2.functionCalls?.[0].name).toBe('read_file');
+      expect(result2.functionCalls?.[1].name).toBe('read_file');
+    });
+
+    it('should not emit tool calls when accumulator is empty on done', () => {
+      // Test that no tool calls are emitted when done=true but accumulator is empty
+      const toolCallAccumulator = new Map<number, { name: string; args: string }>();
+
+      const chunk: OllamaChatResponse = {
+        model: 'llama3.2',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: 'Just a text response',
+        },
+        done: true,
+      };
+
+      const result = converter.convertOllamaChunkToGenAI(chunk, toolCallAccumulator);
+
+      expect(result.functionCalls).toBeUndefined();
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.STOP);
+    });
+
+    it('should handle chunk without accumulatedToolCalls parameter', () => {
+      // Test that the function works without the optional accumulatedToolCalls parameter
+      const chunk: OllamaChatResponse = {
+        model: 'llama3.2',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: 'Hello',
+        },
+        done: true,
+      };
+
+      // Should not throw when accumulatedToolCalls is undefined
+      expect(() => converter.convertOllamaChunkToGenAI(chunk)).not.toThrow();
+    });
+
+    it('should accumulate content across chunks', () => {
+      const accumulatedContent = { text: '' };
+      const chunks = ['Hello', ' ', 'World', '!'];
+
+      let result: ReturnType<typeof converter.convertOllamaChunkToGenAI>;
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk: OllamaChatResponse = {
+          model: 'llama3.2',
+          created_at: '2024-01-01T00:00:00Z',
+          message: {
+            role: 'assistant',
+            content: chunks[i],
+          },
+          done: i === chunks.length - 1,
+        };
+        result = converter.convertOllamaChunkToGenAI(chunk, undefined, accumulatedContent);
+      }
+
+      expect(accumulatedContent.text).toBe('Hello World!');
+      expect(result!.candidates?.[0]?.finishReason).toBe(FinishReason.STOP);
+    });
+
+    it('should emit tool calls even when done chunk has content', () => {
+      // Test that tool calls are still emitted when done chunk has text content
+      const toolCallAccumulator = new Map<number, { name: string; args: string }>();
+
+      // Accumulate tool call
+      const chunk1: OllamaChatResponse = {
+        model: 'llama3.2',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: '',
+          tool_calls: [
+            {
+              function: {
+                name: 'get_weather',
+                arguments: { city: 'Paris' },
+              },
+            },
+          ],
+        },
+        done: false,
+      };
+      converter.convertOllamaChunkToGenAI(chunk1, toolCallAccumulator);
+
+      // Done chunk with text content
+      const chunk2: OllamaChatResponse = {
+        model: 'llama3.2',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: 'Done processing',
+        },
+        done: true,
+      };
+
+      const result = converter.convertOllamaChunkToGenAI(chunk2, toolCallAccumulator);
+
+      expect(result.functionCalls).toBeDefined();
+      expect(result.functionCalls).toHaveLength(1);
+      expect(result.functionCalls?.[0].name).toBe('get_weather');
+    });
+
+    it('should handle tool call with empty arguments', () => {
+      const toolCallAccumulator = new Map<number, { name: string; args: string }>();
+
+      const chunk: OllamaChatResponse = {
+        model: 'llama3.2',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: '',
+          tool_calls: [
+            {
+              function: {
+                name: 'noop',
+                arguments: {},
+              },
+            },
+          ],
+        },
+        done: true,
+      };
+
+      const result = converter.convertOllamaChunkToGenAI(chunk, toolCallAccumulator);
+
+      expect(result.functionCalls).toBeDefined();
+      expect(result.functionCalls).toHaveLength(1);
+      expect(result.functionCalls?.[0].name).toBe('noop');
+      expect(result.functionCalls?.[0].args).toEqual({});
+    });
+
+    it('should emit tool calls with correct finish reason', () => {
+      const toolCallAccumulator = new Map<number, { name: string; args: string }>();
+
+      // Accumulate
+      const chunk1: OllamaChatResponse = {
+        model: 'llama3.2',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: '',
+          tool_calls: [
+            {
+              function: {
+                name: 'test_tool',
+                arguments: { x: 1 },
+              },
+            },
+          ],
+        },
+        done: false,
+      };
+      converter.convertOllamaChunkToGenAI(chunk1, toolCallAccumulator);
+
+      // Emit with done
+      const chunk2: OllamaChatResponse = {
+        model: 'llama3.2',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: '',
+        },
+        done: true,
+      };
+
+      const result = converter.convertOllamaChunkToGenAI(chunk2, toolCallAccumulator);
+
+      // Finish reason should be TOOL_CALLS, not STOP
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.TOOL_CALLS);
+    });
   });
 
   describe('Edge Cases', () => {
