@@ -30,6 +30,11 @@ export const ToolNames = {
   NODEJS: 'nodejs_dev',
   GOLANG: 'golang_dev',
   PHP: 'php_dev',
+  JAVA: 'java_dev',
+  CPP: 'cpp_dev',
+  RUST: 'rust_dev',
+  SWIFT: 'swift_dev',
+  TYPESCRIPT: 'typescript_dev',
 } as const;
 
 export type ToolName = (typeof ToolNames)[keyof typeof ToolNames];
@@ -60,6 +65,11 @@ export const ToolDisplayNames = {
   NODEJS: 'NodeJsDev',
   GOLANG: 'GolangDev',
   PHP: 'PHPDev',
+  JAVA: 'JavaDev',
+  CPP: 'CppDev',
+  RUST: 'RustDev',
+  SWIFT: 'SwiftDev',
+  TYPESCRIPT: 'TypeScriptDev',
 } as const;
 
 // Migration from old tool names to new tool names
@@ -170,6 +180,35 @@ export const ToolAliases: Record<string, ToolName> = {
   composer: ToolNames.PHP,
   phpunit: ToolNames.PHP,
   artisan: ToolNames.PHP,
+
+  // Java dev aliases
+  java: ToolNames.JAVA,
+  javac: ToolNames.JAVA,
+  maven: ToolNames.JAVA,
+  gradle: ToolNames.JAVA,
+
+  // C/C++ dev aliases
+  cpp: ToolNames.CPP,
+  'c++': ToolNames.CPP,
+  gcc: ToolNames.CPP,
+  'g++': ToolNames.CPP,
+  cmake: ToolNames.CPP,
+  make: ToolNames.CPP,
+
+  // Rust dev aliases
+  rust: ToolNames.RUST,
+  cargo: ToolNames.RUST,
+  rustc: ToolNames.RUST,
+
+  // Swift dev aliases
+  swift: ToolNames.SWIFT,
+  swiftc: ToolNames.SWIFT,
+  spm: ToolNames.SWIFT,
+
+  // TypeScript dev aliases
+  ts: ToolNames.TYPESCRIPT,
+  tsc: ToolNames.TYPESCRIPT,
+  typescript: ToolNames.TYPESCRIPT,
 };
 
 /**
