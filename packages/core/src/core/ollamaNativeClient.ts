@@ -753,30 +753,36 @@ export class OllamaNativeClient {
       ? AbortSignal.any([externalSignal, controller.signal])
       : controller.signal;
 
-    debugLog('debug', 'Starting streaming request', {
+    const requestBody = JSON.stringify({
+      ...(body as Record<string, unknown>),
+      stream: true,
+    });
+
+    debugLog('info', 'Starting streaming request', {
       url,
-      body: JSON.stringify(body).slice(0, 500),
+      bodySize: `${(requestBody.length / 1024).toFixed(1)}KB`,
+      bodyPreview: requestBody.slice(0, 500),
     });
 
     let response: Response;
     try {
       debugLog('debug', 'Sending fetch request...');
+      const fetchStartTime = Date.now();
       response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/x-ndjson',
         },
-        body: JSON.stringify({
-          ...(body as Record<string, unknown>),
-          stream: true,
-        }),
+        body: requestBody,
         signal: combinedSignal,
       });
-      debugLog('debug', 'Fetch response received', {
+      const fetchDuration = Date.now() - fetchStartTime;
+      debugLog('info', 'Fetch response received', {
         status: response.status,
         ok: response.ok,
         contentType: response.headers.get('content-type'),
+        fetchDuration: `${fetchDuration}ms`,
       });
     } catch (fetchError) {
       debugLog('error', 'Fetch request failed', {
