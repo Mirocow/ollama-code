@@ -45,6 +45,12 @@ export interface ContentGenerator {
   embedContent(request: EmbedContentParameters): Promise<EmbedContentResponse>;
 
   useSummarizedThinking(): boolean;
+
+  /**
+   * Check if the current model supports function calling (tools)
+   * Returns undefined if not supported by this generator type
+   */
+  checkToolSupport?(): Promise<boolean>;
 }
 
 export enum AuthType {

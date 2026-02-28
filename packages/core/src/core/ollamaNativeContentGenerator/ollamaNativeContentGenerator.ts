@@ -44,6 +44,7 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
   private client: OllamaNativeClient;
   private converter: OllamaContentConverter;
   private config: ContentGeneratorConfig;
+  private _supportsTools: boolean | undefined;
 
   constructor(
     contentGeneratorConfig: ContentGeneratorConfig,
@@ -61,6 +62,31 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
 
     // Create converter for format transformation
     this.converter = new OllamaContentConverter(contentGeneratorConfig.model);
+  }
+
+  /**
+   * Check if the current model supports function calling (tools)
+   */
+  async checkToolSupport(): Promise<boolean> {
+    if (this._supportsTools !== undefined) {
+      return this._supportsTools;
+    }
+
+    try {
+      this._supportsTools = await this.client.supportsTools(this.config.model);
+      debugLogger.info('Tool support check', {
+        model: this.config.model,
+        supportsTools: this._supportsTools,
+      });
+      return this._supportsTools;
+    } catch (error) {
+      debugLogger.warn('Could not check tool support', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Assume true on error
+      this._supportsTools = true;
+      return true;
+    }
   }
 
   /**

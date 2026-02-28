@@ -394,10 +394,22 @@ export class OllamaContentConverter {
   ): OllamaChatMessage | null {
     const textContent = this.extractFunctionResponseContent(response.response);
 
-    return {
+    const message: OllamaChatMessage = {
       role: 'tool',
       content: textContent,
     };
+
+    // Ollama requires tool_name for tool role messages
+    if (response.name) {
+      message.tool_name = response.name;
+    }
+
+    debugLogger.debug('Created tool message', {
+      toolName: response.name,
+      contentLength: textContent.length,
+    });
+
+    return message;
   }
 
   /**
