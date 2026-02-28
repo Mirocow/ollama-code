@@ -157,7 +157,11 @@ export const MODEL_FAMILIES: ModelFamilyDefinition[] = [
     modelOverrides: [
       { pattern: /codestral/i, capabilities: { tools: true } },
       { pattern: /mixtral/i, capabilities: { tools: true } },
-      { pattern: /mistral[-_]?instruct/i, capabilities: { tools: true } },
+      { pattern: /mistral.*instruct/i, capabilities: { tools: true } },
+      {
+        pattern: /mistral[-_](?:small|medium|large)/i,
+        capabilities: { tools: true },
+      },
     ],
   },
 
@@ -176,7 +180,10 @@ export const MODEL_FAMILIES: ModelFamilyDefinition[] = [
     modelOverrides: [
       { pattern: /gemma[-_]?3/i, capabilities: { tools: true, vision: true } },
       { pattern: /codegemma/i, capabilities: { tools: true } },
-      { pattern: /gemma[-_]?2[-_]?instruct/i, capabilities: { tools: true } },
+      {
+        pattern: /gemma.*(?:instruct|it)[-_]?(?:\d|$)/i,
+        capabilities: { tools: true },
+      },
     ],
   },
 
@@ -264,7 +271,7 @@ export const MODEL_FAMILIES: ModelFamilyDefinition[] = [
     defaultOutputFormat: 'native',
     modelOverrides: [
       { pattern: /solar[-_]?pro/i, capabilities: { tools: true } },
-      { pattern: /solar[-_]?instruct/i, capabilities: { tools: true } },
+      { pattern: /solar.*instruct/i, capabilities: { tools: true } },
     ],
   },
 
