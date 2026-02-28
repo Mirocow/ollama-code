@@ -71,10 +71,10 @@ export const Header: React.FC<HeaderProps> = ({
   // Get model capabilities
   const capabilities = getModelCapabilities(model);
   const capabilityBadges: string[] = [];
-  if (capabilities.supportsTools) {
+  if (capabilities.tools) {
     capabilityBadges.push('🔧');
   }
-  if (capabilities.supportsThinking) {
+  if (capabilities.thinking) {
     capabilityBadges.push('🧠');
   }
   const capabilitiesText =

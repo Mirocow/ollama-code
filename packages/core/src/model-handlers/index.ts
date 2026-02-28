@@ -9,39 +9,21 @@
  *
  * This module provides a pluggable architecture for handling different AI models.
  * Each model family (Qwen, Llama, DeepSeek, etc.) has its own handler that knows
- * how to parse tool calls, format requests, and process responses.
+ * how to parse tool calls from text output.
+ *
+ * For model capabilities (tools, vision, thinking), use model-definitions module.
  *
  * @example Basic usage
  * ```typescript
  * import { getModelHandlerFactory } from './model-handlers';
+ * import { getModelCapabilities } from './model-definitions';
  *
  * const factory = getModelHandlerFactory();
- * const handler = await factory.getHandler('qwen3-coder:30b');
+ * const handler = factory.getHandler('qwen3-coder:30b');
  * const result = handler.parseToolCalls(content);
- * ```
  *
- * @example Adding a new model
- * ```typescript
- * import { IModelHandler, ToolCallParseResult, ModelHandlerConfig } from './model-handlers';
- *
- * class MyModelHandler implements IModelHandler {
- *   readonly name = 'my-model';
- *   readonly config: ModelHandlerConfig = {
- *     modelPattern: /my-model/i,
- *     displayName: 'My Model',
- *   };
- *
- *   canHandle(modelName: string): boolean {
- *     return this.config.modelPattern.test(modelName);
- *   }
- *
- *   parseToolCalls(content: string): ToolCallParseResult {
- *     // Custom parsing logic
- *   }
- * }
- *
- * // Register
- * factory.register(new MyModelHandler());
+ * const caps = getModelCapabilities('qwen3-coder:30b');
+ * console.log(caps.tools, caps.thinking);
  * ```
  *
  * @see ./README.md for detailed documentation
@@ -74,24 +56,11 @@ export {
 } from './utils/parserUtils.js';
 
 // Factory
-import { getModelHandlerFactory as getFactory } from './modelHandlerFactory.js';
 export {
   ModelHandlerFactory,
   getModelHandlerFactory,
   resetModelHandlerFactory,
 } from './modelHandlerFactory.js';
-
-// Helper function to get model capabilities
-export function getModelCapabilities(modelName: string): {
-  supportsTools: boolean;
-  supportsThinking: boolean;
-} {
-  const factory = getFactory();
-  return {
-    supportsTools: factory.supportsTools(modelName),
-    supportsThinking: factory.supportsThinking(modelName),
-  };
-}
 
 // Default handler
 export { DefaultModelHandler } from './default/index.js';
