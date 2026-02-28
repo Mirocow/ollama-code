@@ -201,10 +201,10 @@ export class StandaloneJsonParser implements IToolCallTextParser {
           if (!hasToolCall(toolCalls, parsed['name'])) {
             toolCalls.push({
               name: parsed['name'],
-              args: (parsed['arguments'] || parsed['args'] || {}) as Record<
-                string,
-                unknown
-              >,
+              args: (parsed['arguments'] ||
+                parsed['args'] ||
+                parsed['parameters'] ||
+                {}) as Record<string, unknown>,
             });
           }
           cleanedContent =
