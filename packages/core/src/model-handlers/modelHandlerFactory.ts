@@ -49,10 +49,13 @@ const debugLogger = createDebugLogger('MODEL_HANDLER_FACTORY');
  */
 export class ModelHandlerFactory {
   private handlers: IModelHandler[] = [];
-  private defaultHandler: IModelHandler | null = null;
+  private defaultHandler: IModelHandler;
   private initialized = false;
 
-  private constructor() {}
+  private constructor() {
+    // Initialize with a fallback default handler
+    this.defaultHandler = DefaultModelHandler;
+  }
 
   /**
    * Create a factory with default handlers.
@@ -71,34 +74,34 @@ export class ModelHandlerFactory {
 
     // Register handlers (order matters - more specific first)
     // Code/Tool-focused models
-    this.register(new QwenModelHandler());
-    this.register(new DeepSeekModelHandler());
-    this.register(new CommandModelHandler());
+    this.register(QwenModelHandler);
+    this.register(DeepSeekModelHandler);
+    this.register(CommandModelHandler);
 
     // General purpose models
-    this.register(new MistralModelHandler());
-    this.register(new GemmaModelHandler());
-    this.register(new PhiModelHandler());
-    this.register(new YiModelHandler());
-    this.register(new GraniteModelHandler());
-    this.register(new DbrxModelHandler());
-    this.register(new SolarModelHandler());
+    this.register(MistralModelHandler);
+    this.register(GemmaModelHandler);
+    this.register(PhiModelHandler);
+    this.register(YiModelHandler);
+    this.register(GraniteModelHandler);
+    this.register(DbrxModelHandler);
+    this.register(SolarModelHandler);
 
     // Code-specific models
-    this.register(new StarCoderModelHandler());
+    this.register(StarCoderModelHandler);
 
     // Additional models
-    this.register(new OlmoModelHandler());
-    this.register(new NeuralChatModelHandler());
+    this.register(OlmoModelHandler);
+    this.register(NeuralChatModelHandler);
 
     // Vision models (least likely to have tools)
-    this.register(new LlavaModelHandler());
+    this.register(LlavaModelHandler);
 
     // Llama family (most common, register last for specific models)
-    this.register(new LlamaModelHandler());
+    this.register(LlamaModelHandler);
 
     // Set default handler (used when no specific handler matches)
-    this.defaultHandler = new DefaultModelHandler();
+    this.defaultHandler = DefaultModelHandler;
 
     this.initialized = true;
 
@@ -184,7 +187,7 @@ export class ModelHandlerFactory {
       handler: this.defaultHandler?.name ?? 'none',
     });
 
-    return this.defaultHandler!;
+    return this.defaultHandler;
   }
 
   /**

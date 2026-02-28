@@ -4,14 +4,56 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  IModelHandler,
-  ToolCallParseResult,
-  ModelHandlerConfig,
-  IToolCallTextParser,
-} from '../types.js';
+import {
+  createModelHandler,
+  type ModelHandlerConfig,
+} from '../baseModelHandler.js';
 import { mistralParsers } from './parsers.js';
-import { defaultParsers } from '../default/parsers.js';
+
+/**
+ * Mistral model handler configuration.
+ */
+const mistralConfig: ModelHandlerConfig = {
+  modelPattern: /mistral|mixtral|codestral/i,
+  displayName: 'Mistral',
+  description: 'Mistral AI models (mistral, mixtral, codestral)',
+  supportsStructuredToolCalls: true,
+  supportsTextToolCalls: true,
+  supportsTools: true,
+  maxContextLength: 128000, // mistral-large
+};
+
+/**
+ * Check if Mistral model supports tools.
+ */
+function supportsTools(modelName: string): boolean {
+  const name = modelName.toLowerCase();
+
+  // Codestral - code focused, supports tools
+  if (/codestral/i.test(name)) return true;
+
+  // Mistral Small/Medium/Large - all support tools
+  if (/mistral[-_]?small|mistral[-_]?medium|mistral[-_]?large/i.test(name))
+    return true;
+
+  // Mixtral 8x7B, 8x22B - support tools
+  if (/mixtral/i.test(name)) return true;
+
+  // Mistral 7B - base model, instruct variant supports tools
+  if (/mistral[-_]?7b/i.test(name)) {
+    return /instruct/i.test(name);
+  }
+
+  // Mistral Nemo - supports tools
+  if (/mistral[-_]?nemo/i.test(name)) return true;
+
+  // Generic mistral - check for instruct tag
+  if (/mistral/i.test(name)) {
+    return /instruct/i.test(name);
+  }
+
+  return false;
+}
 
 /**
  * Mistral model handler.
@@ -24,81 +66,11 @@ import { defaultParsers } from '../default/parsers.js';
  * Mistral models typically return tool calls in structured format,
  * but may also output in [TOOL_CALLS] text format.
  */
-export class MistralModelHandler implements IModelHandler {
-  readonly name = 'mistral';
-  readonly config: ModelHandlerConfig = {
-    modelPattern: /mistral|mixtral|codestral/i,
-    displayName: 'Mistral',
-    description: 'Mistral AI models (mistral, mixtral, codestral)',
-    supportsStructuredToolCalls: true,
-    supportsTextToolCalls: true,
-    supportsTools: true,
-    maxContextLength: 128000, // mistral-large
-  };
-
-  private parsers: IToolCallTextParser[];
-
-  constructor() {
-    this.parsers = [...mistralParsers, ...defaultParsers];
-    this.parsers.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
-  }
-
-  canHandle(modelName: string): boolean {
-    const pattern = this.config.modelPattern;
-    if (typeof pattern === 'string') {
-      return modelName.toLowerCase().includes(pattern.toLowerCase());
-    }
-    return pattern.test(modelName);
-  }
-
-  supportsTools(modelName: string): boolean {
-    const name = modelName.toLowerCase();
-
-    // Codestral - code focused, supports tools
-    if (/codestral/i.test(name)) return true;
-
-    // Mistral Small/Medium/Large - all support tools
-    if (/mistral[-_]?small|mistral[-_]?medium|mistral[-_]?large/i.test(name))
-      return true;
-
-    // Mixtral 8x7B, 8x22B - support tools
-    if (/mixtral/i.test(name)) return true;
-
-    // Mistral 7B - base model, instruct variant supports tools
-    if (/mistral[-_]?7b/i.test(name)) {
-      return /instruct/i.test(name);
-    }
-
-    // Mistral Nemo - supports tools
-    if (/mistral[-_]?nemo/i.test(name)) return true;
-
-    // Generic mistral - check for instruct tag
-    if (/mistral/i.test(name)) {
-      return /instruct/i.test(name);
-    }
-
-    // Default for Mistral family
-    return false;
-  }
-
-  parseToolCalls(content: string): ToolCallParseResult {
-    const allToolCalls: Array<{ name: string; args: Record<string, unknown> }> =
-      [];
-    let currentContent = content;
-
-    for (const parser of this.parsers) {
-      if (parser.canParse(currentContent)) {
-        const result = parser.parse(currentContent);
-        if (result.toolCalls.length > 0) {
-          allToolCalls.push(...result.toolCalls);
-          currentContent = result.cleanedContent;
-        }
-      }
-    }
-
-    return {
-      toolCalls: allToolCalls,
-      cleanedContent: currentContent.trim(),
-    };
-  }
-}
+export const MistralModelHandler = createModelHandler(
+  'mistral',
+  mistralConfig,
+  {
+    parsers: mistralParsers,
+    supportsToolsFn: supportsTools,
+  },
+);

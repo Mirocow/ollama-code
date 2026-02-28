@@ -27,7 +27,7 @@ import {
 
 describe('Model Handlers', () => {
   describe('DefaultModelHandler', () => {
-    const handler = new DefaultModelHandler();
+    const handler = DefaultModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('default');
@@ -87,7 +87,7 @@ describe('Model Handlers', () => {
   });
 
   describe('QwenModelHandler', () => {
-    const handler = new QwenModelHandler();
+    const handler = QwenModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('qwen');
@@ -128,7 +128,7 @@ describe('Model Handlers', () => {
   });
 
   describe('LlamaModelHandler', () => {
-    const handler = new LlamaModelHandler();
+    const handler = LlamaModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('llama');
@@ -152,7 +152,7 @@ describe('Model Handlers', () => {
   });
 
   describe('DeepSeekModelHandler', () => {
-    const handler = new DeepSeekModelHandler();
+    const handler = DeepSeekModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('deepseek');
@@ -172,7 +172,7 @@ describe('Model Handlers', () => {
   });
 
   describe('MistralModelHandler', () => {
-    const handler = new MistralModelHandler();
+    const handler = MistralModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('mistral');
@@ -226,7 +226,7 @@ describe('Model Handlers', () => {
   });
 
   describe('GemmaModelHandler', () => {
-    const handler = new GemmaModelHandler();
+    const handler = GemmaModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('gemma');
@@ -255,7 +255,7 @@ describe('Model Handlers', () => {
   });
 
   describe('PhiModelHandler', () => {
-    const handler = new PhiModelHandler();
+    const handler = PhiModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('phi');
@@ -281,7 +281,7 @@ describe('Model Handlers', () => {
   });
 
   describe('CommandModelHandler', () => {
-    const handler = new CommandModelHandler();
+    const handler = CommandModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('command');
@@ -301,7 +301,7 @@ describe('Model Handlers', () => {
   });
 
   describe('YiModelHandler', () => {
-    const handler = new YiModelHandler();
+    const handler = YiModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('yi');
@@ -327,7 +327,7 @@ describe('Model Handlers', () => {
   });
 
   describe('LlavaModelHandler', () => {
-    const handler = new LlavaModelHandler();
+    const handler = LlavaModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('llava');
@@ -349,7 +349,7 @@ describe('Model Handlers', () => {
   });
 
   describe('SolarModelHandler', () => {
-    const handler = new SolarModelHandler();
+    const handler = SolarModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('solar');
@@ -373,7 +373,7 @@ describe('Model Handlers', () => {
   });
 
   describe('StarCoderModelHandler', () => {
-    const handler = new StarCoderModelHandler();
+    const handler = StarCoderModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('starcoder');
@@ -393,7 +393,7 @@ describe('Model Handlers', () => {
   });
 
   describe('DbrxModelHandler', () => {
-    const handler = new DbrxModelHandler();
+    const handler = DbrxModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('dbrx');
@@ -416,7 +416,7 @@ describe('Model Handlers', () => {
   });
 
   describe('GraniteModelHandler', () => {
-    const handler = new GraniteModelHandler();
+    const handler = GraniteModelHandler;
 
     it('should have correct config', () => {
       expect(handler.name).toBe('granite');
