@@ -381,13 +381,6 @@ export const useOllamaStream = (
         onDebugMessage(
           `Received user query (${trimmedQuery.length} chars): "${trimmedQuery.slice(0, 200)}${trimmedQuery.length > 200 ? '...' : ''}"`,
         );
-        // Also log to stderr when DEBUG is set (for console visibility)
-        if (process.env['DEBUG']) {
-          // eslint-disable-next-line no-console
-          console.error(
-            `[${new Date().toISOString()}] [USER_INPUT] "${trimmedQuery}"`,
-          );
-        }
         await logger?.logMessage(MessageSenderType.USER, trimmedQuery);
 
         // Handle UI-only commands first

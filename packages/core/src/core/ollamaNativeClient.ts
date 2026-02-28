@@ -31,22 +31,13 @@ function getDebugLogger() {
   return _debugLogger;
 }
 
-// Console fallback for debug output when session is not available
+// Debug log - writes to file only
 function debugLog(
   level: 'debug' | 'info' | 'warn' | 'error',
   ...args: unknown[]
 ) {
-  // Always try the file logger
   const logger = getDebugLogger();
   logger[level](...args);
-
-  // Also log to console if DEBUG env is set and session might not be ready
-  if (process.env['DEBUG']) {
-    const timestamp = new Date().toISOString();
-    const prefix = `[${timestamp}] [OLLAMA_CLIENT] [${level.toUpperCase()}]`;
-    // eslint-disable-next-line no-console
-    console.error(prefix, ...args);
-  }
 }
 
 /**
