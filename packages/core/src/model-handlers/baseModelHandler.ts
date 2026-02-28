@@ -15,6 +15,7 @@ import type {
 // Re-export ModelHandlerConfig for convenience
 export type ModelHandlerConfig = ModelHandlerConfigType;
 import { defaultParsers } from './default/parsers.js';
+import { supportsTools as supportsToolsFromDef } from '../model-definitions/index.js';
 
 /**
  * Options for creating a model handler.
@@ -60,19 +61,8 @@ export function createModelHandler(
     },
 
     supportsTools(modelName: string): boolean {
-      if (options?.supportsToolsFn) {
-        return options.supportsToolsFn(modelName);
-      }
-      if (options?.toolsSupportPattern) {
-        const patterns = Array.isArray(options.toolsSupportPattern)
-          ? options.toolsSupportPattern
-          : [options.toolsSupportPattern];
-        return patterns.some((p) => p.test(modelName));
-      }
-      if (config.supportsTools !== undefined) {
-        return config.supportsTools;
-      }
-      return this.canHandle(modelName);
+      // Always delegate to model-definitions for consistency
+      return supportsToolsFromDef(modelName);
     },
 
     parseToolCalls(content: string): ToolCallParseResult {
@@ -115,7 +105,8 @@ export abstract class BaseModelHandler implements IModelHandler {
   }
 
   supportsTools(modelName: string): boolean {
-    return this.config.supportsTools ?? this.canHandle(modelName);
+    // Always delegate to model-definitions for consistency
+    return supportsToolsFromDef(modelName);
   }
 
   parseToolCalls(content: string): ToolCallParseResult {
