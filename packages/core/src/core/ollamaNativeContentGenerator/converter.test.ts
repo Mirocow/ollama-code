@@ -527,6 +527,61 @@ describe('OllamaContentConverter', () => {
       expect(candidate?.content?.parts).toHaveLength(1);
       expect((candidate?.content?.parts as any)?.[0]).toHaveProperty('functionCall');
     });
+
+    it('should emit tool calls when done chunk comes separately from tool_calls chunk', () => {
+      // This test covers the bug fix where tool_calls were not emitted when:
+      // - Chunk 1: has tool_calls but done=false (accumulate tool calls)
+      // - Chunk 2: has done=true but no tool_calls (should emit accumulated tool calls)
+      const toolCallAccumulator = new Map<number, { name: string; args: string }>();
+
+      // Chunk 1: Contains tool_calls, but not done yet
+      const chunk1: OllamaChatResponse = {
+        model: 'llama3.2',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: '',
+          tool_calls: [
+            {
+              function: {
+                name: 'list_directory',
+                arguments: { path: '/home' },
+              },
+            },
+          ],
+        },
+        done: false,
+      };
+
+      const result1 = converter.convertOllamaChunkToGenAI(chunk1, toolCallAccumulator);
+
+      // Tool call should be accumulated
+      expect(toolCallAccumulator.size).toBe(1);
+      // But NOT emitted yet (no functionCall in parts)
+      expect(result1.functionCalls).toBeUndefined();
+
+      // Chunk 2: Final chunk with done=true, but NO tool_calls
+      const chunk2: OllamaChatResponse = {
+        model: 'llama3.2',
+        created_at: '2024-01-01T00:00:00Z',
+        message: {
+          role: 'assistant',
+          content: '',
+        },
+        done: true,
+        eval_count: 10,
+      };
+
+      const result2 = converter.convertOllamaChunkToGenAI(chunk2, toolCallAccumulator);
+      const candidate = result2.candidates?.[0];
+
+      // NOW tool calls should be emitted!
+      expect(result2.functionCalls).toBeDefined();
+      expect(result2.functionCalls).toHaveLength(1);
+      expect(result2.functionCalls?.[0].name).toBe('list_directory');
+      expect(result2.functionCalls?.[0].args).toEqual({ path: '/home' });
+      expect(candidate?.finishReason).toBe(FinishReason.TOOL_CALLS);
+    });
   });
 
   describe('Edge Cases', () => {

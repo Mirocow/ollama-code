@@ -621,7 +621,7 @@ export class OllamaContentConverter {
       parts.push({ text: ollamaChunk.message.content });
     }
 
-    // Handle tool calls in streaming
+    // Handle tool calls in streaming - accumulate tool calls from chunks
     if (ollamaChunk.message?.tool_calls && accumulatedToolCalls) {
       for (let i = 0; i < ollamaChunk.message.tool_calls.length; i++) {
         const toolCall = ollamaChunk.message.tool_calls[i];
@@ -636,22 +636,25 @@ export class OllamaContentConverter {
           });
         }
       }
+    }
 
-      // If stream is done, emit all completed tool calls
-      if (ollamaChunk.done && accumulatedToolCalls.size > 0) {
-        debugLogger.info('Emitting accumulated tool calls', {
-          count: accumulatedToolCalls.size,
-          tools: [...accumulatedToolCalls.values()].map((tc) => tc.name),
+    // If stream is done, emit all accumulated tool calls
+    // NOTE: This must be OUTSIDE the tool_calls check above, because the final
+    // chunk with done=true may not contain tool_calls, but we still need to emit
+    // the previously accumulated ones.
+    if (ollamaChunk.done && accumulatedToolCalls && accumulatedToolCalls.size > 0) {
+      debugLogger.info('Emitting accumulated tool calls', {
+        count: accumulatedToolCalls.size,
+        tools: [...accumulatedToolCalls.values()].map((tc) => tc.name),
+      });
+      for (const [, toolCall] of accumulatedToolCalls) {
+        parts.push({
+          functionCall: {
+            id: `call_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            name: toolCall.name,
+            args: JSON.parse(toolCall.args || '{}'),
+          },
         });
-        for (const [, toolCall] of accumulatedToolCalls) {
-          parts.push({
-            functionCall: {
-              id: `call_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-              name: toolCall.name,
-              args: JSON.parse(toolCall.args || '{}'),
-            },
-          });
-        }
       }
     }
 
