@@ -21,6 +21,7 @@ import {
   detectOllamaError,
 } from '../utils/ollamaErrors.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
+import { apiLogger } from '../utils/apiLogger.js';
 
 // Lazy-initialized debug logger to ensure session is set before use
 let _debugLogger: ReturnType<typeof createDebugLogger> | null = null;
@@ -659,6 +660,22 @@ export class OllamaNativeClient {
         body: body ? JSON.stringify(body).slice(0, 500) : undefined,
       });
 
+      // Log the request to API logger
+      const requestLogData = {
+        type: 'request',
+        method,
+        url,
+        endpoint,
+        body: body,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+      };
+      apiLogger.logInteraction(requestLogData).catch(() => {
+        // Ignore logging errors
+      });
+
       try {
         const response = await fetch(url, {
           method,
@@ -685,11 +702,23 @@ export class OllamaNativeClient {
             status: response.status,
             error: errorMessage,
           });
+          const error = new Error(errorMessage);
+          apiLogger.logInteraction(requestLogData, { status: response.status, error: errorMessage, body: errorText }, error).catch(() => {});
           throw detectOllamaError(new Error(errorMessage), {});
         }
 
         const result = (await response.json()) as T;
         debugLog('debug', 'API request completed', { endpoint });
+
+        // Log the response to API logger
+        apiLogger.logInteraction(requestLogData, {
+          type: 'response',
+          status: response.status,
+          body: result,
+        }).catch(() => {
+          // Ignore logging errors
+        });
+
         return result;
       } catch (error) {
         // Handle timeout
@@ -698,10 +727,13 @@ export class OllamaNativeClient {
             endpoint,
             timeout: this.timeout,
           });
-          throw new OllamaTimeoutError(this.timeout);
+          const timeoutError = new OllamaTimeoutError(this.timeout);
+          apiLogger.logInteraction(requestLogData, undefined, timeoutError).catch(() => {});
+          throw timeoutError;
         }
         // Re-throw OllamaApiError as-is
         if (error instanceof OllamaApiError) {
+          apiLogger.logInteraction(requestLogData, undefined, error).catch(() => {});
           throw error;
         }
         // Wrap other errors
@@ -709,7 +741,9 @@ export class OllamaNativeClient {
           endpoint,
           error: error instanceof Error ? error.message : String(error),
         });
-        throw detectOllamaError(error, { timeoutMs: this.timeout });
+        const wrappedError = detectOllamaError(error, { timeoutMs: this.timeout });
+        apiLogger.logInteraction(requestLogData, undefined, wrappedError).catch(() => {});
+        throw wrappedError;
       } finally {
         clearTimeout(timeoutId);
       }
@@ -723,6 +757,7 @@ export class OllamaNativeClient {
    * - Handles mid-stream errors (Ollama returns errors in NDJSON format)
    * - Refreshes timeout on each chunk to handle long-running generations
    * - Provides detailed logging for debugging
+   * - Logs full request/response to API logger
    */
   private async streamingRequest<T>(
     endpoint: string,
@@ -758,6 +793,26 @@ export class OllamaNativeClient {
       externalSignalAborted: externalSignal?.aborted,
     });
 
+    // Log the request to API logger
+    const requestLogData = {
+      type: 'request',
+      method: 'POST',
+      url,
+      endpoint,
+      body: body,
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/x-ndjson',
+      },
+    };
+    apiLogger.logInteraction(requestLogData).catch(() => {
+      // Ignore logging errors
+    });
+
+    // Collect response chunks for logging
+    const responseChunks: T[] = [];
+    let responseError: Error | undefined;
+
     let response: Response;
     try {
       const fetchStartTime = Date.now();
@@ -779,11 +834,14 @@ export class OllamaNativeClient {
         fetchDuration: `${fetchDuration}ms`,
       });
     } catch (fetchError) {
+      responseError = fetchError instanceof Error ? fetchError : new Error(String(fetchError));
       debugLog('error', 'Fetch request failed', {
         error:
           fetchError instanceof Error ? fetchError.message : String(fetchError),
         name: fetchError instanceof Error ? fetchError.name : 'Unknown',
       });
+      // Log the error to API logger
+      apiLogger.logInteraction(requestLogData, undefined, responseError).catch(() => {});
       throw fetchError;
     }
 
@@ -803,6 +861,9 @@ export class OllamaNativeClient {
           status: response.status,
           error: errorMessage,
         });
+        responseError = new Error(errorMessage);
+        // Log the error to API logger
+        apiLogger.logInteraction(requestLogData, { status: response.status, error: errorMessage, body: errorText }, responseError).catch(() => {});
         throw detectOllamaError(new Error(errorMessage), {});
       }
 
@@ -810,7 +871,9 @@ export class OllamaNativeClient {
       const reader = response.body?.getReader();
       if (!reader) {
         debugLog('error', 'Response body is not readable');
-        throw new OllamaConnectionError('Response body is not readable');
+        responseError = new OllamaConnectionError('Response body is not readable');
+        apiLogger.logInteraction(requestLogData, undefined, responseError).catch(() => {});
+        throw responseError;
       }
       debugLog('debug', 'Reader obtained, starting to read chunks...');
 
@@ -859,7 +922,9 @@ export class OllamaNativeClient {
                 debugLog('error', 'Mid-stream error received', {
                   error: errorMsg,
                 });
-                throw new OllamaStreamingError(errorMsg, parsed);
+                responseError = new OllamaStreamingError(errorMsg, parsed);
+                apiLogger.logInteraction(requestLogData, { chunks: responseChunks, error: errorMsg }, responseError).catch(() => {});
+                throw responseError;
               }
 
               // Log first few parsed chunks for debugging
@@ -869,6 +934,8 @@ export class OllamaNativeClient {
                 });
               }
 
+              // Collect response chunk for logging
+              responseChunks.push(parsed);
               callback(parsed);
             } catch (parseError) {
               // If it's already an OllamaStreamingError, re-throw it
@@ -892,9 +959,12 @@ export class OllamaNativeClient {
           // Check for error in final chunk
           if (parsed && typeof parsed === 'object' && 'error' in parsed) {
             const errorMsg = (parsed as { error: string }).error;
-            throw new OllamaStreamingError(errorMsg, parsed);
+            responseError = new OllamaStreamingError(errorMsg, parsed);
+            apiLogger.logInteraction(requestLogData, { chunks: responseChunks, error: errorMsg }, responseError).catch(() => {});
+            throw responseError;
           }
 
+          responseChunks.push(parsed);
           callback(parsed);
         } catch (parseError) {
           if (parseError instanceof OllamaStreamingError) {
@@ -906,23 +976,37 @@ export class OllamaNativeClient {
           });
         }
       }
+
+      // Log the complete response to API logger
+      apiLogger.logInteraction(requestLogData, {
+        type: 'streaming_response',
+        totalChunks: responseChunks.length,
+        chunks: responseChunks,
+      }).catch(() => {
+        // Ignore logging errors
+      });
     } catch (error) {
       // Handle timeout
       if (error instanceof Error && error.name === 'AbortError') {
         debugLog('error', 'Streaming request timed out', {
           timeout: this.timeout,
         });
-        throw new OllamaTimeoutError(this.timeout);
+        const timeoutError = new OllamaTimeoutError(this.timeout);
+        apiLogger.logInteraction(requestLogData, { chunks: responseChunks }, timeoutError).catch(() => {});
+        throw timeoutError;
       }
       // Re-throw OllamaApiError as-is
       if (error instanceof OllamaApiError) {
+        apiLogger.logInteraction(requestLogData, { chunks: responseChunks }, error).catch(() => {});
         throw error;
       }
       // Wrap other errors
       debugLog('error', 'Streaming request error', {
         error: error instanceof Error ? error.message : String(error),
       });
-      throw detectOllamaError(error, { timeoutMs: this.timeout });
+      const wrappedError = detectOllamaError(error, { timeoutMs: this.timeout });
+      apiLogger.logInteraction(requestLogData, { chunks: responseChunks }, wrappedError).catch(() => {});
+      throw wrappedError;
     } finally {
       clearTimeout(timeoutId);
     }
