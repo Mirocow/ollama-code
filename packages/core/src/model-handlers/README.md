@@ -26,6 +26,9 @@ model-handlers/
 ├── qwen/                 # Qwen models handler
 │   ├── index.ts
 │   └── parsers.ts
+├── mistral/              # Mistral models handler
+│   ├── index.ts
+│   └── parsers.ts
 ├── llama/                # Llama models handler
 │   ├── index.ts
 │   └── parsers.ts
@@ -39,8 +42,9 @@ model-handlers/
 | Model Pattern | Handler | Tool Call Format |
 |---------------|---------|------------------|
 | `qwen`, `qwq` | QwenModelHandler | `<tool_call=...>`, `<think...>` |
-| `llama`, `codellama` | LlamaModelHandler | `{"type": "function", ...}` |
+| `mistral`, `mixtral`, `codestral` | MistralModelHandler | `[TOOL_CALLS] [...]`, code blocks |
 | `deepseek` | DeepSeekModelHandler | `<think...>` tags |
+| `llama`, `codellama` | LlamaModelHandler | `{"type": "function", ...}` |
 | * (any other) | DefaultModelHandler | All common formats |
 
 ### Usage
@@ -215,6 +219,9 @@ model-handlers/
 ├── qwen/                 # Обработчик моделей Qwen
 │   ├── index.ts
 │   └── parsers.ts
+├── mistral/              # Обработчик моделей Mistral
+│   ├── index.ts
+│   └── parsers.ts
 ├── llama/                # Обработчик моделей Llama
 │   ├── index.ts
 │   └── parsers.ts
@@ -228,8 +235,9 @@ model-handlers/
 | Паттерн модели | Обработчик | Формат tool calls |
 |----------------|------------|-------------------|
 | `qwen`, `qwq` | QwenModelHandler | `<tool_call=...>`, `<think...>` |
-| `llama`, `codellama` | LlamaModelHandler | `{"type": "function", ...}` |
+| `mistral`, `mixtral`, `codestral` | MistralModelHandler | `[TOOL_CALLS] [...]`, code blocks |
 | `deepseek` | DeepSeekModelHandler | `<think...>` теги |
+| `llama`, `codellama` | LlamaModelHandler | `{"type": "function", ...}` |
 | * (любая другая) | DefaultModelHandler | Все распространённые форматы |
 
 ### Использование

@@ -13,6 +13,7 @@ import {
   QwenModelHandler,
   LlamaModelHandler,
   DeepSeekModelHandler,
+  MistralModelHandler,
 } from './index.js';
 
 describe('Model Handlers', () => {
@@ -126,6 +127,41 @@ describe('Model Handlers', () => {
       expect(handler.canHandle('llama3.2')).toBe(false);
     });
   });
+
+  describe('MistralModelHandler', () => {
+    const handler = new MistralModelHandler();
+
+    it('should have correct config', () => {
+      expect(handler.name).toBe('mistral');
+      expect(handler.config.displayName).toBe('Mistral');
+    });
+
+    it('should handle mistral models', () => {
+      expect(handler.canHandle('mistral:latest')).toBe(true);
+      expect(handler.canHandle('mistral-small:24b')).toBe(true);
+      expect(handler.canHandle('mistral-large:123b')).toBe(true);
+      expect(handler.canHandle('mixtral:8x7b')).toBe(true);
+      expect(handler.canHandle('codestral:22b')).toBe(true);
+      expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should parse [TOOL_CALLS] format', () => {
+      const content = '[TOOL_CALLS] [{"name": "get_weather", "arguments": {"location": "Paris"}}]';
+      const result = handler.parseToolCalls(content);
+
+      expect(result.toolCalls).toHaveLength(1);
+      expect(result.toolCalls[0].name).toBe('get_weather');
+      expect(result.toolCalls[0].args).toEqual({ location: 'Paris' });
+    });
+
+    it('should parse code block format', () => {
+      const content = '```json\n{"name": "list_files", "arguments": {"path": "/home"}}\n```';
+      const result = handler.parseToolCalls(content);
+
+      expect(result.toolCalls).toHaveLength(1);
+      expect(result.toolCalls[0].name).toBe('list_files');
+    });
+  });
 });
 
 describe('ModelHandlerFactory', () => {
@@ -146,6 +182,7 @@ describe('ModelHandlerFactory', () => {
       expect(names).toContain('qwen');
       expect(names).toContain('llama');
       expect(names).toContain('deepseek');
+      expect(names).toContain('mistral');
     });
   });
 
@@ -163,6 +200,16 @@ describe('ModelHandlerFactory', () => {
     it('should return DeepSeek handler for deepseek models', () => {
       const handler = factory.getHandler('deepseek-r1:70b');
       expect(handler.name).toBe('deepseek');
+    });
+
+    it('should return Mistral handler for mistral models', () => {
+      const handler = factory.getHandler('mistral:latest');
+      expect(handler.name).toBe('mistral');
+    });
+
+    it('should return Mistral handler for mixtral models', () => {
+      const handler = factory.getHandler('mixtral:8x7b');
+      expect(handler.name).toBe('mistral');
     });
 
     it('should return default handler for unknown models', () => {

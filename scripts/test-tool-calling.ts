@@ -1,7 +1,20 @@
 #!/usr/bin/env node
 /**
  * Test script for debugging tool calling with different models
- * Usage: npx tsx scripts/test-tool-calling.ts [model-name]
+ *
+ * Usage:
+ *   npx tsx scripts/test-tool-calling.ts [model-name]
+ *   OLLAMA_URL=http://192.168.1.177:11434 npx tsx scripts/test-tool-calling.ts qwen2.5-coder:14b
+ *
+ * Environment variables:
+ *   OLLAMA_URL - Ollama server URL (default: http://localhost:11434)
+ *
+ * Examples:
+ *   # Local server
+ *   npx tsx scripts/test-tool-calling.ts qwen2.5-coder:14b
+ *
+ *   # Remote server
+ *   OLLAMA_URL=http://192.168.1.177:11434 npx tsx scripts/test-tool-calling.ts qwen2.5-coder:14b
  */
 
 import {
@@ -11,14 +24,15 @@ import {
 import { OllamaContentConverter } from '../packages/core/src/core/ollamaNativeContentGenerator/converter.js';
 
 const MODEL = process.argv[2] || 'qwen2.5-coder:14b';
-const client = createOllamaNativeClient({ baseUrl: process.env.OLLAMA_URL || DEFAULT_OLLAMA_NATIVE_URL });
+const OLLAMA_URL = process.env.OLLAMA_URL || DEFAULT_OLLAMA_NATIVE_URL;
+const client = createOllamaNativeClient({ baseUrl: OLLAMA_URL });
 
 async function main() {
   console.log('='.repeat(70));
   console.log('Tool Calling Test');
   console.log('='.repeat(70));
   console.log(`Model: ${MODEL}`);
-  console.log(`URL: ${process.env.OLLAMA_URL || DEFAULT_OLLAMA_NATIVE_URL}`);
+  console.log(`URL: ${OLLAMA_URL}`);
   console.log('');
 
   try {
