@@ -16,6 +16,7 @@
  */
 
 import type { IToolCallTextParser, ToolCallParseResult, ParsedToolCall } from '../types.js';
+import { tryParseArrayAt, extractToolCall } from '../utils/parserUtils.js';
 
 /**
  * Parser for Mistral's [TOOL_CALLS] format.
@@ -37,20 +38,16 @@ export class MistralToolCallsBracketParser implements IToolCallTextParser {
     let match;
 
     while ((match = pattern.exec(content)) !== null) {
-      try {
-        const parsed = JSON.parse(match[1].trim());
-        if (Array.isArray(parsed)) {
-          for (const item of parsed) {
-            if (item && typeof item === 'object' && item['name']) {
-              toolCalls.push({
-                name: item['name'],
-                args: (item['arguments'] || item['args'] || {}) as Record<string, unknown>,
-              });
-            }
+      const result = tryParseArrayAt(match[1], 0);
+      if (result) {
+        for (const item of result.array) {
+          const toolCall = extractToolCall(item);
+          if (toolCall) {
+            toolCalls.push(toolCall);
           }
-          cleanedContent = cleanedContent.replace(match[0], '');
         }
-      } catch { /* skip parse errors */ }
+        cleanedContent = cleanedContent.replace(match[0], '');
+      }
     }
 
     return { toolCalls, cleanedContent: cleanedContent.trim() };
@@ -84,11 +81,9 @@ export class MistralCodeBlockParser implements IToolCallTextParser {
         const jsonStr = match[1].trim();
         if (jsonStr.startsWith('{') && jsonStr.includes('"name"')) {
           const parsed = JSON.parse(jsonStr);
-          if (parsed && typeof parsed === 'object' && parsed['name']) {
-            toolCalls.push({
-              name: parsed['name'],
-              args: (parsed['arguments'] || parsed['args'] || {}) as Record<string, unknown>,
-            });
+          const toolCall = extractToolCall(parsed);
+          if (toolCall) {
+            toolCalls.push(toolCall);
             cleanedContent = cleanedContent.replace(match[0], '');
           }
         }

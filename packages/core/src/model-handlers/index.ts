@@ -57,7 +57,17 @@ export type {
 } from './types.js';
 
 // Base classes
-export { BaseModelHandler, BaseToolCallParser } from './baseModelHandler.js';
+export { BaseModelHandler, BaseToolCallParser, createModelHandler } from './baseModelHandler.js';
+
+// Utility functions for custom parsers
+export {
+  findMatchingBrace,
+  findMatchingBracket,
+  tryParseJsonAt,
+  tryParseArrayAt,
+  extractToolCall,
+  hasToolCall,
+} from './utils/parserUtils.js';
 
 // Factory
 export {

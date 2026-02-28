@@ -13,6 +13,7 @@
  */
 
 import type { IToolCallTextParser, ToolCallParseResult, ParsedToolCall } from '../types.js';
+import { tryParseJsonAt, extractToolCall } from '../utils/parserUtils.js';
 
 /**
  * Parser for Qwen's <tool_call=...> format.
@@ -35,50 +36,22 @@ export class QwenToolCallTagParser implements IToolCallTextParser {
 
     while ((match = pattern.exec(content)) !== null) {
       const jsonStart = match.index + match[0].length;
-      const result = this.tryParseJsonAt(content, jsonStart);
+      const result = tryParseJsonAt(content, jsonStart);
       if (result) {
-        const parsed = result.json as Record<string, unknown>;
-        if (parsed['name'] && typeof parsed['name'] === 'string') {
-          toolCalls.push({
-            name: parsed['name'],
-            args: (parsed['arguments'] || parsed['args'] || {}) as Record<string, unknown>,
-          });
+        const toolCall = extractToolCall(result.json);
+        if (toolCall) {
+          toolCalls.push(toolCall);
           const closingAngle = content.indexOf('>', result.end);
           if (closingAngle !== -1) {
-            cleanedContent = cleanedContent.replace(content.slice(match.index, closingAngle + 1), '');
+            cleanedContent = cleanedContent.replace(
+              content.slice(match.index, closingAngle + 1),
+              '',
+            );
           }
         }
       }
     }
     return { toolCalls, cleanedContent: cleanedContent.trim() };
-  }
-
-  private findMatchingBrace(str: string, start: number): number {
-    if (str[start] !== '{') return -1;
-    let depth = 0;
-    let inString = false;
-    let escapeNext = false;
-
-    for (let i = start; i < str.length; i++) {
-      const char = str[i];
-      if (escapeNext) { escapeNext = false; continue; }
-      if (char === '\\' && inString) { escapeNext = true; continue; }
-      if (char === '"') { inString = !inString; continue; }
-      if (!inString) {
-        if (char === '{') depth++;
-        else if (char === '}') { depth--; if (depth === 0) return i; }
-      }
-    }
-    return -1;
-  }
-
-  private tryParseJsonAt(str: string, start: number): { json: unknown; end: number } | null {
-    if (str[start] !== '{') return null;
-    const end = this.findMatchingBrace(str, start);
-    if (end === -1) return null;
-    try {
-      return { json: JSON.parse(str.slice(start, end + 1)), end };
-    } catch { return null; }
   }
 }
 
@@ -105,11 +78,9 @@ export class QwenThinkTagParser implements IToolCallTextParser {
     while ((match = pattern.exec(content)) !== null) {
       try {
         const parsed = JSON.parse(match[1].trim());
-        if (parsed['name'] && typeof parsed['name'] === 'string') {
-          toolCalls.push({
-            name: parsed['name'],
-            args: (parsed['arguments'] || parsed['args'] || {}) as Record<string, unknown>,
-          });
+        const toolCall = extractToolCall(parsed);
+        if (toolCall) {
+          toolCalls.push(toolCall);
           cleanedContent = cleanedContent.replace(match[0], '');
         }
       } catch { /* not a JSON tool call */ }
