@@ -19,6 +19,8 @@ import { SolarModelHandler } from './solar/index.js';
 import { StarCoderModelHandler } from './starcoder/index.js';
 import { DbrxModelHandler } from './dbrx/index.js';
 import { GraniteModelHandler } from './granite/index.js';
+import { OlmoModelHandler } from './olmo/index.js';
+import { NeuralChatModelHandler } from './neural-chat/index.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('MODEL_HANDLER_FACTORY');
@@ -84,6 +86,10 @@ export class ModelHandlerFactory {
 
     // Code-specific models
     this.register(new StarCoderModelHandler());
+
+    // Additional models
+    this.register(new OlmoModelHandler());
+    this.register(new NeuralChatModelHandler());
 
     // Vision models (least likely to have tools)
     this.register(new LlavaModelHandler());
