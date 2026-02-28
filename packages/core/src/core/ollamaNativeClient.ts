@@ -22,7 +22,32 @@ import {
 } from '../utils/ollamaErrors.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
-const debugLogger = createDebugLogger('OLLAMA_CLIENT');
+// Lazy-initialized debug logger to ensure session is set before use
+let _debugLogger: ReturnType<typeof createDebugLogger> | null = null;
+function getDebugLogger() {
+  if (!_debugLogger) {
+    _debugLogger = createDebugLogger('OLLAMA_CLIENT');
+  }
+  return _debugLogger;
+}
+
+// Console fallback for debug output when session is not available
+function debugLog(
+  level: 'debug' | 'info' | 'warn' | 'error',
+  ...args: unknown[]
+) {
+  // Always try the file logger
+  const logger = getDebugLogger();
+  logger[level](...args);
+
+  // Also log to console if DEBUG env is set and session might not be ready
+  if (process.env.DEBUG) {
+    const timestamp = new Date().toISOString();
+    const prefix = `[${timestamp}] [OLLAMA_CLIENT] [${level.toUpperCase()}]`;
+    // eslint-disable-next-line no-console
+    console.error(prefix, ...args);
+  }
+}
 
 /**
  * Default Ollama base URL (native API, not OpenAI-compatible)
@@ -636,10 +661,10 @@ export class OllamaNativeClient {
         ? AbortSignal.any([externalSignal, controller.signal])
         : controller.signal;
 
-      debugLogger.debug('Making API request', { 
-        method, 
-        endpoint, 
-        body: body ? JSON.stringify(body).slice(0, 500) : undefined 
+      debugLog('debug', 'Making API request', {
+        method,
+        endpoint,
+        body: body ? JSON.stringify(body).slice(0, 500) : undefined,
       });
 
       try {
@@ -664,17 +689,23 @@ export class OllamaNativeClient {
           } catch {
             // Use default error message
           }
-          debugLogger.error('API request failed', { status: response.status, error: errorMessage });
+          debugLog('error', 'API request failed', {
+            status: response.status,
+            error: errorMessage,
+          });
           throw detectOllamaError(new Error(errorMessage), {});
         }
 
-        const result = await response.json() as T;
-        debugLogger.debug('API request completed', { endpoint });
+        const result = (await response.json()) as T;
+        debugLog('debug', 'API request completed', { endpoint });
         return result;
       } catch (error) {
         // Handle timeout
         if (error instanceof Error && error.name === 'AbortError') {
-          debugLogger.error('API request timed out', { endpoint, timeout: this.timeout });
+          debugLog('error', 'API request timed out', {
+            endpoint,
+            timeout: this.timeout,
+          });
           throw new OllamaTimeoutError(this.timeout);
         }
         // Re-throw OllamaApiError as-is
@@ -682,7 +713,10 @@ export class OllamaNativeClient {
           throw error;
         }
         // Wrap other errors
-        debugLogger.error('API request error', { endpoint, error: error instanceof Error ? error.message : String(error) });
+        debugLog('error', 'API request error', {
+          endpoint,
+          error: error instanceof Error ? error.message : String(error),
+        });
         throw detectOllamaError(error, { timeoutMs: this.timeout });
       } finally {
         clearTimeout(timeoutId);
@@ -692,7 +726,7 @@ export class OllamaNativeClient {
 
   /**
    * Make a streaming HTTP request to the Ollama API
-   * 
+   *
    * Improvements for latest Ollama API:
    * - Handles mid-stream errors (Ollama returns errors in NDJSON format)
    * - Refreshes timeout on each chunk to handle long-running generations
@@ -706,7 +740,7 @@ export class OllamaNativeClient {
   ): Promise<void> {
     const url = `${this.baseUrl}${endpoint}`;
     const controller = new AbortController();
-    
+
     // Use a refreshable timeout that resets on each chunk
     let timeoutId = setTimeout(() => controller.abort(), this.timeout);
     const refreshTimeout = () => {
@@ -719,7 +753,10 @@ export class OllamaNativeClient {
       ? AbortSignal.any([externalSignal, controller.signal])
       : controller.signal;
 
-    debugLogger.debug('Starting streaming request', { url, body: JSON.stringify(body).slice(0, 500) });
+    debugLog('debug', 'Starting streaming request', {
+      url,
+      body: JSON.stringify(body).slice(0, 500),
+    });
 
     try {
       const response = await fetch(url, {
@@ -746,7 +783,10 @@ export class OllamaNativeClient {
         } catch {
           // Use default error message
         }
-        debugLogger.error('Streaming request failed', { status: response.status, error: errorMessage });
+        debugLog('error', 'Streaming request failed', {
+          status: response.status,
+          error: errorMessage,
+        });
         throw detectOllamaError(new Error(errorMessage), {});
       }
 
@@ -761,9 +801,9 @@ export class OllamaNativeClient {
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) {
-          debugLogger.debug('Streaming completed', { totalChunks: chunkCount });
+          debugLog('debug', 'Streaming completed', { totalChunks: chunkCount });
           break;
         }
 
@@ -779,14 +819,16 @@ export class OllamaNativeClient {
           if (line.trim()) {
             try {
               const parsed = JSON.parse(line) as T;
-              
+
               // Check for mid-stream errors (Ollama returns errors in NDJSON format)
               if (parsed && typeof parsed === 'object' && 'error' in parsed) {
                 const errorMsg = (parsed as { error: string }).error;
-                debugLogger.error('Mid-stream error received', { error: errorMsg });
+                debugLog('error', 'Mid-stream error received', {
+                  error: errorMsg,
+                });
                 throw new OllamaStreamingError(errorMsg, parsed);
               }
-              
+
               callback(parsed);
             } catch (parseError) {
               // If it's already an OllamaStreamingError, re-throw it
@@ -794,7 +836,9 @@ export class OllamaNativeClient {
                 throw parseError;
               }
               // Skip malformed JSON lines but log them
-              debugLogger.warn('Skipping malformed JSON line', { line: line.slice(0, 100) });
+              debugLog('warn', 'Skipping malformed JSON line', {
+                line: line.slice(0, 100),
+              });
             }
           }
         }
@@ -804,26 +848,30 @@ export class OllamaNativeClient {
       if (buffer.trim()) {
         try {
           const parsed = JSON.parse(buffer) as T;
-          
+
           // Check for error in final chunk
           if (parsed && typeof parsed === 'object' && 'error' in parsed) {
             const errorMsg = (parsed as { error: string }).error;
             throw new OllamaStreamingError(errorMsg, parsed);
           }
-          
+
           callback(parsed);
         } catch (parseError) {
           if (parseError instanceof OllamaStreamingError) {
             throw parseError;
           }
           // Skip malformed JSON
-          debugLogger.warn('Skipping malformed JSON in final buffer', { buffer: buffer.slice(0, 100) });
+          debugLog('warn', 'Skipping malformed JSON in final buffer', {
+            buffer: buffer.slice(0, 100),
+          });
         }
       }
     } catch (error) {
       // Handle timeout
       if (error instanceof Error && error.name === 'AbortError') {
-        debugLogger.error('Streaming request timed out', { timeout: this.timeout });
+        debugLog('error', 'Streaming request timed out', {
+          timeout: this.timeout,
+        });
         throw new OllamaTimeoutError(this.timeout);
       }
       // Re-throw OllamaApiError as-is
@@ -831,7 +879,9 @@ export class OllamaNativeClient {
         throw error;
       }
       // Wrap other errors
-      debugLogger.error('Streaming request error', { error: error instanceof Error ? error.message : String(error) });
+      debugLog('error', 'Streaming request error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw detectOllamaError(error, { timeoutMs: this.timeout });
     } finally {
       clearTimeout(timeoutId);
