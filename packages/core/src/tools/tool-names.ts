@@ -386,6 +386,8 @@ export const ToolAliases: Record<string, ToolName> = {
   scm: ToolNames.SHELL,
 };
 
+export const DynamicAliases: Record<string, ToolName> = {};
+
 /**
  * Resolves a tool name or alias to its canonical tool name.
  * If the name is not found in aliases, returns the original name.
@@ -395,6 +397,11 @@ export const ToolAliases: Record<string, ToolName> = {
  */
 export function resolveToolAlias(name: string): string {
   const normalizedName = name.trim().toLowerCase();
+
+  // Check dynamic aliases first (higher priority)
+  if (normalizedName in DynamicAliases) {
+    return DynamicAliases[normalizedName];
+  }
 
   // Check if it's a direct alias
   if (normalizedName in ToolAliases) {

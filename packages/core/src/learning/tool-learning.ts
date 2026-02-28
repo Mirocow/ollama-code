@@ -33,7 +33,12 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { Storage } from '../config/storage.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
-import { ToolNames, ToolAliases, type ToolName } from '../tools/tool-names.js';
+import {
+  ToolNames,
+  ToolAliases,
+  DynamicAliases,
+  type ToolName,
+} from '../tools/tool-names.js';
 
 const debugLogger = createDebugLogger('TOOL_LEARNING');
 
@@ -382,15 +387,14 @@ export class ToolLearningManager {
   }
 
   /**
-   * Applies dynamic aliases to the ToolAliases map.
+   * Applies dynamic aliases to the DynamicAliases map.
    * This allows the system to automatically resolve learned aliases.
    */
   private applyDynamicAliases(): void {
     for (const [alias, dynamicAlias] of this.dynamicAliases) {
       // Don't overwrite existing static aliases
       if (!(alias in ToolAliases)) {
-        (ToolAliases as Record<string, ToolName>)[alias] =
-          dynamicAlias.canonicalName;
+        DynamicAliases[alias] = dynamicAlias.canonicalName;
       }
     }
     debugLogger.debug(`Applied ${this.dynamicAliases.size} dynamic aliases`);
@@ -505,8 +509,8 @@ export class ToolLearningManager {
 
     this.dynamicAliases.set(normalizedAlias, dynamicAlias);
 
-    // Apply immediately
-    (ToolAliases as Record<string, ToolName>)[normalizedAlias] = canonicalName;
+    // Apply immediately to DynamicAliases
+    DynamicAliases[normalizedAlias] = canonicalName;
 
     this.dirty = true;
     debugLogger.info(`Added dynamic alias: ${alias} -> ${canonicalName}`);
@@ -805,8 +809,8 @@ export class ToolLearningManager {
     const normalized = alias.toLowerCase().trim();
     if (this.dynamicAliases.has(normalized)) {
       this.dynamicAliases.delete(normalized);
-      // Remove from ToolAliases if it was added there
-      delete (ToolAliases as Record<string, ToolName>)[normalized];
+      // Remove from DynamicAliases
+      delete DynamicAliases[normalized];
       this.dirty = true;
       return true;
     }
