@@ -19,7 +19,8 @@ import type {
   Part,
   PartListUnion,
 } from '@ollama-code/ollama-code-core';
-import { FinishReason ,
+import {
+  FinishReason,
   OllamaEventType as ServerOllamaEventType,
   createDebugLogger,
   getErrorMessage,
@@ -376,7 +377,9 @@ export const useOllamaStream = (
 
       if (typeof query === 'string') {
         const trimmedQuery = query.trim();
-        onDebugMessage(`Received user query (${trimmedQuery.length} chars)`);
+        onDebugMessage(
+          `Received user query (${trimmedQuery.length} chars): "${trimmedQuery.slice(0, 200)}${trimmedQuery.length > 200 ? '...' : ''}"`,
+        );
         await logger?.logMessage(MessageSenderType.USER, trimmedQuery);
 
         // Handle UI-only commands first
