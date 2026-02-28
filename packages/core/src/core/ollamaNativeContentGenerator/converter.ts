@@ -445,6 +445,202 @@ export class OllamaContentConverter {
   }
 
   /**
+   * Parse tool calls from text content when model returns them in text format.
+   * Supports multiple formats:
+   * - <tool_call={"name": "...", "arguments": {...}}>
+   * - <tool_call_start>...<tool_call_end>
+   * - JSON objects with name and arguments fields
+   */
+  private parseToolCallsFromText(content: string): {
+    toolCalls: Array<{ name: string; args: Record<string, unknown> }>;
+    cleanedContent: string;
+  } {
+    const toolCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
+    let cleanedContent = content;
+
+    // Helper function to find matching braces (respects strings)
+    const findMatchingBrace = (str: string, start: number): number => {
+      if (str[start] !== '{') return -1;
+      let depth = 0;
+      let inString = false;
+      let escapeNext = false;
+
+      for (let i = start; i < str.length; i++) {
+        const char = str[i];
+
+        if (escapeNext) {
+          escapeNext = false;
+          continue;
+        }
+
+        if (char === '\\' && inString) {
+          escapeNext = true;
+          continue;
+        }
+
+        if (char === '"' && !escapeNext) {
+          inString = !inString;
+          continue;
+        }
+
+        if (!inString) {
+          if (char === '{') depth++;
+          else if (char === '}') {
+            depth--;
+            if (depth === 0) return i;
+          }
+        }
+      }
+      return -1;
+    };
+
+    // Helper function to try parsing JSON at a position
+    const tryParseJsonAt = (str: string, start: number): { json: unknown; end: number } | null => {
+      if (str[start] !== '{') return null;
+      const end = findMatchingBrace(str, start);
+      if (end === -1) return null;
+      try {
+        const jsonStr = str.slice(start, end + 1);
+        const parsed = JSON.parse(jsonStr);
+        return { json: parsed, end };
+      } catch {
+        return null;
+      }
+    };
+
+    // Format 1: <tool_call=...>
+    const toolCallPattern1 = /<tool_call\s*=\s*/gi;
+    let match;
+    while ((match = toolCallPattern1.exec(content)) !== null) {
+      const jsonStart = match.index + match[0].length;
+      const result = tryParseJsonAt(content, jsonStart);
+      if (result) {
+        const parsed = result.json as Record<string, unknown>;
+        if (parsed['name'] && typeof parsed['name'] === 'string') {
+          toolCalls.push({
+            name: parsed['name'],
+            args: (parsed['arguments'] || parsed['args'] || {}) as Record<string, unknown>,
+          });
+          // Find the closing > after the JSON
+          const closingAngle = content.indexOf('>', result.end);
+          if (closingAngle !== -1) {
+            cleanedContent = cleanedContent.replace(content.slice(match.index, closingAngle + 1), '');
+          }
+        }
+      }
+    }
+
+    // Format 2: <tool_call_start>...<tool_call_end>
+    const toolCallPattern2 = /<tool_call_start>([\s\S]*?)<tool_call_end>/gi;
+    while ((match = toolCallPattern2.exec(content)) !== null) {
+      try {
+        const parsed = JSON.parse(match[1].trim());
+        if (parsed['name']) {
+          toolCalls.push({
+            name: parsed['name'],
+            args: parsed['arguments'] || parsed['args'] || {},
+          });
+          cleanedContent = cleanedContent.replace(match[0], '');
+        }
+      } catch {
+        // Not valid JSON, skip
+      }
+    }
+
+    // Format 3: Qwen3 format with  tags
+    const thinkPattern = /<think\b[^>]*>([\s\S]*?)<\/think>/gi;
+    while ((match = thinkPattern.exec(content)) !== null) {
+      const thinkContent = match[1];
+      // Check if think block contains a tool call JSON
+      try {
+        const parsed = JSON.parse(thinkContent.trim());
+        if (parsed['name'] && typeof parsed['name'] === 'string') {
+          toolCalls.push({
+            name: parsed['name'],
+            args: parsed['arguments'] || parsed['args'] || {},
+          });
+          cleanedContent = cleanedContent.replace(match[0], '');
+        }
+      } catch {
+        // Not a JSON tool call, keep the think block
+      }
+    }
+
+    // Format 4: Standalone JSON objects with "name" field (like {"name": "...", "arguments": {...}})
+    // Find all potential JSON objects and try to parse them
+    let searchPos = 0;
+    while (searchPos < cleanedContent.length) {
+      const jsonStart = cleanedContent.indexOf('{', searchPos);
+      if (jsonStart === -1) break;
+
+      const result = tryParseJsonAt(cleanedContent, jsonStart);
+      if (result) {
+        const parsed = result.json as Record<string, unknown>;
+        // Check if it looks like a tool call (has "name" and "arguments"/"args")
+        if (parsed['name'] && typeof parsed['name'] === 'string' && !parsed['type']) {
+          // Don't add duplicates
+          const exists = toolCalls.some((tc) => tc.name === parsed['name']);
+          if (!exists) {
+            toolCalls.push({
+              name: parsed['name'],
+              args: (parsed['arguments'] || parsed['args'] || {}) as Record<string, unknown>,
+            });
+          }
+          cleanedContent = cleanedContent.slice(0, jsonStart) + cleanedContent.slice(result.end + 1);
+          searchPos = jsonStart;
+          continue;
+        }
+      }
+      searchPos = jsonStart + 1;
+    }
+
+    // Format 5: Tool call with function call structure {"type": "function", "function": {...}}
+    searchPos = 0;
+    while (searchPos < cleanedContent.length) {
+      const jsonStart = cleanedContent.indexOf('{', searchPos);
+      if (jsonStart === -1) break;
+
+      const result = tryParseJsonAt(cleanedContent, jsonStart);
+      if (result) {
+        const parsed = result.json as Record<string, unknown>;
+        if (parsed['type'] === 'function' && parsed['function'] && typeof parsed['function'] === 'object') {
+          const func = parsed['function'] as Record<string, unknown>;
+          if (func['name'] && typeof func['name'] === 'string') {
+            // Arguments might be a string or object
+            let args = {};
+            if (typeof func['arguments'] === 'string') {
+              try {
+                args = JSON.parse(func['arguments']);
+              } catch {
+                args = {};
+              }
+            } else if (typeof func['arguments'] === 'object') {
+              args = func['arguments'] as Record<string, unknown>;
+            }
+
+            const exists = toolCalls.some((tc) => tc.name === func['name']);
+            if (!exists) {
+              toolCalls.push({
+                name: func['name'] as string,
+                args,
+              });
+            }
+            cleanedContent = cleanedContent.slice(0, jsonStart) + cleanedContent.slice(result.end + 1);
+            searchPos = jsonStart;
+            continue;
+          }
+        }
+      }
+      searchPos = jsonStart + 1;
+    }
+
+    // Clean up extra whitespace
+    cleanedContent = cleanedContent.trim();
+
+    return { toolCalls, cleanedContent };
+  }
+
+  /**
    * Convert native Ollama response to GenAI format
    */
   convertOllamaResponseToGenAI(
@@ -465,12 +661,7 @@ export class OllamaContentConverter {
       done: ollamaResponse.done,
     });
 
-    // Handle text content
-    if (ollamaResponse.message?.content) {
-      parts.push({ text: ollamaResponse.message.content });
-    }
-
-    // Handle tool calls
+    // Handle tool calls from structured response
     if (ollamaResponse.message?.tool_calls) {
       debugLogger.info('Processing tool calls from response', {
         count: ollamaResponse.message.tool_calls.length,
@@ -484,6 +675,37 @@ export class OllamaContentConverter {
             args: toolCall.function.arguments,
           },
         });
+      }
+    }
+
+    // Handle text content - also parse for embedded tool calls
+    if (ollamaResponse.message?.content) {
+      const content = ollamaResponse.message.content;
+
+      // Try to parse tool calls from text content (for models that don't return structured tool_calls)
+      const { toolCalls: parsedToolCalls, cleanedContent } =
+        this.parseToolCallsFromText(content);
+
+      if (parsedToolCalls.length > 0) {
+        debugLogger.info('Parsed tool calls from text content', {
+          count: parsedToolCalls.length,
+          tools: parsedToolCalls.map((tc) => tc.name),
+        });
+
+        for (const tc of parsedToolCalls) {
+          parts.push({
+            functionCall: {
+              id: `call_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+              name: tc.name,
+              args: tc.args,
+            },
+          });
+        }
+      }
+
+      // Add cleaned text content if not empty
+      if (cleanedContent.trim()) {
+        parts.unshift({ text: cleanedContent });
       }
     }
 
@@ -546,6 +768,7 @@ export class OllamaContentConverter {
   convertOllamaChunkToGenAI(
     ollamaChunk: OllamaChatResponse,
     accumulatedToolCalls?: Map<number, { name: string; args: string }>,
+    accumulatedContent?: { text: string },
   ): GenerateContentResponse {
     const response = new GenerateContentResponse();
     const parts: Part[] = [];
@@ -563,6 +786,11 @@ export class OllamaContentConverter {
         done: ollamaChunk.done,
         accumulatedToolCallsSize: accumulatedToolCalls?.size,
       });
+    }
+
+    // Accumulate content for text-based tool call parsing
+    if (accumulatedContent && ollamaChunk.message?.content) {
+      accumulatedContent.text += ollamaChunk.message.content;
     }
 
     // Handle text content
@@ -601,6 +829,38 @@ export class OllamaContentConverter {
             },
           });
         }
+      }
+    }
+
+    // Parse tool calls from accumulated text content when stream is done
+    // This handles models that return tool calls in text format
+    if (
+      ollamaChunk.done &&
+      accumulatedContent &&
+      accumulatedContent.text &&
+      (!accumulatedToolCalls || accumulatedToolCalls.size === 0)
+    ) {
+      const { toolCalls: parsedToolCalls, cleanedContent } =
+        this.parseToolCallsFromText(accumulatedContent.text);
+
+      if (parsedToolCalls.length > 0) {
+        debugLogger.info('Parsed tool calls from streaming text content', {
+          count: parsedToolCalls.length,
+          tools: parsedToolCalls.map((tc) => tc.name),
+        });
+
+        for (const tc of parsedToolCalls) {
+          parts.push({
+            functionCall: {
+              id: `call_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+              name: tc.name,
+              args: tc.args,
+            },
+          });
+        }
+
+        // Update accumulated content with cleaned version
+        accumulatedContent.text = cleanedContent;
       }
     }
 
