@@ -741,31 +741,11 @@ export class OllamaNativeClient {
     const url = `${this.baseUrl}${endpoint}`;
     const controller = new AbortController();
 
-    // Log when timeout controller aborts
-    controller.signal.addEventListener('abort', () => {
-      // eslint-disable-next-line no-console
-      console.error(
-        `[${new Date().toISOString()}] [OLLAMA_CLIENT] TIMEOUT controller aborted!`,
-      );
-    });
-
     // Use a refreshable timeout that resets on each chunk
-    let timeoutId = setTimeout(() => {
-      // eslint-disable-next-line no-console
-      console.error(
-        `[${new Date().toISOString()}] [OLLAMA_CLIENT] TIMEOUT fired after ${this.timeout}ms`,
-      );
-      controller.abort();
-    }, this.timeout);
+    let timeoutId = setTimeout(() => controller.abort(), this.timeout);
     const refreshTimeout = () => {
       clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        // eslint-disable-next-line no-console
-        console.error(
-          `[${new Date().toISOString()}] [OLLAMA_CLIENT] TIMEOUT fired after ${this.timeout}ms`,
-        );
-        controller.abort();
-      }, this.timeout);
+      timeoutId = setTimeout(() => controller.abort(), this.timeout);
     };
 
     // Combine external signal with timeout signal
@@ -773,65 +753,21 @@ export class OllamaNativeClient {
       ? AbortSignal.any([externalSignal, controller.signal])
       : controller.signal;
 
-    // Log when combined signal aborts
-    combinedSignal.addEventListener('abort', () => {
-      // eslint-disable-next-line no-console
-      console.error(
-        `[${new Date().toISOString()}] [OLLAMA_CLIENT] COMBINED signal aborted! reason:`,
-        combinedSignal.reason,
-      );
-    });
-
-    // Log external signal status
-    if (externalSignal) {
-      // eslint-disable-next-line no-console
-      console.error(
-        `[${new Date().toISOString()}] [OLLAMA_CLIENT] External signal provided, already aborted: ${externalSignal.aborted}`,
-      );
-      externalSignal.addEventListener('abort', () => {
-        // eslint-disable-next-line no-console
-        console.error(
-          `[${new Date().toISOString()}] [OLLAMA_CLIENT] EXTERNAL signal aborted! reason:`,
-          externalSignal.reason,
-        );
-      });
-    }
-
     const requestBody = JSON.stringify({
       ...(body as Record<string, unknown>),
       stream: true,
     });
 
-    // Log to console directly for immediate visibility
-    // eslint-disable-next-line no-console
-    console.error(`\n${'='.repeat(80)}`);
-    // eslint-disable-next-line no-console
-    console.error(
-      `[${new Date().toISOString()}] [OLLAMA_CLIENT] START streamingRequest`,
-    );
-    // eslint-disable-next-line no-console
-    console.error(`[${new Date().toISOString()}] [OLLAMA_CLIENT] URL: ${url}`);
-    // eslint-disable-next-line no-console
-    console.error(
-      `[${new Date().toISOString()}] [OLLAMA_CLIENT] Body size: ${(requestBody.length / 1024).toFixed(1)}KB`,
-    );
-    // eslint-disable-next-line no-console
-    console.error(
-      `[${new Date().toISOString()}] [OLLAMA_CLIENT] Timeout: ${this.timeout}ms`,
-    );
-
     debugLog('info', 'Starting streaming request', {
       url,
       bodySize: `${(requestBody.length / 1024).toFixed(1)}KB`,
-      bodyPreview: requestBody.slice(0, 500),
+      timeout: this.timeout,
+      hasExternalSignal: !!externalSignal,
+      externalSignalAborted: externalSignal?.aborted,
     });
 
     let response: Response;
     try {
-      // eslint-disable-next-line no-console
-      console.error(
-        `[${new Date().toISOString()}] [OLLAMA_CLIENT] Calling fetch()...`,
-      );
       const fetchStartTime = Date.now();
       response = await fetch(url, {
         method: 'POST',
@@ -843,10 +779,6 @@ export class OllamaNativeClient {
         signal: combinedSignal,
       });
       const fetchDuration = Date.now() - fetchStartTime;
-      // eslint-disable-next-line no-console
-      console.error(
-        `[${new Date().toISOString()}] [OLLAMA_CLIENT] Fetch response received in ${fetchDuration}ms, status: ${response.status}`,
-      );
 
       debugLog('info', 'Fetch response received', {
         status: response.status,
@@ -855,11 +787,6 @@ export class OllamaNativeClient {
         fetchDuration: `${fetchDuration}ms`,
       });
     } catch (fetchError) {
-      // eslint-disable-next-line no-console
-      console.error(
-        `[${new Date().toISOString()}] [OLLAMA_CLIENT] Fetch FAILED:`,
-        fetchError,
-      );
       debugLog('error', 'Fetch request failed', {
         error:
           fetchError instanceof Error ? fetchError.message : String(fetchError),
