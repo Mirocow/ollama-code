@@ -41,12 +41,15 @@ export interface ModelMetrics {
   totalGeneratedTokens: number;
   totalCachedTokens: number;
   totalApiTime: number;
-  byModel: Record<string, {
-    promptTokens: number;
-    generatedTokens: number;
-    cachedTokens: number;
-    apiTime: number;
-  }>;
+  byModel: Record<
+    string,
+    {
+      promptTokens: number;
+      generatedTokens: number;
+      cachedTokens: number;
+      apiTime: number;
+    }
+  >;
 }
 
 export interface FileMetrics {
@@ -79,7 +82,10 @@ export interface SessionMetrics {
   totalApiTime: number;
 }
 
-type MetricsListener = (event: { metrics: SessionMetrics; lastPromptTokenCount: number }) => void;
+type MetricsListener = (event: {
+  metrics: SessionMetrics;
+  lastPromptTokenCount: number;
+}) => void;
 
 class UiTelemetryService {
   private metrics: SessionMetrics;
@@ -281,7 +287,11 @@ class UiTelemetryService {
   }
 
   // File operation tracking
-  recordFileOperation(operation: 'read' | 'write' | 'edit', linesAdded?: number, linesRemoved?: number): void {
+  recordFileOperation(
+    operation: 'read' | 'write' | 'edit',
+    linesAdded?: number,
+    linesRemoved?: number,
+  ): void {
     this.metrics.files[operation]++;
     if (linesAdded) this.metrics.files.totalLinesAdded += linesAdded;
     if (linesRemoved) this.metrics.files.totalLinesRemoved += linesRemoved;
