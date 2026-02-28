@@ -103,7 +103,7 @@ export const ToolConfirmationMessage: React.FC<
 
   const handleSelect = (item: ToolConfirmationOutcome) => handleConfirm(item);
 
-  // Compact mode: return simple 3-option display
+  // Compact mode: return simple 3-option display with quick keys enabled
   if (compactMode) {
     const compactOptions: Array<RadioSelectItem<ToolConfirmationOutcome>> = [
       {
@@ -127,12 +127,17 @@ export const ToolConfirmationMessage: React.FC<
       <Box flexDirection="column">
         <Box>
           <Text wrap="truncate">{t('Do you want to proceed?')}</Text>
+          <Text color={theme.text.secondary} dimColor>
+            {' '}
+            {t('(y/n or Enter)')}
+          </Text>
         </Box>
         <Box>
           <RadioButtonSelect
             items={compactOptions}
             onSelect={handleSelect}
             isFocused={isFocused}
+            enableQuickKeys={true}
           />
         </Box>
       </Box>
@@ -407,19 +412,24 @@ export const ToolConfirmationMessage: React.FC<
         {bodyContent}
       </Box>
 
-      {/* Confirmation Question */}
+      {/* Confirmation Question with hint */}
       <Box marginBottom={1} flexShrink={0}>
         <Text color={theme.text.primary} wrap="truncate">
           {question}
         </Text>
+        <Text color={theme.text.secondary} dimColor>
+          {' '}
+          {t('(y/n or Enter)')}
+        </Text>
       </Box>
 
-      {/* Select Input for Options */}
+      {/* Select Input for Options with quick keys enabled */}
       <Box flexShrink={0}>
         <RadioButtonSelect
           items={options}
           onSelect={handleSelect}
           isFocused={isFocused}
+          enableQuickKeys={true}
         />
       </Box>
     </Box>

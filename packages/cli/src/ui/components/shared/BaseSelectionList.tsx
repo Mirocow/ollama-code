@@ -30,6 +30,8 @@ export interface BaseSelectionListProps<
   showNumbers?: boolean;
   showScrollArrows?: boolean;
   maxItemsToShow?: number;
+  /** Enable quick keys (y/n) for confirmation dialogs. Default: false */
+  enableQuickKeys?: boolean;
   renderItem: (item: TItem, context: RenderItemContext) => React.ReactNode;
 }
 
@@ -43,6 +45,7 @@ export interface BaseSelectionListProps<
  * - Scrolling for long lists
  * - Color theming based on selection/disabled state
  * - Keyboard navigation and numeric selection
+ * - Cross-platform quick keys (y/n) for confirmation dialogs
  *
  * Specific components should use this as a base and provide
  * their own renderItem implementation for custom content.
@@ -59,6 +62,7 @@ export function BaseSelectionList<
   showNumbers = true,
   showScrollArrows = false,
   maxItemsToShow = 10,
+  enableQuickKeys = false,
   renderItem,
 }: BaseSelectionListProps<T, TItem>): React.JSX.Element {
   const { activeIndex } = useSelectionList({
@@ -68,6 +72,7 @@ export function BaseSelectionList<
     onHighlight,
     isFocused,
     showNumbers,
+    enableQuickKeys,
   });
 
   const [scrollOffset, setScrollOffset] = useState(0);

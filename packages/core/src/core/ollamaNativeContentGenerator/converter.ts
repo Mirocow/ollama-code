@@ -446,10 +446,12 @@ export class OllamaContentConverter {
 
   /**
    * Parse tool calls from text content when model returns them in text format.
-   * Supports multiple formats:
+   * Supports multiple formats used by various Ollama models:
    * - <tool_call={"name": "...", "arguments": {...}}>
    * - <tool_call_start>...<tool_call_end>
+   * - <think...> tags with embedded tool call JSON
    * - JSON objects with name and arguments fields
+   * - Function call structure {"type": "function", "function": {...}}
    */
   private parseToolCallsFromText(content: string): {
     toolCalls: Array<{ name: string; args: Record<string, unknown> }>;
@@ -547,7 +549,7 @@ export class OllamaContentConverter {
       }
     }
 
-    // Format 3: Qwen3 format with  tags
+    // Format 3: Think tags format (used by some models like Qwen3)
     const thinkPattern = /<think\b[^>]*>([\s\S]*?)<\/think>/gi;
     while ((match = thinkPattern.exec(content)) !== null) {
       const thinkContent = match[1];
