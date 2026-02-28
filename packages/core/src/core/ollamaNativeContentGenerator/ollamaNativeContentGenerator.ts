@@ -117,12 +117,23 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
     request: GenerateContentParameters,
     userPromptId: string,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
+    const timestamp = new Date().toISOString();
+
+    // eslint-disable-next-line no-console
+    console.error(`\n${'='.repeat(80)}`);
+    // eslint-disable-next-line no-console
+    console.error(`[${timestamp}] [OLLAMA_NATIVE] START generateContentStream`);
+    // eslint-disable-next-line no-console
+    console.error(
+      `[${timestamp}] [OLLAMA_NATIVE] model: ${this.config.model}, userPromptId: ${userPromptId}`,
+    );
+
     debugLogger.debug('Generating content stream with native Ollama API', {
       model: this.config.model,
       userPromptId,
     });
 
-    // Log user messages for debugging (also to console when DEBUG is set)
+    // Log user messages for debugging
     if (request.contents) {
       const userMessages = request.contents
         .flatMap((c) => ('parts' in c ? c.parts : []))
@@ -130,16 +141,17 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
         .map((p) => (typeof p === 'string' ? p : (p as { text: string }).text));
       const messagesStr = userMessages.join('\n---\n');
       debugLogger.info('User messages:', messagesStr);
-      // Also log to console when DEBUG is set
-      if (process.env['DEBUG']) {
-        // eslint-disable-next-line no-console
-        console.error(
-          `[${new Date().toISOString()}] [OLLAMA_NATIVE] User messages:\n${messagesStr}`,
-        );
-      }
+      // eslint-disable-next-line no-console
+      console.error(
+        `[${timestamp}] [OLLAMA_NATIVE] User messages:\n${messagesStr}`,
+      );
     }
 
     // Convert request once
+    // eslint-disable-next-line no-console
+    console.error(
+      `[${new Date().toISOString()}] [OLLAMA_NATIVE] Converting request to Ollama format...`,
+    );
     const ollamaRequest = this.converter.convertGenAIRequestToOllama(request);
     if (request.config?.tools) {
       ollamaRequest.tools = await this.converter.convertGenAIToolsToOllamaAsync(
@@ -147,6 +159,21 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
       );
     }
     this.applyConfigOptions(ollamaRequest);
+
+    // Log full request before sending
+    const requestJson = JSON.stringify(ollamaRequest, null, 2);
+    debugLogger.info('FULL OLLAMA REQUEST:', requestJson);
+
+    // eslint-disable-next-line no-console
+    console.error(
+      `\n[${new Date().toISOString()}] [OLLAMA_NATIVE] FULL REQUEST (size: ${(requestJson.length / 1024).toFixed(1)}KB):`,
+    );
+    // eslint-disable-next-line no-console
+    console.error(requestJson);
+    // eslint-disable-next-line no-console
+    console.error(
+      `\n[${new Date().toISOString()}] [OLLAMA_NATIVE] Calling client.chat()...`,
+    );
 
     // Store references for the generator
     const client = this.client;
@@ -162,6 +189,7 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
         | null = null;
       let error: Error | null = null;
       let done = false;
+      let chunkCount = 0;
 
       // Accumulate tool calls across chunks
       const accumulatedToolCalls = new Map<
@@ -172,6 +200,14 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
       // Process streaming response
       const streamPromise = client
         .chat(ollamaRequest, (chunk: OllamaChatResponse) => {
+          chunkCount++;
+          if (chunkCount <= 3) {
+            // eslint-disable-next-line no-console
+            console.error(
+              `[${new Date().toISOString()}] [OLLAMA_NATIVE] Received chunk #${chunkCount}`,
+            );
+          }
+
           // Convert each chunk to GenAI format and queue it
           const genaiResponse = converter.convertOllamaChunkToGenAI(
             chunk,
@@ -187,6 +223,10 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
           }
         })
         .then(() => {
+          // eslint-disable-next-line no-console
+          console.error(
+            `[${new Date().toISOString()}] [OLLAMA_NATIVE] Stream completed, total chunks: ${chunkCount}`,
+          );
           done = true;
           // Resolve any pending promise
           if (resolveNext) {
@@ -198,6 +238,11 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
           }
         })
         .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error(
+            `[${new Date().toISOString()}] [OLLAMA_NATIVE] Stream error:`,
+            err,
+          );
           error = err;
           done = true;
           if (resolveNext) {
