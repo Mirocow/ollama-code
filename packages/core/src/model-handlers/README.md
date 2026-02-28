@@ -1,13 +1,22 @@
-# Model Handlers
+# Model Handlers | Обработчики моделей
 
-This directory contains model-specific handlers for parsing tool calls and processing requests/responses from different AI models.
+[English](#english) | [Русский](#русский)
 
-## Architecture
+---
+
+<a name="english"></a>
+## English
+
+### Overview
+
+This module provides a pluggable architecture for handling different AI models. Each model family (Qwen, Llama, DeepSeek, etc.) has its own handler that knows how to parse tool calls and process responses.
+
+### Architecture
 
 ```
 model-handlers/
 ├── types.ts              # Interfaces and types
-├── baseModelHandler.ts   # Base classes with utilities
+├── baseModelHandler.ts   # Base class with utilities
 ├── modelHandlerFactory.ts # Factory for managing handlers
 ├── index.ts              # Exports
 ├── README.md             # This file
@@ -25,16 +34,16 @@ model-handlers/
     └── parsers.ts
 ```
 
-## How It Works
+### Model Mapping
 
-1. **Factory Pattern**: `ModelHandlerFactory` manages all handlers
-2. **Chain of Responsibility**: Each handler checks if it can handle a model
-3. **First Match Wins**: The first handler that returns `canHandle() === true` is used
-4. **Default Fallback**: If no handler matches, the default handler is used
+| Model Pattern | Handler | Tool Call Format |
+|---------------|---------|------------------|
+| `qwen`, `qwq` | QwenModelHandler | `<tool_call=...>`, `<think...>` |
+| `llama`, `codellama` | LlamaModelHandler | `{"type": "function", ...}` |
+| `deepseek` | DeepSeekModelHandler | `<think...>` tags |
+| * (any other) | DefaultModelHandler | All common formats |
 
-## Usage
-
-### Basic Usage
+### Usage
 
 ```typescript
 import { getModelHandlerFactory } from './model-handlers';
@@ -42,74 +51,33 @@ import { getModelHandlerFactory } from './model-handlers';
 const factory = getModelHandlerFactory();
 
 // Get handler for a model
-const handler = await factory.getHandler('qwen3-coder:30b');
+const handler = factory.getHandler('qwen2.5-coder:14b');
 
 // Parse tool calls from text
 const result = handler.parseToolCalls(content);
 console.log(result.toolCalls); // [{ name: 'tool_name', args: {...} }]
-console.log(result.cleanedContent); // Content with tool calls removed
 ```
 
-### Direct Handler Usage
+### Adding a New Model
 
-```typescript
-import { QwenModelHandler } from './model-handlers';
+1. **Create directory**: `model-handlers/my-model/`
 
-const handler = new QwenModelHandler();
-
-if (handler.canHandle('qwen3-coder:30b')) {
-  const result = handler.parseToolCalls(content);
-}
-```
-
-### Register Custom Handler
-
-```typescript
-import { getModelHandlerFactory } from './model-handlers';
-
-const factory = getModelHandlerFactory();
-factory.register(new MyCustomHandler());
-```
-
----
-
-## Adding a New Model
-
-To add support for a new model family, follow these steps:
-
-### Step 1: Create Directory Structure
-
-```bash
-mkdir -p model-handlers/my-model
-```
-
-### Step 2: Create Parsers (if needed)
-
-Create `model-handlers/my-model/parsers.ts`:
-
+2. **Create parsers** (`model-handlers/my-model/parsers.ts`):
 ```typescript
 import type { IToolCallTextParser, ToolCallParseResult, ParsedToolCall } from '../types.js';
 
-/**
- * Parser for MyModel's specific tool call format.
- */
 export class MyModelToolCallParser implements IToolCallTextParser {
   readonly name = 'my-model-tool-call';
-  readonly priority = 5; // Lower = tried first
+  readonly priority = 5;
 
   canParse(content: string): boolean {
-    // Return true if this parser might find tool calls
-    return content.includes('<my_tool_call>');
+    return content.includes('<my_tool>');
   }
 
   parse(content: string): ToolCallParseResult {
     const toolCalls: ParsedToolCall[] = [];
-    let cleanedContent = content;
-
-    // Your parsing logic here
-    // Extract tool calls and clean content
-
-    return { toolCalls, cleanedContent: cleanedContent.trim() };
+    // Your parsing logic
+    return { toolCalls, cleanedContent: content.trim() };
   }
 }
 
@@ -118,45 +86,34 @@ export const myModelParsers: IToolCallTextParser[] = [
 ];
 ```
 
-### Step 3: Create Handler
-
-Create `model-handlers/my-model/index.ts`:
-
+3. **Create handler** (`model-handlers/my-model/index.ts`):
 ```typescript
 import type { IModelHandler, ToolCallParseResult, ModelHandlerConfig, IToolCallTextParser } from '../types.js';
 import { myModelParsers } from './parsers.js';
 import { defaultParsers } from '../default/parsers.js';
 
-/**
- * MyModel handler.
- *
- * Describe your model here:
- * - Model names it handles
- * - Tool call formats it uses
- * - Any special behavior
- */
 export class MyModelHandler implements IModelHandler {
   readonly name = 'my-model';
   readonly config: ModelHandlerConfig = {
-    // Regex pattern to match model names
-    modelPattern: /my-model|mymodel/i,
+    modelPattern: /my-model/i,
     displayName: 'My Model',
-    description: 'Description of your model',
-    supportsStructuredToolCalls: true, // Does it support Ollama tool_calls?
-    supportsTextToolCalls: true,       // Can it return tool calls in text?
-    maxContextLength: 32000,           // If known
+    supportsStructuredToolCalls: true,
+    supportsTextToolCalls: true,
   };
 
   private parsers: IToolCallTextParser[];
 
   constructor() {
-    // Your parsers first, then default parsers as fallback
     this.parsers = [...myModelParsers, ...defaultParsers];
     this.parsers.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
   }
 
   canHandle(modelName: string): boolean {
-    return this.config.modelPattern.test(modelName);
+    const pattern = this.config.modelPattern;
+    if (typeof pattern === 'string') {
+      return modelName.toLowerCase().includes(pattern.toLowerCase());
+    }
+    return pattern.test(modelName);
   }
 
   parseToolCalls(content: string): ToolCallParseResult {
@@ -173,170 +130,262 @@ export class MyModelHandler implements IModelHandler {
       }
     }
 
-    return {
-      toolCalls: allToolCalls,
-      cleanedContent: currentContent.trim(),
-    };
+    return { toolCalls: allToolCalls, cleanedContent: currentContent.trim() };
   }
 }
 ```
 
-### Step 4: Register in Factory
-
-Edit `model-handlers/modelHandlerFactory.ts`:
-
+4. **Register in Factory** (`model-handlers/modelHandlerFactory.ts`):
 ```typescript
-// Add import
-const { MyModelHandler } = await import('./my-model/index.js');
+import { MyModelHandler } from './my-model/index.js';
 
-// Register in initializeHandlers() method
+// In initializeHandlers():
 this.register(new MyModelHandler());
 ```
 
-### Step 5: Export from Index
-
-Edit `model-handlers/index.ts`:
-
+5. **Export** (`model-handlers/index.ts`):
 ```typescript
 export { MyModelHandler } from './my-model/index.js';
 export { myModelParsers } from './my-model/parsers.js';
 ```
 
-### Step 6: Add Tests
+### Debugging
 
-Create `model-handlers/my-model/index.test.ts`:
+Enable logging:
+```bash
+DEBUG=OLLAMA_* npm start
+```
+
+Or with `--debug` flag:
+```bash
+npm run start -- --debug
+```
+
+Logs are saved to a file and contain full request/response information.
+
+### Testing Tool Calling
+
+To test tool calling with a specific model:
+
+```bash
+# In the project directory
+npx tsx scripts/test-tool-calling.ts qwen2.5-coder:14b
+npx tsx scripts/test-tool-calling.ts llama3.2
+npx tsx scripts/test-tool-calling.ts deepseek-r1:70b
+```
+
+### Common Issues
+
+1. **Model doesn't call tools**
+   - Check tool support: `client.supportsTools('model-name')`
+   - Model may return tool calls in text - check the logs
+   - Make sure tools are properly passed in the request
+
+2. **Tool calls not parsed from text**
+   - Check the response format in logs
+   - Add a new parser if the format differs
+   - Make sure the handler is correctly determined for the model
+
+3. **Wrong handler for model**
+   - Check mapping: `factory.getHandler('model-name')`
+   - Check the pattern in `config.modelPattern`
+   - Handler is determined by first match
+
+---
+
+<a name="русский"></a>
+## Русский
+
+### Обзор
+
+Этот модуль предоставляет расширяемую архитектуру для работы с различными AI моделями. Каждое семейство моделей (Qwen, Llama, DeepSeek и т.д.) имеет свой обработчик, который знает, как парсить tool calls и обрабатывать ответы.
+
+### Архитектура
+
+```
+model-handlers/
+├── types.ts              # Интерфейсы и типы
+├── baseModelHandler.ts   # Базовый класс с утилитами
+├── modelHandlerFactory.ts # Фабрика для управления обработчиками
+├── index.ts              # Экспорты
+├── README.md             # Этот файл
+├── default/              # Стандартный обработчик (fallback)
+│   ├── index.ts
+│   └── parsers.ts
+├── qwen/                 # Обработчик моделей Qwen
+│   ├── index.ts
+│   └── parsers.ts
+├── llama/                # Обработчик моделей Llama
+│   ├── index.ts
+│   └── parsers.ts
+└── deepseek/             # Обработчик моделей DeepSeek
+    ├── index.ts
+    └── parsers.ts
+```
+
+### Маппинг моделей
+
+| Паттерн модели | Обработчик | Формат tool calls |
+|----------------|------------|-------------------|
+| `qwen`, `qwq` | QwenModelHandler | `<tool_call=...>`, `<think...>` |
+| `llama`, `codellama` | LlamaModelHandler | `{"type": "function", ...}` |
+| `deepseek` | DeepSeekModelHandler | `<think...>` теги |
+| * (любая другая) | DefaultModelHandler | Все распространённые форматы |
+
+### Использование
 
 ```typescript
-import { describe, it, expect } from 'vitest';
-import { MyModelHandler } from './index.js';
+import { getModelHandlerFactory } from './model-handlers';
 
-describe('MyModelHandler', () => {
-  const handler = new MyModelHandler();
+const factory = getModelHandlerFactory();
 
-  it('should handle my-model names', () => {
-    expect(handler.canHandle('my-model-v1')).toBe(true);
-    expect(handler.canHandle('other-model')).toBe(false);
-  });
+// Получить обработчик для модели
+const handler = factory.getHandler('qwen2.5-coder:14b');
 
-  it('should parse tool calls', () => {
-    const content = '<my_tool_call>{"name": "test", "arguments": {}}</my_tool_call>';
-    const result = handler.parseToolCalls(content);
-    expect(result.toolCalls).toHaveLength(1);
-    expect(result.toolCalls[0].name).toBe('test');
-  });
-});
+// Парсить tool calls из текста
+const result = handler.parseToolCalls(content);
+console.log(result.toolCalls); // [{ name: 'tool_name', args: {...} }]
 ```
 
----
+### Добавление новой модели
 
-## Tool Call Formats
+1. **Создать директорию**: `model-handlers/my-model/`
 
-Different models use different formats for tool calls:
-
-### Qwen Format
-```
-<tool_call={"name": "list_directory", "arguments": {"path": "/home"}}>
-```
-
-### Qwen3 Think Format
-```
-<think {"name": "tool", "arguments": {...}} </think<tool_call_parser>
-```
-
-### OpenAI/Function Format
-```json
-{"type": "function", "function": {"name": "tool_name", "arguments": "{\"arg\": \"value\"}"}}
-```
-
-### Standalone JSON
-```json
-{"name": "tool_name", "arguments": {"arg": "value"}}
-```
-
----
-
-## Parser Priority
-
-Parsers are tried in order of priority (lower number = higher priority):
-
-| Priority | Use Case |
-|----------|----------|
-| 1-10     | Model-specific formats (most specific) |
-| 10-20    | Common formats with tags |
-| 20-30    | Generic formats (JSON) |
-| 100+     | Fallback parsers |
-
----
-
-## Testing Your Handler
-
+2. **Создать парсеры** (`model-handlers/my-model/parsers.ts`):
 ```typescript
-import { getModelHandlerFactory, resetModelHandlerFactory } from './model-handlers';
+import type { IToolCallTextParser, ToolCallParseResult, ParsedToolCall } from '../types.js';
 
-describe('MyModelHandler Integration', () => {
-  beforeEach(() => {
-    resetModelHandlerFactory();
-  });
+export class MyModelToolCallParser implements IToolCallTextParser {
+  readonly name = 'my-model-tool-call';
+  readonly priority = 5;
 
-  it('should be selected for my-model', async () => {
-    const factory = getModelHandlerFactory();
-    const handler = await factory.getHandler('my-model-v1');
-    expect(handler.name).toBe('my-model');
-  });
-});
-```
-
----
-
-## Troubleshooting
-
-### Handler Not Being Selected
-
-1. Check `canHandle()` returns `true` for your model name
-2. Check `modelPattern` regex is correct
-3. Handlers are checked in registration order - more specific handlers should be registered first
-
-### Tool Calls Not Being Parsed
-
-1. Add debug logging to your parser
-2. Check `canParse()` returns `true` for your content
-3. Verify the JSON format matches what your parser expects
-
-### Multiple Tool Calls
-
-Your parser should handle multiple tool calls in one content:
-
-```typescript
-parse(content: string): ToolCallParseResult {
-  const toolCalls: ParsedToolCall[] = [];
-
-  // Use a loop with global regex
-  const pattern = /<tool_call[^>]*>/gi;
-  let match;
-  while ((match = pattern.exec(content)) !== null) {
-    // Extract and add each tool call
+  canParse(content: string): boolean {
+    return content.includes('<my_tool>');
   }
 
-  return { toolCalls, cleanedContent };
+  parse(content: string): ToolCallParseResult {
+    const toolCalls: ParsedToolCall[] = [];
+    // Ваша логика парсинга
+    return { toolCalls, cleanedContent: content.trim() };
+  }
+}
+
+export const myModelParsers: IToolCallTextParser[] = [
+  new MyModelToolCallParser(),
+];
+```
+
+3. **Создать обработчик** (`model-handlers/my-model/index.ts`):
+```typescript
+import type { IModelHandler, ToolCallParseResult, ModelHandlerConfig, IToolCallTextParser } from '../types.js';
+import { myModelParsers } from './parsers.js';
+import { defaultParsers } from '../default/parsers.js';
+
+export class MyModelHandler implements IModelHandler {
+  readonly name = 'my-model';
+  readonly config: ModelHandlerConfig = {
+    modelPattern: /my-model/i,
+    displayName: 'My Model',
+    supportsStructuredToolCalls: true,
+    supportsTextToolCalls: true,
+  };
+
+  private parsers: IToolCallTextParser[];
+
+  constructor() {
+    this.parsers = [...myModelParsers, ...defaultParsers];
+    this.parsers.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
+  }
+
+  canHandle(modelName: string): boolean {
+    const pattern = this.config.modelPattern;
+    if (typeof pattern === 'string') {
+      return modelName.toLowerCase().includes(pattern.toLowerCase());
+    }
+    return pattern.test(modelName);
+  }
+
+  parseToolCalls(content: string): ToolCallParseResult {
+    const allToolCalls: ParsedToolCall[] = [];
+    let currentContent = content;
+
+    for (const parser of this.parsers) {
+      if (parser.canParse(currentContent)) {
+        const result = parser.parse(currentContent);
+        if (result.toolCalls.length > 0) {
+          allToolCalls.push(...result.toolCalls);
+          currentContent = result.cleanedContent;
+        }
+      }
+    }
+
+    return { toolCalls: allToolCalls, cleanedContent: currentContent.trim() };
+  }
 }
 ```
 
----
+4. **Зарегистрировать в фабрике** (`model-handlers/modelHandlerFactory.ts`):
+```typescript
+import { MyModelHandler } from './my-model/index.js';
 
-## Best Practices
+// В методе initializeHandlers():
+this.register(new MyModelHandler());
+```
 
-1. **Be Specific**: Model-specific parsers should have lower priority numbers
-2. **Fallback**: Always include default parsers for common formats
-3. **Deduplication**: Check for duplicate tool calls before adding
-4. **Content Cleaning**: Remove parsed tool calls from content to avoid double-parsing
-5. **Error Handling**: Wrap JSON parsing in try-catch
-6. **Testing**: Test with real model outputs
+5. **Экспортировать** (`model-handlers/index.ts`):
+```typescript
+export { MyModelHandler } from './my-model/index.js';
+export { myModelParsers } from './my-model/parsers.js';
+```
 
----
+### Поддерживаемые форматы tool calls
 
-## Example: Complete Handler
+| Формат | Пример | Используется |
+|--------|--------|--------------|
+| Tool call tag | `<tool_call={"name": "...", "arguments": {...}}>` | Qwen |
+| Tool call start/end | `<tool_call_start>...<tool_call_end>` | Универсальный |
+| Think tags | `<think {"name": "..."} </think Tags | Qwen3, DeepSeek R1 |
+| Function call | `{"type": "function", "function": {...}}` | Llama, OpenAI |
+| Standalone JSON | `{"name": "...", "arguments": {...}}` | Универсальный |
 
-See `qwen/` directory for a complete example of a model handler with:
-- Custom parsers for Qwen-specific formats
-- Integration with default parsers
-- Configuration and documentation
+### Отладка
+
+Включить логирование:
+```bash
+DEBUG=OLLAMA_* npm start
+```
+
+Или с флагом `--debug`:
+```bash
+npm run start -- --debug
+```
+
+Логи сохраняются в файл и содержат полную информацию о запросах и ответах.
+
+### Тестирование tool calling
+
+Для тестирования tool calling с конкретной моделью:
+
+```bash
+# В директории проекта
+npx tsx scripts/test-tool-calling.ts qwen2.5-coder:14b
+npx tsx scripts/test-tool-calling.ts llama3.2
+npx tsx scripts/test-tool-calling.ts deepseek-r1:70b
+```
+
+### Частые проблемы
+
+1. **Модель не вызывает tool calls**
+   - Проверьте поддержку tools: `client.supportsTools('model-name')`
+   - Модель может возвращать tool calls в тексте - проверьте логи
+   - Убедитесь, что tools правильно передаются в запросе
+
+2. **Tool calls не парсятся из текста**
+   - Проверьте формат ответа в логах
+   - Добавьте новый парсер, если формат отличается
+   - Убедитесь, что handler правильно определяется для модели
+
+3. **Неправильный handler для модели**
+   - Проверьте маппинг: `factory.getHandler('model-name')`
+   - Проверьте паттерн в `config.modelPattern`
+   - Handler определяется по первому совпадению
