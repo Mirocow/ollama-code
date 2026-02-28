@@ -311,3 +311,9 @@ export * from './utils/yaml-parser.js';
 
 export { makeFakeConfig } from './test-utils/config.js';
 export * from './test-utils/index.js';
+
+// ============================================================================
+// Model Handlers
+// ============================================================================
+
+export { getModelCapabilities } from './model-handlers/index.js';

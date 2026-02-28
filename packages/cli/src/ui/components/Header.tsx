@@ -11,6 +11,7 @@ import {
   AuthType,
   shortenPath,
   tildeifyPath,
+  getModelCapabilities,
 } from '@ollama-code/ollama-code-core';
 import { theme } from '../semantic-colors.js';
 import { shortAsciiLogo } from './AsciiArt.js';
@@ -67,6 +68,18 @@ export const Header: React.FC<HeaderProps> = ({
   const logoWidth = getAsciiArtWidth(displayLogo);
   const formattedAuthType = formatAuthType(authType);
 
+  // Get model capabilities
+  const capabilities = getModelCapabilities(model);
+  const capabilityBadges: string[] = [];
+  if (capabilities.supportsTools) {
+    capabilityBadges.push('🔧');
+  }
+  if (capabilities.supportsThinking) {
+    capabilityBadges.push('🧠');
+  }
+  const capabilitiesText =
+    capabilityBadges.length > 0 ? ` ${capabilityBadges.join(' ')}` : '';
+
   // Calculate available space properly:
   // First determine if logo can be shown, then use remaining space for path
   const containerMarginX = 2; // marginLeft + marginRight on the outer container
@@ -109,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
     ? baseUrl.replace(/^https?:\/\//, '')
     : 'localhost:11434';
 
-  const authModelText = `${formattedAuthType} | ${displayBaseUrl} | ${model}`;
+  const authModelText = `${formattedAuthType} | ${displayBaseUrl} | ${model}${capabilitiesText}`;
   const modelHintText = ' (/model to change)';
   const showModelHint =
     infoPanelContentWidth > 0 &&

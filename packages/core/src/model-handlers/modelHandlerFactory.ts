@@ -232,6 +232,37 @@ export class ModelHandlerFactory {
   }
 
   /**
+   * Check if a model supports thinking/reasoning.
+   * Thinking models output their reasoning in <think...> tags.
+   *
+   * @param modelName - The model name to check
+   * @returns true if the model supports thinking
+   */
+  supportsThinking(modelName: string): boolean {
+    const handler = this.getHandler(modelName);
+
+    // Use handler's supportsThinking method if available
+    if (handler.supportsThinking) {
+      const result = handler.supportsThinking(modelName);
+      debugLogger.debug('supportsThinking check', {
+        model: modelName,
+        handler: handler.name,
+        result,
+      });
+      return result;
+    }
+
+    // Fallback to config.supportsThinking
+    const result = handler.config.supportsThinking ?? false;
+    debugLogger.debug('supportsThinking check (from config)', {
+      model: modelName,
+      handler: handler.name,
+      result,
+    });
+    return result;
+  }
+
+  /**
    * Get list of registered handler names.
    */
   getHandlerNames(): string[] {
