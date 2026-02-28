@@ -511,22 +511,22 @@ export class GrepTool extends BaseDeclarativeTool<GrepToolParams, ToolResult> {
           pattern: {
             type: 'string',
             description:
-              'The regular expression pattern to search for in file contents',
+              'REQUIRED: The regular expression pattern to search for in file contents. Examples: "function\\s+\\w+" to find function declarations, "import.*from" to find imports, "TODO|FIXME" to find todos.',
           },
           glob: {
             type: 'string',
             description:
-              'Glob pattern to filter files (e.g. "*.js", "*.{ts,tsx}")',
+              'OPTIONAL: Glob pattern to filter files (e.g. "*.js", "*.{ts,tsx}"). Omit to search all files.',
           },
           path: {
             type: 'string',
             description:
-              'File or directory to search in. Defaults to current working directory.',
+              'OPTIONAL: File or directory to search in. Defaults to current working directory if omitted.',
           },
           limit: {
             type: 'number',
             description:
-              'Limit output to first N matching lines. Optional - shows all matches if not specified.',
+              'OPTIONAL: Limit output to first N matching lines. Shows all matches if not specified.',
           },
         },
         required: ['pattern'],

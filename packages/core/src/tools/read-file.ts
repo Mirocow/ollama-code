@@ -11,9 +11,7 @@ import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
 import { ToolNames, ToolDisplayNames } from './tool-names.js';
 
 import type { PartUnion } from '../types/content.js';
-import {
-  processSingleFileContent,
-} from '../utils/fileUtils.js';
+import { processSingleFileContent } from '../utils/fileUtils.js';
 import type { Config } from '../config/config.js';
 
 import { isSubpath } from '../utils/paths.js';
@@ -101,8 +99,6 @@ class ReadFileToolInvocation extends BaseToolInvocation<
       llmContent = result.llmContent || '';
     }
 
-
-
     return {
       llmContent,
       returnDisplay: result.returnDisplay || '',
@@ -129,17 +125,17 @@ export class ReadFileTool extends BaseDeclarativeTool<
         properties: {
           absolute_path: {
             description:
-              "The absolute path to the file to read (e.g., '/home/user/project/file.txt'). Relative paths are not supported. You must provide an absolute path.",
+              "REQUIRED: The absolute path to the file to read. Must be an absolute path, not relative. Examples: '/home/user/project/file.txt', '/Users/name/workspace/src/index.ts', 'C:\\Users\\name\\file.txt'.",
             type: 'string',
           },
           offset: {
             description:
-              "Optional: For text files, the 0-based line number to start reading from. Requires 'limit' to be set. Use for paginating through large files.",
+              "OPTIONAL: For text files, the 0-based line number to start reading from. Requires 'limit' to be set. Use for paginating through large files.",
             type: 'number',
           },
           limit: {
             description:
-              "Optional: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit).",
+              "OPTIONAL: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (up to a default limit).",
             type: 'number',
           },
         },

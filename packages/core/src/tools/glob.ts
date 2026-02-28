@@ -247,12 +247,13 @@ export class GlobTool extends BaseDeclarativeTool<GlobToolParams, ToolResult> {
       {
         properties: {
           pattern: {
-            description: 'The glob pattern to match files against',
+            description:
+              'REQUIRED: The glob pattern to match files against. Examples: "**/*.ts" for all TypeScript files, "src/**/*.js" for JS files in src directory, "*.json" for JSON files in current directory.',
             type: 'string',
           },
           path: {
             description:
-              'The directory to search in. If not specified, the current working directory will be used. IMPORTANT: Omit this field to use the default directory. DO NOT enter "undefined" or "null" - simply omit it for the default behavior. Must be a valid directory path if provided.',
+              'OPTIONAL: The directory to search in. If not specified, the current working directory will be used. IMPORTANT: Omit this field to use the default directory. DO NOT enter "undefined" or "null" - simply omit it for the default behavior. Must be a valid directory path if provided.',
             type: 'string',
           },
         },
