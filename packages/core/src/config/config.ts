@@ -62,6 +62,9 @@ import { WebSearchTool } from '../tools/web-search/index.js';
 import { WriteFileTool } from '../tools/write-file.js';
 import { LspTool } from '../tools/lsp.js';
 import type { LspClient } from '../lsp/types.js';
+import { PythonTool } from '../tools/python.js';
+import { NodeJsTool } from '../tools/nodejs.js';
+import { GolangTool } from '../tools/golang.js';
 
 // Other modules
 import { ideContextStore } from '../ide/ideContext.js';
@@ -1605,6 +1608,11 @@ export class Config {
       // Register the unified LSP tool
       registerCoreTool(LspTool, this);
     }
+
+    // Register development tools for Python, Node.js, and Golang
+    registerCoreTool(PythonTool, this);
+    registerCoreTool(NodeJsTool, this);
+    registerCoreTool(GolangTool, this);
 
     await registry.discoverAllTools();
     this.debugLogger.debug(
