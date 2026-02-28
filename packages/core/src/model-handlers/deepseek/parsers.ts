@@ -12,7 +12,14 @@
  * - Standard JSON formats for tool calls
  */
 
-import type { IToolCallTextParser, ToolCallParseResult, ParsedToolCall } from '../types.js';
+import type {
+  IToolCallTextParser,
+  ToolCallParseResult,
+  ParsedToolCall,
+} from '../types.js';
+import { createDebugLogger } from '../../utils/debugLogger.js';
+
+const debugLogger = createDebugLogger('DEEPSEEK_PARSER');
 
 /**
  * Parser for DeepSeek R1's thinking tags.
@@ -43,16 +50,33 @@ export class DeepSeekThinkParser implements IToolCallTextParser {
         try {
           const parsed = JSON.parse(jsonMatch[0]);
           if (parsed['name'] && typeof parsed['name'] === 'string') {
-            toolCalls.push({
+            const toolCall: ParsedToolCall = {
               name: parsed['name'],
-              args: (parsed['arguments'] || parsed['args'] || {}) as Record<string, unknown>,
+              args: (parsed['arguments'] || parsed['args'] || {}) as Record<
+                string,
+                unknown
+              >,
+            };
+            debugLogger.debug('Parsed think tag tool call', {
+              name: toolCall.name,
+              args: toolCall.args,
             });
+            toolCalls.push(toolCall);
           }
-        } catch { /* not a valid JSON tool call */ }
+        } catch {
+          /* not a valid JSON tool call */
+        }
       }
 
       // Remove think block from content
       cleanedContent = cleanedContent.replace(match[0], '');
+    }
+
+    if (toolCalls.length > 0) {
+      debugLogger.info('DeepSeekThinkParser result', {
+        count: toolCalls.length,
+        toolCalls: toolCalls.map((tc) => ({ name: tc.name, args: tc.args })),
+      });
     }
 
     return { toolCalls, cleanedContent: cleanedContent.trim() };

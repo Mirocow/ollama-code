@@ -12,8 +12,15 @@
  * - <think...> tags with tool calls (Qwen3)
  */
 
-import type { IToolCallTextParser, ToolCallParseResult, ParsedToolCall } from '../types.js';
+import type {
+  IToolCallTextParser,
+  ToolCallParseResult,
+  ParsedToolCall,
+} from '../types.js';
 import { tryParseJsonAt, extractToolCall } from '../utils/parserUtils.js';
+import { createDebugLogger } from '../../utils/debugLogger.js';
+
+const debugLogger = createDebugLogger('QWEN_PARSER');
 
 /**
  * Parser for Qwen's <tool_call=...> format.
@@ -40,6 +47,10 @@ export class QwenToolCallTagParser implements IToolCallTextParser {
       if (result) {
         const toolCall = extractToolCall(result.json);
         if (toolCall) {
+          debugLogger.debug('Parsed tool_call tag', {
+            name: toolCall.name,
+            args: toolCall.args,
+          });
           toolCalls.push(toolCall);
           const closingAngle = content.indexOf('>', result.end);
           if (closingAngle !== -1) {
@@ -50,6 +61,12 @@ export class QwenToolCallTagParser implements IToolCallTextParser {
           }
         }
       }
+    }
+    if (toolCalls.length > 0) {
+      debugLogger.info('QwenToolCallTagParser result', {
+        count: toolCalls.length,
+        toolCalls: toolCalls.map((tc) => ({ name: tc.name, args: tc.args })),
+      });
     }
     return { toolCalls, cleanedContent: cleanedContent.trim() };
   }
@@ -80,10 +97,22 @@ export class QwenThinkTagParser implements IToolCallTextParser {
         const parsed = JSON.parse(match[1].trim());
         const toolCall = extractToolCall(parsed);
         if (toolCall) {
+          debugLogger.debug('Parsed think tag tool call', {
+            name: toolCall.name,
+            args: toolCall.args,
+          });
           toolCalls.push(toolCall);
           cleanedContent = cleanedContent.replace(match[0], '');
         }
-      } catch { /* not a JSON tool call */ }
+      } catch {
+        /* not a JSON tool call */
+      }
+    }
+    if (toolCalls.length > 0) {
+      debugLogger.info('QwenThinkTagParser result', {
+        count: toolCalls.length,
+        toolCalls: toolCalls.map((tc) => ({ name: tc.name, args: tc.args })),
+      });
     }
     return { toolCalls, cleanedContent: cleanedContent.trim() };
   }
