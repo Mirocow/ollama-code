@@ -22,6 +22,10 @@ import { GraniteModelHandler } from './granite/index.js';
 import { OlmoModelHandler } from './olmo/index.js';
 import { NeuralChatModelHandler } from './neural-chat/index.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
+import {
+  supportsTools as supportsToolsDef,
+  supportsThinking as supportsThinkingDef,
+} from '../model-definitions/index.js';
 
 const debugLogger = createDebugLogger('MODEL_HANDLER_FACTORY');
 
@@ -31,20 +35,18 @@ const debugLogger = createDebugLogger('MODEL_HANDLER_FACTORY');
  * This factory implements a chain-of-responsibility pattern where each
  * handler is checked in order until one can handle the given model.
  *
- * New handlers can be registered to support additional model families.
+ * Capabilities (supportsTools, supportsThinking, etc.) are delegated to
+ * the model-definitions module for consistency.
  *
  * @example
  * ```typescript
- * const factory = ModelHandlerFactory.createDefault();
+ * const factory = getModelHandlerFactory();
  *
  * // Get handler for a model
  * const handler = factory.getHandler('qwen3-coder:30b');
  *
  * // Parse tool calls
  * const result = handler.parseToolCalls(content);
- *
- * // Register a custom handler
- * factory.register(new MyCustomHandler());
  * ```
  */
 export class ModelHandlerFactory {
@@ -204,65 +206,24 @@ export class ModelHandlerFactory {
 
   /**
    * Check if a model supports function calling (tools).
-   * Uses the handler's supportsTools method if available,
-   * otherwise falls back to the handler's config.
+   * Delegates to model-definitions for consistency.
    *
    * @param modelName - The model name to check
    * @returns true if the model supports tools
    */
   supportsTools(modelName: string): boolean {
-    const handler = this.getHandler(modelName);
-
-    // Use handler's supportsTools method if available
-    if (handler.supportsTools) {
-      const result = handler.supportsTools(modelName);
-      debugLogger.debug('supportsTools check', {
-        model: modelName,
-        handler: handler.name,
-        result,
-      });
-      return result;
-    }
-
-    // Fallback to config.supportsTools
-    const result = handler.config.supportsTools ?? false;
-    debugLogger.debug('supportsTools check (from config)', {
-      model: modelName,
-      handler: handler.name,
-      result,
-    });
-    return result;
+    return supportsToolsDef(modelName);
   }
 
   /**
    * Check if a model supports thinking/reasoning.
-   * Thinking models output their reasoning in <think...> tags.
+   * Delegates to model-definitions for consistency.
    *
    * @param modelName - The model name to check
    * @returns true if the model supports thinking
    */
   supportsThinking(modelName: string): boolean {
-    const handler = this.getHandler(modelName);
-
-    // Use handler's supportsThinking method if available
-    if (handler.supportsThinking) {
-      const result = handler.supportsThinking(modelName);
-      debugLogger.debug('supportsThinking check', {
-        model: modelName,
-        handler: handler.name,
-        result,
-      });
-      return result;
-    }
-
-    // Fallback to config.supportsThinking
-    const result = handler.config.supportsThinking ?? false;
-    debugLogger.debug('supportsThinking check (from config)', {
-      model: modelName,
-      handler: handler.name,
-      result,
-    });
-    return result;
+    return supportsThinkingDef(modelName);
   }
 
   /**
