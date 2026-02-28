@@ -16,6 +16,55 @@ import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('PROMPTS');
 
+/**
+ * Gathers environment information for the AI model.
+ * This provides context about the runtime environment at the start of a session.
+ */
+function getEnvironmentInfo(): string {
+  const envLines: string[] = [];
+
+  // Ollama configuration
+  const ollamaBaseUrl = process.env['OLLAMA_BASE_URL'] || process.env['OLLAMA_HOST'] || 'http://localhost:11434';
+  const ollamaModel = process.env['OLLAMA_MODEL'];
+  const ollamaKeepAlive = process.env['OLLAMA_KEEP_ALIVE'];
+  const ollamaApiKey = process.env['OLLAMA_API_KEY'] ? '(set)' : '(not set)';
+
+  // Debug mode status
+  const debugMode = process.env['DEBUG'] ? 'enabled' : 'disabled';
+
+  // System information
+  const nodeVersion = process.version;
+  const platform = process.platform;
+  const cwd = process.cwd();
+  const homeDir = os.homedir();
+
+  // Build environment section
+  envLines.push('## Environment');
+  envLines.push('');
+  envLines.push('You are running in the following environment:');
+  envLines.push('');
+  envLines.push('### Ollama Configuration');
+  envLines.push(`- **OLLAMA_BASE_URL**: ${ollamaBaseUrl}`);
+  if (ollamaModel) {
+    envLines.push(`- **OLLAMA_MODEL**: ${ollamaModel}`);
+  }
+  if (ollamaKeepAlive) {
+    envLines.push(`- **OLLAMA_KEEP_ALIVE**: ${ollamaKeepAlive}`);
+  }
+  envLines.push(`- **OLLAMA_API_KEY**: ${ollamaApiKey}`);
+  envLines.push('');
+  envLines.push('### System Information');
+  envLines.push(`- **Node.js Version**: ${nodeVersion}`);
+  envLines.push(`- **Platform**: ${platform}`);
+  envLines.push(`- **Current Working Directory**: ${cwd}`);
+  envLines.push(`- **Home Directory**: ${homeDir}`);
+  envLines.push('');
+  envLines.push('### Debug Settings');
+  envLines.push(`- **DEBUG Mode**: ${debugMode}`);
+
+  return envLines.join('\n');
+}
+
 export function resolvePathFromEnv(envVar?: string): {
   isSwitch: boolean;
   value: string | null;
@@ -314,6 +363,8 @@ ${(function () {
   }
   return '';
 })()}
+
+${getEnvironmentInfo()}
 
 ${getToolCallExamples(model || '')}
 

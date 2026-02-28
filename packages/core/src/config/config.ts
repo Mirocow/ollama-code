@@ -65,6 +65,7 @@ import type { LspClient } from '../lsp/types.js';
 import { PythonTool } from '../tools/python.js';
 import { NodeJsTool } from '../tools/nodejs.js';
 import { GolangTool } from '../tools/golang.js';
+import { PHPTool } from '../tools/php.js';
 
 // Other modules
 import { ideContextStore } from '../ide/ideContext.js';
@@ -1609,10 +1610,11 @@ export class Config {
       registerCoreTool(LspTool, this);
     }
 
-    // Register development tools for Python, Node.js, and Golang
+    // Register development tools for Python, Node.js, Golang, and PHP
     registerCoreTool(PythonTool, this);
     registerCoreTool(NodeJsTool, this);
     registerCoreTool(GolangTool, this);
+    registerCoreTool(PHPTool, this);
 
     await registry.discoverAllTools();
     this.debugLogger.debug(

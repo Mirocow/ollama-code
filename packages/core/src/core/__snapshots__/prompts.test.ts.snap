@@ -1,7 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`Core System Prompt (prompts.ts) > should append userMemory with separator when provided 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -136,6 +136,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 
 
 
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
+
 # Examples (Illustrating Tone and Workflow)
 <example>
 user: 1 + 2
@@ -220,7 +237,7 @@ Be extra polite."
 `;
 
 exports[`Core System Prompt (prompts.ts) > should include git instructions when in a git repo 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -370,6 +387,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 - Never push changes to a remote repository without being asked explicitly by the user.
 
 
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
+
 # Examples (Illustrating Tone and Workflow)
 <example>
 user: 1 + 2
@@ -449,7 +483,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Core System Prompt (prompts.ts) > should include non-sandbox instructions when SANDBOX env var is not set 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -584,6 +618,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 
 
 
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
+
 # Examples (Illustrating Tone and Workflow)
 <example>
 user: 1 + 2
@@ -663,7 +714,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Core System Prompt (prompts.ts) > should include sandbox-specific instructions when SANDBOX env var is set 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -798,6 +849,23 @@ You are running in a sandbox container with limited access to files outside the 
 
 
 
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
+
 # Examples (Illustrating Tone and Workflow)
 <example>
 user: 1 + 2
@@ -877,7 +945,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Core System Prompt (prompts.ts) > should include seatbelt-specific instructions when SANDBOX env var is "sandbox-exec" 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -1012,6 +1080,23 @@ You are running under macos seatbelt with limited access to files outside the pr
 
 
 
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
+
 # Examples (Illustrating Tone and Workflow)
 <example>
 user: 1 + 2
@@ -1091,7 +1176,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Core System Prompt (prompts.ts) > should not include git instructions when not in a git repo 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -1225,6 +1310,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 
 
 
+
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -1305,7 +1407,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Core System Prompt (prompts.ts) > should return the base prompt when no userMemory is provided 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -1439,6 +1541,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 
 
 
+
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -1519,7 +1638,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Core System Prompt (prompts.ts) > should return the base prompt when userMemory is empty string 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -1653,6 +1772,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 
 
 
+
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -1733,7 +1869,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Core System Prompt (prompts.ts) > should return the base prompt when userMemory is whitespace only 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -1868,6 +2004,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 
 
 
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
+
 # Examples (Illustrating Tone and Workflow)
 <example>
 user: 1 + 2
@@ -1947,7 +2100,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Model-specific tool call formats > should preserve model-specific formats with sandbox environment 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -2082,6 +2235,23 @@ You are running in a sandbox container with limited access to files outside the 
 
 
 
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
+
 # Examples (Illustrating Tone and Workflow)
 <example>
 user: 1 + 2
@@ -2184,7 +2354,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Model-specific tool call formats > should preserve model-specific formats with user memory 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -2318,6 +2488,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 
 
 
+
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -2484,7 +2671,7 @@ User prefers concise responses."
 `;
 
 exports[`Model-specific tool call formats > should use JSON format for qwen-vl model 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -2618,6 +2805,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 
 
 
+
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -2721,7 +2925,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Model-specific tool call formats > should use XML format for qwen3-coder model 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -2855,6 +3059,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 
 
 
+
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -3017,7 +3238,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Model-specific tool call formats > should use bracket format for generic models 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -3151,6 +3372,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 
 
 
+
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -3231,7 +3469,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
 `;
 
 exports[`Model-specific tool call formats > should use bracket format when no model is specified 1`] = `
-"You are Qwen Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+"You are Ollama Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -3365,6 +3603,23 @@ You are running outside of a sandbox container, directly on the user's system. F
 
 
 
+
+## Environment
+
+You are running in the following environment:
+
+### Ollama Configuration
+- **OLLAMA_BASE_URL**: http://localhost:11434
+- **OLLAMA_API_KEY**: (not set)
+
+### System Information
+- **Node.js Version**: v24.13.1
+- **Platform**: linux
+- **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
+- **Home Directory**: /home/z
+
+### Debug Settings
+- **DEBUG Mode**: disabled
 
 # Examples (Illustrating Tone and Workflow)
 <example>

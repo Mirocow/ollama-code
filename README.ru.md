@@ -66,6 +66,36 @@ npm run start -- "Объясни, как работает async/await в JavaScr
 npm run debug
 ```
 
+## Новые возможности v0.10.6
+
+### Инструменты разработки
+
+Добавлены три комплексных инструмента для разработки:
+
+| Инструмент | Алиасы | Описание |
+|------------|--------|-------------|
+| `python_dev` | `py`, `python`, `pip`, `pytest` | Разработка на Python (run, test, lint, venv, pip) |
+| `nodejs_dev` | `node`, `npm`, `yarn`, `pnpm`, `bun` | Разработка на Node.js с автоопределением пакетного менеджера |
+| `golang_dev` | `go`, `golang` | Разработка на Go (run, build, test, mod) |
+| `php_dev` | `php`, `composer`, `phpunit`, `artisan` | Разработка на PHP с поддержкой Composer и Laravel |
+
+### Оповещение об окружении
+
+Модель теперь получает детальную информацию об окружении в начале сессии:
+- Конфигурация Ollama (base URL, модель, статус API ключа)
+- Системная информация (версия Node.js, платформа, рабочая директория)
+- Настройки отладки
+
+### Расширенная документация
+
+Новая комплексная документация:
+- [FEATURES.ru.md](./docs/FEATURES.ru.md) - Полный справочник функций
+- [TOOLS.ru.md](./docs/TOOLS.ru.md) - Справочник инструментов
+- [FEATURES.md](./docs/FEATURES.md) - English feature reference
+- [TOOLS.md](./docs/TOOLS.md) - English tools reference
+
+---
+
 ## Новые возможности v0.10.5
 
 ### Система алиасов инструментов
@@ -246,14 +276,31 @@ ollama-code/
 
 ## Документация
 
-| Документ                                       | Описание                     |
-| ---------------------------------------------- | ---------------------------- |
-| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md)        | Руководство по использованию |
-| [EXAMPLES.md](./docs/EXAMPLES.md)              | Примеры использования        |
-| [TUTORIAL.md](./docs/TUTORIAL.md)              | Туториал для начинающих      |
-| [OLLAMA_API.md](./docs/OLLAMA_API.md)          | Документация API             |
-| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Структура проекта            |
-| [ROADMAP.md](./ROADMAP.md)                     | План развития                |
+### Краткий справочник
+
+| Документ | Описание |
+|----------|-------------|
+| [FEATURES.ru.md](./docs/FEATURES.ru.md) | **Полный справочник функций** |
+| [TOOLS.ru.md](./docs/TOOLS.ru.md) | **Справочник инструментов** |
+| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Руководство по использованию |
+| [EXAMPLES.md](./docs/EXAMPLES.md) | Примеры использования |
+| [OLLAMA_API.md](./docs/OLLAMA_API.md) | Документация API |
+
+### Английская документация (English Documentation)
+
+| Document | Description |
+|----------|-------------|
+| [FEATURES.md](./docs/FEATURES.md) | **Complete feature reference** |
+| [TOOLS.md](./docs/TOOLS.md) | **Tools reference** |
+| [README.md](./README.md) | README in English |
+
+### Ресурсы проекта
+
+| Документ | Описание |
+|----------|-------------|
+| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Структура проекта |
+| [ROADMAP.md](./ROADMAP.md) | План развития |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Руководство по участию |
 
 ## Основные команды
 
