@@ -167,11 +167,14 @@ export function extractToolCall(parsed: unknown): ParsedToolCall | null {
 
   const obj = parsed as Record<string, unknown>;
 
-  // Format 1 & 2: Direct format { name: "...", arguments/args: {...} }
+  // Format 1 & 2: Direct format { name: "...", arguments/args/parameters: {...} }
   if (obj['name'] && typeof obj['name'] === 'string' && !obj['type']) {
     return {
       name: obj['name'],
-      args: (obj['arguments'] || obj['args'] || {}) as Record<string, unknown>,
+      args: (obj['arguments'] ||
+        obj['args'] ||
+        obj['parameters'] ||
+        {}) as Record<string, unknown>,
     };
   }
 
@@ -206,6 +209,9 @@ export function extractToolCall(parsed: unknown): ParsedToolCall | null {
  * @param name - Tool name to check
  * @returns true if tool call exists
  */
-export function hasToolCall(toolCalls: ParsedToolCall[], name: string): boolean {
+export function hasToolCall(
+  toolCalls: ParsedToolCall[],
+  name: string,
+): boolean {
   return toolCalls.some((tc) => tc.name === name);
 }
