@@ -48,7 +48,7 @@ export interface LearningEntry {
   tags: string[];
 }
 
-export interface ToolUsageStats {
+export interface ToolUsageLearningStats {
   toolName: string;
   totalCalls: number;
   successfulCalls: number;
@@ -77,7 +77,7 @@ function getLearningDir(): string {
 export class SelfLearningManager {
   private static instance: SelfLearningManager;
   private entries: LearningEntry[] = [];
-  private toolStats: Map<string, ToolUsageStats> = new Map();
+  private toolStats: Map<string, ToolUsageLearningStats> = new Map();
   private dirty = false;
   private saveInterval: NodeJS.Timeout | null = null;
 
@@ -110,13 +110,17 @@ export class SelfLearningManager {
       try {
         const data = await fs.readFile(entriesPath, 'utf-8');
         this.entries = JSON.parse(data);
-      } catch { this.entries = []; }
+      } catch {
+        this.entries = [];
+      }
 
       const statsPath = path.join(dir, STATS_FILE);
       try {
         const data = await fs.readFile(statsPath, 'utf-8');
         this.toolStats = new Map(Object.entries(JSON.parse(data)));
-      } catch { this.toolStats = new Map(); }
+      } catch {
+        this.toolStats = new Map();
+      }
 
       debugLogger.debug(`Loaded ${this.entries.length} entries`);
     } catch (error) {
@@ -160,7 +164,10 @@ export class SelfLearningManager {
     userMessage: string,
     modelResponse: string,
     correctedResponse: string,
-    context?: { toolCalls?: LearningEntry['context']['toolCalls']; language?: string },
+    context?: {
+      toolCalls?: LearningEntry['context']['toolCalls'];
+      language?: string;
+    },
   ): void {
     this.entries.push({
       id: `corr_${Date.now()}`,
@@ -221,19 +228,23 @@ export class SelfLearningManager {
       lines.push('\n### Most Used Tools');
       for (const t of topTools) {
         const rate = ((t.successfulCalls / t.totalCalls) * 100).toFixed(0);
-        lines.push(`- **${t.toolName}**: ${rate}% success (${t.totalCalls} uses)`);
+        lines.push(
+          `- **${t.toolName}**: ${rate}% success (${t.totalCalls} uses)`,
+        );
       }
     }
 
     // Recent corrections
     const corrections = this.entries
-      .filter(e => e.type === 'correction')
+      .filter((e) => e.type === 'correction')
       .slice(-3);
 
     if (corrections.length > 0) {
       lines.push('\n### Recent Corrections');
       for (const c of corrections) {
-        lines.push(`- [${c.context.language || 'unknown'}] ${c.tags.join(', ')}`);
+        lines.push(
+          `- [${c.context.language || 'unknown'}] ${c.tags.join(', ')}`,
+        );
       }
     }
 
@@ -241,11 +252,15 @@ export class SelfLearningManager {
   }
 
   async export(): Promise<string> {
-    return JSON.stringify({
-      version: '1.0',
-      entries: this.entries,
-      toolStats: Object.fromEntries(this.toolStats),
-    }, null, 2);
+    return JSON.stringify(
+      {
+        version: '1.0',
+        entries: this.entries,
+        toolStats: Object.fromEntries(this.toolStats),
+      },
+      null,
+      2,
+    );
   }
 
   async import(data: string): Promise<void> {

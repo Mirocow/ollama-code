@@ -37,6 +37,7 @@ import type {
   PartListUnion,
 } from '../types/content.js';
 import { ToolNames } from '../tools/tool-names.js';
+import { getToolLearningManager } from '../learning/tool-learning.js';
 import { getResponseTextFromParts } from '../utils/generateContentResponseUtilities.js';
 import type { ModifyContext } from '../tools/modifiable-tool.js';
 import {
@@ -624,7 +625,8 @@ export class CoreToolScheduler {
 
   /**
    * Generates error message for unknown tool. Returns early with skill-specific
-   * message if the name matches a skill, otherwise uses Levenshtein suggestions.
+   * message if the name matches a skill, otherwise uses ToolLearningManager
+   * for intelligent suggestions and records the error for learning.
    */
   private getToolNotFoundMessage(unknownToolName: string, topN = 3): string {
     // Check if the unknown tool name matches an available skill name.
@@ -638,8 +640,59 @@ export class CoreToolScheduler {
       }
     }
 
-    // Standard "not found" message with Levenshtein suggestions
+    // Use ToolLearningManager for intelligent suggestions
+    const toolLearning = getToolLearningManager();
+    const bestMatch = toolLearning.findBestMatch(unknownToolName);
+
+    // Record this error for learning
+    if (bestMatch && bestMatch.confidence > 0.5) {
+      toolLearning.recordToolError(
+        unknownToolName,
+        bestMatch.name,
+        bestMatch.confidence,
+        {
+          modelId: this.config.getModel(),
+        },
+      );
+
+      // Generate learning-enhanced error message
+      const feedback = toolLearning.generateLearningFeedback();
+      const latestFeedback = feedback.find(
+        (f) => f.incorrectTool === unknownToolName,
+      );
+
+      if (latestFeedback) {
+        return `Tool "${unknownToolName}" not found in registry.
+
+${latestFeedback.explanation}
+
+Correct usage: ${latestFeedback.example}
+
+LEARNING TIP: Remember the correct tool name is "${bestMatch.name}". This error has been recorded for learning.`;
+      }
+
+      return `Tool "${unknownToolName}" not found in registry. Did you mean "${bestMatch.name}"? (confidence: ${(bestMatch.confidence * 100).toFixed(0)}%)
+
+LEARNING TIP: Use the exact tool name "${bestMatch.name}" in future calls.`;
+    }
+
+    // Fallback to standard Levenshtein suggestions
     const suggestion = this.getToolSuggestion(unknownToolName, topN);
+
+    // Record the error even without a confident match
+    toolLearning.recordToolError(
+      unknownToolName,
+      suggestion
+        ? suggestion
+            .replace(/.*Did you mean (one of: )?/, '')
+            .replace(/[?"']/g, '')
+            .split(',')[0]
+            .trim()
+        : 'unknown',
+      0.3, // Low confidence
+      { modelId: this.config.getModel() },
+    );
+
     return `Tool "${unknownToolName}" not found in registry. Tools must use the exact names that are registered.${suggestion}`;
   }
 
