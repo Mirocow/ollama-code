@@ -41,11 +41,18 @@ export interface RadioButtonSelectProps<T> {
   maxItemsToShow?: number;
   /** Whether to show numbers next to items. */
   showNumbers?: boolean;
+  /** Enable quick keys (y/n) for confirmation dialogs. Default: false */
+  enableQuickKeys?: boolean;
 }
 
 /**
  * A custom component that displays a list of items with radio buttons,
  * supporting scrolling and keyboard navigation.
+ *
+ * Features:
+ * - Cross-platform keyboard navigation (Windows, macOS, Linux)
+ * - Quick confirmation with 'y' key (when enableQuickKeys is true)
+ * - Quick rejection with 'n' key (when enableQuickKeys is true)
  *
  * @template T The type of the value associated with each radio item.
  */
@@ -58,6 +65,7 @@ export function RadioButtonSelect<T>({
   showScrollArrows = false,
   maxItemsToShow = 10,
   showNumbers = true,
+  enableQuickKeys = false,
 }: RadioButtonSelectProps<T>): React.JSX.Element {
   return (
     <BaseSelectionList<T, RadioSelectItem<T>>
@@ -69,6 +77,7 @@ export function RadioButtonSelect<T>({
       showNumbers={showNumbers}
       showScrollArrows={showScrollArrows}
       maxItemsToShow={maxItemsToShow}
+      enableQuickKeys={enableQuickKeys}
       renderItem={(item, { titleColor }) => {
         // Handle special theme display case for ThemeDialog compatibility
         if (item.themeNameDisplay && item.themeTypeDisplay) {

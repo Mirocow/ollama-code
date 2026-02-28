@@ -21,6 +21,8 @@ export interface UseSelectionListOptions<T> {
   onHighlight?: (value: T) => void;
   isFocused?: boolean;
   showNumbers?: boolean;
+  /** Enable quick keys (y/n) for confirmation dialogs. Default: false */
+  enableQuickKeys?: boolean;
 }
 
 const debugLogger = createDebugLogger('SELECTION_LIST');
@@ -59,6 +61,13 @@ type SelectionListAction<T> =
       };
     }
   | {
+      type: 'SELECT_INDEX';
+      payload: {
+        index: number;
+        items: Array<SelectionListItem<T>>;
+      };
+    }
+  | {
       type: 'SELECT_CURRENT';
       payload: {
         items: Array<SelectionListItem<T>>;
@@ -73,6 +82,74 @@ type SelectionListAction<T> =
     };
 
 const NUMBER_INPUT_TIMEOUT_MS = 1000;
+
+/**
+ * Normalizes a key name across different platforms and terminals.
+ * Handles variations in key reporting between Windows, macOS, and Linux.
+ */
+function normalizeKeyName(name: string, sequence: string): string {
+  // Handle Enter/Return variations across platforms
+  // Windows: often reports 'enter', Unix: often reports 'return'
+  if (name === 'return' || name === 'enter' || sequence === '\r' || sequence === '\n') {
+    return 'return';
+  }
+
+  // Handle Escape variations
+  if (name === 'escape' || name === 'esc' || sequence === '\u001b') {
+    return 'escape';
+  }
+
+  // Handle Backspace variations
+  // Windows: 'backspace', Unix: sometimes 'delete' or 'backspace'
+  if (name === 'backspace' || name === 'delete' || sequence === '\u007f' || sequence === '\b') {
+    return 'backspace';
+  }
+
+  // For letter keys, normalize to lowercase
+  // This handles cases where some terminals report 'Y' vs 'y'
+  if (sequence && sequence.length === 1 && /^[a-zA-Z]$/.test(sequence)) {
+    return sequence.toLowerCase();
+  }
+
+  // Return the name if no normalization needed
+  return name;
+}
+
+/**
+ * Checks if the key press represents a confirmation action.
+ * Works across different platforms and keyboard layouts.
+ */
+function isConfirmKey(name: string, sequence: string): boolean {
+  const normalized = normalizeKeyName(name, sequence);
+  // Enter/Return, 'y', or 'Y' for confirmation
+  return normalized === 'return' || normalized === 'y';
+}
+
+/**
+ * Checks if the key press represents a rejection action.
+ * Works across different platforms and keyboard layouts.
+ */
+function isRejectKey(name: string, sequence: string): boolean {
+  const normalized = normalizeKeyName(name, sequence);
+  // Escape or 'n'/'N' for rejection
+  return normalized === 'escape' || normalized === 'n';
+}
+
+/**
+ * Checks if the key press represents a navigation up action.
+ */
+function isUpKey(name: string, sequence: string): boolean {
+  const normalized = normalizeKeyName(name, sequence);
+  return normalized === 'up' || normalized === 'k';
+}
+
+/**
+ * Checks if the key press represents a navigation down action.
+ */
+function isDownKey(name: string, sequence: string): boolean {
+  const normalized = normalizeKeyName(name, sequence);
+  return normalized === 'down' || normalized === 'j';
+}
 
 /**
  * Helper function to find the next enabled index in a given direction, supporting wrapping.
@@ -170,6 +247,14 @@ function selectionListReducer<T>(
       return state;
     }
 
+    case 'SELECT_INDEX': {
+      const { index, items } = action.payload;
+      if (index >= 0 && index < items.length && !items[index]?.disabled) {
+        return { ...state, activeIndex: index, pendingSelect: true };
+      }
+      return state;
+    }
+
     case 'SELECT_CURRENT': {
       return { ...state, pendingSelect: true };
     }
@@ -217,8 +302,11 @@ function selectionListReducer<T>(
  * for list-based selection components like radio buttons and menus.
  *
  * Features:
- * - Keyboard navigation with j/k and arrow keys
+ * - Cross-platform keyboard navigation (works on Windows, macOS, Linux)
+ * - Navigation with j/k and arrow keys
  * - Selection with Enter key
+ * - Quick confirmation with 'y' key (when enableQuickKeys is true)
+ * - Quick rejection with 'n' key (when enableQuickKeys is true)
  * - Numeric quick selection (when showNumbers is true)
  * - Handles disabled items (skips them during navigation)
  * - Wrapping navigation (last to first, first to last)
@@ -230,6 +318,7 @@ export function useSelectionList<T>({
   onHighlight,
   isFocused = true,
   showNumbers = false,
+  enableQuickKeys = false,
 }: UseSelectionListOptions<T>): UseSelectionListResult {
   const [state, dispatch] = useReducer(selectionListReducer<T>, {
     activeIndex: computeInitialIndex(initialIndex, items),
@@ -239,7 +328,7 @@ export function useSelectionList<T>({
     items,
   });
   const numberInputRef = useRef('');
-  const numberInputTimer = useRef<NodeJS.Timeout | null>(null);
+  const numberInputTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize/synchronize state when initialIndex or items change
   useEffect(() => {
@@ -287,6 +376,7 @@ export function useSelectionList<T>({
   useKeypress(
     (key) => {
       const { sequence, name } = key;
+      const normalized = normalizeKeyName(name, sequence);
       const isNumeric = showNumbers && /^[0-9]$/.test(sequence);
 
       // Clear number input buffer on non-numeric key press
@@ -295,19 +385,44 @@ export function useSelectionList<T>({
         numberInputRef.current = '';
       }
 
-      if (name === 'k' || name === 'up') {
+      // Navigation: Up
+      if (isUpKey(name, sequence)) {
         dispatch({ type: 'MOVE_UP', payload: { items } });
         return;
       }
 
-      if (name === 'j' || name === 'down') {
+      // Navigation: Down
+      if (isDownKey(name, sequence)) {
         dispatch({ type: 'MOVE_DOWN', payload: { items } });
         return;
       }
 
-      if (name === 'return') {
+      // Selection: Enter/Return
+      if (normalized === 'return') {
         dispatch({ type: 'SELECT_CURRENT', payload: { items } });
         return;
+      }
+
+      // Quick confirmation: 'y' key (for confirmation dialogs)
+      // Works across all platforms - checks both name and sequence
+      if (enableQuickKeys && normalized === 'y' && items.length > 0) {
+        const firstItem = items[0];
+        if (firstItem && !firstItem.disabled) {
+          // Select first option (typically "Yes, allow once")
+          dispatch({ type: 'SELECT_INDEX', payload: { index: 0, items } });
+          return;
+        }
+      }
+
+      // Quick rejection: 'n' key (for confirmation dialogs)
+      // Works across all platforms - checks both name and sequence
+      if (enableQuickKeys && normalized === 'n' && items.length > 0) {
+        const lastItem = items[items.length - 1];
+        if (lastItem && !lastItem.disabled) {
+          // Select last option (typically "No" / "Cancel")
+          dispatch({ type: 'SELECT_INDEX', payload: { index: items.length - 1, items } });
+          return;
+        }
       }
 
       // Handle numeric input for quick selection
@@ -374,3 +489,6 @@ export function useSelectionList<T>({
     setActiveIndex,
   };
 }
+
+// Export helper functions for testing and reuse
+export { normalizeKeyName, isConfirmKey, isRejectKey, isUpKey, isDownKey };
