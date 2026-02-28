@@ -11,6 +11,9 @@ import {
 
 /**
  * Command model handler configuration.
+ *
+ * Note: Capabilities (tools, thinking, vision) are defined in model-definitions.
+ * This handler focuses on parsing tool calls from text output.
  */
 const commandConfig: ModelHandlerConfig = {
   modelPattern: /command/i,
@@ -18,30 +21,8 @@ const commandConfig: ModelHandlerConfig = {
   description: 'Cohere Command models (command-r, command-r-plus)',
   supportsStructuredToolCalls: true,
   supportsTextToolCalls: true,
-  supportsTools: true,
-  maxContextLength: 128000, // command-r-plus
+  maxContextLength: 128000,
 };
-
-/**
- * Check if Command model supports tools.
- */
-function supportsTools(modelName: string): boolean {
-  const name = modelName.toLowerCase();
-
-  // Command-R Plus - best tool calling
-  if (/command[-_]?r[-_]?plus/i.test(name)) return true;
-
-  // Command-R - optimized for tools
-  if (/command[-_]?r/i.test(name)) return true;
-
-  // Command (base) - supports tools but not optimized
-  if (/command$/i.test(name) || /command-light/i.test(name)) {
-    return true;
-  }
-
-  // Default for Command family
-  return true;
-}
 
 /**
  * Command model handler.
@@ -53,10 +34,4 @@ function supportsTools(modelName: string): boolean {
  *
  * Command-R models are specifically designed for tool use and RAG.
  */
-export const CommandModelHandler = createModelHandler(
-  'command',
-  commandConfig,
-  {
-    supportsToolsFn: supportsTools,
-  },
-);
+export const CommandModelHandler = createModelHandler('command', commandConfig);

@@ -11,6 +11,9 @@ import {
 
 /**
  * Llama model handler configuration.
+ *
+ * Note: Capabilities (tools, thinking, vision) are defined in model-definitions.
+ * This handler focuses on parsing tool calls from text output.
  */
 const llamaConfig: ModelHandlerConfig = {
   modelPattern: /llama|codellama/i,
@@ -18,39 +21,8 @@ const llamaConfig: ModelHandlerConfig = {
   description: 'Meta Llama models (llama3.1, llama3.2, llama3.3, codellama)',
   supportsStructuredToolCalls: true,
   supportsTextToolCalls: true,
-  supportsTools: true,
-  maxContextLength: 128000, // llama3.1
+  maxContextLength: 128000,
 };
-
-/**
- * Check if Llama model supports tools.
- */
-function supportsTools(modelName: string): boolean {
-  const name = modelName.toLowerCase();
-
-  // Llama 3.1+ - all support tools (native function calling)
-  if (/llama[-_]?3[._]?[123]/i.test(name)) return true;
-
-  // Llama 3 - base model may not, instruct variant does
-  if (/llama[-_]?3(?![-._]?[123])/i.test(name)) {
-    return /instruct/i.test(name);
-  }
-
-  // Code Llama - supports tools for code generation
-  if (/codellama|code[-_]?llama/i.test(name)) return true;
-
-  // Llama 2 - instruct variants support tools
-  if (/llama[-_]?2/i.test(name)) {
-    return /instruct|chat/i.test(name);
-  }
-
-  // Generic llama - check for instruct/chat tags
-  if (/llama/i.test(name)) {
-    return /instruct|chat/i.test(name);
-  }
-
-  return false;
-}
 
 /**
  * Llama model handler.
@@ -63,6 +35,4 @@ function supportsTools(modelName: string): boolean {
  *
  * Llama 3.1+ models have native function calling support.
  */
-export const LlamaModelHandler = createModelHandler('llama', llamaConfig, {
-  supportsToolsFn: supportsTools,
-});
+export const LlamaModelHandler = createModelHandler('llama', llamaConfig);

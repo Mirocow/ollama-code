@@ -11,6 +11,9 @@ import {
 
 /**
  * Neural Chat model handler configuration.
+ *
+ * Note: Capabilities (tools, thinking, vision) are defined in model-definitions.
+ * This handler focuses on parsing tool calls from text output.
  */
 const neuralChatConfig: ModelHandlerConfig = {
   modelPattern: /neural[-_]?chat/i,
@@ -18,19 +21,8 @@ const neuralChatConfig: ModelHandlerConfig = {
   description: 'Intel Neural Chat models',
   supportsStructuredToolCalls: false,
   supportsTextToolCalls: true,
-  supportsTools: true,
   maxContextLength: 8192,
 };
-
-/**
- * Check if Neural Chat model supports tools.
- */
-function supportsTools(modelName: string): boolean {
-  const name = modelName.toLowerCase();
-  // Neural Chat v3+ supports tools
-  if (/neural[-_]?chat.*v[-_]?3/i.test(name)) return true;
-  return false;
-}
 
 /**
  * Neural Chat model handler.
@@ -44,7 +36,4 @@ function supportsTools(modelName: string): boolean {
 export const NeuralChatModelHandler = createModelHandler(
   'neural-chat',
   neuralChatConfig,
-  {
-    supportsToolsFn: supportsTools,
-  },
 );

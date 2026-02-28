@@ -11,6 +11,9 @@ import {
 
 /**
  * Granite model handler configuration.
+ *
+ * Note: Capabilities (tools, thinking, vision) are defined in model-definitions.
+ * This handler focuses on parsing tool calls from text output.
  */
 const graniteConfig: ModelHandlerConfig = {
   modelPattern: /granite/i,
@@ -18,31 +21,8 @@ const graniteConfig: ModelHandlerConfig = {
   description: 'IBM Granite models',
   supportsStructuredToolCalls: true,
   supportsTextToolCalls: true,
-  supportsTools: true,
   maxContextLength: 128000,
 };
-
-/**
- * Check if Granite model supports tools.
- */
-function supportsTools(modelName: string): boolean {
-  const name = modelName.toLowerCase();
-
-  // Granite Code - supports tools for code tasks
-  if (/granite[-_]?code/i.test(name)) return true;
-
-  // Granite Instruct - supports tools
-  if (/granite[-_]?instruct/i.test(name)) return true;
-
-  // Granite 3.0+ - supports tools
-  if (/granite[-_]?3/i.test(name)) return true;
-
-  // Granite with instruct tag
-  if (/granite/i.test(name) && /instruct/i.test(name)) return true;
-
-  // Base Granite - no tools
-  return false;
-}
 
 /**
  * Granite model handler.
@@ -54,10 +34,4 @@ function supportsTools(modelName: string): boolean {
  *
  * Granite models are enterprise-focused with strong tool calling support.
  */
-export const GraniteModelHandler = createModelHandler(
-  'granite',
-  graniteConfig,
-  {
-    supportsToolsFn: supportsTools,
-  },
-);
+export const GraniteModelHandler = createModelHandler('granite', graniteConfig);
