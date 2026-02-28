@@ -934,6 +934,25 @@ export class OllamaNativeClient {
                 });
               }
 
+              // Log tool_calls immediately for debugging (console + file)
+              const parsedWithToolCalls = parsed as { message?: { tool_calls?: unknown[] } };
+              if (parsedWithToolCalls.message?.tool_calls) {
+                const toolCallInfo = JSON.stringify(parsedWithToolCalls.message.tool_calls, null, 2);
+                console.error('\n[OLLAMA TOOL_CALLS RECEIVED]:\n', toolCallInfo, '\n');
+                debugLog('info', 'TOOL_CALLS from Ollama:', parsedWithToolCalls.message.tool_calls);
+              }
+
+              // Log done flag for debugging
+              const parsedWithDone = parsed as { done?: boolean };
+              if (parsedWithDone.done) {
+                const toolCallChunks = responseChunks.filter((c) => {
+                  const chunk = c as { message?: { tool_calls?: unknown[] } };
+                  return chunk.message?.tool_calls && chunk.message.tool_calls.length > 0;
+                });
+                console.error('\n[OLLAMA DONE CHUNK] chunk #%d, accumulated tool_calls: %d\n', 
+                  chunkCount, toolCallChunks.length);
+              }
+
               // Collect response chunk for logging
               responseChunks.push(parsed);
               callback(parsed);
