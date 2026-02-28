@@ -79,11 +79,49 @@ const ripgrepAvailabilityCheck: WarningCheck = {
   },
 };
 
+// Check for UTF-8 encoding support
+const encodingCheck: WarningCheck = {
+  id: 'encoding',
+  check: async (_options: WarningCheckOptions) => {
+    // Check if LANG or LC_ALL are set to support UTF-8
+    const lang = process.env['LANG'] || '';
+    const lcAll = process.env['LC_ALL'] || '';
+    const lcCtype = process.env['LC_CTYPE'] || '';
+
+    // Check if any of the locale variables contain UTF-8
+    const hasUtf8 =
+      lang.toLowerCase().includes('utf-8') ||
+      lang.toLowerCase().includes('utf8') ||
+      lcAll.toLowerCase().includes('utf-8') ||
+      lcAll.toLowerCase().includes('utf8') ||
+      lcCtype.toLowerCase().includes('utf-8') ||
+      lcCtype.toLowerCase().includes('utf8');
+
+    // On Windows, we don't need to check for UTF-8 as it's handled differently
+    if (os.platform() === 'win32') {
+      return null;
+    }
+
+    // If no UTF-8 locale is detected and LANG is not set, warn the user
+    if (!hasUtf8 && !lang && !lcAll && !lcCtype) {
+      return 'Warning: No UTF-8 locale detected. Cyrillic and other non-ASCII characters may not display correctly. Consider setting LANG=en_US.UTF-8 or LANG=ru_RU.UTF-8 in your shell configuration.';
+    }
+
+    // If LANG is set but doesn't contain UTF-8, warn the user
+    if (lang && !hasUtf8) {
+      return `Warning: Current locale "${lang}" may not support UTF-8. Cyrillic and other non-ASCII characters may not display correctly. Consider setting LANG=en_US.UTF-8 or LANG=ru_RU.UTF-8.`;
+    }
+
+    return null;
+  },
+};
+
 // All warning checks
 const WARNING_CHECKS: readonly WarningCheck[] = [
   homeDirectoryCheck,
   rootDirectoryCheck,
   ripgrepAvailabilityCheck,
+  encodingCheck,
 ];
 
 export async function getUserStartupWarnings(
