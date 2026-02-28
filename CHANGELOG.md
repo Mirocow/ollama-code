@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.10.5
+
+### New Features
+- **Tool Alias System**: Added short aliases for tool names (e.g., `run` → `run_shell_command`, `read` → `read_file`, `write` → `write_file`)
+- **Session ID Display**: Session ID now shown in the header for better debugging and logging
+- **UTF-8 Locale Check**: Added startup warning for non-UTF-8 terminal encoding
+
+### Tool Aliases
+| Alias | Canonical Name |
+|-------|----------------|
+| `run`, `shell`, `exec`, `cmd` | `run_shell_command` |
+| `read` | `read_file` |
+| `write`, `create` | `write_file` |
+| `grep`, `search`, `find` | `grep_search` |
+| `glob`, `files` | `glob` |
+| `ls`, `list`, `dir` | `list_directory` |
+| `todo`, `todos` | `todo_write` |
+| `memory`, `save` | `save_memory` |
+| `websearch`, `web` | `web_search` |
+| `webfetch`, `fetch`, `url` | `web_fetch` |
+| `agent`, `subagent` | `task` |
+
+### Improvements
+- Improved error messages for tool not found scenarios
+- Enhanced documentation structure
+- Added bilingual documentation support (English/Russian)
+
+### Bug Fixes
+- Fixed tool name resolution for better model compatibility
+
 ## 0.0.14
 
 - Added plan mode support for task planning

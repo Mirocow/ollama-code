@@ -9,66 +9,91 @@
  ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝      ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
 ```
 
-**Ollama Code** — это CLI-инструмент для работы с AI-ассистентом по программированию, использующий локальные модели Ollama. Проект предоставляет полный контроль над кодом и данными, работая полностью офлайн.
+**Ollama Code** is a CLI tool for AI-powered programming assistance using local Ollama models. The project provides full control over code and data, working completely offline.
 
-## Возможности
+[**Русская версия**](./README.ru.md)
 
-- 🚀 **Полностью локальная работа** — все модели запускаются локально через Ollama
-- 💻 **CLI-интерфейс** — удобный терминальный интерфейс на базе Ink (React for CLI)
-- 🔧 **Инструменты для кода** — чтение, редактирование, поиск файлов, выполнение команд
-- 🔌 **MCP поддержка** — интеграция с Model Context Protocol серверами
-- 🌐 **Веб-поиск** — интеграция с Tavily и Google Custom Search
-- 📦 **Расширения** — система расширений для добавления новых возможностей
-- 🐛 **Отладка** — встроенная поддержка отладки через VSCode
-- 🧠 **Thinking Models** — поддержка моделей с рассуждениями (DeepSeek R1)
-- 📊 **Code Analysis** — анализ качества кода с оценкой A-F
-- 🎨 **Diagram Generator** — создание Mermaid и PlantUML диаграмм
-- 🔀 **Git Advanced** — продвинутые git операции (stash, cherry-pick, rebase, bisect)
-- 🌐 **API Tester** — тестирование REST API endpoints
+## Features
 
-## Требования
+- 🚀 **Fully Local** — all models run locally via Ollama
+- 💻 **CLI Interface** — convenient terminal interface based on Ink (React for CLI)
+- 🔧 **Code Tools** — read, edit, search files, execute commands
+- 🔌 **MCP Support** — integration with Model Context Protocol servers
+- 🌐 **Web Search** — integration with Tavily and Google Custom Search
+- 📦 **Extensions** — extension system for adding new capabilities
+- 🐛 **Debugging** — built-in VSCode debugging support
+- 🧠 **Thinking Models** — support for reasoning models (DeepSeek R1)
+- 📊 **Code Analysis** — code quality analysis with A-F grading
+- 🎨 **Diagram Generator** — create Mermaid and PlantUML diagrams
+- 🔀 **Git Advanced** — advanced git operations (stash, cherry-pick, rebase, bisect)
+- 🌐 **API Tester** — REST API endpoint testing
+- 🏷️ **Tool Aliases** — short names for tools (`run` → `run_shell_command`)
+
+## Requirements
 
 - **Node.js** >= 20.0.0
-- **Ollama** установленный и запущенный (https://ollama.ai)
+- **Ollama** installed and running (https://ollama.ai)
 
-## Быстрый старт
+## Quick Start
 
-### Установка зависимостей
+### Installation
 
 ```bash
-# Клонировать репозиторий
+# Clone the repository
 git clone <repository-url>
 cd ollama-code
 
-# Установить зависимости
+# Install dependencies
 npm install
 
-# Собрать проект
+# Build the project
 npm run build
 ```
 
-### Запуск
+### Running
 
 ```bash
-# Интерактивный режим
+# Interactive mode
 npm run start
 
-# С указанием модели
+# With specific model
 npm run start -- --model llama3.2
 
-# Одноразовый запрос
-npm run start -- "Объясни, как работает async/await в JavaScript"
+# One-off query
+npm run start -- "Explain how async/await works in JavaScript"
 
-# Режим отладки
+# Debug mode
 npm run debug
 ```
 
-## Новые возможности v0.12.0
+## What's New in v0.10.5
 
-### UI/UX Улучшения
+### Tool Alias System
+
+Models can now use short tool names:
+
+| Alias | Tool Name |
+|-------|-----------|
+| `run`, `shell`, `exec`, `cmd` | `run_shell_command` |
+| `read` | `read_file` |
+| `write`, `create` | `write_file` |
+| `grep`, `search`, `find` | `grep_search` |
+| `ls`, `list`, `dir` | `list_directory` |
+
+### Session ID Display
+
+Session ID is now shown in the header for easier debugging and log correlation.
+
+### UTF-8 Locale Check
+
+Added startup warning if terminal encoding is not UTF-8.
+
+---
+
+## UI/UX Improvements
 
 ```typescript
-// Прогресс-бар для загрузки моделей
+// Progress bar for model downloads
 <ProgressBar
   progress={45}
   label="Downloading model"
@@ -76,7 +101,7 @@ npm run debug
   eta="2m 30s"
 />
 
-// Thinking indicator для thinking моделей
+// Thinking indicator for reasoning models
 <ThinkingIndicator
   message="Analyzing code..."
   elapsedTime={45}
@@ -90,251 +115,173 @@ npm run debug
   completionTokens={1000}
   tokensPerSecond={45}
 />
-
-// GPU/Memory indicator
-<GPUUsage
-  name="NVIDIA RTX 4090"
-  utilization={85}
-  memoryUsed={20 * 1024 * 1024 * 1024}
-  memoryTotal={24 * 1024 * 1024 * 1024}
-/>
 ```
+
+## Additional Tools
 
 ### Database Tool
 
 ```bash
-> Выполни SELECT * FROM users LIMIT 10 в SQLite базе data.db
-> Сохрани backup базы в /backup/db.sql
-> Покажи схему таблицы users
+> Execute SELECT * FROM users LIMIT 10 in SQLite database data.db
+> Save database backup to /backup/db.sql
+> Show schema of users table
 ```
 
 ### Docker Tool
 
 ```bash
-> Запусти контейнер nginx на порту 8080
-> Покажи логи контейнера my-app
-> Останови все контейнеры
-> Собери Docker образ из текущей директории
+> Run nginx container on port 8080
+> Show logs of my-app container
+> Stop all containers
+> Build Docker image from current directory
 ```
 
 ### Redis Tool
 
 ```bash
-> Получи значение ключа session:user:123
-> Установи cache:data со сроком 1 час
-> Опубликуй сообщение в канал notifications
-> Покажи все ключи с префиксом user:
+> Get value of key session:user:123
+> Set cache:data with 1 hour expiry
+> Publish message to notifications channel
+> Show all keys with user: prefix
 ```
 
-### Performance
-
-- **Response Caching**: Кэширование ответов LLM с LRU eviction
-- **Embedding Caching**: Кэширование эмбеддингов для быстрого поиска
-
----
-
-## Возможности v0.11.0
-
-### Thinking Models (DeepSeek R1)
-
-```typescript
-// Модели с рассуждениями показывают процесс мышления
-const response = await client.chat({
-  model: 'deepseek-r1:8b',
-  messages: [{ role: 'user', content: 'Реши задачу...' }],
-  think: true,
-});
-```
-
-### Structured Outputs (JSON Schema)
-
-```typescript
-// Структурированный вывод по схеме
-const response = await client.generate({
-  model: 'llama3.2',
-  prompt: 'Извлеки данные...',
-  format: {
-    type: 'object',
-    properties: {
-      name: { type: 'string' },
-      age: { type: 'number' },
-    },
-    required: ['name'],
-  },
-});
-```
-
-### Code Analyzer Tool
-
-```bash
-> Проанализируй файл src/index.ts на качество кода
-
-# Результат:
-# Score: 85/100 (Grade: B)
-# Issues: 2 warnings, 1 error
-# Recommendations: Добавить обработку ошибок
-```
-
-### Git Advanced Tool
-
-```bash
-> Сохрани изменения в stash с сообщением "WIP"
-> Перенеси коммит abc123 в текущую ветку
-> Найди баг с помощью bisect между v1.0 и HEAD
-```
-
-### API Tester Tool
-
-```bash
-> Протестируй GET https://api.example.com/users
-> Отправь POST на /api/users с данными {"name": "Test"}
-```
-
-### Diagram Generator
-
-```bash
-> Создай блок-схему процесса авторизации
-> Нарисуй sequence diagram для API запроса
-```
-
-## Структура проекта
+## Project Structure
 
 ```
 ollama-code/
 ├── packages/
-│   ├── core/           # Ядро: Ollama клиент, инструменты, типы
-│   ├── cli/            # CLI интерфейс на базе Ink
-│   ├── webui/          # Веб-компоненты для UI
-│   └── sdk-typescript/ # SDK для программного использования
-├── scripts/            # Скрипты сборки и запуска
-├── integration-tests/  # Интеграционные тесты
-└── docs/              # Документация
+│   ├── core/           # Core: Ollama client, tools, types
+│   ├── cli/            # CLI interface based on Ink
+│   ├── webui/          # Web components for UI
+│   └── sdk-typescript/ # SDK for programmatic use
+├── scripts/            # Build and run scripts
+├── integration-tests/  # Integration tests
+└── docs/               # Documentation
 ```
 
-## Документация
+## Documentation
 
-| Документ                                       | Описание                     |
-| ---------------------------------------------- | ---------------------------- |
-| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md)        | Руководство по использованию |
-| [EXAMPLES.md](./docs/EXAMPLES.md)              | Примеры использования        |
-| [TUTORIAL.md](./docs/TUTORIAL.md)              | Туториал для начинающих      |
-| [OLLAMA_API.md](./docs/OLLAMA_API.md)          | Документация API             |
-| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Структура проекта            |
-| [ROADMAP.md](./ROADMAP.md)                     | План развития                |
+| Document | Description |
+|----------|-------------|
+| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Usage guide |
+| [EXAMPLES.md](./docs/EXAMPLES.md) | Usage examples |
+| [TUTORIAL.md](./docs/TUTORIAL.md) | Beginner tutorial |
+| [OLLAMA_API.md](./docs/OLLAMA_API.md) | API documentation |
+| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Project structure |
+| [ROADMAP.md](./ROADMAP.md) | Development roadmap |
 
-## Основные команды
+## Commands
 
-| Команда             | Описание                   |
-| ------------------- | -------------------------- |
-| `npm run build`     | Собрать все пакеты         |
-| `npm run start`     | Запустить CLI              |
-| `npm run dev`       | Запуск в режиме разработки |
-| `npm run debug`     | Запуск с отладчиком        |
-| `npm run test`      | Запустить тесты            |
-| `npm run lint`      | Проверить код линтером     |
-| `npm run typecheck` | Проверка типов TypeScript  |
+| Command | Description |
+|---------|-------------|
+| `npm run build` | Build all packages |
+| `npm run start` | Run CLI |
+| `npm run dev` | Run in development mode |
+| `npm run debug` | Run with debugger |
+| `npm run test` | Run tests |
+| `npm run lint` | Lint code |
+| `npm run typecheck` | TypeScript type check |
 
-## Параметры CLI
+## CLI Options
 
 ```
 Options:
-  -d, --debug                     Режим отладки
-  -m, --model                     Указать модель
-  -s, --sandbox                   Запуск в песочнице
-  -y, --yolo                      Автоматическое подтверждение всех действий
-      --approval-mode             Режим подтверждения: plan, default, auto-edit, yolo
-      --experimental-lsp          Включить экспериментальную поддержку LSP
-      --ollama-base-url           URL Ollama сервера (по умолчанию: http://localhost:11434)
-      --ollama-api-key            API ключ для удалённых инстансов
+  -d, --debug                     Debug mode
+  -m, --model                     Specify model
+  -s, --sandbox                   Run in sandbox
+  -y, --yolo                      Auto-confirm all actions
+      --approval-mode             Approval mode: plan, default, auto-edit, yolo
+      --experimental-lsp          Enable experimental LSP support
+      --ollama-base-url           Ollama server URL (default: http://localhost:11434)
+      --ollama-api-key            API key for remote instances
 ```
 
-## Переменные окружения
+## Environment Variables
 
-| Переменная                   | Описание                                      |
-| ---------------------------- | --------------------------------------------- |
-| `OLLAMA_BASE_URL`            | URL Ollama сервера                            |
-| `OLLAMA_API_KEY`             | API ключ (опционально)                        |
-| `OLLAMA_MODEL`               | Модель по умолчанию                           |
-| `OLLAMA_KEEP_ALIVE`          | Время удержания модели в памяти (default: 5m) |
-| `DEBUG`                      | Включить режим отладки (1 или true)           |
-| `OLLAMA_CODE_DEBUG_LOG_FILE` | Логирование в файл                            |
+| Variable | Description |
+|----------|-------------|
+| `OLLAMA_BASE_URL` | Ollama server URL |
+| `OLLAMA_API_KEY` | API key (optional) |
+| `OLLAMA_MODEL` | Default model |
+| `OLLAMA_KEEP_ALIVE` | Model memory retention time (default: 5m) |
+| `DEBUG` | Enable debug mode (1 or true) |
+| `OLLAMA_CODE_DEBUG_LOG_FILE` | Log to file |
 
-## Отладка в VSCode
+## VSCode Debugging
 
-Проект включает готовые конфигурации VSCode для отладки:
+The project includes ready-to-use VSCode debug configurations:
 
-1. Откройте проект в VSCode
-2. Нажмите F5 или выберите "Run and Debug"
-3. Выберите конфигурацию:
-   - **Debug Ollama Code CLI** — базовая отладка
-   - **Debug Ollama Code CLI (with args)** — с аргументами
-   - **Debug Current Test File** — отладка текущего теста
+1. Open project in VSCode
+2. Press F5 or select "Run and Debug"
+3. Choose configuration:
+   - **Debug Ollama Code CLI** — basic debugging
+   - **Debug Ollama Code CLI (with args)** — with arguments
+   - **Debug Current Test File** — debug current test
 
-## API Ollama
+## Ollama API
 
-Проект использует нативные API Ollama:
+The project uses native Ollama APIs:
 
-### Основные endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/tags` | GET | List local models |
+| `/api/show` | POST | Model info |
+| `/api/generate` | POST | Text generation |
+| `/api/chat` | POST | Chat with model |
+| `/api/embed` | POST | Embeddings |
+| `/api/create` | POST | Create model |
+| `/api/pull` | POST | Download model |
+| `/api/ps` | GET | Running models |
+| `/api/version` | GET | Ollama version |
 
-| Endpoint        | Метод | Описание                 |
-| --------------- | ----- | ------------------------ |
-| `/api/tags`     | GET   | Список локальных моделей |
-| `/api/show`     | POST  | Информация о модели      |
-| `/api/generate` | POST  | Генерация текста         |
-| `/api/chat`     | POST  | Чат с моделью            |
-| `/api/embed`    | POST  | Эмбеддинги               |
-| `/api/create`   | POST  | Создание модели          |
-| `/api/pull`     | POST  | Загрузка модели          |
-| `/api/ps`       | GET   | Запущенные модели        |
-| `/api/version`  | GET   | Версия Ollama            |
+Full API docs: [OLLAMA_API.md](./docs/OLLAMA_API.md)
 
-Документация API: [OLLAMA_API.md](./docs/OLLAMA_API.md)
+## Recommended Models
 
-## Рекомендуемые модели
+| Model | Purpose | Size |
+|-------|---------|------|
+| `llama3.2` | General purpose | 3B |
+| `deepseek-r1:8b` | Reasoning (thinking) | 8B |
+| `codellama` | Programming | 7B+ |
+| `mistral` | General purpose | 7B |
+| `nomic-embed-text` | Embeddings | 274M |
 
-| Модель             | Назначение             | Размер |
-| ------------------ | ---------------------- | ------ |
-| `llama3.2`         | Общего назначения      | 3B     |
-| `deepseek-r1:8b`   | Рассуждения (thinking) | 8B     |
-| `codellama`        | Программирование       | 7B+    |
-| `mistral`          | Общего назначения      | 7B     |
-| `nomic-embed-text` | Эмбеддинги             | 274M   |
+## Development
 
-## Разработка
-
-### Сборка отдельного пакета
+### Build Single Package
 
 ```bash
-# Сборка core
+# Build core
 npm run build --workspace=packages/core
 
-# Сборка cli
+# Build cli
 npm run build --workspace=packages/cli
 ```
 
-### Запуск тестов
+### Run Tests
 
 ```bash
-# Все тесты
+# All tests
 npm run test
 
-# Тесты core пакета
+# Core package tests
 npm run test --workspace=packages/core
 
-# Интеграционные тесты
+# Integration tests
 npm run test:integration:sandbox:none
 ```
 
-### Добавление нового инструмента
+### Adding a New Tool
 
-1. Создайте файл в `packages/core/src/tools/`
-2. Реализуйте класс, наследующий `BaseDeclarativeTool`
-3. Экспортируйте из `index.ts`
+1. Create file in `packages/core/src/tools/`
+2. Implement class extending `BaseDeclarativeTool`
+3. Export from `index.ts`
+4. Add alias in `tool-names.ts`
 
-## Лицензия
+## License
 
 Apache License 2.0
 
-## Содействие
+## Contributing
 
-См. [CONTRIBUTING.md](./CONTRIBUTING.md) для руководства по участию в разработке.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines.
