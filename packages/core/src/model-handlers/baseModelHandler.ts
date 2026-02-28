@@ -9,8 +9,11 @@ import type {
   IToolCallTextParser,
   ToolCallParseResult,
   ParsedToolCall,
-  ModelHandlerConfig,
+  ModelHandlerConfig as ModelHandlerConfigType,
 } from './types.js';
+
+// Re-export ModelHandlerConfig for convenience
+export type ModelHandlerConfig = ModelHandlerConfigType;
 import { defaultParsers } from './default/parsers.js';
 
 /**

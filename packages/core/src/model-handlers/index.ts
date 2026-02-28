@@ -138,4 +138,7 @@ export { GraniteModelHandler } from './granite/index.js';
 export { graniteParsers } from './granite/parsers.js';
 
 export { OlmoModelHandler } from './olmo/index.js';
+export { olmoParsers } from './olmo/parsers.js';
+
 export { NeuralChatModelHandler } from './neural-chat/index.js';
+export { neuralChatParsers } from './neural-chat/parsers.js';

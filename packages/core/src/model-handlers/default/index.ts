@@ -4,8 +4,47 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { IModelHandler, ToolCallParseResult, ModelHandlerConfig, IToolCallTextParser } from '../types.js';
-import { defaultParsers } from './parsers.js';
+import {
+  createModelHandler,
+  type ModelHandlerConfig,
+} from '../baseModelHandler.js';
+
+/**
+ * Default model handler configuration.
+ */
+const defaultConfig: ModelHandlerConfig = {
+  modelPattern: /.*/, // Matches any model
+  displayName: 'Default',
+  description: 'Default handler with common tool call formats',
+  supportsStructuredToolCalls: false,
+  supportsTextToolCalls: true,
+  supportsTools: false, // Unknown models - assume no tool support
+};
+
+/**
+ * Check if unknown model supports tools.
+ * Uses conservative approach - return false by default.
+ */
+function supportsTools(modelName: string): boolean {
+  // Known tool-capable models that might not have specific handlers
+  const knownToolPatterns = [
+    /command[-_]?r/i, // Command-R models
+    /gemma[-_]?2/i, // Gemma 2 supports tools
+    /phi[-_]?3/i, // Phi-3 supports tools
+    /claude/i, // Claude models (via API)
+    /gpt[-_]?[34]/i, // GPT models (via API)
+  ];
+
+  for (const pattern of knownToolPatterns) {
+    if (pattern.test(modelName)) {
+      return true;
+    }
+  }
+
+  // Unknown model - assume no tool support
+  // The caller can still try to use tools and parse from text
+  return false;
+}
 
 /**
  * Default model handler.
@@ -13,76 +52,10 @@ import { defaultParsers } from './parsers.js';
  * This handler is used when no specific model handler matches.
  * It includes parsers for all common tool call formats.
  */
-export class DefaultModelHandler implements IModelHandler {
-  readonly name = 'default';
-  readonly config: ModelHandlerConfig = {
-    modelPattern: /.*/, // Matches any model
-    displayName: 'Default',
-    description: 'Default handler with common tool call formats',
-    supportsStructuredToolCalls: false,
-    supportsTextToolCalls: true,
-    supportsTools: false, // Unknown models - assume no tool support
-  };
-
-  private parsers: IToolCallTextParser[];
-
-  constructor() {
-    this.parsers = [...defaultParsers];
-  }
-
-  /**
-   * Always returns true - this is the default handler.
-   */
-  canHandle(_modelName: string): boolean {
-    return true;
-  }
-
-  /**
-   * Check if unknown model supports tools.
-   * Uses conservative approach - return false by default.
-   * Can be overridden by checking Ollama API capabilities.
-   */
-  supportsTools(modelName: string): boolean {
-    // Known tool-capable models that might not have specific handlers
-    const knownToolPatterns = [
-      /command[-_]?r/i,        // Command-R models
-      /gemma[-_]?2/i,          // Gemma 2 supports tools
-      /phi[-_]?3/i,            // Phi-3 supports tools
-      /claude/i,               // Claude models (via API)
-      /gpt[-_]?[34]/i,         // GPT models (via API)
-    ];
-
-    for (const pattern of knownToolPatterns) {
-      if (pattern.test(modelName)) {
-        return true;
-      }
-    }
-
-    // Unknown model - assume no tool support
-    // The caller can still try to use tools and parse from text
-    return false;
-  }
-
-  /**
-   * Parse tool calls using all default parsers.
-   */
-  parseToolCalls(content: string): ToolCallParseResult {
-    const allToolCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
-    let currentContent = content;
-
-    for (const parser of this.parsers) {
-      if (parser.canParse(currentContent)) {
-        const result = parser.parse(currentContent);
-        if (result.toolCalls.length > 0) {
-          allToolCalls.push(...result.toolCalls);
-          currentContent = result.cleanedContent;
-        }
-      }
-    }
-
-    return {
-      toolCalls: allToolCalls,
-      cleanedContent: currentContent.trim(),
-    };
-  }
-}
+export const DefaultModelHandler = createModelHandler(
+  'default',
+  defaultConfig,
+  {
+    supportsToolsFn: supportsTools,
+  },
+);
