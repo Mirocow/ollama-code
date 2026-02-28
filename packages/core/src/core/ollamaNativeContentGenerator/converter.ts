@@ -32,6 +32,10 @@ import type {
   OllamaModelOptions,
 } from '../ollamaNativeClient.js';
 
+import { createDebugLogger } from '../../utils/debugLogger.js';
+
+const debugLogger = createDebugLogger('OLLAMA_CONVERTER');
+
 /**
  * Converter class for transforming data between GenAI and native Ollama formats
  */
@@ -199,6 +203,10 @@ export class OllamaContentConverter {
     const ollamaTools: OllamaTool[] = [];
     const toolsArray = Array.isArray(genaiTools) ? genaiTools : [genaiTools];
 
+    debugLogger.debug('Converting tools to Ollama format', {
+      toolsCount: toolsArray.length,
+    });
+
     for (const tool of toolsArray) {
       let actualTool: Tool;
 
@@ -237,6 +245,11 @@ export class OllamaContentConverter {
         }
       }
     }
+
+    debugLogger.info('Converted tools for Ollama', {
+      count: ollamaTools.length,
+      toolNames: ollamaTools.map((t) => t.function.name),
+    });
 
     return ollamaTools;
   }
@@ -428,6 +441,18 @@ export class OllamaContentConverter {
     const response = new GenerateContentResponse();
     const parts: Part[] = [];
 
+    // Log the response for debugging
+    debugLogger.debug('Converting Ollama response', {
+      hasContent: !!ollamaResponse.message?.content,
+      contentLength: ollamaResponse.message?.content?.length,
+      hasToolCalls: !!ollamaResponse.message?.tool_calls,
+      toolCallsCount: ollamaResponse.message?.tool_calls?.length,
+      toolCalls: ollamaResponse.message?.tool_calls?.map(
+        (tc) => tc.function.name,
+      ),
+      done: ollamaResponse.done,
+    });
+
     // Handle text content
     if (ollamaResponse.message?.content) {
       parts.push({ text: ollamaResponse.message.content });
@@ -435,6 +460,10 @@ export class OllamaContentConverter {
 
     // Handle tool calls
     if (ollamaResponse.message?.tool_calls) {
+      debugLogger.info('Processing tool calls from response', {
+        count: ollamaResponse.message.tool_calls.length,
+        tools: ollamaResponse.message.tool_calls.map((tc) => tc.function.name),
+      });
       for (const toolCall of ollamaResponse.message.tool_calls) {
         parts.push({
           functionCall: {
@@ -449,19 +478,35 @@ export class OllamaContentConverter {
     response.responseId = `ollama-${Date.now()}`;
     response.createTime = new Date().getTime().toString();
 
+    // Determine finish reason - use TOOL_CALLS if there are tool calls
+    const hasToolCalls = parts.some((p) => p.functionCall);
+    const finishReason = ollamaResponse.done
+      ? hasToolCalls
+        ? FinishReason.TOOL_CALLS
+        : FinishReason.STOP
+      : FinishReason.FINISH_REASON_UNSPECIFIED;
+
     response.candidates = [
       {
         content: {
           parts,
           role: 'model' as const,
         },
-        finishReason: ollamaResponse.done
-          ? FinishReason.STOP
-          : FinishReason.FINISH_REASON_UNSPECIFIED,
+        finishReason,
         index: 0,
         safetyRatings: [],
       },
     ];
+
+    // Set functionCalls for convenience (used by turn.ts)
+    if (hasToolCalls) {
+      response.functionCalls = parts
+        .filter((p) => p.functionCall)
+        .map((p) => p.functionCall!);
+      debugLogger.info('Set functionCalls on response', {
+        count: response.functionCalls.length,
+      });
+    }
 
     response.modelVersion = this.model;
     response.promptFeedback = { safetyRatings: [] };
@@ -493,6 +538,21 @@ export class OllamaContentConverter {
     const response = new GenerateContentResponse();
     const parts: Part[] = [];
 
+    // Log chunk details for debugging
+    if (ollamaChunk.message?.tool_calls || ollamaChunk.done) {
+      debugLogger.debug('Converting Ollama chunk', {
+        hasContent: !!ollamaChunk.message?.content,
+        hasToolCalls: !!ollamaChunk.message?.tool_calls,
+        toolCallsCount: ollamaChunk.message?.tool_calls?.length,
+        toolCalls: ollamaChunk.message?.tool_calls?.map((tc) => ({
+          name: tc.function.name,
+          hasArgs: !!tc.function.arguments,
+        })),
+        done: ollamaChunk.done,
+        accumulatedToolCallsSize: accumulatedToolCalls?.size,
+      });
+    }
+
     // Handle text content
     if (ollamaChunk.message?.content) {
       parts.push({ text: ollamaChunk.message.content });
@@ -503,6 +563,10 @@ export class OllamaContentConverter {
       for (let i = 0; i < ollamaChunk.message.tool_calls.length; i++) {
         const toolCall = ollamaChunk.message.tool_calls[i];
         if (toolCall.function.name) {
+          debugLogger.info('Accumulating tool call', {
+            index: i,
+            name: toolCall.function.name,
+          });
           accumulatedToolCalls.set(i, {
             name: toolCall.function.name,
             args: JSON.stringify(toolCall.function.arguments),
@@ -511,7 +575,11 @@ export class OllamaContentConverter {
       }
 
       // If stream is done, emit all completed tool calls
-      if (ollamaChunk.done) {
+      if (ollamaChunk.done && accumulatedToolCalls.size > 0) {
+        debugLogger.info('Emitting accumulated tool calls', {
+          count: accumulatedToolCalls.size,
+          tools: [...accumulatedToolCalls.values()].map((tc) => tc.name),
+        });
         for (const [, toolCall] of accumulatedToolCalls) {
           parts.push({
             functionCall: {
@@ -526,6 +594,9 @@ export class OllamaContentConverter {
 
     response.responseId = `ollama-${Date.now()}`;
     response.createTime = new Date().getTime().toString();
+
+    // Determine if there are tool calls
+    const hasToolCalls = parts.some((p) => p.functionCall);
 
     const candidate: {
       content: { parts: Part[]; role: string };
@@ -542,10 +613,20 @@ export class OllamaContentConverter {
     };
 
     if (ollamaChunk.done) {
-      candidate.finishReason = FinishReason.STOP;
+      candidate.finishReason = hasToolCalls
+        ? FinishReason.TOOL_CALLS
+        : FinishReason.STOP;
     }
 
     response.candidates = [candidate];
+
+    // Set functionCalls for convenience (used by turn.ts)
+    if (hasToolCalls) {
+      response.functionCalls = parts
+        .filter((p) => p.functionCall)
+        .map((p) => p.functionCall!);
+    }
+
     response.modelVersion = this.model;
     response.promptFeedback = { safetyRatings: [] };
 
