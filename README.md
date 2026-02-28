@@ -34,6 +34,7 @@
 - 🔀 **Git Advanced** — advanced git operations (stash, cherry-pick, rebase, bisect)
 - 🌐 **API Tester** — REST API endpoint testing
 - 🏷️ **Tool Aliases** — short names for tools (`run` → `run_shell_command`)
+- 🧠 **Self-Learning** — automatic learning of tool names from errors
 
 ## Requirements
 
@@ -72,22 +73,45 @@ npm run start -- "Explain how async/await works in JavaScript"
 npm run debug
 ```
 
+## What's New in v0.10.7
+
+### Self-Learning System for Tool Calling
+
+The system now automatically learns from tool call errors and creates dynamic aliases:
+
+| Feature                | Description                                                |
+| ---------------------- | ---------------------------------------------------------- |
+| **Automatic Learning** | Records tool call errors and creates aliases automatically |
+| **Fuzzy Matching**     | Uses Levenshtein distance to suggest correct tool names    |
+| **Persistence**        | Learning data saved to `~/.ollama-code/learning/`          |
+| **Dynamic Aliases**    | Runtime alias creation without code modifications          |
+
+**How it works:**
+
+1. Model calls a non-existent tool name → System records the error
+2. System uses fuzzy matching to find the most similar valid tool
+3. After threshold reached → Dynamic alias is created
+4. Future calls with incorrect name → Resolved to correct tool
+
+---
+
 ## What's New in v0.10.6
 
 ### Development Tools
 
 Three new comprehensive development tools have been added:
 
-| Tool | Aliases | Description |
-|------|---------|-------------|
-| `python_dev` | `py`, `python`, `pip`, `pytest` | Python development (run, test, lint, venv, pip) |
-| `nodejs_dev` | `node`, `npm`, `yarn`, `pnpm`, `bun` | Node.js development with auto-detected package manager |
-| `golang_dev` | `go`, `golang` | Go development (run, build, test, mod) |
-| `php_dev` | `php`, `composer`, `phpunit`, `artisan` | PHP development with Composer and Laravel support |
+| Tool         | Aliases                                 | Description                                            |
+| ------------ | --------------------------------------- | ------------------------------------------------------ |
+| `python_dev` | `py`, `python`, `pip`, `pytest`         | Python development (run, test, lint, venv, pip)        |
+| `nodejs_dev` | `node`, `npm`, `yarn`, `pnpm`, `bun`    | Node.js development with auto-detected package manager |
+| `golang_dev` | `go`, `golang`                          | Go development (run, build, test, mod)                 |
+| `php_dev`    | `php`, `composer`, `phpunit`, `artisan` | PHP development with Composer and Laravel support      |
 
 ### Environment Notification
 
 The model now receives detailed environment information at session start, including:
+
 - Ollama configuration (base URL, model, API key status)
 - System information (Node.js version, platform, working directory)
 - Debug settings
@@ -95,6 +119,7 @@ The model now receives detailed environment information at session start, includ
 ### Enhanced Documentation
 
 New comprehensive documentation:
+
 - [FEATURES.md](./docs/FEATURES.md) - Complete feature reference
 - [TOOLS.md](./docs/TOOLS.md) - Detailed tools reference
 - [FEATURES.ru.md](./docs/FEATURES.ru.md) - Russian feature reference
@@ -108,13 +133,13 @@ New comprehensive documentation:
 
 Models can now use short tool names:
 
-| Alias | Tool Name |
-|-------|-----------|
+| Alias                         | Tool Name           |
+| ----------------------------- | ------------------- |
 | `run`, `shell`, `exec`, `cmd` | `run_shell_command` |
-| `read` | `read_file` |
-| `write`, `create` | `write_file` |
-| `grep`, `search`, `find` | `grep_search` |
-| `ls`, `list`, `dir` | `list_directory` |
+| `read`                        | `read_file`         |
+| `write`, `create`             | `write_file`        |
+| `grep`, `search`, `find`      | `grep_search`       |
+| `ls`, `list`, `dir`           | `list_directory`    |
 
 ### Session ID Display
 
@@ -199,41 +224,41 @@ ollama-code/
 
 ### Quick Reference
 
-| Document | Description |
-|----------|-------------|
-| [FEATURES.md](./docs/FEATURES.md) | **Complete feature reference** |
-| [TOOLS.md](./docs/TOOLS.md) | **Detailed tools reference** |
-| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Usage guide |
-| [EXAMPLES.md](./docs/EXAMPLES.md) | Usage examples |
-| [OLLAMA_API.md](./docs/OLLAMA_API.md) | API documentation |
+| Document                                | Description                    |
+| --------------------------------------- | ------------------------------ |
+| [FEATURES.md](./docs/FEATURES.md)       | **Complete feature reference** |
+| [TOOLS.md](./docs/TOOLS.md)             | **Detailed tools reference**   |
+| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Usage guide                    |
+| [EXAMPLES.md](./docs/EXAMPLES.md)       | Usage examples                 |
+| [OLLAMA_API.md](./docs/OLLAMA_API.md)   | API documentation              |
 
 ### Russian Documentation (Русская документация)
 
-| Документ | Описание |
-|----------|-------------|
+| Документ                                | Описание                      |
+| --------------------------------------- | ----------------------------- |
 | [FEATURES.ru.md](./docs/FEATURES.ru.md) | **Полный справочник функций** |
-| [TOOLS.ru.md](./docs/TOOLS.ru.md) | **Справочник инструментов** |
-| [README.ru.md](./README.ru.md) | README на русском |
+| [TOOLS.ru.md](./docs/TOOLS.ru.md)       | **Справочник инструментов**   |
+| [README.ru.md](./README.ru.md)          | README на русском             |
 
 ### Project Resources
 
-| Document | Description |
-|----------|-------------|
-| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Project structure |
-| [ROADMAP.md](./ROADMAP.md) | Development roadmap |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution guidelines |
+| Document                                       | Description             |
+| ---------------------------------------------- | ----------------------- |
+| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Project structure       |
+| [ROADMAP.md](./ROADMAP.md)                     | Development roadmap     |
+| [CONTRIBUTING.md](./CONTRIBUTING.md)           | Contribution guidelines |
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run build` | Build all packages |
-| `npm run start` | Run CLI |
-| `npm run dev` | Run in development mode |
-| `npm run debug` | Run with debugger |
-| `npm run test` | Run tests |
-| `npm run lint` | Lint code |
-| `npm run typecheck` | TypeScript type check |
+| Command             | Description             |
+| ------------------- | ----------------------- |
+| `npm run build`     | Build all packages      |
+| `npm run start`     | Run CLI                 |
+| `npm run dev`       | Run in development mode |
+| `npm run debug`     | Run with debugger       |
+| `npm run test`      | Run tests               |
+| `npm run lint`      | Lint code               |
+| `npm run typecheck` | TypeScript type check   |
 
 ## CLI Options
 
@@ -251,14 +276,14 @@ Options:
 
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `OLLAMA_BASE_URL` | Ollama server URL |
-| `OLLAMA_API_KEY` | API key (optional) |
-| `OLLAMA_MODEL` | Default model |
-| `OLLAMA_KEEP_ALIVE` | Model memory retention time (default: 5m) |
-| `DEBUG` | Enable debug mode (1 or true) |
-| `OLLAMA_CODE_DEBUG_LOG_FILE` | Log to file |
+| Variable                     | Description                               |
+| ---------------------------- | ----------------------------------------- |
+| `OLLAMA_BASE_URL`            | Ollama server URL                         |
+| `OLLAMA_API_KEY`             | API key (optional)                        |
+| `OLLAMA_MODEL`               | Default model                             |
+| `OLLAMA_KEEP_ALIVE`          | Model memory retention time (default: 5m) |
+| `DEBUG`                      | Enable debug mode (1 or true)             |
+| `OLLAMA_CODE_DEBUG_LOG_FILE` | Log to file                               |
 
 ## VSCode Debugging
 
@@ -275,29 +300,29 @@ The project includes ready-to-use VSCode debug configurations:
 
 The project uses native Ollama APIs:
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/tags` | GET | List local models |
-| `/api/show` | POST | Model info |
-| `/api/generate` | POST | Text generation |
-| `/api/chat` | POST | Chat with model |
-| `/api/embed` | POST | Embeddings |
-| `/api/create` | POST | Create model |
-| `/api/pull` | POST | Download model |
-| `/api/ps` | GET | Running models |
-| `/api/version` | GET | Ollama version |
+| Endpoint        | Method | Description       |
+| --------------- | ------ | ----------------- |
+| `/api/tags`     | GET    | List local models |
+| `/api/show`     | POST   | Model info        |
+| `/api/generate` | POST   | Text generation   |
+| `/api/chat`     | POST   | Chat with model   |
+| `/api/embed`    | POST   | Embeddings        |
+| `/api/create`   | POST   | Create model      |
+| `/api/pull`     | POST   | Download model    |
+| `/api/ps`       | GET    | Running models    |
+| `/api/version`  | GET    | Ollama version    |
 
 Full API docs: [OLLAMA_API.md](./docs/OLLAMA_API.md)
 
 ## Recommended Models
 
-| Model | Purpose | Size |
-|-------|---------|------|
-| `llama3.2` | General purpose | 3B |
-| `deepseek-r1:8b` | Reasoning (thinking) | 8B |
-| `codellama` | Programming | 7B+ |
-| `mistral` | General purpose | 7B |
-| `nomic-embed-text` | Embeddings | 274M |
+| Model              | Purpose              | Size |
+| ------------------ | -------------------- | ---- |
+| `llama3.2`         | General purpose      | 3B   |
+| `deepseek-r1:8b`   | Reasoning (thinking) | 8B   |
+| `codellama`        | Programming          | 7B+  |
+| `mistral`          | General purpose      | 7B   |
+| `nomic-embed-text` | Embeddings           | 274M |
 
 ## Development
 

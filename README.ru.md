@@ -34,6 +34,7 @@
 - 🔀 **Git Advanced** — продвинутые git операции (stash, cherry-pick, rebase, bisect)
 - 🌐 **API Tester** — тестирование REST API endpoints
 - 🏷️ **Алиасы инструментов** — короткие имена для инструментов (`run` → `run_shell_command`)
+- 🧠 **Самообучение** — автоматическое обучение правильным именам инструментов
 
 ## Требования
 
@@ -72,22 +73,45 @@ npm run start -- "Объясни, как работает async/await в JavaScr
 npm run debug
 ```
 
+## Новые возможности v0.10.7
+
+### Система самообучения для вызова инструментов
+
+Система теперь автоматически обучается на ошибках вызова инструментов и создаёт динамические алиасы:
+
+| Функция                     | Описание                                                             |
+| --------------------------- | -------------------------------------------------------------------- |
+| **Автоматическое обучение** | Записывает ошибки вызова инструментов и создаёт алиасы автоматически |
+| **Нечёткое сопоставление**  | Использует расстояние Левенштейна для предложения правильных имён    |
+| **Сохранение данных**       | Данные обучения сохраняются в `~/.ollama-code/learning/`             |
+| **Динамические алиасы**     | Создание алиасов во время выполнения без изменения кода              |
+
+**Как это работает:**
+
+1. Модель вызывает несуществующий инструмент → Система записывает ошибку
+2. Система использует нечёткое сопоставление для поиска похожего инструмента
+3. После достижения порога → Создаётся динамический алиас
+4. Будущие вызовы с неправильным именем → Перенаправляются на правильный инструмент
+
+---
+
 ## Новые возможности v0.10.6
 
 ### Инструменты разработки
 
 Добавлены три комплексных инструмента для разработки:
 
-| Инструмент | Алиасы | Описание |
-|------------|--------|-------------|
-| `python_dev` | `py`, `python`, `pip`, `pytest` | Разработка на Python (run, test, lint, venv, pip) |
-| `nodejs_dev` | `node`, `npm`, `yarn`, `pnpm`, `bun` | Разработка на Node.js с автоопределением пакетного менеджера |
-| `golang_dev` | `go`, `golang` | Разработка на Go (run, build, test, mod) |
-| `php_dev` | `php`, `composer`, `phpunit`, `artisan` | Разработка на PHP с поддержкой Composer и Laravel |
+| Инструмент   | Алиасы                                  | Описание                                                     |
+| ------------ | --------------------------------------- | ------------------------------------------------------------ |
+| `python_dev` | `py`, `python`, `pip`, `pytest`         | Разработка на Python (run, test, lint, venv, pip)            |
+| `nodejs_dev` | `node`, `npm`, `yarn`, `pnpm`, `bun`    | Разработка на Node.js с автоопределением пакетного менеджера |
+| `golang_dev` | `go`, `golang`                          | Разработка на Go (run, build, test, mod)                     |
+| `php_dev`    | `php`, `composer`, `phpunit`, `artisan` | Разработка на PHP с поддержкой Composer и Laravel            |
 
 ### Оповещение об окружении
 
 Модель теперь получает детальную информацию об окружении в начале сессии:
+
 - Конфигурация Ollama (base URL, модель, статус API ключа)
 - Системная информация (версия Node.js, платформа, рабочая директория)
 - Настройки отладки
@@ -95,6 +119,7 @@ npm run debug
 ### Расширенная документация
 
 Новая комплексная документация:
+
 - [FEATURES.ru.md](./docs/FEATURES.ru.md) - Полный справочник функций
 - [TOOLS.ru.md](./docs/TOOLS.ru.md) - Справочник инструментов
 - [FEATURES.md](./docs/FEATURES.md) - English feature reference
@@ -108,19 +133,19 @@ npm run debug
 
 Модели теперь могут использовать короткие имена инструментов:
 
-| Алиас | Каноническое имя |
-|-------|------------------|
+| Алиас                         | Каноническое имя    |
+| ----------------------------- | ------------------- |
 | `run`, `shell`, `exec`, `cmd` | `run_shell_command` |
-| `read` | `read_file` |
-| `write`, `create` | `write_file` |
-| `grep`, `search`, `find` | `grep_search` |
-| `glob`, `files` | `glob` |
-| `ls`, `list`, `dir` | `list_directory` |
-| `todo`, `todos` | `todo_write` |
-| `memory`, `save` | `save_memory` |
-| `websearch`, `web` | `web_search` |
-| `webfetch`, `fetch`, `url` | `web_fetch` |
-| `agent`, `subagent` | `task` |
+| `read`                        | `read_file`         |
+| `write`, `create`             | `write_file`        |
+| `grep`, `search`, `find`      | `grep_search`       |
+| `glob`, `files`               | `glob`              |
+| `ls`, `list`, `dir`           | `list_directory`    |
+| `todo`, `todos`               | `todo_write`        |
+| `memory`, `save`              | `save_memory`       |
+| `websearch`, `web`            | `web_search`        |
+| `webfetch`, `fetch`, `url`    | `web_fetch`         |
+| `agent`, `subagent`           | `task`              |
 
 ### Отображение Session ID
 
@@ -284,29 +309,29 @@ ollama-code/
 
 ### Краткий справочник
 
-| Документ | Описание |
-|----------|-------------|
+| Документ                                | Описание                      |
+| --------------------------------------- | ----------------------------- |
 | [FEATURES.ru.md](./docs/FEATURES.ru.md) | **Полный справочник функций** |
-| [TOOLS.ru.md](./docs/TOOLS.ru.md) | **Справочник инструментов** |
-| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Руководство по использованию |
-| [EXAMPLES.md](./docs/EXAMPLES.md) | Примеры использования |
-| [OLLAMA_API.md](./docs/OLLAMA_API.md) | Документация API |
+| [TOOLS.ru.md](./docs/TOOLS.ru.md)       | **Справочник инструментов**   |
+| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Руководство по использованию  |
+| [EXAMPLES.md](./docs/EXAMPLES.md)       | Примеры использования         |
+| [OLLAMA_API.md](./docs/OLLAMA_API.md)   | Документация API              |
 
 ### Английская документация (English Documentation)
 
-| Document | Description |
-|----------|-------------|
+| Document                          | Description                    |
+| --------------------------------- | ------------------------------ |
 | [FEATURES.md](./docs/FEATURES.md) | **Complete feature reference** |
-| [TOOLS.md](./docs/TOOLS.md) | **Tools reference** |
-| [README.md](./README.md) | README in English |
+| [TOOLS.md](./docs/TOOLS.md)       | **Tools reference**            |
+| [README.md](./README.md)          | README in English              |
 
 ### Ресурсы проекта
 
-| Документ | Описание |
-|----------|-------------|
-| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Структура проекта |
-| [ROADMAP.md](./ROADMAP.md) | План развития |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | Руководство по участию |
+| Документ                                       | Описание               |
+| ---------------------------------------------- | ---------------------- |
+| [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) | Структура проекта      |
+| [ROADMAP.md](./ROADMAP.md)                     | План развития          |
+| [CONTRIBUTING.md](./CONTRIBUTING.md)           | Руководство по участию |
 
 ## Основные команды
 

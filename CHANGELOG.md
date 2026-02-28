@@ -1,10 +1,44 @@
 # Changelog
 
+## 0.10.7
+
+### New Features
+
+#### Self-Learning System for Tool Calling
+
+- **Automatic Tool Name Learning**: The system now learns from tool call errors and automatically creates dynamic aliases for frequently mistaken tool names
+- **Fuzzy Matching**: Uses Levenshtein distance algorithm to suggest similar tool names when a model makes an error
+- **Learning Data Persistence**: Learning data is saved to `~/.ollama-code/learning/` directory for persistence across sessions
+- **Dynamic Aliases**: Runtime alias creation without code modifications - when a model repeatedly uses an incorrect tool name, an alias is automatically created
+- **Error Tracking**: Tracks tool call errors and patterns to improve suggestions over time
+
+#### How It Works
+
+1. When a model calls a non-existent tool, the system records the error
+2. The system uses fuzzy matching to find the most similar valid tool name
+3. After reaching the threshold (default: 1 error), a dynamic alias is automatically created
+4. Future calls with the incorrect name are resolved to the correct tool
+5. Learning data persists across sessions for continuous improvement
+
+#### Technical Details
+
+- `ToolLearningManager` class manages the learning process
+- `DynamicAliases` export in `tool-names.ts` for runtime alias storage
+- Integrated with `CoreToolScheduler` for error detection
+- Learning context added to system prompts for model guidance
+
+### Improvements
+
+- Enhanced error messages with learning-enhanced suggestions
+- Better model compatibility through dynamic alias resolution
+- Improved user experience with automatic error correction
+
 ## 0.10.6
 
 ### New Features
 
 #### Development Tools
+
 - **Python Development Tool** (`python_dev`): Comprehensive Python development support including:
   - Run Python scripts with arguments
   - Execute pytest with test patterns
@@ -31,21 +65,24 @@
   - Race detector support
 
 #### Documentation
+
 - **Tools Reference Documentation**: Complete bilingual documentation for all tools
   - English version: `docs/TOOLS.md`
   - Russian version: `docs/TOOLS.ru.md`
   - Covers all 20+ tools with parameters, examples, and best practices
 
 ### Tool Aliases Updates
+
 Added development tool aliases:
 
-| Alias | Canonical Tool |
-|-------|----------------|
-| `py`, `python`, `pip`, `pytest` | `python_dev` |
-| `node`, `npm`, `yarn`, `pnpm`, `bun` | `nodejs_dev` |
-| `go`, `golang` | `golang_dev` |
+| Alias                                | Canonical Tool |
+| ------------------------------------ | -------------- |
+| `py`, `python`, `pip`, `pytest`      | `python_dev`   |
+| `node`, `npm`, `yarn`, `pnpm`, `bun` | `nodejs_dev`   |
+| `go`, `golang`                       | `golang_dev`   |
 
 ### Improvements
+
 - Enhanced tool registry with development tools integration
 - Improved shell execution for development commands
 - Better timeout handling for long-running operations
@@ -53,31 +90,35 @@ Added development tool aliases:
 ## 0.10.5
 
 ### New Features
+
 - **Tool Alias System**: Added short aliases for tool names (e.g., `run` → `run_shell_command`, `read` → `read_file`, `write` → `write_file`)
 - **Session ID Display**: Session ID now shown in the header for better debugging and logging
 - **UTF-8 Locale Check**: Added startup warning for non-UTF-8 terminal encoding
 
 ### Tool Aliases
-| Alias | Canonical Name |
-|-------|----------------|
+
+| Alias                         | Canonical Name      |
+| ----------------------------- | ------------------- |
 | `run`, `shell`, `exec`, `cmd` | `run_shell_command` |
-| `read` | `read_file` |
-| `write`, `create` | `write_file` |
-| `grep`, `search`, `find` | `grep_search` |
-| `glob`, `files` | `glob` |
-| `ls`, `list`, `dir` | `list_directory` |
-| `todo`, `todos` | `todo_write` |
-| `memory`, `save` | `save_memory` |
-| `websearch`, `web` | `web_search` |
-| `webfetch`, `fetch`, `url` | `web_fetch` |
-| `agent`, `subagent` | `task` |
+| `read`                        | `read_file`         |
+| `write`, `create`             | `write_file`        |
+| `grep`, `search`, `find`      | `grep_search`       |
+| `glob`, `files`               | `glob`              |
+| `ls`, `list`, `dir`           | `list_directory`    |
+| `todo`, `todos`               | `todo_write`        |
+| `memory`, `save`              | `save_memory`       |
+| `websearch`, `web`            | `web_search`        |
+| `webfetch`, `fetch`, `url`    | `web_fetch`         |
+| `agent`, `subagent`           | `task`              |
 
 ### Improvements
+
 - Improved error messages for tool not found scenarios
 - Enhanced documentation structure
 - Added bilingual documentation support (English/Russian)
 
 ### Bug Fixes
+
 - Fixed tool name resolution for better model compatibility
 
 ## 0.0.14
