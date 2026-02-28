@@ -1476,7 +1476,8 @@ export class OllamaNativeClient {
 
   /**
    * Check if a model supports function calling (tools).
-   * This checks the model's capabilities from /api/show response.
+   * This checks the model's capabilities from /api/show response,
+   * and falls back to model handler patterns.
    *
    * @param modelName The model name to check
    * @returns true if the model supports tools
@@ -1504,34 +1505,35 @@ export class OllamaNativeClient {
         }
       }
 
-      // Some models are known to support tools by name pattern
-      const toolCapablePatterns = [
-        /llama3\.[12]/i,
-        /mistral/i,
-        /mixtral/i,
-        /command-r/i,
-        /qwen2\.5/i,
-        /qwen3/i,
-        /deepseek/i,
-      ];
+      // Fall back to model handler patterns
+      // Import dynamically to avoid circular dependency
+      const { getModelHandlerFactory } = await import('../model-handlers/index.js');
+      const factory = getModelHandlerFactory();
+      const handlerSupport = factory.supportsTools(modelName);
 
-      for (const pattern of toolCapablePatterns) {
-        if (pattern.test(modelName)) {
-          debugLog('info', 'Model likely supports tools by name pattern', {
-            modelName,
-          });
-          return true;
-        }
+      if (handlerSupport) {
+        debugLog('info', 'Model supports tools by handler pattern', {
+          modelName,
+        });
+        return true;
       }
 
       return false;
     } catch (error) {
-      debugLog('warn', 'Could not determine tool support, assuming yes', {
+      debugLog('warn', 'Could not determine tool support, checking handler patterns', {
         modelName,
         error: error instanceof Error ? error.message : String(error),
       });
-      // Assume true on error - let the model try to use tools
-      return true;
+
+      // Fall back to model handler patterns on error
+      try {
+        const { getModelHandlerFactory } = await import('../model-handlers/index.js');
+        const factory = getModelHandlerFactory();
+        return factory.supportsTools(modelName);
+      } catch {
+        // If all else fails, assume true - let the model try to use tools
+        return true;
+      }
     }
   }
 }

@@ -28,6 +28,7 @@ export class LlamaModelHandler implements IModelHandler {
     description: 'Meta Llama models (llama3, codellama)',
     supportsStructuredToolCalls: true,
     supportsTextToolCalls: true,
+    supportsTools: true, // llama3.1+ supports tools
     maxContextLength: 128000, // llama3.1
   };
 
@@ -44,6 +45,16 @@ export class LlamaModelHandler implements IModelHandler {
       return modelName.toLowerCase().includes(pattern.toLowerCase());
     }
     return pattern.test(modelName);
+  }
+
+  supportsTools(modelName: string): boolean {
+    // Only llama3.1+ supports tools
+    // llama3, llama2, and original llama don't support structured tools
+    if (/llama[-_]?3\.[1-9]/i.test(modelName)) return true;
+    if (/llama[-_]?3[1-9]/i.test(modelName)) return true;
+    if (/codellama/i.test(modelName)) return true;
+    // Default: assume llama3.1+ if just "llama3" or similar
+    return /llama3/i.test(modelName);
   }
 
   parseToolCalls(content: string): ToolCallParseResult {

@@ -30,6 +30,7 @@ export class QwenModelHandler implements IModelHandler {
     description: 'Alibaba Qwen models (qwen2.5, qwen3, qwq)',
     supportsStructuredToolCalls: true,
     supportsTextToolCalls: true,
+    supportsTools: true,
     maxContextLength: 128000, // Varies by model
   };
 
@@ -48,6 +49,11 @@ export class QwenModelHandler implements IModelHandler {
       return modelName.toLowerCase().includes(pattern.toLowerCase());
     }
     return pattern.test(modelName);
+  }
+
+  supportsTools(modelName: string): boolean {
+    // All Qwen models support tools
+    return this.canHandle(modelName);
   }
 
   parseToolCalls(content: string): ToolCallParseResult {

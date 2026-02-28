@@ -167,6 +167,38 @@ export class ModelHandlerFactory {
   }
 
   /**
+   * Check if a model supports function calling (tools).
+   * Uses the handler's supportsTools method if available,
+   * otherwise falls back to the handler's config.
+   *
+   * @param modelName - The model name to check
+   * @returns true if the model supports tools
+   */
+  supportsTools(modelName: string): boolean {
+    const handler = this.getHandler(modelName);
+
+    // Use handler's supportsTools method if available
+    if (handler.supportsTools) {
+      const result = handler.supportsTools(modelName);
+      debugLogger.debug('supportsTools check', {
+        model: modelName,
+        handler: handler.name,
+        result,
+      });
+      return result;
+    }
+
+    // Fallback to config.supportsTools
+    const result = handler.config.supportsTools ?? false;
+    debugLogger.debug('supportsTools check (from config)', {
+      model: modelName,
+      handler: handler.name,
+      result,
+    });
+    return result;
+  }
+
+  /**
    * Get list of registered handler names.
    */
   getHandlerNames(): string[] {
