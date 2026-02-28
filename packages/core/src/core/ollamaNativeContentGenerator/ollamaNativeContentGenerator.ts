@@ -122,13 +122,21 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
       userPromptId,
     });
 
-    // Log user messages for debugging
+    // Log user messages for debugging (also to console when DEBUG is set)
     if (request.contents) {
       const userMessages = request.contents
         .flatMap((c) => ('parts' in c ? c.parts : []))
         .filter((p) => typeof p === 'string' || ('text' in p && p.text))
         .map((p) => (typeof p === 'string' ? p : (p as { text: string }).text));
-      debugLogger.info('User messages:', userMessages.join('\n---\n'));
+      const messagesStr = userMessages.join('\n---\n');
+      debugLogger.info('User messages:', messagesStr);
+      // Also log to console when DEBUG is set
+      if (process.env['DEBUG']) {
+        // eslint-disable-next-line no-console
+        console.error(
+          `[${new Date().toISOString()}] [OLLAMA_NATIVE] User messages:\n${messagesStr}`,
+        );
+      }
     }
 
     // Convert request once
