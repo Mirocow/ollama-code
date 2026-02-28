@@ -5,6 +5,7 @@
  */
 
 import path from 'node:path';
+import fs from 'node:fs';
 import type { Config } from '../config/config.js';
 import { ToolErrorType } from './tool-error.js';
 import {
@@ -194,58 +195,58 @@ export class CppToolInvocation extends BaseToolInvocation<
 
   private buildCompileCommand(): string {
     const parts = [this.getCompiler()];
-    
+
     // Standard
     if (this.params.std) {
       parts.push(`-std=${this.params.std}`);
     }
-    
+
     // Optimization
     if (this.params.optimize) {
       parts.push('-O2');
     }
-    
+
     // Debug symbols
     if (this.params.debug) {
       parts.push('-g');
     }
-    
+
     // Preprocessor defines
     if (this.params.defines?.length) {
       for (const def of this.params.defines) {
         parts.push(`-D${def}`);
       }
     }
-    
+
     // Include directories
     if (this.params.include_dirs?.length) {
       for (const inc of this.params.include_dirs) {
         parts.push('-I', inc);
       }
     }
-    
+
     // Output file
     if (this.params.output) {
       parts.push('-o', this.params.output);
     }
-    
+
     // Source file
     if (this.params.file) {
       parts.push(this.params.file);
     }
-    
+
     // Libraries
     if (this.params.libs?.length) {
       for (const lib of this.params.libs) {
         parts.push('-l', lib);
       }
     }
-    
+
     // Additional arguments
     if (this.params.args?.length) {
       parts.push(...this.params.args);
     }
-    
+
     return parts.join(' ');
   }
 
@@ -254,7 +255,7 @@ export class CppToolInvocation extends BaseToolInvocation<
     const outputFile = this.params.output || 'a.out';
     const compileCmd = this.buildCompileCommand();
     const runCmd = `./${outputFile}`;
-    
+
     if (this.params.args?.length) {
       return `${compileCmd} && ${runCmd} ${this.params.args.join(' ')}`;
     }
@@ -263,8 +264,7 @@ export class CppToolInvocation extends BaseToolInvocation<
 
   private buildBuildCommand(): string {
     const cwd = this.params.directory || this.config.getTargetDir();
-    const fs = require('fs');
-    
+
     // Check for CMakeLists.txt
     if (fs.existsSync(path.join(cwd, 'CMakeLists.txt'))) {
       return this.buildCMakeBuildCommand();
@@ -288,28 +288,28 @@ export class CppToolInvocation extends BaseToolInvocation<
   private buildCMakeConfigureCommand(): string {
     const buildDir = this.params.build_dir || 'build';
     const parts = ['cmake', '-B', buildDir];
-    
+
     if (this.params.args?.length) {
       parts.push(...this.params.args);
     }
-    
+
     parts.push('-S', '.');
-    
+
     return parts.join(' ');
   }
 
   private buildCMakeBuildCommand(): string {
     const buildDir = this.params.build_dir || 'build';
     const parts = ['cmake', '--build', buildDir];
-    
+
     if (this.params.target) {
       parts.push('--target', this.params.target);
     }
-    
+
     if (this.params.args?.length) {
       parts.push(...this.params.args);
     }
-    
+
     return parts.join(' ');
   }
 
@@ -321,11 +321,11 @@ export class CppToolInvocation extends BaseToolInvocation<
   private buildCMakeTestCommand(): string {
     const buildDir = this.params.build_dir || 'build';
     const parts = ['cd', buildDir, '&&', 'ctest', '--output-on-failure'];
-    
+
     if (this.params.args?.length) {
       parts.push(...this.params.args);
     }
-    
+
     return parts.join(' ');
   }
 
@@ -336,15 +336,15 @@ export class CppToolInvocation extends BaseToolInvocation<
 
   private buildMakeCommand(): string {
     const parts = ['make'];
-    
+
     if (this.params.target) {
       parts.push(this.params.target);
     }
-    
+
     if (this.params.args?.length) {
       parts.push(...this.params.args);
     }
-    
+
     return parts.join(' ');
   }
 
@@ -363,7 +363,8 @@ export class CppToolInvocation extends BaseToolInvocation<
   ): Promise<ToolResult> {
     if (signal.aborted) {
       return {
-        llmContent: 'C/C++ command was cancelled by user before it could start.',
+        llmContent:
+          'C/C++ command was cancelled by user before it could start.',
         returnDisplay: 'Command cancelled by user.',
       };
     }
@@ -553,7 +554,7 @@ function getCppToolDescription(): string {
   "file": "main.c",
   "compiler": "gcc",
   "debug": true,
-  "defines": ["DEBUG", "VERSION=\\\"1.0\\\""]
+  "defines": ["DEBUG", "VERSION='1.0'"]
 }
 
 // Compile and run
@@ -601,10 +602,7 @@ function getCppToolDescription(): string {
 `;
 }
 
-export class CppTool extends BaseDeclarativeTool<
-  CppToolParams,
-  ToolResult
-> {
+export class CppTool extends BaseDeclarativeTool<CppToolParams, ToolResult> {
   static Name: string = 'cpp_dev';
   private allowlist: Set<string> = new Set();
 
@@ -639,7 +637,8 @@ export class CppTool extends BaseDeclarativeTool<
           compiler: {
             type: 'string',
             enum: ['gcc', 'g++', 'clang', 'clang++'],
-            description: 'Compiler to use (auto-detected from file extension if not specified)',
+            description:
+              'Compiler to use (auto-detected from file extension if not specified)',
           },
           file: {
             type: 'string',

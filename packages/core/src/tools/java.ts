@@ -5,6 +5,7 @@
  */
 
 import path from 'node:path';
+import fs from 'node:fs';
 import type { Config } from '../config/config.js';
 import { ToolErrorType } from './tool-error.js';
 import {
@@ -112,9 +113,12 @@ export class JavaToolInvocation extends BaseToolInvocation<
     _abortSignal: AbortSignal,
   ): Promise<ToolCallConfirmationDetails | false> {
     // Actions that modify the project need confirmation
-    const needsConfirmation = ['maven_install', 'clean', 'maven_clean', 'gradle_clean'].includes(
-      this.params.action,
-    );
+    const needsConfirmation = [
+      'maven_install',
+      'clean',
+      'maven_clean',
+      'gradle_clean',
+    ].includes(this.params.action);
 
     if (!needsConfirmation) {
       return false;
@@ -141,7 +145,6 @@ export class JavaToolInvocation extends BaseToolInvocation<
 
   private detectBuildTool(): JavaBuildTool | null {
     const cwd = this.params.directory || this.config.getTargetDir();
-    const fs = require('fs');
 
     // Check for build files
     if (fs.existsSync(path.join(cwd, 'pom.xml'))) {
@@ -263,7 +266,8 @@ export class JavaToolInvocation extends BaseToolInvocation<
   }
 
   private buildTestCommand(): string {
-    const buildTool = this.params.build_tool || this.detectBuildTool() || 'maven';
+    const buildTool =
+      this.params.build_tool || this.detectBuildTool() || 'maven';
     if (buildTool === 'gradle') {
       return this.buildGradleTestCommand();
     }
@@ -271,7 +275,8 @@ export class JavaToolInvocation extends BaseToolInvocation<
   }
 
   private buildBuildCommand(): string {
-    const buildTool = this.params.build_tool || this.detectBuildTool() || 'maven';
+    const buildTool =
+      this.params.build_tool || this.detectBuildTool() || 'maven';
     if (buildTool === 'gradle') {
       return this.buildGradleBuildCommand();
     }
@@ -279,7 +284,8 @@ export class JavaToolInvocation extends BaseToolInvocation<
   }
 
   private buildCleanCommand(): string {
-    const buildTool = this.params.build_tool || this.detectBuildTool() || 'maven';
+    const buildTool =
+      this.params.build_tool || this.detectBuildTool() || 'maven';
     if (buildTool === 'gradle') {
       return this.buildGradleCleanCommand();
     }
@@ -683,10 +689,7 @@ The tool auto-detects the build tool based on project files.
 `;
 }
 
-export class JavaTool extends BaseDeclarativeTool<
-  JavaToolParams,
-  ToolResult
-> {
+export class JavaTool extends BaseDeclarativeTool<JavaToolParams, ToolResult> {
   static Name: string = 'java_dev';
   private allowlist: Set<string> = new Set();
 

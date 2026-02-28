@@ -5,6 +5,7 @@
  */
 
 import path from 'node:path';
+import fs from 'node:fs';
 import type { Config } from '../config/config.js';
 import { ToolErrorType } from './tool-error.js';
 import {
@@ -144,7 +145,6 @@ export class NodeJsToolInvocation extends BaseToolInvocation<
 
   private detectPackageManager(): NodePackageManager {
     const cwd = this.params.directory || this.config.getTargetDir();
-    const fs = require('fs');
 
     // Check for lock files
     if (fs.existsSync(path.join(cwd, 'pnpm-lock.yaml'))) {
@@ -490,7 +490,8 @@ export class NodeJsToolInvocation extends BaseToolInvocation<
   ): Promise<ToolResult> {
     if (signal.aborted) {
       return {
-        llmContent: 'Node.js command was cancelled by user before it could start.',
+        llmContent:
+          'Node.js command was cancelled by user before it could start.',
         returnDisplay: 'Command cancelled by user.',
       };
     }
@@ -519,26 +520,27 @@ export class NodeJsToolInvocation extends BaseToolInvocation<
     let lastUpdateTime = Date.now();
 
     try {
-      const { result: resultPromise, pid } = await ShellExecutionService.execute(
-        command,
-        cwd,
-        (event) => {
-          if (event.type === 'data') {
-            cumulativeOutput = event.chunk;
-            if (updateOutput && Date.now() - lastUpdateTime > 1000) {
-              updateOutput(
-                typeof cumulativeOutput === 'string'
-                  ? cumulativeOutput
-                  : { ansiOutput: cumulativeOutput },
-              );
-              lastUpdateTime = Date.now();
+      const { result: resultPromise, pid } =
+        await ShellExecutionService.execute(
+          command,
+          cwd,
+          (event) => {
+            if (event.type === 'data') {
+              cumulativeOutput = event.chunk;
+              if (updateOutput && Date.now() - lastUpdateTime > 1000) {
+                updateOutput(
+                  typeof cumulativeOutput === 'string'
+                    ? cumulativeOutput
+                    : { ansiOutput: cumulativeOutput },
+                );
+                lastUpdateTime = Date.now();
+              }
             }
-          }
-        },
-        combinedSignal,
-        this.config.getShouldUseNodePtyShell(),
-        shellExecutionConfig ?? {},
-      );
+          },
+          combinedSignal,
+          this.config.getShouldUseNodePtyShell(),
+          shellExecutionConfig ?? {},
+        );
 
       // For background tasks (like dev servers), return immediately
       if (this.params.background) {
@@ -751,7 +753,8 @@ export class NodeJsTool extends BaseDeclarativeTool<
           package_manager: {
             type: 'string',
             enum: ['npm', 'yarn', 'pnpm', 'bun'],
-            description: 'Package manager to use (auto-detected if not specified)',
+            description:
+              'Package manager to use (auto-detected if not specified)',
           },
           script: {
             type: 'string',
