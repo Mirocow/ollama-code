@@ -194,6 +194,24 @@ dist/
 
 ## Примеры использования
 
+### Алиасы инструментов
+
+Модели могут использовать короткие имена инструментов:
+
+| Алиас | Полное имя |
+|-------|------------|
+| `run`, `shell`, `exec`, `cmd` | `run_shell_command` |
+| `read` | `read_file` |
+| `write`, `create` | `write_file` |
+| `grep`, `search`, `find` | `grep_search` |
+| `glob`, `files` | `glob` |
+| `ls`, `list`, `dir` | `list_directory` |
+| `todo`, `todos` | `todo_write` |
+| `memory`, `save` | `save_memory` |
+| `websearch`, `web` | `web_search` |
+| `webfetch`, `fetch`, `url` | `web_fetch` |
+| `agent`, `subagent` | `task` |
+
 ### Анализ кода
 
 ```bash
