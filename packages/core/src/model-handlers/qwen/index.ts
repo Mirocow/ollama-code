@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { IModelHandler, ToolCallParseResult, ModelHandlerConfig, IToolCallTextParser } from '../types.js';
+import type {
+  IModelHandler,
+  ToolCallParseResult,
+  ModelHandlerConfig,
+  IToolCallTextParser,
+} from '../types.js';
 import { qwenParsers } from './parsers.js';
 import { defaultParsers } from '../default/parsers.js';
 
@@ -52,12 +57,44 @@ export class QwenModelHandler implements IModelHandler {
   }
 
   supportsTools(modelName: string): boolean {
-    // All Qwen models support tools
-    return this.canHandle(modelName);
+    const name = modelName.toLowerCase();
+
+    // Qwen2.5-Coder: all versions support tools
+    if (/qwen[-_]?2\.?5[-_]?coder/i.test(name)) return true;
+
+    // Qwen3-Coder: all versions support tools
+    if (/qwen[-_]?3[-_]?coder/i.test(name)) return true;
+
+    // Qwen3 with explicit tools tag
+    if (/qwen[-_]?3[-_]?tools/i.test(name)) return true;
+
+    // QwQ (reasoning models) - support tools
+    if (/qwq/i.test(name)) return true;
+
+    // Qwen2.5 base (not all support tools, need instruct variant)
+    if (/qwen[-_]?2\.?5/i.test(name)) {
+      // Instruct variants support tools
+      if (/instruct/i.test(name)) return true;
+      // Without instruct, assume no tools
+      return false;
+    }
+
+    // Qwen3 base
+    if (/qwen[-_]?3/i.test(name)) {
+      // Most Qwen3 models support tools
+      return true;
+    }
+
+    // Default: assume Qwen models with instruct or tools tags support tools
+    if (/instruct|tools/i.test(name)) return true;
+
+    // Unknown Qwen variant - conservative
+    return false;
   }
 
   parseToolCalls(content: string): ToolCallParseResult {
-    const allToolCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
+    const allToolCalls: Array<{ name: string; args: Record<string, unknown> }> =
+      [];
     let currentContent = content;
 
     for (const parser of this.parsers) {

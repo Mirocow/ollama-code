@@ -10,36 +10,34 @@ import type {
   ModelHandlerConfig,
   IToolCallTextParser,
 } from '../types.js';
-import { mistralParsers } from './parsers.js';
 import { defaultParsers } from '../default/parsers.js';
 
 /**
- * Mistral model handler.
+ * Command model handler.
  *
- * Supports Mistral AI models:
- * - mistral (mistral-small, mistral-medium, mistral-large)
- * - codestral (code-focused model)
- * - mixtral (mixture of experts)
+ * Supports Cohere Command models:
+ * - command-r (optimized for RAG and tools)
+ * - command-r-plus (larger, better tool calling)
+ * - command (general purpose)
  *
- * Mistral models typically return tool calls in structured format,
- * but may also output in [TOOL_CALLS] text format.
+ * Command-R models are specifically designed for tool use and RAG.
  */
-export class MistralModelHandler implements IModelHandler {
-  readonly name = 'mistral';
+export class CommandModelHandler implements IModelHandler {
+  readonly name = 'command';
   readonly config: ModelHandlerConfig = {
-    modelPattern: /mistral|mixtral|codestral/i,
-    displayName: 'Mistral',
-    description: 'Mistral AI models (mistral, mixtral, codestral)',
+    modelPattern: /command/i,
+    displayName: 'Command',
+    description: 'Cohere Command models (command-r, command-r-plus)',
     supportsStructuredToolCalls: true,
     supportsTextToolCalls: true,
     supportsTools: true,
-    maxContextLength: 128000, // mistral-large
+    maxContextLength: 128000, // command-r-plus
   };
 
   private parsers: IToolCallTextParser[];
 
   constructor() {
-    this.parsers = [...mistralParsers, ...defaultParsers];
+    this.parsers = [...defaultParsers];
     this.parsers.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
   }
 
@@ -54,31 +52,19 @@ export class MistralModelHandler implements IModelHandler {
   supportsTools(modelName: string): boolean {
     const name = modelName.toLowerCase();
 
-    // Codestral - code focused, supports tools
-    if (/codestral/i.test(name)) return true;
+    // Command-R Plus - best tool calling
+    if (/command[-_]?r[-_]?plus/i.test(name)) return true;
 
-    // Mistral Small/Medium/Large - all support tools
-    if (/mistral[-_]?small|mistral[-_]?medium|mistral[-_]?large/i.test(name))
+    // Command-R - optimized for tools
+    if (/command[-_]?r/i.test(name)) return true;
+
+    // Command (base) - supports tools but not optimized
+    if (/command$/i.test(name) || /command-light/i.test(name)) {
       return true;
-
-    // Mixtral 8x7B, 8x22B - support tools
-    if (/mixtral/i.test(name)) return true;
-
-    // Mistral 7B - base model, instruct variant supports tools
-    if (/mistral[-_]?7b/i.test(name)) {
-      return /instruct/i.test(name);
     }
 
-    // Mistral Nemo - supports tools
-    if (/mistral[-_]?nemo/i.test(name)) return true;
-
-    // Generic mistral - check for instruct tag
-    if (/mistral/i.test(name)) {
-      return /instruct/i.test(name);
-    }
-
-    // Default for Mistral family
-    return false;
+    // Default for Command family
+    return true;
   }
 
   parseToolCalls(content: string): ToolCallParseResult {

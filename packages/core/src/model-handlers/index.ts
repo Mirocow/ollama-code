@@ -57,7 +57,11 @@ export type {
 } from './types.js';
 
 // Base classes
-export { BaseModelHandler, BaseToolCallParser, createModelHandler } from './baseModelHandler.js';
+export {
+  BaseModelHandler,
+  BaseToolCallParser,
+  createModelHandler,
+} from './baseModelHandler.js';
 
 // Utility functions for custom parsers
 export {
@@ -92,3 +96,12 @@ export { deepseekParsers } from './deepseek/parsers.js';
 
 export { MistralModelHandler } from './mistral/index.js';
 export { mistralParsers } from './mistral/parsers.js';
+
+export { GemmaModelHandler } from './gemma/index.js';
+export { gemmaParsers } from './gemma/parsers.js';
+
+export { PhiModelHandler } from './phi/index.js';
+export { phiParsers } from './phi/parsers.js';
+
+export { CommandModelHandler } from './command/index.js';
+export { commandParsers } from './command/parsers.js';

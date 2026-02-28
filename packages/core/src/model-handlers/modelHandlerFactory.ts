@@ -10,6 +10,9 @@ import { QwenModelHandler } from './qwen/index.js';
 import { LlamaModelHandler } from './llama/index.js';
 import { DeepSeekModelHandler } from './deepseek/index.js';
 import { MistralModelHandler } from './mistral/index.js';
+import { GemmaModelHandler } from './gemma/index.js';
+import { PhiModelHandler } from './phi/index.js';
+import { CommandModelHandler } from './command/index.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('MODEL_HANDLER_FACTORY');
@@ -62,6 +65,9 @@ export class ModelHandlerFactory {
     this.register(new QwenModelHandler());
     this.register(new DeepSeekModelHandler());
     this.register(new MistralModelHandler());
+    this.register(new GemmaModelHandler());
+    this.register(new PhiModelHandler());
+    this.register(new CommandModelHandler());
     this.register(new LlamaModelHandler());
 
     // Set default handler (used when no specific handler matches)
