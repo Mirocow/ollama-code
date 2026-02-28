@@ -177,6 +177,9 @@ export * from './subagents/index.js';
 // Export skills
 export * from './skills/index.js';
 
+// Export learning system
+export * from './learning/index.js';
+
 // Export extension
 export * from './extension/index.js';
 

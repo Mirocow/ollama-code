@@ -10,22 +10,26 @@
  * This module provides the self-learning capabilities for Ollama Code.
  * It allows the AI model to learn from user interactions and improve over time.
  *
- * ## How it works
+ * ## Components
  *
- * 1. **Corrections**: When a user corrects the model's response, the correction
- *    is stored with context for future reference.
+ * ### 1. General Learning (self-learning.ts)
+ * - Tracks user corrections
+ * - Records successful patterns
+ * - Maintains tool usage statistics
  *
- * 2. **Success Tracking**: Successful interactions are recorded to build
- *    statistics about which tools and approaches work best.
- *
- * 3. **Pattern Recognition**: The system identifies patterns in user behavior
- *    and project types to provide better suggestions.
+ * ### 2. Tool Learning (tool-learning.ts)
+ * - Detects tool call errors (hallucinated tool names)
+ * - Creates dynamic aliases for common mistakes
+ * - Generates learning feedback for the model
  *
  * ## Data Storage
  *
  * All learning data is stored in `~/.ollama-code/learning/`:
- * - `entries.json`: Learning entries (corrections, successes)
+ * - `entries.json`: General learning entries
  * - `tool_stats.json`: Tool usage statistics
+ * - `tool_errors.json`: Tool call error records
+ * - `dynamic_aliases.json`: Dynamically created aliases
+ * - `tool_learning_stats.json`: Per-tool learning statistics
  *
  * ## Privacy
  *
@@ -39,21 +43,28 @@
  *
  * @example
  * ```typescript
- * import { getSelfLearningManager } from './learning/index.js';
+ * import {
+ *   getSelfLearningManager,
+ *   getToolLearningManager
+ * } from './learning/index.js';
  *
+ * // Initialize learning systems
  * const learning = getSelfLearningManager();
- * await learning.initialize();
+ * const toolLearning = getToolLearningManager();
  *
- * // Record a correction
- * learning.recordCorrection(
- *   'Create a React component',
- *   'Created with class component',
- *   'Should use functional component with hooks',
- *   { language: 'typescript' }
+ * await learning.initialize();
+ * await toolLearning.initialize();
+ *
+ * // Record a tool error
+ * const error = toolLearning.recordToolError(
+ *   'git_dev',  // Wrong tool name
+ *   'run_shell_command',  // Correct tool
+ *   0.95,  // Confidence
+ *   { modelId: 'llama3' }
  * );
  *
- * // Get learning summary for context
- * const summary = learning.getLearningSummary();
+ * // Get learning context for system prompt
+ * const context = toolLearning.generateLearningContext();
  * ```
  */
 
@@ -61,6 +72,15 @@ export {
   SelfLearningManager,
   getSelfLearningManager,
   type LearningEntry,
-  type ToolUsageStats,
+  type ToolUsageLearningStats,
   type ProjectPattern,
 } from './self-learning.js';
+
+export {
+  ToolLearningManager,
+  getToolLearningManager,
+  type ToolCallError,
+  type ToolLearningStats,
+  type DynamicAlias,
+  type LearningFeedback,
+} from './tool-learning.js';

@@ -10,6 +10,8 @@ import {
   IdeConnectionType,
   logIdeConnection,
   type Config,
+  getToolLearningManager,
+  getSelfLearningManager,
 } from '@ollama-code/ollama-code-core';
 import { type LoadedSettings, SettingScope } from '../config/settings.js';
 import { performInitialAuth } from './auth.js';
@@ -69,6 +71,19 @@ export async function initializeApp(
     const ideClient = await IdeClient.getInstance();
     await ideClient.connect();
     logIdeConnection(config, new IdeConnectionEvent(IdeConnectionType.START));
+  }
+
+  // Initialize learning systems
+  try {
+    const toolLearning = getToolLearningManager();
+    await toolLearning.initialize();
+
+    const selfLearning = getSelfLearningManager();
+    await selfLearning.initialize();
+  } catch (error) {
+    // Non-critical error, continue without learning
+    // eslint-disable-next-line no-console
+    console.warn('Failed to initialize learning systems:', error);
   }
 
   return {

@@ -13,8 +13,58 @@ import { isGitRepository } from '../utils/gitUtils.js';
 import { OLLAMA_CODE_CONFIG_DIR } from '../tools/memoryTool.js';
 import type { GenerateContentConfig } from '../types/content.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
+import { getToolLearningManager } from '../learning/tool-learning.js';
 
 const debugLogger = createDebugLogger('PROMPTS');
+
+/**
+ * Gets the tool learning context to include in system prompts.
+ * This helps the model learn from past mistakes.
+ */
+function getToolLearningContext(): string {
+  try {
+    const toolLearning = getToolLearningManager();
+    const feedback = toolLearning.generateLearningFeedback();
+
+    if (feedback.length === 0) {
+      return '';
+    }
+
+    const lines: string[] = [
+      '',
+      '# Tool Learning Context',
+      '',
+      'You have made the following tool call errors in recent sessions. Learn from these mistakes:',
+      '',
+    ];
+
+    for (const f of feedback.slice(0, 3)) {
+      lines.push(
+        `## Wrong: "${f.incorrectTool}" → Correct: "${f.correctTool}"`,
+      );
+      lines.push(f.explanation);
+      lines.push(`**Example:** \`${f.example}\``);
+      lines.push('');
+    }
+
+    const commonMistakes = toolLearning.getCommonMistakes(5);
+    if (commonMistakes.length > 0) {
+      lines.push('### Common Tool Name Mistakes to Avoid');
+      for (const m of commonMistakes) {
+        lines.push(`- ❌ "${m.wrongName}" → ✅ use "${m.correct}"`);
+      }
+      lines.push('');
+    }
+
+    lines.push(
+      '**IMPORTANT:** Always use EXACT tool names as listed in the Available Tools section.',
+    );
+
+    return lines.join('\n');
+  } catch {
+    return '';
+  }
+}
 
 /**
  * Gathers environment information for the AI model.
@@ -24,7 +74,10 @@ function getEnvironmentInfo(): string {
   const envLines: string[] = [];
 
   // Ollama configuration
-  const ollamaBaseUrl = process.env['OLLAMA_BASE_URL'] || process.env['OLLAMA_HOST'] || 'http://localhost:11434';
+  const ollamaBaseUrl =
+    process.env['OLLAMA_BASE_URL'] ||
+    process.env['OLLAMA_HOST'] ||
+    'http://localhost:11434';
   const ollamaModel = process.env['OLLAMA_MODEL'];
   const ollamaKeepAlive = process.env['OLLAMA_KEEP_ALIVE'];
   const ollamaApiKey = process.env['OLLAMA_API_KEY'] ? '(set)' : '(not set)';
@@ -367,6 +420,8 @@ ${(function () {
 ${getEnvironmentInfo()}
 
 ${getToolCallExamples(model || '')}
+
+${getToolLearningContext()}
 
 # Final Reminder
 Your core function is efficient and safe assistance. Balance extreme conciseness with the crucial need for clarity, especially regarding safety and potential system modifications. Always prioritize user control and project conventions. Never make assumptions about the contents of files; instead use '${ToolNames.READ_FILE}' to ensure you aren't making broad assumptions. Finally, you are an agent - please keep going until the user's query is completely resolved.
