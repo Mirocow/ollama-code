@@ -41,7 +41,7 @@ function debugLog(
   logger[level](...args);
 
   // Also log to console if DEBUG env is set and session might not be ready
-  if (process.env.DEBUG) {
+  if (process.env['DEBUG']) {
     const timestamp = new Date().toISOString();
     const prefix = `[${timestamp}] [OLLAMA_CLIENT] [${level.toUpperCase()}]`;
     // eslint-disable-next-line no-console
