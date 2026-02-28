@@ -43,6 +43,9 @@ export interface ModelHandlerConfig {
   /** Whether the model may return tool calls in text format */
   supportsTextToolCalls?: boolean;
 
+  /** Whether the model supports function calling at all */
+  supportsTools?: boolean;
+
   /** Maximum context length (if known) */
   maxContextLength?: number;
 
@@ -106,6 +109,15 @@ export interface IModelHandler {
    * @returns Parsed tool calls and cleaned content
    */
   parseToolCalls(content: string): ToolCallParseResult;
+
+  /**
+   * Check if this model supports function calling (tools).
+   * This can be based on model name patterns or known capabilities.
+   *
+   * @param modelName - The model name to check (e.g., 'qwen3-coder:30b')
+   * @returns true if the model supports tools
+   */
+  supportsTools?(modelName: string): boolean;
 
   /**
    * Optional: Pre-process request before sending to model.

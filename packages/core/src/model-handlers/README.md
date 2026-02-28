@@ -39,13 +39,14 @@ model-handlers/
 
 ### Model Mapping
 
-| Model Pattern | Handler | Tool Call Format |
-|---------------|---------|------------------|
-| `qwen`, `qwq` | QwenModelHandler | `<tool_call=...>`, `<think...>` |
-| `mistral`, `mixtral`, `codestral` | MistralModelHandler | `[TOOL_CALLS] [...]`, code blocks |
-| `deepseek` | DeepSeekModelHandler | `<think...>` tags |
-| `llama`, `codellama` | LlamaModelHandler | `{"type": "function", ...}` |
-| * (any other) | DefaultModelHandler | All common formats |
+| Model Pattern | Handler | Tool Call Format | Supports Tools |
+|---------------|---------|------------------|----------------|
+| `qwen`, `qwq` | QwenModelHandler | `<tool_call=...>`, `<think...>` | ✅ All |
+| `mistral`, `mixtral`, `codestral` | MistralModelHandler | `[TOOL_CALLS] [...]`, code blocks | ✅ All |
+| `deepseek` | DeepSeekModelHandler | `<think...>` tags | ✅ All |
+| `llama3.1+`, `codellama` | LlamaModelHandler | `{"type": "function", ...}` | ✅ llama3.1+ only |
+| `llama2`, `llama` | LlamaModelHandler | `{"type": "function", ...}` | ❌ No |
+| * (any other) | DefaultModelHandler | All common formats | Varies by model |
 
 ### Usage
 
@@ -56,6 +57,10 @@ const factory = getModelHandlerFactory();
 
 // Get handler for a model
 const handler = factory.getHandler('qwen2.5-coder:14b');
+
+// Check if model supports tools
+const supportsTools = factory.supportsTools('qwen2.5-coder:14b');
+console.log('Supports tools:', supportsTools); // true
 
 // Parse tool calls from text
 const result = handler.parseToolCalls(content);
@@ -232,13 +237,14 @@ model-handlers/
 
 ### Маппинг моделей
 
-| Паттерн модели | Обработчик | Формат tool calls |
-|----------------|------------|-------------------|
-| `qwen`, `qwq` | QwenModelHandler | `<tool_call=...>`, `<think...>` |
-| `mistral`, `mixtral`, `codestral` | MistralModelHandler | `[TOOL_CALLS] [...]`, code blocks |
-| `deepseek` | DeepSeekModelHandler | `<think...>` теги |
-| `llama`, `codellama` | LlamaModelHandler | `{"type": "function", ...}` |
-| * (любая другая) | DefaultModelHandler | Все распространённые форматы |
+| Паттерн модели | Обработчик | Формат tool calls | Поддержка tools |
+|----------------|------------|-------------------|-----------------|
+| `qwen`, `qwq` | QwenModelHandler | `<tool_call=...>`, `<think...>` | ✅ Все |
+| `mistral`, `mixtral`, `codestral` | MistralModelHandler | `[TOOL_CALLS] [...]`, code blocks | ✅ Все |
+| `deepseek` | DeepSeekModelHandler | `<think...>` теги | ✅ Все |
+| `llama3.1+`, `codellama` | LlamaModelHandler | `{"type": "function", ...}` | ✅ Только llama3.1+ |
+| `llama2`, `llama` | LlamaModelHandler | `{"type": "function", ...}` | ❌ Нет |
+| * (любая другая) | DefaultModelHandler | Все распространённые форматы | Зависит от модели |
 
 ### Использование
 
@@ -249,6 +255,10 @@ const factory = getModelHandlerFactory();
 
 // Получить обработчик для модели
 const handler = factory.getHandler('qwen2.5-coder:14b');
+
+// Проверить поддержку tools
+const supportsTools = factory.supportsTools('qwen2.5-coder:14b');
+console.log('Поддержка tools:', supportsTools); // true
 
 // Парсить tool calls из текста
 const result = handler.parseToolCalls(content);

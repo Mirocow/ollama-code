@@ -27,6 +27,7 @@ export class MistralModelHandler implements IModelHandler {
     description: 'Mistral AI models (mistral, mixtral, codestral)',
     supportsStructuredToolCalls: true,
     supportsTextToolCalls: true,
+    supportsTools: true,
     maxContextLength: 128000, // mistral-large
   };
 
@@ -43,6 +44,11 @@ export class MistralModelHandler implements IModelHandler {
       return modelName.toLowerCase().includes(pattern.toLowerCase());
     }
     return pattern.test(modelName);
+  }
+
+  supportsTools(modelName: string): boolean {
+    // All Mistral/Mixtral/Codestral models support tools
+    return this.canHandle(modelName);
   }
 
   parseToolCalls(content: string): ToolCallParseResult {

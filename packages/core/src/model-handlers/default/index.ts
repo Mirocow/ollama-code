@@ -19,8 +19,9 @@ export class DefaultModelHandler implements IModelHandler {
     modelPattern: /.*/, // Matches any model
     displayName: 'Default',
     description: 'Default handler with common tool call formats',
-    supportsStructuredToolCalls: true,
+    supportsStructuredToolCalls: false,
     supportsTextToolCalls: true,
+    supportsTools: false, // Unknown models - assume no tool support
   };
 
   private parsers: IToolCallTextParser[];
@@ -34,6 +35,32 @@ export class DefaultModelHandler implements IModelHandler {
    */
   canHandle(_modelName: string): boolean {
     return true;
+  }
+
+  /**
+   * Check if unknown model supports tools.
+   * Uses conservative approach - return false by default.
+   * Can be overridden by checking Ollama API capabilities.
+   */
+  supportsTools(modelName: string): boolean {
+    // Known tool-capable models that might not have specific handlers
+    const knownToolPatterns = [
+      /command[-_]?r/i,        // Command-R models
+      /gemma[-_]?2/i,          // Gemma 2 supports tools
+      /phi[-_]?3/i,            // Phi-3 supports tools
+      /claude/i,               // Claude models (via API)
+      /gpt[-_]?[34]/i,         // GPT models (via API)
+    ];
+
+    for (const pattern of knownToolPatterns) {
+      if (pattern.test(modelName)) {
+        return true;
+      }
+    }
+
+    // Unknown model - assume no tool support
+    // The caller can still try to use tools and parse from text
+    return false;
   }
 
   /**

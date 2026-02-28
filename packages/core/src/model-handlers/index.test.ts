@@ -88,6 +88,12 @@ describe('Model Handlers', () => {
       expect(handler.canHandle('llama3.2')).toBe(false);
     });
 
+    it('should support tools for all qwen models', () => {
+      expect(handler.supportsTools!('qwen3-coder:30b')).toBe(true);
+      expect(handler.supportsTools!('qwen2.5-coder:7b')).toBe(true);
+      expect(handler.supportsTools!('qwq:32b')).toBe(true);
+    });
+
     it('should parse Qwen tool_call format', () => {
       const content = '<tool_call={"name": "test_tool", "arguments": {"arg1": "value1"}}>';
       const result = handler.parseToolCalls(content);
@@ -111,6 +117,14 @@ describe('Model Handlers', () => {
       expect(handler.canHandle('codellama:34b')).toBe(true);
       expect(handler.canHandle('qwen3-coder')).toBe(false);
     });
+
+    it('should support tools for llama3.1+ but not llama2', () => {
+      expect(handler.supportsTools!('llama3.1:70b')).toBe(true);
+      expect(handler.supportsTools!('llama3.2:latest')).toBe(true);
+      expect(handler.supportsTools!('codellama:34b')).toBe(true);
+      // llama2 doesn't support tools
+      expect(handler.supportsTools!('llama2:70b')).toBe(false);
+    });
   });
 
   describe('DeepSeekModelHandler', () => {
@@ -125,6 +139,11 @@ describe('Model Handlers', () => {
       expect(handler.canHandle('deepseek-coder:33b')).toBe(true);
       expect(handler.canHandle('deepseek-r1:70b')).toBe(true);
       expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should support tools for all deepseek models', () => {
+      expect(handler.supportsTools!('deepseek-coder:33b')).toBe(true);
+      expect(handler.supportsTools!('deepseek-r1:70b')).toBe(true);
     });
   });
 
@@ -143,6 +162,12 @@ describe('Model Handlers', () => {
       expect(handler.canHandle('mixtral:8x7b')).toBe(true);
       expect(handler.canHandle('codestral:22b')).toBe(true);
       expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should support tools for all mistral models', () => {
+      expect(handler.supportsTools!('mistral:latest')).toBe(true);
+      expect(handler.supportsTools!('mixtral:8x7b')).toBe(true);
+      expect(handler.supportsTools!('codestral:22b')).toBe(true);
     });
 
     it('should parse [TOOL_CALLS] format', () => {
@@ -215,6 +240,42 @@ describe('ModelHandlerFactory', () => {
     it('should return default handler for unknown models', () => {
       const handler = factory.getHandler('unknown-model');
       expect(handler.name).toBe('default');
+    });
+  });
+
+  describe('supportsTools', () => {
+    it('should return true for qwen models', () => {
+      expect(factory.supportsTools('qwen3-coder:30b')).toBe(true);
+      expect(factory.supportsTools('qwen2.5-coder:14b')).toBe(true);
+      expect(factory.supportsTools('qwq:32b')).toBe(true);
+    });
+
+    it('should return true for mistral models', () => {
+      expect(factory.supportsTools('mistral:latest')).toBe(true);
+      expect(factory.supportsTools('mixtral:8x7b')).toBe(true);
+      expect(factory.supportsTools('codestral:22b')).toBe(true);
+    });
+
+    it('should return true for deepseek models', () => {
+      expect(factory.supportsTools('deepseek-coder:33b')).toBe(true);
+      expect(factory.supportsTools('deepseek-r1:70b')).toBe(true);
+    });
+
+    it('should return true for llama3.1+ models', () => {
+      expect(factory.supportsTools('llama3.1:70b')).toBe(true);
+      expect(factory.supportsTools('llama3.2:latest')).toBe(true);
+      expect(factory.supportsTools('codellama:34b')).toBe(true);
+    });
+
+    it('should return false for unknown models', () => {
+      expect(factory.supportsTools('unknown-model')).toBe(false);
+      expect(factory.supportsTools('random-model:7b')).toBe(false);
+    });
+
+    it('should return true for known tool-capable models in default handler', () => {
+      expect(factory.supportsTools('command-r:35b')).toBe(true);
+      expect(factory.supportsTools('gemma2:27b')).toBe(true);
+      expect(factory.supportsTools('phi3:14b')).toBe(true);
     });
   });
 

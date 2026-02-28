@@ -26,6 +26,7 @@ export class DeepSeekModelHandler implements IModelHandler {
     description: 'DeepSeek models (deepseek-coder, deepseek-r1)',
     supportsStructuredToolCalls: true,
     supportsTextToolCalls: true,
+    supportsTools: true,
     maxContextLength: 128000,
   };
 
@@ -42,6 +43,11 @@ export class DeepSeekModelHandler implements IModelHandler {
       return modelName.toLowerCase().includes(pattern.toLowerCase());
     }
     return pattern.test(modelName);
+  }
+
+  supportsTools(modelName: string): boolean {
+    // All DeepSeek models support tools
+    return this.canHandle(modelName);
   }
 
   parseToolCalls(content: string): ToolCallParseResult {
