@@ -14,6 +14,7 @@ import { OLLAMA_CODE_CONFIG_DIR } from '../tools/memoryTool.js';
 import type { GenerateContentConfig } from '../types/content.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 import { getToolLearningManager } from '../learning/tool-learning.js';
+import { supportsTools } from '../model-definitions/index.js';
 
 const debugLogger = createDebugLogger('PROMPTS');
 
@@ -64,6 +65,70 @@ function getToolLearningContext(): string {
   } catch {
     return '';
   }
+}
+
+/**
+ * Gets tool call format instructions for models without native tool support.
+ * These models need explicit instructions on how to format tool calls in JSON.
+ */
+function getToolCallFormatInstructions(model?: string): string {
+  // Only add instructions for models without native tool support
+  if (model && supportsTools(model)) {
+    return '';
+  }
+
+  return `
+# Tool Call Format (IMPORTANT)
+
+This model does not have native tool calling support. You MUST format tool calls as JSON objects.
+
+## Correct Format
+
+Use one of these formats to call tools:
+
+### Format 1: Tool Call Tag (Preferred)
+\`\`\`
+<tool_call={"name": "tool_name", "arguments": {"param": "value"}}>
+\`\`\`
+
+### Format 2: JSON in Code Block
+\`\`\`json
+{"name": "tool_name", "arguments": {"param": "value"}}
+\`\`\`
+
+### Format 3: Function Call Format
+\`\`\`
+{"type": "function", "function": {"name": "tool_name", "arguments": {"param": "value"}}}
+\`\`\`
+
+## Examples
+
+- To read a file: \`<tool_call={"name": "read_file", "arguments": {"filepath": "/path/to/file"}}>\`
+- To run a command: \`<tool_call={"name": "run_shell_command", "arguments": {"command": "git status"}}>\`
+- To write a file: \`<tool_call={"name": "write_file", "arguments": {"filepath": "/path/to/file", "content": "content"}}>\`
+
+## Available Tool Names
+
+Use ONLY these exact tool names:
+- \`read_file\` - Read a single file
+- \`read_many_files\` - Read multiple files
+- \`write_file\` - Create or overwrite a file
+- \`edit\` - Edit an existing file
+- \`run_shell_command\` - Execute shell commands (including git, npm, etc.)
+- \`grep_search\` - Search file contents
+- \`glob\` - Find files by pattern
+- \`list_directory\` - List directory contents
+- \`python_dev\` - Python development commands
+- \`nodejs_dev\` - Node.js/JavaScript commands
+- \`golang_dev\` - Go development commands
+- \`todo_write\` - Manage task list
+- \`save_memory\` - Save information for later
+- \`task\` - Launch subagent
+- \`skill\` - Execute a skill
+
+**NEVER use names like:** git_dev, shell_dev, bash_dev, javascript_dev, etc.
+These are NOT valid tool names!
+`;
 }
 
 /**
@@ -422,6 +487,8 @@ ${getEnvironmentInfo()}
 ${getToolCallExamples(model || '')}
 
 ${getToolLearningContext()}
+
+${getToolCallFormatInstructions(model || '')}
 
 # Final Reminder
 Your core function is efficient and safe assistance. Balance extreme conciseness with the crucial need for clarity, especially regarding safety and potential system modifications. Always prioritize user control and project conventions. Never make assumptions about the contents of files; instead use '${ToolNames.READ_FILE}' to ensure you aren't making broad assumptions. Finally, you are an agent - please keep going until the user's query is completely resolved.
