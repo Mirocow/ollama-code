@@ -79,3 +79,6 @@ export { llamaParsers } from './llama/parsers.js';
 
 export { DeepSeekModelHandler } from './deepseek/index.js';
 export { deepseekParsers } from './deepseek/parsers.js';
+
+export { MistralModelHandler } from './mistral/index.js';
+export { mistralParsers } from './mistral/parsers.js';
