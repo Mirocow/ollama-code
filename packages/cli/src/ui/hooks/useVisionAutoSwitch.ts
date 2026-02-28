@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type PartListUnion, type Part ,
+import {
+  type PartListUnion,
+  type Part,
   AuthType,
   type Config,
   ApprovalMode,
+  supportsVision,
+  getDefaultVisionModel,
 } from '@ollama-code/ollama-code-core';
 import { useCallback, useRef } from 'react';
 import { VisionSwitchOutcome } from '../components/ModelSwitchDialog.js';
-import {
-  getDefaultVisionModel,
-  isVisionModel,
-} from '../models/availableModels.js';
 import { MessageType } from '../types.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import {
@@ -137,7 +137,7 @@ export function shouldOfferVisionSwitch(
   }
 
   // If current model is already a vision model, no need to switch
-  if (isVisionModel(currentModel)) {
+  if (supportsVision(currentModel)) {
     return false;
   }
 

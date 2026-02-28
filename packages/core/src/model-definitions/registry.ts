@@ -464,3 +464,16 @@ export function supportsThinking(modelName: string): boolean {
 export function getToolCallFormat(modelName: string): ToolCallFormat {
   return getModelDefinition(modelName).outputFormat;
 }
+
+/**
+ * Default vision model for Ollama.
+ */
+export const DEFAULT_VISION_MODEL = 'llava';
+
+/**
+ * Get default vision model for Ollama.
+ * Returns the model ID of the default vision-capable model.
+ */
+export function getDefaultVisionModel(): string {
+  return DEFAULT_VISION_MODEL;
+}
