@@ -13,6 +13,12 @@ import { MistralModelHandler } from './mistral/index.js';
 import { GemmaModelHandler } from './gemma/index.js';
 import { PhiModelHandler } from './phi/index.js';
 import { CommandModelHandler } from './command/index.js';
+import { YiModelHandler } from './yi/index.js';
+import { LlavaModelHandler } from './llava/index.js';
+import { SolarModelHandler } from './solar/index.js';
+import { StarCoderModelHandler } from './starcoder/index.js';
+import { DbrxModelHandler } from './dbrx/index.js';
+import { GraniteModelHandler } from './granite/index.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('MODEL_HANDLER_FACTORY');
@@ -62,12 +68,27 @@ export class ModelHandlerFactory {
     if (this.initialized) return;
 
     // Register handlers (order matters - more specific first)
+    // Code/Tool-focused models
     this.register(new QwenModelHandler());
     this.register(new DeepSeekModelHandler());
+    this.register(new CommandModelHandler());
+
+    // General purpose models
     this.register(new MistralModelHandler());
     this.register(new GemmaModelHandler());
     this.register(new PhiModelHandler());
-    this.register(new CommandModelHandler());
+    this.register(new YiModelHandler());
+    this.register(new GraniteModelHandler());
+    this.register(new DbrxModelHandler());
+    this.register(new SolarModelHandler());
+
+    // Code-specific models
+    this.register(new StarCoderModelHandler());
+
+    // Vision models (least likely to have tools)
+    this.register(new LlavaModelHandler());
+
+    // Llama family (most common, register last for specific models)
     this.register(new LlamaModelHandler());
 
     // Set default handler (used when no specific handler matches)

@@ -11,44 +11,39 @@ model-handlers/
 ├── baseModelHandler.ts      # Базовые классы и утилиты
 ├── modelHandlerFactory.ts   # Фабрика handlers
 ├── default/                 # Default handler и parsers
-│   ├── index.ts
-│   └── parsers.ts
 ├── qwen/                    # Alibaba Qwen models
-│   ├── index.ts
-│   └── parsers.ts
 ├── llama/                   # Meta Llama models
-│   ├── index.ts
-│   └── parsers.ts
 ├── deepseek/                # DeepSeek models
-│   ├── index.ts
-│   └── parsers.ts
 ├── mistral/                 # Mistral AI models
-│   ├── index.ts
-│   └── parsers.ts
 ├── gemma/                   # Google Gemma models
-│   ├── index.ts
-│   └── parsers.ts
 ├── phi/                     # Microsoft Phi models
-│   ├── index.ts
-│   └── parsers.ts
 ├── command/                 # Cohere Command models
-│   ├── index.ts
-│   └── parsers.ts
+├── yi/                      # 01.ai Yi models
+├── llava/                   # LLaVA vision models
+├── solar/                   # Upstage Solar models
+├── starcoder/               # StarCoder code models
+├── dbrx/                    # Databricks DBRX models
+├── granite/                 # IBM Granite models
 └── utils/                   # Общие утилиты
-    └── parserUtils.ts
 ```
 
 ## Поддерживаемые модели
 
-| Handler      | Models                                   | Tool Support                                |
-| ------------ | ---------------------------------------- | ------------------------------------------- |
-| **Qwen**     | qwen2.5-coder, qwen3-coder, qwq          | ✅ All Qwen-Coder, Qwen3, QwQ               |
-| **Llama**    | llama3.1, llama3.2, codellama            | ✅ llama3.1+, codellama                     |
-| **DeepSeek** | deepseek-coder, deepseek-r1, deepseek-v3 | ✅ All                                      |
-| **Mistral**  | mistral, mixtral, codestral              | ✅ Instruct variants, all Mixtral/Codestral |
-| **Gemma**    | gemma-2, gemma-3, codegemma              | ⚠️ Gemma 3, CodeGemma only                  |
-| **Phi**      | phi-3, phi-3.5, phi-4                    | ✅ Phi-3+                                   |
-| **Command**  | command-r, command-r-plus                | ✅ All (optimized for tools)                |
+| Handler | Models | Tool Support |
+|---------|--------|--------------|
+| **Qwen** | qwen2.5-coder, qwen3-coder, qwq | ✅ Qwen-Coder, Qwen3, QwQ, Qwen2.5-instruct |
+| **Llama** | llama3.1, llama3.2, llama3.3, codellama | ✅ llama3.1+, codellama |
+| **DeepSeek** | deepseek-coder, deepseek-r1, deepseek-v3 | ✅ All DeepSeek models |
+| **Mistral** | mistral, mixtral, codestral | ✅ Instruct variants, all Mixtral/Codestral |
+| **Gemma** | gemma-2, gemma-3, codegemma | ⚠️ Gemma 3, CodeGemma, Gemma 2 instruct only |
+| **Phi** | phi-3, phi-3.5, phi-4 | ✅ Phi 3+ (phi-2 no tools) |
+| **Command** | command-r, command-r-plus | ✅ All (optimized for tools) |
+| **Yi** | yi, yi-coder, yi-large, yi-chat | ✅ Yi-Coder, Yi-Large, Yi-Chat |
+| **LLaVA** | llava, bakllava, moondream, minicpm-v | ❌ Vision models (no tools) |
+| **Solar** | solar-10.7b, solar-pro | ✅ Solar Pro, instruct variants |
+| **StarCoder** | starcoder, starcoder2, stable-code | ❌ Code models (no tools) |
+| **DBRX** | dbrx, dbrx-instruct | ✅ dbrx-instruct only |
+| **Granite** | granite-3b, granite-7b, granite-code | ✅ Granite 3+, Granite-code, Granite-instruct |
 
 ## Использование
 
@@ -110,20 +105,17 @@ factory.register(new MyModelHandler());
 Разные модели возвращают tool calls в разных форматах:
 
 ### Qwen
-
 ```
 <tool_call={"name": "function_name", "arguments": {...}}>
 ```
 
 ### Mistral
-
 ```
 [TOOL_CALLS]
 [{"name": "function_name", "arguments": {...}}]
 ```
 
 ### DeepSeek R1
-
 ```
 <think...>
 ...reasoning...
@@ -132,7 +124,6 @@ factory.register(new MyModelHandler());
 ```
 
 ### Phi
-
 ```
 <function_call>
 {"name": "function_name", "arguments": {...}}
@@ -152,7 +143,64 @@ OLLAMA_URL=http://localhost:11434 npx tsx scripts/test-tool-calling.ts qwen3-cod
 ## Добавление нового handler
 
 1. Создайте директорию `packages/core/src/model-handlers/my-model/`
-2. Создайте `index.ts` с классом handler
+2. Создайте `index.ts` с классом handler:
+
+```typescript
+import type { IModelHandler, ToolCallParseResult, ModelHandlerConfig, IToolCallTextParser } from '../types.js';
+import { defaultParsers } from '../default/parsers.js';
+
+export class MyModelHandler implements IModelHandler {
+  readonly name = 'my-model';
+  readonly config: ModelHandlerConfig = {
+    modelPattern: /my-model/i,
+    displayName: 'My Model',
+    description: 'My Model description',
+    supportsStructuredToolCalls: true,
+    supportsTextToolCalls: true,
+    supportsTools: true,
+    maxContextLength: 32768,
+  };
+
+  private parsers: IToolCallTextParser[];
+
+  constructor() {
+    this.parsers = [...defaultParsers];
+    this.parsers.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
+  }
+
+  canHandle(modelName: string): boolean {
+    return this.config.modelPattern.test(modelName);
+  }
+
+  supportsTools(modelName: string): boolean {
+    const name = modelName.toLowerCase();
+    // Детальная логика проверки поддержки tools
+    return /instruct/i.test(name);
+  }
+
+  parseToolCalls(content: string): ToolCallParseResult {
+    const allToolCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
+    let currentContent = content;
+
+    for (const parser of this.parsers) {
+      if (parser.canParse(currentContent)) {
+        const result = parser.parse(currentContent);
+        if (result.toolCalls.length > 0) {
+          allToolCalls.push(...result.toolCalls);
+          currentContent = result.cleanedContent;
+        }
+      }
+    }
+
+    return {
+      toolCalls: allToolCalls,
+      cleanedContent: currentContent.trim(),
+    };
+  }
+}
+```
+
 3. Создайте `parsers.ts` с кастомными парсерами (если нужны)
 4. Зарегистрируйте handler в `modelHandlerFactory.ts`
-5. Добавьте тесты в `index.test.ts`
+5. Добавьте экспорт в `index.ts`
+6. Добавьте тесты в `index.test.ts`
