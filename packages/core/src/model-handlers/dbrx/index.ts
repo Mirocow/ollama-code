@@ -35,7 +35,10 @@ export class DbrxModelHandler implements IModelHandler {
   }
 
   canHandle(modelName: string): boolean {
-    return this.config.modelPattern.test(modelName);
+    const pattern = this.config.modelPattern;
+    return pattern instanceof RegExp
+      ? pattern.test(modelName)
+      : new RegExp(pattern).test(modelName);
   }
 
   supportsTools(modelName: string): boolean {
