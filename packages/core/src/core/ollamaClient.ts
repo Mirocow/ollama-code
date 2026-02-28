@@ -53,9 +53,7 @@ import {
   getDirectoryContextString,
   getInitialChatHistory,
 } from '../utils/environmentContext.js';
-import {
-  buildApiHistoryFromConversation,
-} from '../services/sessionService.js';
+import { buildApiHistoryFromConversation } from '../services/sessionService.js';
 import { reportError } from '../utils/errorReporting.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { checkNextSpeaker } from '../utils/nextSpeakerChecker.js';
@@ -144,6 +142,17 @@ export class OllamaClient {
     const toolDeclarations = toolRegistry.getFunctionDeclarations();
     const tools: Tool[] = [{ functionDeclarations: toolDeclarations }];
     this.getChat().setTools(tools);
+  }
+
+  /**
+   * Check if the current model supports function calling (tools)
+   */
+  async checkToolSupport(): Promise<boolean | undefined> {
+    const generator = this.config.getContentGenerator();
+    if (generator?.checkToolSupport) {
+      return generator.checkToolSupport();
+    }
+    return undefined;
   }
 
   async resetChat(): Promise<void> {

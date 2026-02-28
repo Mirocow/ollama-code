@@ -452,6 +452,7 @@ export interface OllamaShowResponse {
   model_info?: Record<string, unknown>;
   license?: string;
   system?: string;
+  capabilities?: string[]; // e.g., ["completion", "tools"]
 }
 
 /**
@@ -1471,6 +1472,67 @@ export class OllamaNativeClient {
       prompt: '',
       keep_alive: duration,
     });
+  }
+
+  /**
+   * Check if a model supports function calling (tools).
+   * This checks the model's capabilities from /api/show response.
+   *
+   * @param modelName The model name to check
+   * @returns true if the model supports tools
+   *
+   * @example
+   * const supportsTools = await client.supportsTools('llama3.2');
+   * if (!supportsTools) {
+   *   console.log('This model does not support function calling');
+   * }
+   */
+  async supportsTools(modelName: string): Promise<boolean> {
+    try {
+      const info = await this.showModel(modelName);
+
+      // Check capabilities array (newer Ollama versions)
+      if (info.capabilities?.includes('tools')) {
+        return true;
+      }
+
+      // Check model_info for general.capabilities (alternative location)
+      if (info.model_info) {
+        const capabilities = info.model_info['general.capabilities'];
+        if (Array.isArray(capabilities) && capabilities.includes('tools')) {
+          return true;
+        }
+      }
+
+      // Some models are known to support tools by name pattern
+      const toolCapablePatterns = [
+        /llama3\.[12]/i,
+        /mistral/i,
+        /mixtral/i,
+        /command-r/i,
+        /qwen2\.5/i,
+        /qwen3/i,
+        /deepseek/i,
+      ];
+
+      for (const pattern of toolCapablePatterns) {
+        if (pattern.test(modelName)) {
+          debugLog('info', 'Model likely supports tools by name pattern', {
+            modelName,
+          });
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      debugLog('warn', 'Could not determine tool support, assuming yes', {
+        modelName,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Assume true on error - let the model try to use tools
+      return true;
+    }
   }
 }
 

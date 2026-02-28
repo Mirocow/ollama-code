@@ -279,6 +279,29 @@ export const AppContainer = (props: AppContainerProps) => {
       await config.initialize();
       setConfigInitialized(true);
 
+      // Check tool support and show warning if needed
+      const ollamaClient = config.getOllamaClient();
+      if (ollamaClient) {
+        try {
+          const supportsTools = await ollamaClient.checkToolSupport();
+          if (supportsTools === false) {
+            const model = config.getModel();
+            historyManager.addItem(
+              {
+                type: MessageType.WARNING,
+                text:
+                  `⚠️  Model "${model}" may not support function calling (tools). ` +
+                  `Tool commands may not work. Consider using a model that supports tools ` +
+                  `(e.g., llama3.1, llama3.2, qwen2.5-coder, mistral).`,
+              },
+              Date.now(),
+            );
+          }
+        } catch {
+          // Ignore errors in tool support check
+        }
+      }
+
       const resumedSessionData = config.getResumedSessionData();
       if (resumedSessionData) {
         const historyItems = buildResumedHistoryItems(
