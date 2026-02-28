@@ -17,8 +17,12 @@ import {
   OllamaConnectionError,
   OllamaTimeoutError,
   OllamaAbortError,
+  OllamaStreamingError,
   detectOllamaError,
 } from '../utils/ollamaErrors.js';
+import { createDebugLogger } from '../utils/debugLogger.js';
+
+const debugLogger = createDebugLogger('OLLAMA_CLIENT');
 
 /**
  * Default Ollama base URL (native API, not OpenAI-compatible)
@@ -154,6 +158,8 @@ export interface OllamaGenerateResponse {
   created_at: string;
   response: string;
   done: boolean;
+  /** Reason for completion: 'stop', 'length', etc. */
+  done_reason?: 'stop' | 'length' | 'load' | 'error';
   context?: number[];
   total_duration?: number;
   load_duration?: number;
@@ -173,6 +179,8 @@ export interface OllamaChatMessage {
   tool_calls?: OllamaToolCall[];
   /** Thinking content for thinking models */
   thinking?: string;
+  /** Tool name for tool result messages */
+  tool_name?: string;
 }
 
 /**
@@ -220,6 +228,8 @@ export interface OllamaChatResponse {
   created_at: string;
   message: OllamaChatMessage;
   done: boolean;
+  /** Reason for completion: 'stop', 'length', etc. */
+  done_reason?: 'stop' | 'length' | 'load' | 'error';
   total_duration?: number;
   load_duration?: number;
   prompt_eval_count?: number;
@@ -626,6 +636,12 @@ export class OllamaNativeClient {
         ? AbortSignal.any([externalSignal, controller.signal])
         : controller.signal;
 
+      debugLogger.debug('Making API request', { 
+        method, 
+        endpoint, 
+        body: body ? JSON.stringify(body).slice(0, 500) : undefined 
+      });
+
       try {
         const response = await fetch(url, {
           method,
@@ -648,13 +664,17 @@ export class OllamaNativeClient {
           } catch {
             // Use default error message
           }
+          debugLogger.error('API request failed', { status: response.status, error: errorMessage });
           throw detectOllamaError(new Error(errorMessage), {});
         }
 
-        return (await response.json()) as T;
+        const result = await response.json() as T;
+        debugLogger.debug('API request completed', { endpoint });
+        return result;
       } catch (error) {
         // Handle timeout
         if (error instanceof Error && error.name === 'AbortError') {
+          debugLogger.error('API request timed out', { endpoint, timeout: this.timeout });
           throw new OllamaTimeoutError(this.timeout);
         }
         // Re-throw OllamaApiError as-is
@@ -662,6 +682,7 @@ export class OllamaNativeClient {
           throw error;
         }
         // Wrap other errors
+        debugLogger.error('API request error', { endpoint, error: error instanceof Error ? error.message : String(error) });
         throw detectOllamaError(error, { timeoutMs: this.timeout });
       } finally {
         clearTimeout(timeoutId);
@@ -671,6 +692,11 @@ export class OllamaNativeClient {
 
   /**
    * Make a streaming HTTP request to the Ollama API
+   * 
+   * Improvements for latest Ollama API:
+   * - Handles mid-stream errors (Ollama returns errors in NDJSON format)
+   * - Refreshes timeout on each chunk to handle long-running generations
+   * - Provides detailed logging for debugging
    */
   private async streamingRequest<T>(
     endpoint: string,
@@ -680,12 +706,20 @@ export class OllamaNativeClient {
   ): Promise<void> {
     const url = `${this.baseUrl}${endpoint}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    
+    // Use a refreshable timeout that resets on each chunk
+    let timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const refreshTimeout = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    };
 
     // Combine external signal with timeout signal
     const combinedSignal = externalSignal
       ? AbortSignal.any([externalSignal, controller.signal])
       : controller.signal;
+
+    debugLogger.debug('Starting streaming request', { url, body: JSON.stringify(body).slice(0, 500) });
 
     try {
       const response = await fetch(url, {
@@ -712,6 +746,7 @@ export class OllamaNativeClient {
         } catch {
           // Use default error message
         }
+        debugLogger.error('Streaming request failed', { status: response.status, error: errorMessage });
         throw detectOllamaError(new Error(errorMessage), {});
       }
 
@@ -722,10 +757,19 @@ export class OllamaNativeClient {
 
       const decoder = new TextDecoder();
       let buffer = '';
+      let chunkCount = 0;
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        
+        if (done) {
+          debugLogger.debug('Streaming completed', { totalChunks: chunkCount });
+          break;
+        }
+
+        // Refresh timeout on each chunk to handle long-running generations
+        refreshTimeout();
+        chunkCount++;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
@@ -735,9 +779,22 @@ export class OllamaNativeClient {
           if (line.trim()) {
             try {
               const parsed = JSON.parse(line) as T;
+              
+              // Check for mid-stream errors (Ollama returns errors in NDJSON format)
+              if (parsed && typeof parsed === 'object' && 'error' in parsed) {
+                const errorMsg = (parsed as { error: string }).error;
+                debugLogger.error('Mid-stream error received', { error: errorMsg });
+                throw new OllamaStreamingError(errorMsg, parsed);
+              }
+              
               callback(parsed);
-            } catch {
-              // Skip malformed JSON lines
+            } catch (parseError) {
+              // If it's already an OllamaStreamingError, re-throw it
+              if (parseError instanceof OllamaStreamingError) {
+                throw parseError;
+              }
+              // Skip malformed JSON lines but log them
+              debugLogger.warn('Skipping malformed JSON line', { line: line.slice(0, 100) });
             }
           }
         }
@@ -747,14 +804,26 @@ export class OllamaNativeClient {
       if (buffer.trim()) {
         try {
           const parsed = JSON.parse(buffer) as T;
+          
+          // Check for error in final chunk
+          if (parsed && typeof parsed === 'object' && 'error' in parsed) {
+            const errorMsg = (parsed as { error: string }).error;
+            throw new OllamaStreamingError(errorMsg, parsed);
+          }
+          
           callback(parsed);
-        } catch {
+        } catch (parseError) {
+          if (parseError instanceof OllamaStreamingError) {
+            throw parseError;
+          }
           // Skip malformed JSON
+          debugLogger.warn('Skipping malformed JSON in final buffer', { buffer: buffer.slice(0, 100) });
         }
       }
     } catch (error) {
       // Handle timeout
       if (error instanceof Error && error.name === 'AbortError') {
+        debugLogger.error('Streaming request timed out', { timeout: this.timeout });
         throw new OllamaTimeoutError(this.timeout);
       }
       // Re-throw OllamaApiError as-is
@@ -762,6 +831,7 @@ export class OllamaNativeClient {
         throw error;
       }
       // Wrap other errors
+      debugLogger.error('Streaming request error', { error: error instanceof Error ? error.message : String(error) });
       throw detectOllamaError(error, { timeoutMs: this.timeout });
     } finally {
       clearTimeout(timeoutId);
