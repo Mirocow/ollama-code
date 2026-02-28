@@ -14,6 +14,9 @@ import {
   LlamaModelHandler,
   DeepSeekModelHandler,
   MistralModelHandler,
+  GemmaModelHandler,
+  PhiModelHandler,
+  CommandModelHandler,
 } from './index.js';
 
 describe('Model Handlers', () => {
@@ -31,7 +34,8 @@ describe('Model Handlers', () => {
     });
 
     it('should parse tool_call tag format', () => {
-      const content = '<tool_call={"name": "list_directory", "arguments": {"path": "/home"}}>';
+      const content =
+        '<tool_call={"name": "list_directory", "arguments": {"path": "/home"}}>';
       const result = handler.parseToolCalls(content);
 
       expect(result.toolCalls).toHaveLength(1);
@@ -40,7 +44,8 @@ describe('Model Handlers', () => {
     });
 
     it('should parse tool_call_start/end format', () => {
-      const content = '<tool_call_start>{"name": "read_file", "arguments": {"path": "/test.txt"}}<tool_call_end>';
+      const content =
+        '<tool_call_start>{"name": "read_file", "arguments": {"path": "/test.txt"}}<tool_call_end>';
       const result = handler.parseToolCalls(content);
 
       expect(result.toolCalls).toHaveLength(1);
@@ -48,7 +53,8 @@ describe('Model Handlers', () => {
     });
 
     it('should parse function call format', () => {
-      const content = '{"type": "function", "function": {"name": "run_shell_command", "arguments": "{\\"command\\": \\"ls\\"}"}}';
+      const content =
+        '{"type": "function", "function": {"name": "run_shell_command", "arguments": "{\\"command\\": \\"ls\\"}"}}';
       const result = handler.parseToolCalls(content);
 
       expect(result.toolCalls).toHaveLength(1);
@@ -57,7 +63,8 @@ describe('Model Handlers', () => {
     });
 
     it('should parse standalone JSON format', () => {
-      const content = 'Let me help you.\n{"name": "edit", "arguments": {"path": "/file.ts"}}';
+      const content =
+        'Let me help you.\n{"name": "edit", "arguments": {"path": "/file.ts"}}';
       const result = handler.parseToolCalls(content);
 
       expect(result.toolCalls).toHaveLength(1);
@@ -89,13 +96,24 @@ describe('Model Handlers', () => {
     });
 
     it('should support tools for all qwen models', () => {
+      // Qwen-Coder variants
       expect(handler.supportsTools!('qwen3-coder:30b')).toBe(true);
       expect(handler.supportsTools!('qwen2.5-coder:7b')).toBe(true);
+      // QwQ reasoning models
       expect(handler.supportsTools!('qwq:32b')).toBe(true);
+      // Qwen3 tools variant
+      expect(handler.supportsTools!('qwen3-tools:30b')).toBe(true);
+      // Qwen2.5 instruct
+      expect(handler.supportsTools!('qwen2.5-instruct:7b')).toBe(true);
+    });
+
+    it('should NOT support tools for base qwen2.5 models without instruct', () => {
+      expect(handler.supportsTools!('qwen2.5:7b')).toBe(false);
     });
 
     it('should parse Qwen tool_call format', () => {
-      const content = '<tool_call={"name": "test_tool", "arguments": {"arg1": "value1"}}>';
+      const content =
+        '<tool_call={"name": "test_tool", "arguments": {"arg1": "value1"}}>';
       const result = handler.parseToolCalls(content);
 
       expect(result.toolCalls).toHaveLength(1);
@@ -164,14 +182,26 @@ describe('Model Handlers', () => {
       expect(handler.canHandle('llama3.2')).toBe(false);
     });
 
-    it('should support tools for all mistral models', () => {
-      expect(handler.supportsTools!('mistral:latest')).toBe(true);
-      expect(handler.supportsTools!('mixtral:8x7b')).toBe(true);
+    it('should support tools for mistral instruct and codestral models', () => {
+      // Codestral
       expect(handler.supportsTools!('codestral:22b')).toBe(true);
+      // Mixtral
+      expect(handler.supportsTools!('mixtral:8x7b')).toBe(true);
+      // Mistral instruct variants
+      expect(handler.supportsTools!('mistral:7b-instruct')).toBe(true);
+      // Mistral Small/Medium/Large
+      expect(handler.supportsTools!('mistral-small:24b')).toBe(true);
+      expect(handler.supportsTools!('mistral-large:123b')).toBe(true);
+    });
+
+    it('should NOT support tools for base mistral:7b without instruct', () => {
+      expect(handler.supportsTools!('mistral:7b')).toBe(false);
+      expect(handler.supportsTools!('mistral:latest')).toBe(false);
     });
 
     it('should parse [TOOL_CALLS] format', () => {
-      const content = '[TOOL_CALLS] [{"name": "get_weather", "arguments": {"location": "Paris"}}]';
+      const content =
+        '[TOOL_CALLS] [{"name": "get_weather", "arguments": {"location": "Paris"}}]';
       const result = handler.parseToolCalls(content);
 
       expect(result.toolCalls).toHaveLength(1);
@@ -180,11 +210,87 @@ describe('Model Handlers', () => {
     });
 
     it('should parse code block format', () => {
-      const content = '```json\n{"name": "list_files", "arguments": {"path": "/home"}}\n```';
+      const content =
+        '```json\n{"name": "list_files", "arguments": {"path": "/home"}}\n```';
       const result = handler.parseToolCalls(content);
 
       expect(result.toolCalls).toHaveLength(1);
       expect(result.toolCalls[0].name).toBe('list_files');
+    });
+  });
+
+  describe('GemmaModelHandler', () => {
+    const handler = new GemmaModelHandler();
+
+    it('should have correct config', () => {
+      expect(handler.name).toBe('gemma');
+      expect(handler.config.displayName).toBe('Gemma');
+    });
+
+    it('should handle gemma models', () => {
+      expect(handler.canHandle('gemma-2-9b')).toBe(true);
+      expect(handler.canHandle('gemma-3-27b')).toBe(true);
+      expect(handler.canHandle('codegemma:7b')).toBe(true);
+      expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should support tools for Gemma 3 and CodeGemma', () => {
+      expect(handler.supportsTools!('gemma-3-27b')).toBe(true);
+      expect(handler.supportsTools!('codegemma:7b')).toBe(true);
+    });
+
+    it('should NOT support tools for Gemma 2 base', () => {
+      expect(handler.supportsTools!('gemma-2-9b')).toBe(false);
+    });
+
+    it('should support tools for Gemma 2 instruct', () => {
+      expect(handler.supportsTools!('gemma-2-9b-it')).toBe(true);
+    });
+  });
+
+  describe('PhiModelHandler', () => {
+    const handler = new PhiModelHandler();
+
+    it('should have correct config', () => {
+      expect(handler.name).toBe('phi');
+      expect(handler.config.displayName).toBe('Phi');
+    });
+
+    it('should handle phi models', () => {
+      expect(handler.canHandle('phi-3-mini:3.8b')).toBe(true);
+      expect(handler.canHandle('phi-3.5:3.8b')).toBe(true);
+      expect(handler.canHandle('phi-4:14b')).toBe(true);
+      expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should support tools for Phi 3+ models', () => {
+      expect(handler.supportsTools!('phi-3-mini:3.8b')).toBe(true);
+      expect(handler.supportsTools!('phi-3.5:3.8b')).toBe(true);
+      expect(handler.supportsTools!('phi-4:14b')).toBe(true);
+    });
+
+    it('should NOT support tools for Phi 2', () => {
+      expect(handler.supportsTools!('phi-2:2.7b')).toBe(false);
+    });
+  });
+
+  describe('CommandModelHandler', () => {
+    const handler = new CommandModelHandler();
+
+    it('should have correct config', () => {
+      expect(handler.name).toBe('command');
+      expect(handler.config.displayName).toBe('Command');
+    });
+
+    it('should handle command models', () => {
+      expect(handler.canHandle('command-r:35b')).toBe(true);
+      expect(handler.canHandle('command-r-plus:104b')).toBe(true);
+      expect(handler.canHandle('llama3.2')).toBe(false);
+    });
+
+    it('should support tools for all Command models', () => {
+      expect(handler.supportsTools!('command-r:35b')).toBe(true);
+      expect(handler.supportsTools!('command-r-plus:104b')).toBe(true);
     });
   });
 });
@@ -208,6 +314,9 @@ describe('ModelHandlerFactory', () => {
       expect(names).toContain('llama');
       expect(names).toContain('deepseek');
       expect(names).toContain('mistral');
+      expect(names).toContain('gemma');
+      expect(names).toContain('phi');
+      expect(names).toContain('command');
     });
   });
 
@@ -237,6 +346,21 @@ describe('ModelHandlerFactory', () => {
       expect(handler.name).toBe('mistral');
     });
 
+    it('should return Gemma handler for gemma models', () => {
+      const handler = factory.getHandler('gemma-3-27b');
+      expect(handler.name).toBe('gemma');
+    });
+
+    it('should return Phi handler for phi models', () => {
+      const handler = factory.getHandler('phi-3-mini:3.8b');
+      expect(handler.name).toBe('phi');
+    });
+
+    it('should return Command handler for command models', () => {
+      const handler = factory.getHandler('command-r:35b');
+      expect(handler.name).toBe('command');
+    });
+
     it('should return default handler for unknown models', () => {
       const handler = factory.getHandler('unknown-model');
       expect(handler.name).toBe('default');
@@ -250,10 +374,14 @@ describe('ModelHandlerFactory', () => {
       expect(factory.supportsTools('qwq:32b')).toBe(true);
     });
 
-    it('should return true for mistral models', () => {
-      expect(factory.supportsTools('mistral:latest')).toBe(true);
+    it('should return true for mistral instruct models', () => {
+      expect(factory.supportsTools('mistral:7b-instruct')).toBe(true);
       expect(factory.supportsTools('mixtral:8x7b')).toBe(true);
       expect(factory.supportsTools('codestral:22b')).toBe(true);
+    });
+
+    it('should return false for base mistral:7b', () => {
+      expect(factory.supportsTools('mistral:7b')).toBe(false);
     });
 
     it('should return true for deepseek models', () => {
@@ -272,10 +400,11 @@ describe('ModelHandlerFactory', () => {
       expect(factory.supportsTools('random-model:7b')).toBe(false);
     });
 
-    it('should return true for known tool-capable models in default handler', () => {
-      expect(factory.supportsTools('command-r:35b')).toBe(true);
-      expect(factory.supportsTools('gemma2:27b')).toBe(true);
-      expect(factory.supportsTools('phi3:14b')).toBe(true);
+    it('should use specific handlers for gemma, phi, command models', () => {
+      // These models now have dedicated handlers
+      expect(factory.getHandler('gemma-3-27b').name).toBe('gemma');
+      expect(factory.getHandler('phi-3-mini').name).toBe('phi');
+      expect(factory.getHandler('command-r:35b').name).toBe('command');
     });
   });
 
@@ -296,7 +425,10 @@ describe('ModelHandlerFactory', () => {
           displayName: 'Custom',
         },
         canHandle: (modelName: string) => /custom/i.test(modelName),
-        parseToolCalls: (content: string) => ({ toolCalls: [], cleanedContent: content }),
+        parseToolCalls: (content: string) => ({
+          toolCalls: [],
+          cleanedContent: content,
+        }),
       };
 
       factory.register(customHandler);

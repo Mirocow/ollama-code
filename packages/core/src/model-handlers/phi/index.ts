@@ -10,36 +10,35 @@ import type {
   ModelHandlerConfig,
   IToolCallTextParser,
 } from '../types.js';
-import { mistralParsers } from './parsers.js';
 import { defaultParsers } from '../default/parsers.js';
 
 /**
- * Mistral model handler.
+ * Phi model handler.
  *
- * Supports Mistral AI models:
- * - mistral (mistral-small, mistral-medium, mistral-large)
- * - codestral (code-focused model)
- * - mixtral (mixture of experts)
+ * Supports Microsoft Phi models:
+ * - phi-2 (older, limited tool support)
+ * - phi-3 (mini, small, medium)
+ * - phi-3.5
+ * - phi-4 (latest with improved tool calling)
  *
- * Mistral models typically return tool calls in structured format,
- * but may also output in [TOOL_CALLS] text format.
+ * Phi-3 and later models have native function calling support.
  */
-export class MistralModelHandler implements IModelHandler {
-  readonly name = 'mistral';
+export class PhiModelHandler implements IModelHandler {
+  readonly name = 'phi';
   readonly config: ModelHandlerConfig = {
-    modelPattern: /mistral|mixtral|codestral/i,
-    displayName: 'Mistral',
-    description: 'Mistral AI models (mistral, mixtral, codestral)',
+    modelPattern: /phi/i,
+    displayName: 'Phi',
+    description: 'Microsoft Phi models (phi-2, phi-3, phi-4)',
     supportsStructuredToolCalls: true,
     supportsTextToolCalls: true,
-    supportsTools: true,
-    maxContextLength: 128000, // mistral-large
+    supportsTools: false, // Determined per model
+    maxContextLength: 128000, // phi-3-medium
   };
 
   private parsers: IToolCallTextParser[];
 
   constructor() {
-    this.parsers = [...mistralParsers, ...defaultParsers];
+    this.parsers = [...defaultParsers];
     this.parsers.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
   }
 
@@ -54,30 +53,22 @@ export class MistralModelHandler implements IModelHandler {
   supportsTools(modelName: string): boolean {
     const name = modelName.toLowerCase();
 
-    // Codestral - code focused, supports tools
-    if (/codestral/i.test(name)) return true;
+    // Phi-4 - excellent tool calling
+    if (/phi[-_]?4/i.test(name)) return true;
 
-    // Mistral Small/Medium/Large - all support tools
-    if (/mistral[-_]?small|mistral[-_]?medium|mistral[-_]?large/i.test(name))
+    // Phi-3.5 - supports tools
+    if (/phi[-_]?3\.?5/i.test(name)) return true;
+
+    // Phi-3 mini/small/medium - support tools
+    if (/phi[-_]?3/i.test(name)) {
+      // All phi-3 variants support function calling
       return true;
-
-    // Mixtral 8x7B, 8x22B - support tools
-    if (/mixtral/i.test(name)) return true;
-
-    // Mistral 7B - base model, instruct variant supports tools
-    if (/mistral[-_]?7b/i.test(name)) {
-      return /instruct/i.test(name);
     }
 
-    // Mistral Nemo - supports tools
-    if (/mistral[-_]?nemo/i.test(name)) return true;
+    // Phi-2 - no native tool support
+    if (/phi[-_]?2/i.test(name)) return false;
 
-    // Generic mistral - check for instruct tag
-    if (/mistral/i.test(name)) {
-      return /instruct/i.test(name);
-    }
-
-    // Default for Mistral family
+    // Default for unknown Phi variants
     return false;
   }
 

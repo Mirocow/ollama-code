@@ -10,35 +10,37 @@ import type {
   ModelHandlerConfig,
   IToolCallTextParser,
 } from '../types.js';
-import { deepseekParsers } from './parsers.js';
 import { defaultParsers } from '../default/parsers.js';
 
 /**
- * DeepSeek model handler.
+ * Gemma model handler.
  *
- * Supports DeepSeek models:
- * - deepseek-coder
- * - deepseek-r1 (reasoning model with <think tags)
+ * Supports Google Gemma models:
+ * - gemma (gemma-2-2b, gemma-2-9b, gemma-2-27b)
+ * - gemma-3 (latest generation)
+ * - codegemma (code-focused variant)
  *
- * DeepSeek R1 is a reasoning model that outputs thinking in <think...> tags.
- * Tool calls may be embedded in the thinking output.
+ * Gemma models have limited tool calling support:
+ * - Gemma 2: No native tool calling (but can follow JSON format)
+ * - Gemma 3: Added tool calling support
+ * - CodeGemma: Limited tool calling for code tasks
  */
-export class DeepSeekModelHandler implements IModelHandler {
-  readonly name = 'deepseek';
+export class GemmaModelHandler implements IModelHandler {
+  readonly name = 'gemma';
   readonly config: ModelHandlerConfig = {
-    modelPattern: /deepseek/i,
-    displayName: 'DeepSeek',
-    description: 'DeepSeek models (deepseek-coder, deepseek-r1)',
-    supportsStructuredToolCalls: true,
+    modelPattern: /gemma/i,
+    displayName: 'Gemma',
+    description: 'Google Gemma models (gemma-2, gemma-3, codegemma)',
+    supportsStructuredToolCalls: false, // Only Gemma 3 supports this
     supportsTextToolCalls: true,
-    supportsTools: true,
-    maxContextLength: 128000,
+    supportsTools: false, // Determined per model
+    maxContextLength: 8192, // Varies by model (up to 32K for some)
   };
 
   private parsers: IToolCallTextParser[];
 
   constructor() {
-    this.parsers = [...deepseekParsers, ...defaultParsers];
+    this.parsers = [...defaultParsers];
     this.parsers.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
   }
 
@@ -53,29 +55,19 @@ export class DeepSeekModelHandler implements IModelHandler {
   supportsTools(modelName: string): boolean {
     const name = modelName.toLowerCase();
 
-    // DeepSeek Coder V2 - supports tools
-    if (/deepseek[-_]?coder[-_]?v?2/i.test(name)) return true;
+    // Gemma 3 - supports tool calling
+    if (/gemma[-_]?3/i.test(name)) return true;
 
-    // DeepSeek Coder (older) - limited tool support
-    if (/deepseek[-_]?coder/i.test(name)) {
-      // V1 has limited support, but works
-      return true;
+    // CodeGemma - limited tool support for code tasks
+    if (/codegemma/i.test(name)) return true;
+
+    // Gemma 2 instruct - no native tools, but can follow format
+    // Most use cases require workarounds
+    if (/gemma[-_]?2/i.test(name)) {
+      return /it|instruct/i.test(name);
     }
 
-    // DeepSeek R1 - reasoning model, supports tools
-    if (/deepseek[-_]?r1/i.test(name)) return true;
-
-    // DeepSeek V3 - supports tools
-    if (/deepseek[-_]?v?3/i.test(name)) return true;
-
-    // DeepSeek V2.5 - supports tools
-    if (/deepseek[-_]?v?2\.?5/i.test(name)) return true;
-
-    // Generic DeepSeek - assume no tools for base models
-    if (/deepseek/i.test(name)) {
-      return /instruct|chat/i.test(name);
-    }
-
+    // Gemma 1 - no tool support
     return false;
   }
 
