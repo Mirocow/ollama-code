@@ -403,35 +403,48 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 
 | Задача                       | Приоритет | Оценка | Статус        |
 | ---------------------------- | --------- | ------ | ------------- |
-| Next.js App Router setup     | P0        | 3d     | 🟡 В процессе |
-| Chat interface component     | P0        | 4d     | 🟡 В процессе |
-| File explorer integration    | P1        | 3d     | 🔴 Не начато  |
-| Terminal emulator (xterm.js) | P1        | 4d     | 🔴 Не начато  |
+| Next.js App Router setup     | P0        | 3d     | ✅ Завершено  |
+| Chat interface component     | P0        | 4d     | ✅ Завершено  |
+| File explorer integration    | P1        | 3d     | ✅ Завершено  |
+| Terminal emulator (xterm.js) | P1        | 4d     | ✅ Завершено  |
 | WebSocket streaming          | P0        | 3d     | 🟡 В процессе |
 
 #### Web UI — Реализовано (частично)
 
-**Статус:** 🟡 В процессе
+**Статус:** 🟡 В процессе (70%)
 
 **Созданные файлы:**
 
-| Файл                                    | Описание                         |
-| --------------------------------------- | -------------------------------- |
-| `packages/web-app/package.json`         | Next.js 15, React 18, Zustand    |
-| `packages/web-app/tsconfig.json`        | TypeScript конфигурация          |
-| `packages/web-app/next.config.mjs`      | Next.js конфигурация             |
-| `packages/web-app/src/app/layout.tsx`   | Root layout с провайдерами       |
-| `packages/web-app/src/app/page.tsx`     | Главная страница с ChatInterface |
-| `packages/web-app/src/app/globals.css`  | Глобальные стили (Tailwind)      |
-| `packages/web-app/src/stores/`          | Zustand stores                   |
-| `packages/web-app/src/hooks/`           | Custom hooks (useWebSocket)      |
-| `packages/web-app/src/components/chat/` | ChatInterface компонент          |
+| Файл                                    | Описание                              |
+| --------------------------------------- | ------------------------------------ |
+| `packages/web-app/package.json`         | Next.js 15, React 19, Zustand        |
+| `packages/web-app/tsconfig.json`        | TypeScript конфигурация              |
+| `packages/web-app/next.config.mjs`      | Next.js конфигурация                 |
+| `packages/web-app/src/app/layout.tsx`   | Root layout с провайдерами           |
+| `packages/web-app/src/app/page.tsx`     | Главная страница с табами            |
+| `packages/web-app/src/app/globals.css`  | Глобальные стили (Tailwind)          |
+| `packages/web-app/src/stores/`          | Zustand stores                       |
+| `packages/web-app/src/hooks/`           | Custom hooks (useWebSocket)          |
+| `packages/web-app/src/components/chat/` | ChatInterface компонент              |
+| `packages/web-app/src/components/explorer/` | FileExplorer с Monaco editor     |
+| `packages/web-app/src/components/terminal/` | TerminalEmulator (xterm.js)      |
+| `packages/web-app/src/app/api/ollama/`  | Ollama API proxy                     |
+| `packages/web-app/src/app/api/models/`  | Models list API                      |
+| `packages/web-app/src/app/api/chat/`    | Chat streaming API                   |
+| `packages/web-app/src/app/api/generate/`| Generate streaming API               |
+| `packages/web-app/src/app/api/fs/`      | Filesystem operations API            |
+
+**Реализовано:**
+- ✅ ChatInterface с streaming
+- ✅ FileExplorer с Monaco editor
+- ✅ TerminalEmulator с xterm.js
+- ✅ API routes для Ollama proxy
+- ✅ Filesystem API (CRUD)
+- ✅ Tabbed interface (Chat/Files/Terminal)
 
 **Осталось реализовать:**
 
-- API routes для proxy к Ollama
-- File explorer с Monaco editor
-- Terminal emulator (xterm.js)
+- Terminal WebSocket backend
 - Полноценная интеграция с CLI backend
 
 ---
@@ -562,9 +575,11 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 
 ### Завершенные задачи
 
-| Коммит     | Описание                                        |
-| ---------- | ----------------------------------------------- |
-| `db4088db` | fix: TypeScript configuration and web-app fixes |
+| Коммит     | Описание                                            |
+| ---------- | --------------------------------------------------- |
+| `76163a8b` | feat(web-app): add API routes, FileExplorer, Terminal |
+| `afe080c6` | docs: update ROADMAP with actual project status     |
+| `db4088db` | fix: TypeScript configuration and web-app fixes     |
 | `c04881dc` | feat(web-app): add ChatInterface component      |
 | `afd70c0c` | fix: correct template path loading              |
 | `ddfc7241` | docs: add TSDoc documentation to core exports   |
@@ -576,7 +591,7 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 
 | Задача                  | Приоритет | Прогресс | Что осталось                     |
 | ----------------------- | --------- | -------- | -------------------------------- |
-| Web UI (v0.15.0)        | P0        | 40%      | API routes, File explorer, xterm |
+| Web UI (v0.15.0)        | P0        | 70%      | Terminal WebSocket backend       |
 | TSDoc Documentation     | P1        | 20%      | CLI, SDK packages                |
 | Virtual scrolling (P2)  | P2        | 0%       | Не начато                        |
 | Structured logging (P2) | P2        | 0%       | Не начато                        |
