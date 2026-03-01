@@ -6,10 +6,10 @@
 
 /**
  * Plugin System
- * 
+ *
  * This module provides a plugin architecture for extending
  * Ollama Code with custom tools, commands, and functionality.
- * 
+ *
  * @example
  * // Define a plugin
  * const myPlugin: PluginDefinition = {
@@ -40,7 +40,7 @@
  *     }
  *   }
  * };
- * 
+ *
  * // Register and enable
  * await pluginManager.registerPlugin(myPlugin);
  * await pluginManager.enablePlugin('my-plugin');
@@ -50,14 +50,41 @@ export * from './types.js';
 export { PluginManager, pluginManager } from './pluginManager.js';
 export { PluginLoader, createPluginLoader } from './pluginLoader.js';
 export type { DiscoveredPlugin } from './pluginLoader.js';
-export { 
-  PluginToolAdapter, 
-  registerPluginTools, 
+export {
+  PluginToolAdapter,
+  registerPluginTools,
   unregisterPluginTools,
-  pluginToolToDeclarative 
+  pluginToolToDeclarative,
 } from './pluginToolAdapter.js';
-export { 
-  PluginRegistry, 
-  getPluginRegistry, 
-  initializePluginRegistry 
+export {
+  PluginRegistry,
+  getPluginRegistry,
+  initializePluginRegistry,
 } from './pluginRegistry.js';
+
+// Security Sandbox
+export {
+  PluginSandbox,
+  createPluginSandbox,
+  createBuiltinSandbox,
+  createTrustedSandbox,
+  createUntrustedSandbox,
+  SandboxViolationError,
+  DEFAULT_RESOURCE_LIMITS,
+  UNTRUSTED_PLUGIN_CONFIG,
+  TRUSTED_PLUGIN_CONFIG,
+  BUILTIN_PLUGIN_CONFIG,
+} from './pluginSandbox.js';
+export type {
+  FilesystemAccessLevel,
+  NetworkAccessLevel,
+  CommandExecutionLevel,
+  FilesystemPermission,
+  NetworkPermission,
+  CommandPermission,
+  ResourceLimits,
+  PluginSandboxConfig,
+  ViolationType,
+  SandboxViolation,
+  SandboxContext,
+} from './pluginSandbox.js';

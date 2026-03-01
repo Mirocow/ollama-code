@@ -1030,3 +1030,103 @@ Verified all development stages are complete. All ROADMAP items through v0.14.0 
 
 - Lint: Minor warnings in integration tests (expected)
 - All core modules compile successfully
+
+---
+
+## Session: Plugin Security Sandbox (v0.13.0) - 2025-03-01
+
+### Summary
+
+Implemented comprehensive security sandbox for plugin execution isolation.
+
+### Security Sandbox Features
+
+#### 1. Filesystem Access Control
+
+- **Access levels**: none, read, write, full
+- **Pattern matching**: glob patterns with context variables (${workingDir}, ${tempDir}, ${home})
+- **Violation tracking**: automatic logging of denied access attempts
+
+#### 2. Network Access Control
+
+- **Domain whitelisting**: exact match and wildcard (\*.example.com)
+- **Port restrictions**: limit requests to specific ports
+- **Method restrictions**: limit HTTP methods (GET, POST, PUT, DELETE, PATCH)
+
+#### 3. Command Execution Control
+
+- **Command whitelisting**: allow specific commands only
+- **Argument restrictions**: control argument patterns
+- **Dangerous command detection**: block rm -rf, etc.
+
+#### 4. Environment Variable Isolation
+
+- **Variable whitelisting**: pattern-based access control
+- **Wildcard support**: NODE\_\* for all Node.js vars
+- **Complete isolation**: only allowed vars passed to plugin
+
+#### 5. Resource Limits
+
+- **Timeout**: configurable execution timeout (default 30s)
+- **Memory**: maximum memory allocation (default 100MB)
+- **File size**: maximum file read/write size
+- **Concurrent ops**: limit simultaneous operations
+
+### Trust Levels
+
+| Level         | Filesystem               | Network          | Commands       | Limits         |
+| ------------- | ------------------------ | ---------------- | -------------- | -------------- |
+| **untrusted** | Project read, temp write | GitHub, npm only | None           | 15s, 50MB      |
+| **trusted**   | Project write, config    | All domains      | npm, node, git | 30s, 100MB     |
+| **builtin**   | Full access              | Full access      | All commands   | 60s, unlimited |
+
+### Files Created
+
+| File                            | Lines | Description                     |
+| ------------------------------- | ----- | ------------------------------- |
+| `plugins/pluginSandbox.ts`      | 800+  | Security sandbox implementation |
+| `plugins/pluginSandbox.test.ts` | 500+  | Comprehensive test suite        |
+
+### Test Coverage
+
+- Constructor and trust levels
+- Filesystem read/write/delete permissions
+- Network domain and method restrictions
+- Command execution whitelisting
+- Environment variable access
+- Resource limit enforcement
+- Violation tracking and callbacks
+- Sandbox lifecycle (activate/deactivate)
+
+### API Usage
+
+```typescript
+// Create sandbox for untrusted plugin
+const sandbox = createUntrustedSandbox(
+  'my-plugin',
+  '1.0.0',
+  workingDir,
+  tempDir,
+);
+
+// Check permissions
+sandbox.canReadFile('/project/file.txt'); // true
+sandbox.canWriteFile('/project/file.txt'); // false
+sandbox.canMakeRequest('https://api.github.com', 'GET'); // true
+sandbox.canExecuteCommand('npm', ['install']); // false
+
+// Activate and monitor
+sandbox.activate();
+sandbox.onViolation((v) => console.warn(`Violation: ${v.type}`));
+
+// Get isolated environment
+const env = sandbox.getEnvironment(); // Only allowed env vars
+```
+
+### Integration Points
+
+The sandbox integrates with:
+
+- **PluginLoader**: Apply sandbox when loading plugins
+- **PluginToolAdapter**: Wrap tool execution with sandbox checks
+- **PluginManager**: Enforce sandbox per plugin trust level
