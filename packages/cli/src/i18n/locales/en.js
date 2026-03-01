@@ -9,6 +9,7 @@ export default {
   'context': 'context',
   'used': 'used',
   'Near limit': 'Near limit',
+  'Size': 'Size',
 
   // Token usage
   'Tokens': 'Tokens',

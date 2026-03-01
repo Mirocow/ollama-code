@@ -9,6 +9,7 @@ export default {
   'context': '上下文',
   'used': '已使用',
   'Near limit': '接近限制',
+  'Size': '大小',
 
   // Token usage
   'Tokens': '令牌',

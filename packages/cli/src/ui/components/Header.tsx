@@ -12,11 +12,54 @@ import {
   shortenPath,
   tildeifyPath,
   getModelCapabilities,
+  tokenLimit,
 } from '@ollama-code/ollama-code-core';
 import { theme } from '../semantic-colors.js';
 import { shortAsciiLogo } from './AsciiArt.js';
 import { getAsciiArtWidth, getCachedStringWidth } from '../utils/textUtils.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
+import { t } from '../../i18n/index.js';
+
+/**
+ * Extract model size from model name (e.g., "14b" from "qwen2.5-coder:14b")
+ */
+function extractModelSize(model: string): string | null {
+  // Match patterns like :14b, :7b, :70b, :0.5b, :1.5b, :32k, etc.
+  const sizeMatch = model.match(/:(\d+\.?\d*[bkmb]?)(?:-|$)/i);
+  if (sizeMatch) {
+    return sizeMatch[1].toLowerCase();
+  }
+  // Also match patterns like -14b, -7b in model name
+  const sizeMatch2 = model.match(/-(\d+\.?\d*[bkmb]?)(?:-|$)/i);
+  if (sizeMatch2) {
+    return sizeMatch2[1].toLowerCase();
+  }
+  return null;
+}
+
+/**
+ * Format context window size for display
+ */
+function formatContextSize(tokens: number): string {
+  if (tokens >= 1_000_000) {
+    return `${(tokens / 1_000_000).toFixed(1)}M`;
+  }
+  if (tokens >= 1_000) {
+    return `${(tokens / 1_000).toFixed(0)}K`;
+  }
+  return tokens.toString();
+}
+
+/**
+ * Create a progress bar string
+ */
+function createProgressBar(percentage: number, width: number = 10): { filled: string; empty: string } {
+  const filled = Math.round(percentage * width);
+  return {
+    filled: '█'.repeat(Math.min(filled, width)),
+    empty: '░'.repeat(Math.max(0, width - filled)),
+  };
+}
 
 interface HeaderProps {
   customAsciiArt?: string; // For user-defined ASCII art
@@ -26,6 +69,8 @@ interface HeaderProps {
   baseUrl?: string;
   workingDirectory: string;
   sessionId?: string;
+  contextWindowSize?: number; // Context window size in tokens
+  promptTokenCount?: number; // Current prompt token count for usage display
 }
 
 function titleizeAuthType(value: string): string {
@@ -63,6 +108,8 @@ export const Header: React.FC<HeaderProps> = ({
   baseUrl,
   workingDirectory,
   sessionId,
+  contextWindowSize,
+  promptTokenCount,
 }) => {
   const { columns: terminalWidth } = useTerminalSize();
 
@@ -87,6 +134,17 @@ export const Header: React.FC<HeaderProps> = ({
   }
   const capabilitiesText =
     capabilityBadges.length > 0 ? ` ${capabilityBadges.join(' ')}` : '';
+
+  // Get context window size (use provided or auto-detect from model)
+  const contextSize = contextWindowSize ?? tokenLimit(model, 'input');
+  const modelSize = extractModelSize(model);
+  const contextSizeFormatted = formatContextSize(contextSize);
+  
+  // Calculate context usage if promptTokenCount is provided
+  const contextUsagePercentage = promptTokenCount && contextSize 
+    ? Math.min(promptTokenCount / contextSize, 1) 
+    : 0;
+  const progressBar = createProgressBar(contextUsagePercentage, 8);
 
   // Calculate available space properly:
   // First determine if logo can be shown, then use remaining space for path
@@ -197,6 +255,29 @@ export const Header: React.FC<HeaderProps> = ({
           <Text color={theme.text.secondary}>{authModelText}</Text>
           {showModelHint && (
             <Text color={theme.text.secondary}>{modelHintText}</Text>
+          )}
+        </Text>
+        {/* Context and Size bar */}
+        <Text>
+          <Text color={theme.text.secondary}>{t('Context')}: </Text>
+          <Text color={theme.text.accent}>{contextSizeFormatted}</Text>
+          {modelSize && (
+            <>
+              <Text color={theme.text.secondary}> | {t('Size')}: </Text>
+              <Text color={theme.text.accent}>{modelSize}</Text>
+            </>
+          )}
+          {promptTokenCount && promptTokenCount > 0 && (
+            <>
+              <Text color={theme.text.secondary}> | </Text>
+              <Text color={theme.text.secondary}>[</Text>
+              <Text color={contextUsagePercentage > 0.9 ? theme.status.warning : theme.text.accent}>
+                {progressBar.filled}
+              </Text>
+              <Text color={theme.text.secondary}>{progressBar.empty}</Text>
+              <Text color={theme.text.secondary}>]</Text>
+              <Text color={theme.text.secondary}> {(contextUsagePercentage * 100).toFixed(1)}%</Text>
+            </>
           )}
         </Text>
         {/* Session ID line (if available) */}
