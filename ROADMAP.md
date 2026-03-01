@@ -4,6 +4,120 @@
 
 ## Текущее состояние (v0.10.8)
 
+### ✅ Реализованные улучшения (2025-03-01)
+
+#### 1. Context Caching — KV-cache Reuse
+**Статус:** ✅ Реализовано
+
+```typescript
+// До: каждый запрос отправлял ВСЮ историю
+// После: используется кэшированный context от Ollama
+
+const client = new OllamaContextClient();
+
+// Первое сообщение - полный процессинг
+await client.generate({
+  model: 'llama3.2',
+  sessionId: 'chat-1',
+  prompt: 'Привет!',
+  system: 'Ты помощник.',
+});
+// → context: [1, 45, 789, ...] сохраняется
+
+// Второе сообщение - ИСПОЛЬЗУЕТ КЭШ (быстро!)
+await client.generate({
+  model: 'llama3.2',
+  sessionId: 'chat-1',
+  prompt: 'Сколько будет 2+2?',
+});
+// → только новые токены обрабатываются!
+```
+
+**Производительность:**
+- 1-е сообщение: 100% (baseline)
+- 2-е сообщение: ~10-20% токенов
+- 10-е сообщение: ~5-10% токенов
+
+**Файлы:**
+- `packages/core/src/cache/contextCacheManager.ts`
+- `packages/core/src/core/ollamaContextClient.ts`
+- `packages/core/src/core/hybridContentGenerator.ts`
+
+#### 2. Zustand Migration
+**Статус:** ✅ Реализовано
+
+Заменен Context API на Zustand для оптимизации re-render'ов:
+
+```typescript
+// До: Context API - все компоненты re-render'ятся
+const state = useContext(UIStateContext);
+
+// После: Zustand - только нужные подписки
+const tokenCount = useSessionStore(state => state.lastPromptTokenCount);
+```
+
+**Stores:**
+- `sessionStore` — сессия и метрики
+- `streamingStore` — состояние стриминга + AbortController
+- `uiStore` — UI настройки с persistence
+
+#### 3. Event Bus
+**Статус:** ✅ Реализовано
+
+Типизированный Event Bus для слабой связности:
+
+```typescript
+// Подписка на события
+eventBus.subscribe('stream:finished', (data) => {
+  console.log('Tokens used:', data.tokenCount);
+});
+
+// Эмиссия событий
+eventBus.emit('stream:finished', { promptId: '123', tokenCount: 1500 });
+```
+
+#### 4. Command Pattern (Undo/Redo)
+**Статус:** ✅ Реализовано
+
+```typescript
+// Выполнение команды с возможностью отмены
+await commandStore.execute({
+  description: 'Change theme',
+  type: 'theme',
+  execute: async () => { /* ... */ },
+  undo: async () => { /* ... */ },
+  canUndo: true,
+});
+
+// Отмена последней команды
+await commandStore.undo();
+
+// Повтор отмененной команды
+await commandStore.redo();
+```
+
+#### 5. Plugin System
+**Статус:** ✅ Реализовано
+
+```typescript
+const myPlugin: PluginDefinition = {
+  metadata: {
+    id: 'my-plugin',
+    name: 'My Plugin',
+    version: '1.0.0',
+  },
+  tools: [{
+    id: 'hello',
+    name: 'hello_world',
+    description: 'Say hello',
+    execute: async (params) => ({ success: true, data: 'Hello!' }),
+  }],
+};
+
+await pluginManager.registerPlugin(myPlugin);
+await pluginManager.enablePlugin('my-plugin');
+```
+
 ### Архитектурный обзор
 
 ```
