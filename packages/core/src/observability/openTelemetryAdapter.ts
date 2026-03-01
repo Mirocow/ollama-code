@@ -11,6 +11,7 @@
 
 import type { Tracer, CompletedSpan } from './tracer.js';
 import type { AggregatedMetric, MetricsCollector } from './metricsCollector.js';
+import axios from 'axios';
 
 // ============================================================================
 // Types
@@ -51,7 +52,10 @@ export interface OpenTelemetryConfig {
  * OTLP Resource
  */
 interface OTLPResource {
-  attributes: Array<{ key: string; value: { stringValue?: string; intValue?: string } }>;
+  attributes: Array<{
+    key: string;
+    value: { stringValue?: string; intValue?: string };
+  }>;
   droppedAttributesCount: number;
 }
 
@@ -66,7 +70,10 @@ interface OTLPSpan {
   kind: number;
   startTimeUnixNano: string;
   endTimeUnixNano: string;
-  attributes: Array<{ key: string; value: { stringValue?: string; intValue?: string; doubleValue?: number } }>;
+  attributes: Array<{
+    key: string;
+    value: { stringValue?: string; intValue?: string; doubleValue?: number };
+  }>;
   droppedAttributesCount: number;
   events: Array<{
     timeUnixNano: string;
@@ -203,7 +210,9 @@ export class OpenTelemetryAdapter {
     return {
       traceId: this.hexToBase64(span.traceId),
       spanId: this.hexToBase64(span.spanId),
-      parentSpanId: span.parentSpanId ? this.hexToBase64(span.parentSpanId) : undefined,
+      parentSpanId: span.parentSpanId
+        ? this.hexToBase64(span.parentSpanId)
+        : undefined,
       name: span.name,
       kind: this.mapSpanKind(span.kind),
       startTimeUnixNano: (span.startTime * 1000000).toString(),
@@ -213,7 +222,9 @@ export class OpenTelemetryAdapter {
       events: span.events.map((event) => ({
         timeUnixNano: (event.timestamp * 1000000).toString(),
         name: event.name,
-        attributes: event.attributes ? this.convertAttributes(event.attributes) : [],
+        attributes: event.attributes
+          ? this.convertAttributes(event.attributes)
+          : [],
         droppedAttributesCount: 0,
       })),
       droppedEventsCount: 0,
@@ -289,13 +300,17 @@ export class OpenTelemetryAdapter {
   async exportMetrics(metrics: AggregatedMetric[]): Promise<void> {
     if (!this.config.enableMetrics || metrics.length === 0) return;
 
-    const resourceMetrics = [{
-      resource: this.createResource(),
-      scopeMetrics: [{
-        scope: { name: 'ollama-code' },
-        metrics: metrics.map((m) => this.convertMetric(m)),
-      }],
-    }];
+    const resourceMetrics = [
+      {
+        resource: this.createResource(),
+        scopeMetrics: [
+          {
+            scope: { name: 'ollama-code' },
+            metrics: metrics.map((m) => this.convertMetric(m)),
+          },
+        ],
+      },
+    ];
 
     const request: OTLPExportRequest = { resourceMetrics };
     await this.send('/v1/metrics', request);
@@ -354,18 +369,21 @@ export class OpenTelemetryAdapter {
     };
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        this.config.timeout,
+      );
+
+      await axios.post(url, data, {
         headers,
-        body: JSON.stringify(data),
-        signal: AbortSignal.timeout(this.config.timeout),
+        signal: controller.signal,
       });
 
-      if (!response.ok) {
-        throw new Error(`OTLP export failed: ${response.status} ${response.statusText}`);
-      }
+      clearTimeout(timeoutId);
     } catch (error) {
-      // Log error but don't throw
+      // Log error but don't throw - telemetry errors should not break the application
+      // eslint-disable-next-line no-console
       console.error('OpenTelemetry export error:', error);
     }
   }
@@ -382,7 +400,9 @@ export class OpenTelemetryAdapter {
     };
   }
 
-  private groupSpansByTrace(spans: CompletedSpan[]): OTLPExportRequest['resourceSpans'] {
+  private groupSpansByTrace(
+    spans: CompletedSpan[],
+  ): OTLPExportRequest['resourceSpans'] {
     const traceMap = new Map<string, CompletedSpan[]>();
 
     for (const span of spans) {
@@ -391,16 +411,25 @@ export class OpenTelemetryAdapter {
       traceMap.set(span.traceId, trace);
     }
 
-    return [{
-      resource: this.createResource(),
-      scopeSpans: [{
-        scope: { name: 'ollama-code' },
-        spans: spans.map((s) => this.convertSpan(s)),
-      }],
-    }];
+    return [
+      {
+        resource: this.createResource(),
+        scopeSpans: [
+          {
+            scope: { name: 'ollama-code' },
+            spans: spans.map((s) => this.convertSpan(s)),
+          },
+        ],
+      },
+    ];
   }
 
-  private convertAttributes(attrs: Record<string, unknown>): Array<{ key: string; value: { stringValue?: string; intValue?: string; doubleValue?: number } }> {
+  private convertAttributes(
+    attrs: Record<string, unknown>,
+  ): Array<{
+    key: string;
+    value: { stringValue?: string; intValue?: string; doubleValue?: number };
+  }> {
     return Object.entries(attrs).map(([key, value]) => {
       if (typeof value === 'string') {
         return { key, value: { stringValue: value } };
@@ -414,14 +443,19 @@ export class OpenTelemetryAdapter {
     });
   }
 
-  private convertLabels(labels: Record<string, string>): Array<{ key: string; value: { stringValue?: string } }> {
+  private convertLabels(
+    labels: Record<string, string>,
+  ): Array<{ key: string; value: { stringValue?: string } }> {
     return Object.entries(labels).map(([key, value]) => ({
       key,
       value: { stringValue: value },
     }));
   }
 
-  private convertStatus(status: { code: string; message?: string }): { code: number; message?: string } {
+  private convertStatus(status: { code: string; message?: string }): {
+    code: number;
+    message?: string;
+  } {
     let code: number;
     switch (status.code) {
       case 'ok':

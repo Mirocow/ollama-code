@@ -31,6 +31,7 @@ import { ServiceAccountImpersonationProvider } from '../mcp/sa-impersonation-pro
 import { DiscoveredMCPTool } from './mcp-tool.js';
 import type { McpToolAnnotations } from './mcp-tool.js';
 import { SdkControlClientTransport } from './sdk-control-client-transport.js';
+import axios from 'axios';
 
 import type { FunctionDeclaration } from '../types/content.js';
 import { mcpToTool } from '../types/content.js';
@@ -938,18 +939,24 @@ export async function connectToMcpServer(
         );
         try {
           const urlToFetch = mcpServerConfig.httpUrl || mcpServerConfig.url!;
-          const response = await fetch(urlToFetch, {
-            method: 'HEAD',
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+          const response = await axios.head(urlToFetch, {
             headers: {
               Accept: mcpServerConfig.httpUrl
                 ? 'application/json'
                 : 'text/event-stream',
             },
-            signal: AbortSignal.timeout(5000),
+            signal: controller.signal,
+            validateStatus: () => true, // Accept any status code
           });
 
+          clearTimeout(timeoutId);
+
           if (response.status === 401) {
-            wwwAuthenticate = response.headers.get('www-authenticate');
+            const authHeader = response.headers['www-authenticate'];
+            wwwAuthenticate = authHeader ? String(authHeader) : null;
             if (wwwAuthenticate) {
               debugLogger.debug(
                 `Found www-authenticate header from server: ${wwwAuthenticate}`,

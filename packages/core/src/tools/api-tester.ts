@@ -32,6 +32,7 @@ import { ToolErrorType } from './tool-error.js';
 import type { Config } from '../config/config.js';
 import { ApprovalMode } from '../config/config.js';
 import { createDebugLogger, type DebugLogger } from '../utils/debugLogger.js';
+import axios, { type AxiosResponse } from 'axios';
 
 // ============================================================================
 // Constants
@@ -187,19 +188,28 @@ function generateRequestId(): string {
 /**
  * Validates a response body against a JSON Schema
  */
-function validateSchema(body: unknown, schema: object): { valid: boolean; errors: string[] } {
+function validateSchema(
+  body: unknown,
+  schema: object,
+): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   // Simple schema validation implementation
   // In production, consider using a library like ajv
-  function validate(value: unknown, schemaNode: Record<string, unknown>, path: string = ''): void {
+  function validate(
+    value: unknown,
+    schemaNode: Record<string, unknown>,
+    path: string = '',
+  ): void {
     if (typeof schemaNode !== 'object' || schemaNode === null) {
       return;
     }
 
     const type = schemaNode['type'] as string | undefined;
     const required = schemaNode['required'] as string[] | undefined;
-    const properties = schemaNode['properties'] as Record<string, unknown> | undefined;
+    const properties = schemaNode['properties'] as
+      | Record<string, unknown>
+      | undefined;
 
     // Type checking
     if (type) {
@@ -211,7 +221,12 @@ function validateSchema(body: unknown, schema: object): { valid: boolean; errors
     }
 
     // Required properties check
-    if (required && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    if (
+      required &&
+      typeof value === 'object' &&
+      value !== null &&
+      !Array.isArray(value)
+    ) {
       for (const prop of required) {
         if (!(prop in (value as Record<string, unknown>))) {
           errors.push(`${path}: missing required property "${prop}"`);
@@ -220,7 +235,12 @@ function validateSchema(body: unknown, schema: object): { valid: boolean; errors
     }
 
     // Properties validation
-    if (properties && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    if (
+      properties &&
+      typeof value === 'object' &&
+      value !== null &&
+      !Array.isArray(value)
+    ) {
       for (const [propName, propSchema] of Object.entries(properties)) {
         const propPath = path ? `${path}.${propName}` : propName;
         const propValue = (value as Record<string, unknown>)[propName];
@@ -252,7 +272,9 @@ function validateSchema(body: unknown, schema: object): { valid: boolean; errors
         errors.push(`${path}: value ${value} is less than minimum ${minimum}`);
       }
       if (maximum !== undefined && value > maximum) {
-        errors.push(`${path}: value ${value} is greater than maximum ${maximum}`);
+        errors.push(
+          `${path}: value ${value} is greater than maximum ${maximum}`,
+        );
       }
     }
 
@@ -261,10 +283,14 @@ function validateSchema(body: unknown, schema: object): { valid: boolean; errors
       const minLength = schemaNode['minLength'] as number | undefined;
       const maxLength = schemaNode['maxLength'] as number | undefined;
       if (minLength !== undefined && value.length < minLength) {
-        errors.push(`${path}: string length ${value.length} is less than minimum ${minLength}`);
+        errors.push(
+          `${path}: string length ${value.length} is less than minimum ${minLength}`,
+        );
       }
       if (maxLength !== undefined && value.length > maxLength) {
-        errors.push(`${path}: string length ${value.length} is greater than maximum ${maxLength}`);
+        errors.push(
+          `${path}: string length ${value.length} is greater than maximum ${maxLength}`,
+        );
       }
     }
   }
@@ -280,14 +306,23 @@ function validateSchema(body: unknown, schema: object): { valid: boolean; errors
 function validateHeaders(
   actualHeaders: Record<string, string>,
   expectedHeaders: Record<string, string | RegExp>,
-): Array<{ header: string; expected: string | RegExp; actual: string; valid: boolean }> {
-  const results: Array<{ header: string; expected: string | RegExp; actual: string; valid: boolean }> = [];
+): Array<{
+  header: string;
+  expected: string | RegExp;
+  actual: string;
+  valid: boolean;
+}> {
+  const results: Array<{
+    header: string;
+    expected: string | RegExp;
+    actual: string;
+    valid: boolean;
+  }> = [];
 
   for (const [header, expected] of Object.entries(expectedHeaders)) {
     const actual = actualHeaders[header.toLowerCase()] || '';
-    const valid = expected instanceof RegExp
-      ? expected.test(actual)
-      : actual === expected;
+    const valid =
+      expected instanceof RegExp ? expected.test(actual) : actual === expected;
     results.push({ header, expected, actual, valid });
   }
 
@@ -298,7 +333,7 @@ function validateHeaders(
  * Sleeps for a specified duration
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // ============================================================================
@@ -355,6 +390,10 @@ class ApiTesterToolInvocation extends BaseToolInvocation<
             headers[this.params.auth.key] = this.params.auth.value;
           }
           break;
+
+        default:
+          // Unknown auth type - no action needed
+          break;
       }
     }
 
@@ -367,38 +406,38 @@ class ApiTesterToolInvocation extends BaseToolInvocation<
   }
 
   /**
-   * Executes a single HTTP request
+   * Executes a single HTTP request using axios
    */
   private async executeRequest(
     signal: AbortSignal,
     timeout: number,
-  ): Promise<{ response: Response; responseTimeMs: number }> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    // Combine abort signals
-    const combinedSignal = AbortSignal.any
-      ? AbortSignal.any([signal, controller.signal])
-      : signal;
-
+  ): Promise<{ response: AxiosResponse; responseTimeMs: number }> {
     const headers = this.buildHeaders();
     const startTime = Date.now();
 
-    this.debugLogger.debug(`[ApiTester] Making ${this.params.method} request to ${this.params.url}`);
-    this.debugLogger.debug(`[ApiTester] Headers: ${JSON.stringify(headers, null, 2)}`);
+    this.debugLogger.debug(
+      `[ApiTester] Making ${this.params.method} request to ${this.params.url}`,
+    );
+    this.debugLogger.debug(
+      `[ApiTester] Headers: ${JSON.stringify(headers, null, 2)}`,
+    );
 
     if (this.params.body) {
-      this.debugLogger.debug(`[ApiTester] Body: ${JSON.stringify(this.params.body, null, 2)}`);
+      this.debugLogger.debug(
+        `[ApiTester] Body: ${JSON.stringify(this.params.body, null, 2)}`,
+      );
     }
 
-    const response = await fetch(this.params.url, {
+    const response = await axios.request({
+      url: this.params.url,
       method: this.params.method,
       headers,
-      body: this.params.body ? JSON.stringify(this.params.body) : undefined,
-      signal: combinedSignal,
+      data: this.params.body,
+      signal,
+      timeout,
+      transformResponse: [(data) => data], // Get raw response
     });
 
-    clearTimeout(timeoutId);
     const responseTimeMs = Date.now() - startTime;
 
     return { response, responseTimeMs };
@@ -407,8 +446,11 @@ class ApiTesterToolInvocation extends BaseToolInvocation<
   /**
    * Parses the response body
    */
-  private async parseResponseBody(response: Response): Promise<{ body: unknown; sizeBytes: number }> {
-    const text = await response.text();
+  private parseResponseBody(response: AxiosResponse): {
+    body: unknown;
+    sizeBytes: number;
+  } {
+    const text = response.data;
     const sizeBytes = Buffer.byteLength(text, 'utf8');
 
     // Try to parse as JSON
@@ -423,11 +465,13 @@ class ApiTesterToolInvocation extends BaseToolInvocation<
   /**
    * Extracts headers from the response
    */
-  private extractHeaders(response: Response): Record<string, string> {
+  private extractHeaders(response: AxiosResponse): Record<string, string> {
     const headers: Record<string, string> = {};
-    response.headers.forEach((value, key) => {
-      headers[key.toLowerCase()] = value;
-    });
+    for (const [key, value] of Object.entries(response.headers)) {
+      if (value !== undefined) {
+        headers[key.toLowerCase()] = String(value);
+      }
+    }
     return headers;
   }
 
@@ -467,7 +511,7 @@ class ApiTesterToolInvocation extends BaseToolInvocation<
     // Validate headers
     if (validation?.headers) {
       result.headerValidation = validateHeaders(headers, validation.headers);
-      if (result.headerValidation.some(h => !h.valid)) {
+      if (result.headerValidation.some((h) => !h.valid)) {
         result.passed = false;
       }
     }
@@ -479,9 +523,7 @@ class ApiTesterToolInvocation extends BaseToolInvocation<
     const authInfo = this.params.auth
       ? ` with ${this.params.auth.type} auth`
       : '';
-    const bodyInfo = this.params.body
-      ? ` with body`
-      : '';
+    const bodyInfo = this.params.body ? ` with body` : '';
     return `Testing ${this.params.method} ${this.params.url}${authInfo}${bodyInfo}`;
   }
 
@@ -520,7 +562,9 @@ class ApiTesterToolInvocation extends BaseToolInvocation<
     const timeout = this.params.timeout ?? DEFAULT_TIMEOUT_MS;
     const retryCount = this.params.retry?.count ?? DEFAULT_RETRY_COUNT;
     const retryDelayMs = this.params.retry?.delayMs ?? DEFAULT_RETRY_DELAY_MS;
-    const retryOnStatusCodes = this.params.retry?.retryOnStatusCodes ?? [408, 429, 500, 502, 503, 504];
+    const retryOnStatusCodes = this.params.retry?.retryOnStatusCodes ?? [
+      408, 429, 500, 502, 503, 504,
+    ];
 
     let lastError: Error | null = null;
     let retryAttempts = 0;
@@ -531,17 +575,23 @@ class ApiTesterToolInvocation extends BaseToolInvocation<
       }
 
       try {
-        const { response, responseTimeMs } = await this.executeRequest(signal, timeout);
+        const { response, responseTimeMs } = await this.executeRequest(
+          signal,
+          timeout,
+        );
         const statusCode = response.status;
         const headers = this.extractHeaders(response);
-        const { body, sizeBytes } = await this.parseResponseBody(response);
+        const { body, sizeBytes } = this.parseResponseBody(response);
 
         this.debugLogger.debug(
           `[ApiTester] Response: ${statusCode} in ${responseTimeMs}ms, ${sizeBytes} bytes`,
         );
 
         // Check if we should retry
-        if (attempt < retryCount - 1 && retryOnStatusCodes.includes(statusCode)) {
+        if (
+          attempt < retryCount - 1 &&
+          retryOnStatusCodes.includes(statusCode)
+        ) {
           this.debugLogger.debug(
             `[ApiTester] Status ${statusCode} triggers retry (${attempt + 1}/${retryCount})`,
           );
@@ -608,7 +658,6 @@ ${JSON.stringify(headers, null, 2)}
         }
 
         return result;
-
       } catch (error) {
         lastError = error as Error;
         this.debugLogger.error(
@@ -661,7 +710,8 @@ const API_TESTER_PARAMS_SCHEMA = {
   properties: {
     url: {
       type: 'string',
-      description: 'The URL endpoint to test. Must be a valid HTTP or HTTPS URL.',
+      description:
+        'The URL endpoint to test. Must be a valid HTTP or HTTPS URL.',
     },
     method: {
       type: 'string',
@@ -674,7 +724,8 @@ const API_TESTER_PARAMS_SCHEMA = {
       description: 'Custom headers to include in the request.',
     },
     body: {
-      description: 'Request body (will be JSON-encoded if object). Only used for POST, PUT, PATCH methods.',
+      description:
+        'Request body (will be JSON-encoded if object). Only used for POST, PUT, PATCH methods.',
     },
     auth: {
       type: 'object',
@@ -722,7 +773,8 @@ const API_TESTER_PARAMS_SCHEMA = {
         headers: {
           type: 'object',
           additionalProperties: { type: 'string' },
-          description: 'Expected response headers (values can be strings or regex patterns).',
+          description:
+            'Expected response headers (values can be strings or regex patterns).',
         },
       },
       description: 'Response validation configuration.',
@@ -751,7 +803,8 @@ const API_TESTER_PARAMS_SCHEMA = {
         retryOnStatusCodes: {
           type: 'array',
           items: { type: 'number' },
-          description: 'HTTP status codes that should trigger a retry. Default: [408, 429, 500, 502, 503, 504].',
+          description:
+            'HTTP status codes that should trigger a retry. Default: [408, 429, 500, 502, 503, 504].',
         },
       },
       description: 'Retry configuration for failed requests.',
@@ -830,7 +883,9 @@ Usage notes:
     );
   }
 
-  protected override validateToolParamValues(params: ApiTesterToolParams): string | null {
+  protected override validateToolParamValues(
+    params: ApiTesterToolParams,
+  ): string | null {
     // Validate URL
     if (!params.url || params.url.trim() === '') {
       return "The 'url' parameter cannot be empty.";
@@ -852,7 +907,10 @@ Usage notes:
     }
 
     // Validate body is not used with GET or DELETE
-    if (params.body && (params.method === 'GET' || params.method === 'DELETE')) {
+    if (
+      params.body &&
+      (params.method === 'GET' || params.method === 'DELETE')
+    ) {
       this.createDebugLogger().debug(
         `[ApiTester] Warning: Body provided for ${params.method} request, which typically doesn't use a body.`,
       );
@@ -876,6 +934,9 @@ Usage notes:
             return "API Key authentication requires 'key' and 'value' parameters.";
           }
           break;
+        default:
+          // Unknown auth type - validation not needed
+          break;
       }
     }
 
@@ -888,10 +949,16 @@ Usage notes:
 
     // Validate retry configuration
     if (params.retry) {
-      if (params.retry.count !== undefined && (params.retry.count < 1 || params.retry.count > 10)) {
+      if (
+        params.retry.count !== undefined &&
+        (params.retry.count < 1 || params.retry.count > 10)
+      ) {
         return "The 'retry.count' must be between 1 and 10.";
       }
-      if (params.retry.delayMs !== undefined && (params.retry.delayMs < 100 || params.retry.delayMs > 30000)) {
+      if (
+        params.retry.delayMs !== undefined &&
+        (params.retry.delayMs < 100 || params.retry.delayMs > 30000)
+      ) {
         return "The 'retry.delayMs' must be between 100 and 30000 milliseconds.";
       }
     }
