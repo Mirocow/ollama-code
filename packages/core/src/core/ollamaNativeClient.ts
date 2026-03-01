@@ -877,35 +877,37 @@ export class OllamaNativeClient {
       }
       debugLog('debug', 'Reader obtained, starting to read chunks...');
 
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let chunkCount = 0;
-      let bytesRead = 0;
+      // Wrap reader operations in try-finally to ensure cleanup on abort/error
+      try {
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let chunkCount = 0;
+        let bytesRead = 0;
 
-      while (true) {
-        debugLog('debug', 'Waiting for next chunk...');
-        const { done, value } = await reader.read();
+        while (true) {
+          debugLog('debug', 'Waiting for next chunk...');
+          const { done, value } = await reader.read();
 
-        if (done) {
-          debugLog('info', 'Streaming completed', {
-            totalChunks: chunkCount,
-            totalBytes: bytesRead,
-          });
-          break;
-        }
+          if (done) {
+            debugLog('info', 'Streaming completed', {
+              totalChunks: chunkCount,
+              totalBytes: bytesRead,
+            });
+            break;
+          }
 
-        // Refresh timeout on each chunk to handle long-running generations
-        refreshTimeout();
-        chunkCount++;
-        bytesRead += value?.length ?? 0;
+          // Refresh timeout on each chunk to handle long-running generations
+          refreshTimeout();
+          chunkCount++;
+          bytesRead += value?.length ?? 0;
 
-        // Log chunk details for debugging (first 5 and every 10th)
-        if (chunkCount <= 5 || chunkCount % 10 === 0) {
-          debugLog('debug', `Received chunk #${chunkCount}`, {
-            size: value?.length ?? 0,
-            totalBytes: bytesRead,
-          });
-        }
+          // Log chunk details for debugging (first 5 and every 10th)
+          if (chunkCount <= 5 || chunkCount % 10 === 0) {
+            debugLog('debug', `Received chunk #${chunkCount}`, {
+              size: value?.length ?? 0,
+              totalBytes: bytesRead,
+            });
+          }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
@@ -1004,6 +1006,13 @@ export class OllamaNativeClient {
       }).catch(() => {
         // Ignore logging errors
       });
+      } finally {
+        // Always release the reader lock to prevent memory leaks
+        // Some mock readers may not have releaseLock, so check first
+        if (reader && typeof reader.releaseLock === 'function') {
+          reader.releaseLock();
+        }
+      }
     } catch (error) {
       // Handle timeout
       if (error instanceof Error && error.name === 'AbortError') {
