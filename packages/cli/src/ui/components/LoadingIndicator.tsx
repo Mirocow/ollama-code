@@ -6,6 +6,7 @@
 
 import type { ThoughtSummary } from '@ollama-code/ollama-code-core';
 import type React from 'react';
+import { memo, useMemo } from 'react';
 import { Box, Text } from 'ink';
 import { theme } from '../semantic-colors.js';
 import { useStreamingContext } from '../contexts/StreamingContext.js';
@@ -23,7 +24,11 @@ interface LoadingIndicatorProps {
   thought?: ThoughtSummary | null;
 }
 
-export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
+/**
+ * LoadingIndicator component - shows loading status during streaming
+ * Memoized to prevent unnecessary re-renders
+ */
+const LoadingIndicatorComponent: React.FC<LoadingIndicatorProps> = ({
   currentLoadingPhrase,
   elapsedTime,
   rightContent,
@@ -33,21 +38,35 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
   const { columns: terminalWidth } = useTerminalSize();
   const isNarrow = isNarrowWidth(terminalWidth);
 
+  // Early return if not streaming
   if (streamingState === StreamingState.Idle) {
     return null;
   }
 
-  const primaryText = thought?.subject || currentLoadingPhrase;
+  // Memoize computed values
+  const primaryText = useMemo(
+    () => thought?.subject || currentLoadingPhrase,
+    [thought?.subject, currentLoadingPhrase]
+  );
 
-  const cancelAndTimerContent =
-    streamingState !== StreamingState.WaitingForConfirmation
-      ? t('(esc to cancel, {{time}})', {
-          time:
-            elapsedTime < 60
-              ? `${elapsedTime}s`
-              : formatDuration(elapsedTime * 1000),
-        })
+  const formattedTime = useMemo(() => {
+    return elapsedTime < 60
+      ? `${elapsedTime}s`
+      : formatDuration(elapsedTime * 1000);
+  }, [elapsedTime]);
+
+  const cancelAndTimerContent = useMemo(() => {
+    return streamingState !== StreamingState.WaitingForConfirmation
+      ? t('(esc to cancel, {{time}})', { time: formattedTime })
       : null;
+  }, [streamingState, formattedTime]);
+
+  // Memoize spinner props
+  const spinnerDisplay = useMemo(
+    () =>
+      streamingState === StreamingState.WaitingForConfirmation ? '⠏' : '',
+    [streamingState]
+  );
 
   return (
     <Box paddingLeft={0} flexDirection="column">
@@ -59,13 +78,7 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
       >
         <Box>
           <Box marginRight={1}>
-            <OllamaRespondingSpinner
-              nonRespondingDisplay={
-                streamingState === StreamingState.WaitingForConfirmation
-                  ? '⠏'
-                  : ''
-              }
-            />
+            <OllamaRespondingSpinner nonRespondingDisplay={spinnerDisplay} />
           </Box>
           {primaryText && (
             <Text color={theme.text.accent} wrap="truncate-end">
@@ -88,3 +101,8 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
     </Box>
   );
 };
+
+/**
+ * Memoized LoadingIndicator component
+ */
+export const LoadingIndicator = memo(LoadingIndicatorComponent);
