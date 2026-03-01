@@ -4,22 +4,88 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @packageDocumentation
+ *
+ * Ollama Code Core Library - A comprehensive toolkit for building AI-powered
+ * code assistants with local LLM support through Ollama.
+ *
+ * @remarks
+ * This package provides the core functionality for Ollama Code, including:
+ * - Native Ollama API client with streaming support
+ * - Context caching for KV-cache reuse
+ * - Tool system with MCP (Model Context Protocol) support
+ * - Plugin system with sandboxing
+ * - LSP (Language Server Protocol) integration
+ * - Model management and configuration
+ *
+ * @example
+ * ```typescript
+ * import { OllamaNativeClient, createOllamaNativeClient } from '@ollama-code/ollama-code-core';
+ *
+ * // Create a client
+ * const client = createOllamaNativeClient({ baseUrl: 'http://localhost:11434' });
+ *
+ * // List available models
+ * const models = await client.listModels();
+ *
+ * // Chat with streaming
+ * await client.chat(
+ *   { model: 'llama3.2', messages: [{ role: 'user', content: 'Hello!' }] },
+ *   (chunk) => console.log(chunk.message.content)
+ * );
+ * ```
+ */
+
 // ============================================================================
 // Types (Ollama Code native types)
 // ============================================================================
 
+/**
+ * Core type definitions for Ollama Code.
+ * @module types
+ */
 export * from './types/index.js';
 
 // ============================================================================
 // Configuration & Models
 // ============================================================================
 
+/**
+ * Configuration management and model registry.
+ *
+ * @module config
+ * @remarks
+ * The configuration system supports multiple sources:
+ * - Command-line arguments (highest priority)
+ * - Settings file (.ollama-code/settings.json)
+ * - Environment variables
+ * - Default values (lowest priority)
+ *
+ * @example
+ * ```typescript
+ * import { Config, createConfig } from '@ollama-code/ollama-code-core';
+ *
+ * const config = await createConfig({
+ *   model: 'llama3.2',
+ *   ollamaUrl: 'http://localhost:11434'
+ * });
+ * ```
+ */
+
 // Core configuration
 export * from './config/config.js';
 export { Storage } from './config/storage.js';
 export * from './utils/configResolver.js';
 
-// Model configuration
+/**
+ * Model registry and configuration.
+ *
+ * @module models
+ * @remarks
+ * Manages model definitions, capabilities detection, and provider configurations.
+ * Supports multiple model providers: Ollama, OpenAI, Anthropic, Google, and more.
+ */
 export {
   DEFAULT_OLLAMA_MODEL,
   DEFAULT_OLLAMA_EMBEDDING_MODEL,
@@ -54,6 +120,38 @@ export * from './output/types.js';
 // Core Engine
 // ============================================================================
 
+/**
+ * Core engine components for content generation and chat.
+ *
+ * @module core
+ * @remarks
+ * The core engine provides:
+ * - {@link OllamaClient} - High-level client for Ollama API
+ * - {@link OllamaChat} - Chat session management with history
+ * - {@link OllamaNativeClient} - Low-level native Ollama API client
+ * - {@link HybridContentGenerator} - Multi-provider content generation
+ * - {@link ContentGenerator} - Abstract content generation interface
+ *
+ * @example
+ * ```typescript
+ * import { OllamaNativeClient } from '@ollama-code/ollama-code-core';
+ *
+ * const client = new OllamaNativeClient({
+ *   baseUrl: 'http://localhost:11434',
+ *   timeout: 300000
+ * });
+ *
+ * // List models
+ * const { models } = await client.listModels();
+ *
+ * // Chat with streaming
+ * await client.chat({
+ *   model: 'llama3.2',
+ *   messages: [{ role: 'user', content: 'Hello!' }]
+ * }, (chunk) => process.stdout.write(chunk.message.content ?? ''));
+ * ```
+ */
+
 export * from './core/ollamaClient.js';
 export * from './core/contentGenerator.js';
 export * from './core/coreToolScheduler.js';
@@ -66,7 +164,22 @@ export * from './core/turn.js';
 export { OllamaChat, type StreamEvent } from './core/ollamaChat.js';
 export * from './tools/tool-names.js';
 
-// Native Ollama API Client
+/**
+ * Native Ollama API Client - Direct REST API communication.
+ *
+ * @module ollama-native
+ * @remarks
+ * Provides low-level access to Ollama's native REST API endpoints:
+ * - `/api/tags` - List local models
+ * - `/api/show` - Show model info
+ * - `/api/generate` - Text generation with streaming
+ * - `/api/chat` - Chat completion with streaming
+ * - `/api/embed` - Text embeddings
+ * - `/api/pull`, `/api/push` - Model registry operations
+ * - `/api/create`, `/api/copy`, `/api/delete` - Model management
+ *
+ * @see {@link https://github.com/ollama/ollama/blob/main/docs/api.md | Ollama API Documentation}
+ */
 export {
   OllamaNativeClient,
   createOllamaNativeClient,
@@ -122,6 +235,43 @@ export {
 // ============================================================================
 // Tools
 // ============================================================================
+
+/**
+ * Tool system for AI-powered code operations.
+ *
+ * @module tools
+ * @remarks
+ * The tool system provides a comprehensive set of tools for code operations:
+ *
+ * **File Operations:**
+ * - {@link ReadFileTool} - Read file contents
+ * - {@link WriteFileTool} - Write files
+ * - {@link EditTool} - Edit files with diff/patch operations
+ * - {@link GlobTool} - Find files by pattern
+ * - {@link GrepTool} - Search file contents
+ * - {@link ListDirectoryTool} - List directory contents
+ *
+ * **Code Analysis:**
+ * - {@link LSPTool} - Language Server Protocol integration
+ *
+ * **Execution:**
+ * - {@link ShellTool} - Execute shell commands
+ * - {@link TaskTool} - Create and manage subagents
+ *
+ * **MCP Support:**
+ * - {@link MCPClient} - Model Context Protocol client
+ * - {@link MCPTool} - MCP tool wrapper
+ *
+ * @example
+ * ```typescript
+ * import { ToolRegistry, ReadFileTool } from '@ollama-code/ollama-code-core';
+ *
+ * const registry = new ToolRegistry();
+ * registry.registerTool(new ReadFileTool(config));
+ *
+ * const result = await registry.executeTool('read_file', { path: '/src/index.ts' });
+ * ```
+ */
 
 // Export utilities
 export * from './utils/paths.js';
@@ -199,7 +349,42 @@ export * from './learning/index.js';
 // Export extension
 export * from './extension/index.js';
 
-// Export plugin system
+/**
+ * Plugin system with sandboxing and marketplace.
+ *
+ * @module plugins
+ * @remarks
+ * The plugin system enables extensibility through:
+ *
+ * **Plugin Discovery:**
+ * - Builtin plugins (core-tools, dev-tools, file-tools, search-tools, shell-tools)
+ * - User plugins from ~/.ollama-code/plugins/
+ * - Project plugins from .ollama-code/plugins/
+ * - NPM packages with @ollama-code/plugin- prefix
+ *
+ * **Plugin Lifecycle:**
+ * - Load → Register → Enable → Disable → Unload
+ *
+ * **Security:**
+ * - Filesystem access restrictions
+ * - Network restrictions
+ * - Command execution limits
+ *
+ * @example
+ * ```typescript
+ * import { PluginManager, PluginLoader } from '@ollama-code/ollama-code-core';
+ *
+ * const loader = new PluginLoader(config);
+ * const manager = new PluginManager(config);
+ *
+ * // Discover plugins
+ * const plugins = await loader.discoverAll();
+ *
+ * // Register and enable
+ * await manager.registerPlugin(myPlugin);
+ * await manager.enablePlugin('my-plugin');
+ * ```
+ */
 export * from './plugins/index.js';
 
 // Export prompt logic
@@ -299,18 +484,121 @@ export * from './telemetry-stubs.js';
 // Streaming (Priority 3.1)
 // ============================================================================
 
+/**
+ * Streaming support with backpressure control and cancellation.
+ *
+ * @module streaming
+ * @remarks
+ * Provides robust streaming capabilities:
+ *
+ * **Components:**
+ * - {@link StreamingController} - Flow control and chunk management
+ * - {@link BackpressureController} - Buffer management for slow consumers
+ * - {@link StreamBuffer} - Efficient chunk buffering
+ * - {@link ChunkValidator} - Validate stream chunks
+ * - {@link CancellationToken} - Cooperative cancellation support
+ *
+ * @example
+ * ```typescript
+ * import { CancellationTokenSource } from '@ollama-code/ollama-code-core';
+ *
+ * const source = new CancellationTokenSource({ timeout: 30000 });
+ * const token = source.token;
+ *
+ * // Pass to async operation
+ * await fetchData({ signal: token.toAbortSignal() });
+ *
+ * // Cancel on demand
+ * source.cancel('User requested');
+ * ```
+ */
 export * from './streaming/index.js';
 
 // ============================================================================
 // Caching (Priority 3.2)
 // ============================================================================
 
+/**
+ * Caching system for context and tool results.
+ *
+ * @module cache
+ * @remarks
+ * Provides multiple caching strategies:
+ *
+ * **Context Caching:**
+ * - KV-cache reuse through Ollama's context API
+ * - Reduces token processing for repeated prompts
+ *
+ * **Tool Result Caching:**
+ * - Caches tool execution results
+ * - Content-hash based invalidation
+ *
+ * **Embedding Cache:**
+ * - Caches text embeddings
+ * - LRU eviction policy
+ *
+ * @example
+ * ```typescript
+ * import { ContextCacheManager, OllamaContextClient } from '@ollama-code/ollama-code-core';
+ *
+ * const contextClient = new OllamaContextClient({ baseUrl: 'http://localhost:11434' });
+ *
+ * // First request - creates context
+ * const result1 = await contextClient.generate({
+ *   model: 'llama3.2',
+ *   sessionId: 'chat-1',
+ *   prompt: 'Hello!'
+ * });
+ *
+ * // Second request - reuses context (faster!)
+ * const result2 = await contextClient.generate({
+ *   model: 'llama3.2',
+ *   sessionId: 'chat-1',
+ *   prompt: 'How are you?'
+ * });
+ * ```
+ */
 export * from './cache/index.js';
 
 // ============================================================================
 // Observability (Priority 3.3)
 // ============================================================================
 
+/**
+ * Observability and telemetry for monitoring and debugging.
+ *
+ * @module observability
+ * @remarks
+ * Provides comprehensive observability:
+ *
+ * **Metrics:**
+ * - Token usage tracking
+ * - Response latency measurement
+ * - Tool execution statistics
+ *
+ * **Tracing:**
+ * - OpenTelemetry integration
+ * - Distributed tracing support
+ * - Span management
+ *
+ * **Logging:**
+ * - Structured logging
+ * - Debug logging with levels
+ * - API request/response logging
+ *
+ * @example
+ * ```typescript
+ * import { MetricsCollector, Tracer } from '@ollama-code/ollama-code-core';
+ *
+ * const metrics = new MetricsCollector();
+ * metrics.recordTokenUsage({ input: 100, output: 50 });
+ *
+ * const tracer = new Tracer('my-service');
+ * const span = tracer.startSpan('operation');
+ * // ... do work ...
+ * span.end();
+ * ```
+ */
 export * from './observability/index.js';
 
 // ============================================================================
