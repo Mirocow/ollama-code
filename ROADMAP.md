@@ -206,6 +206,44 @@ await pluginManager.enablePlugin('my-plugin');
 | Retry logic | P1 | 1d | 🔴 Не начато |
 | Request timeout handling | P2 | 1d | 🔴 Не начато |
 
+#### План миграции fetch → axios
+
+**Причина миграции:**
+- Единообразная обработка ошибок
+- Автоматическая сериализация JSON
+- Встроенная поддержка timeout
+- Interceptors для логирования и аутентификации
+- Retry logic из коробки
+- Лучшая типизация
+
+**Файлы для миграции:**
+1. `packages/core/src/core/ollamaClient.ts` — основной Ollama клиент
+2. `packages/core/src/core/ollamaNativeClient.ts` — native API клиент
+3. `packages/core/src/core/ollamaContextClient.ts` — context-aware клиент
+4. `packages/core/src/tools/web-fetch/*.ts` — web fetch инструменты
+5. `packages/core/src/tools/web-search/providers/*.ts` — search providers
+
+**Этапы миграции:**
+
+| Этап | Описание | Файлы | Риск |
+|------|----------|-------|------|
+| 1 | Создание axios instance с базовой конфигурацией | `httpClient.ts` | Низкий |
+| 2 | Добавление interceptors (logging, auth) | `interceptors.ts` | Низкий |
+| 3 | Миграция ollamaClient | `ollamaClient.ts` | Средний |
+| 4 | Миграция ollamaNativeClient | `ollamaNativeClient.ts` | Высокий |
+| 5 | Миграция web-search providers | `web-search/` | Низкий |
+| 6 | Тестирование всех API endpoints | `*.test.ts` | Низкий |
+
+**Тестирование:**
+- Все существующие 118+ тестов должны проходить
+- Добавить интеграционные тесты для retry logic
+- Добавить тесты для timeout handling
+- Проверить streaming responses
+
+**Откат:**
+- Сохранить оригинальные fetch-based файлы как `.bak`
+- Feature flag для переключения между fetch/axios
+
 ---
 
 ### v0.13.0 — Plugin System v2
@@ -367,6 +405,6 @@ Ollama Code v0.11.0 включает ключевые архитектурные
 
 ---
 
-*Document version: 3.0.0*
-*Last updated: 2025-01-27*
+*Document version: 3.1.0*
+*Last updated: 2025-03-01*
 *Author: Architecture Team*

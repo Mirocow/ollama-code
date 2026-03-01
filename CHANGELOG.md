@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.11.1
+
+### Documentation Updates
+
+- Added Qwen2.5-Coder and Qwen3-Coder to recommended models
+  - `qwen2.5-coder:7b` — excellent for programming tasks (7B parameters)
+  - `qwen2.5-coder:14b` — balanced performance and quality (14B parameters)
+  - `qwen3-coder:30b` — top-tier coding model (30B parameters)
+
+### Roadmap Updates
+
+- Added detailed migration plan for fetch → axios transition
+- Documented files, stages, and testing requirements
+
+---
+
 ## 0.11.0
 
 ### New Features

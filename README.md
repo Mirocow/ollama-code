@@ -485,13 +485,16 @@ Full API docs: [OLLAMA_API.md](./docs/OLLAMA_API.md)
 
 ## Recommended Models
 
-| Model              | Purpose              | Size |
-| ------------------ | -------------------- | ---- |
-| `llama3.2`         | General purpose      | 3B   |
-| `deepseek-r1:8b`   | Reasoning (thinking) | 8B   |
-| `codellama`        | Programming          | 7B+  |
-| `mistral`          | General purpose      | 7B   |
-| `nomic-embed-text` | Embeddings           | 274M |
+| Model                | Purpose              | Size  |
+| -------------------- | -------------------- | ----- |
+| `llama3.2`           | General purpose      | 3B    |
+| `qwen2.5-coder:7b`   | Programming          | 7B    |
+| `qwen2.5-coder:14b`  | Programming          | 14B   |
+| `qwen3-coder:30b`    | Programming          | 30B   |
+| `deepseek-r1:8b`     | Reasoning (thinking) | 8B    |
+| `codellama`          | Programming          | 7B+   |
+| `mistral`            | General purpose      | 7B    |
+| `nomic-embed-text`   | Embeddings           | 274M  |
 
 ## Development
 
