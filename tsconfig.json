@@ -16,15 +16,21 @@
     "strictPropertyInitialization": true,
     "resolveJsonModule": true,
     "sourceMap": true,
-    "composite": true,
-    "incremental": true,
     "declaration": true,
     "allowSyntheticDefaultImports": true,
     "verbatimModuleSyntax": true,
     "lib": ["ES2023"],
     "module": "NodeNext",
     "moduleResolution": "nodenext",
-    "target": "es2022",
+    "target": "ES2022",
     "jsx": "react-jsx"
-  }
+  },
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/cli" },
+    { "path": "./packages/sdk-typescript" },
+    { "path": "./packages/test-utils" }
+  ],
+  "files": [],
+  "exclude": ["node_modules", "dist", "**/dist", "**/node_modules"]
 }
