@@ -409,6 +409,14 @@ ollama-code/
 | [ROADMAP.md](./ROADMAP.md)                     | План развития          |
 | [CONTRIBUTING.md](./CONTRIBUTING.md)           | Руководство по участию |
 
+### Plugin System
+
+| Документ                                            | Описание                            |
+| --------------------------------------------------- | ----------------------------------- |
+| [PLUGIN_SYSTEM.md](./docs/PLUGIN_SYSTEM.md)         | Архитектура и API плагинов          |
+| [PLUGIN_MARKETPLACE.md](./docs/PLUGIN_MARKETPLACE.md) | Руководство по Marketplace        |
+| [PLUGIN_SANDBOX.md](./docs/PLUGIN_SANDBOX.md)       | Безопасность и sandboxing           |
+
 ## Основные команды
 
 | Команда             | Описание                   |
