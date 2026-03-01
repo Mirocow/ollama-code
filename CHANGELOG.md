@@ -25,6 +25,14 @@ Error: Rendered more hooks than during the previous render.
 
 - Updated `ROADMAP.md` with complete status of all tasks
 - All major features now marked as completed
+- **NEW**: Added comprehensive Plugin Marketplace documentation (`docs/PLUGIN_MARKETPLACE.md`)
+  - CLI commands: search, install, update, uninstall, list
+  - Programmatic API with TypeScript types
+  - Trust levels: verified, community, unverified
+  - Creating plugins for marketplace
+  - Integration with Claude extensions
+- Updated `README.md` with Plugin System documentation links
+- Added Plugin Marketplace section to `docs/PLUGIN_SYSTEM.md`
 
 ---
 

@@ -964,3 +964,65 @@ const plugins = pluginRegistry.getLoadedPlugins();
 await pluginRegistry.enablePlugin('my-plugin');
 await pluginRegistry.disablePlugin('my-plugin');
 ```
+
+## Plugin Marketplace
+
+Ollama Code включает Plugin Marketplace для поиска, установки и управления плагинами из npm-реестра.
+
+### Быстрый старт
+
+```bash
+# Поиск плагинов
+plugin search git
+
+# Установка плагина
+plugin install ollama-code-plugin-git-tools
+
+# Обновление всех плагинов
+plugin update --all
+
+# Список установленных плагинов
+plugin list
+```
+
+### Programmatic API
+
+```typescript
+import { createPluginMarketplace } from '@ollama-code/ollama-code-core';
+
+const marketplace = createPluginMarketplace(process.cwd());
+
+// Поиск плагинов
+const plugins = await marketplace.search({ query: 'git' });
+
+// Установка плагина
+const result = await marketplace.install('my-plugin', {
+  global: true,
+  version: '1.0.0',
+});
+
+// Обновление всех плагинов
+const updates = await marketplace.updateAll({ checkOnly: true });
+```
+
+### Уровни доверия
+
+| Уровень | Описание |
+|---------|----------|
+| `verified` | Официально верифицированные плагины |
+| `community` | Плагины от сообщества с хорошей репутацией |
+| `unverified` | Непроверенные плагины (требуют `--skip-verification`) |
+
+### Создание плагина для Marketplace
+
+```json
+// package.json
+{
+  "name": "ollama-code-plugin-my-plugin",
+  "version": "1.0.0",
+  "keywords": ["ollama-code-plugin"],
+  "main": "index.js"
+}
+```
+
+**Полная документация**: См. [Plugin Marketplace](./PLUGIN_MARKETPLACE.md) для детального описания CLI команд, API и создания плагинов.
