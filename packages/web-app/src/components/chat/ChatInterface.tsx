@@ -69,9 +69,7 @@ export function ChatInterface() {
   useEffect(() => {
     async function fetchModels() {
       try {
-        const response = await fetch(
-          process.env.NEXT_PUBLIC_OLLAMA_URL || 'http://localhost:11434/api/tags'
-        );
+        const response = await fetch('/api/models');
         const data = await response.json();
         setModels(data.models || []);
         if (data.models?.length > 0 && !selectedModel) {
@@ -119,27 +117,24 @@ export function ChatInterface() {
     const abortController = new AbortController();
     startStreaming(abortController);
 
-    // Send to Ollama via REST API (WebSocket can be used for advanced streaming)
+    // Send to Ollama via API route
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_OLLAMA_URL || 'http://localhost:11434'}/api/chat`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: selectedModel,
-            messages: [
-              ...(activeSession?.messages || []).map((m) => ({
-                role: m.role,
-                content: m.content,
-              })),
-              { role: 'user', content: userMessage },
-            ],
-            stream: true,
-          }),
-          signal: abortController.signal,
-        }
-      );
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: selectedModel,
+          messages: [
+            ...(activeSession?.messages || []).map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
+            { role: 'user', content: userMessage },
+          ],
+          stream: true,
+        }),
+        signal: abortController.signal,
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
