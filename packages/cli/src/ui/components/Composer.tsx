@@ -5,7 +5,7 @@
  */
 
 import { Box, useIsScreenReaderEnabled } from 'ink';
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState, useMemo } from 'react';
 import { LoadingIndicator } from './LoadingIndicator.js';
 import { InputPrompt } from './InputPrompt.js';
 import { Footer } from './Footer.js';
@@ -20,14 +20,73 @@ import { ConfigInitDisplay } from '../components/ConfigInitDisplay.js';
 import { FeedbackDialog } from '../FeedbackDialog.js';
 import { t } from '../../i18n/index.js';
 
-export const Composer = () => {
+/**
+ * Composer component - renders input area and loading indicators
+ * Memoized to prevent unnecessary re-renders
+ */
+const ComposerComponent = () => {
   const config = useConfig();
   const isScreenReaderEnabled = useIsScreenReaderEnabled();
   const uiState = useUIState();
   const uiActions = useUIActions();
   const { vimEnabled } = useVimMode();
 
-  const { showAutoAcceptIndicator } = uiState;
+  // Memoize frequently accessed state values
+  const {
+    showAutoAcceptIndicator,
+    embeddedShellFocused,
+    streamingState,
+    thought,
+    currentLoadingPhrase,
+    elapsedTime,
+    isConfigInitialized,
+    messageQueue,
+    isFeedbackDialogOpen,
+    isInputActive,
+    buffer,
+    inputWidth,
+    suggestionsWidth,
+    userMessages,
+    slashCommands,
+    commandContext,
+    shellModeActive,
+  } = useMemo(() => ({
+    showAutoAcceptIndicator: uiState.showAutoAcceptIndicator,
+    embeddedShellFocused: uiState.embeddedShellFocused,
+    streamingState: uiState.streamingState,
+    thought: uiState.thought,
+    currentLoadingPhrase: uiState.currentLoadingPhrase,
+    elapsedTime: uiState.elapsedTime,
+    isConfigInitialized: uiState.isConfigInitialized,
+    messageQueue: uiState.messageQueue,
+    isFeedbackDialogOpen: uiState.isFeedbackDialogOpen,
+    isInputActive: uiState.isInputActive,
+    buffer: uiState.buffer,
+    inputWidth: uiState.inputWidth,
+    suggestionsWidth: uiState.suggestionsWidth,
+    userMessages: uiState.userMessages,
+    slashCommands: uiState.slashCommands,
+    commandContext: uiState.commandContext,
+    shellModeActive: uiState.shellModeActive,
+  }), [
+    uiState.showAutoAcceptIndicator,
+    uiState.embeddedShellFocused,
+    uiState.streamingState,
+    uiState.thought,
+    uiState.currentLoadingPhrase,
+    uiState.elapsedTime,
+    uiState.isConfigInitialized,
+    uiState.messageQueue,
+    uiState.isFeedbackDialogOpen,
+    uiState.isInputActive,
+    uiState.buffer,
+    uiState.inputWidth,
+    uiState.suggestionsWidth,
+    uiState.userMessages,
+    uiState.slashCommands,
+    uiState.commandContext,
+    uiState.shellModeActive,
+  ]);
 
   // State for keyboard shortcuts display toggle
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -46,45 +105,54 @@ export const Composer = () => {
     [uiActions],
   );
 
+  // Memoize placeholder text
+  const placeholder = useMemo(
+    () =>
+      vimEnabled
+        ? '  ' + t("Press 'i' for INSERT mode and 'Esc' for NORMAL mode.")
+        : '  ' + t('Type your message or @path/to/file'),
+    [vimEnabled]
+  );
+
+  // Memoize loading indicator props
+  const loadingIndicatorProps = useMemo(
+    () => ({
+      thought:
+        streamingState === StreamingState.WaitingForConfirmation ||
+        config.getAccessibility()?.enableLoadingPhrases === false
+          ? undefined
+          : thought,
+      currentLoadingPhrase:
+        config.getAccessibility()?.enableLoadingPhrases === false
+          ? undefined
+          : currentLoadingPhrase,
+      elapsedTime,
+    }),
+    [streamingState, thought, currentLoadingPhrase, elapsedTime, config]
+  );
+
   return (
     <Box flexDirection="column" marginTop={1}>
-      {!uiState.embeddedShellFocused && (
-        <LoadingIndicator
-          // Hide loading phrases when enableLoadingPhrases is explicitly false.
-          // Using === false ensures phrases show by default when undefined.
-          thought={
-            uiState.streamingState === StreamingState.WaitingForConfirmation ||
-            config.getAccessibility()?.enableLoadingPhrases === false
-              ? undefined
-              : uiState.thought
-          }
-          currentLoadingPhrase={
-            config.getAccessibility()?.enableLoadingPhrases === false
-              ? undefined
-              : uiState.currentLoadingPhrase
-          }
-          elapsedTime={uiState.elapsedTime}
-        />
-      )}
+      {!embeddedShellFocused && <LoadingIndicator {...loadingIndicatorProps} />}
 
-      {!uiState.isConfigInitialized && <ConfigInitDisplay />}
+      {!isConfigInitialized && <ConfigInitDisplay />}
 
-      <QueuedMessageDisplay messageQueue={uiState.messageQueue} />
+      <QueuedMessageDisplay messageQueue={messageQueue} />
 
-      {uiState.isFeedbackDialogOpen && <FeedbackDialog />}
+      {isFeedbackDialogOpen && <FeedbackDialog />}
 
-      {uiState.isInputActive && (
+      {isInputActive && (
         <InputPrompt
-          buffer={uiState.buffer}
-          inputWidth={uiState.inputWidth}
-          suggestionsWidth={uiState.suggestionsWidth}
+          buffer={buffer}
+          inputWidth={inputWidth}
+          suggestionsWidth={suggestionsWidth}
           onSubmit={uiActions.handleFinalSubmit}
-          userMessages={uiState.userMessages}
+          userMessages={userMessages}
           onClearScreen={uiActions.handleClearScreen}
           config={config}
-          slashCommands={uiState.slashCommands}
-          commandContext={uiState.commandContext}
-          shellModeActive={uiState.shellModeActive}
+          slashCommands={slashCommands}
+          commandContext={commandContext}
+          shellModeActive={shellModeActive}
           setShellModeActive={uiActions.setShellModeActive}
           approvalMode={showAutoAcceptIndicator}
           onEscapePromptChange={uiActions.onEscapePromptChange}
@@ -93,12 +161,8 @@ export const Composer = () => {
           onSuggestionsVisibilityChange={handleSuggestionsVisibilityChange}
           focus={true}
           vimHandleInput={uiActions.vimHandleInput}
-          isEmbeddedShellFocused={uiState.embeddedShellFocused}
-          placeholder={
-            vimEnabled
-              ? '  ' + t("Press 'i' for INSERT mode and 'Esc' for NORMAL mode.")
-              : '  ' + t('Type your message or @path/to/file')
-          }
+          isEmbeddedShellFocused={embeddedShellFocused}
+          placeholder={placeholder}
         />
       )}
 
@@ -112,3 +176,8 @@ export const Composer = () => {
     </Box>
   );
 };
+
+/**
+ * Memoized Composer component
+ */
+export const Composer = memo(ComposerComponent);
