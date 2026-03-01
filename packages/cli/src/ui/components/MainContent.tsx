@@ -33,10 +33,11 @@ export const MainContent = () => {
 
   return (
     <>
+      {/* AppHeader is outside Static to allow dynamic updates (e.g., context progress bar) */}
+      <AppHeader version={version} />
       <Static
         key={`${uiState.historyRemountKey}-${uiState.currentModel}`}
         items={[
-          <AppHeader key="app-header" version={version} />,
           <DebugModeNotification key="debug-notification" />,
           <Notifications key="notifications" />,
           ...uiState.history.map((h) => (
