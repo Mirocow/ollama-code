@@ -50,6 +50,7 @@ packages/core/src/generated/
 .integration-tests/
 packages/vscode-ide-companion/*.vsix
 scripts/unused-keys-only-in-locales.json
+logs
 
 # Qwen Code Configs
 
@@ -79,3 +80,4 @@ integration-tests/terminal-capture/scenarios/screenshots/
 # storybook
 *storybook.log
 storybook-static
+
