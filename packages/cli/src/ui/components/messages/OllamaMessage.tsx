@@ -5,6 +5,7 @@
  */
 
 import type React from 'react';
+import { memo, useMemo } from 'react';
 import { Text, Box } from 'ink';
 import { MarkdownDisplay } from '../../utils/MarkdownDisplay.js';
 import { theme } from '../../semantic-colors.js';
@@ -17,7 +18,11 @@ interface OllamaMessageProps {
   contentWidth: number;
 }
 
-export const OllamaMessage: React.FC<OllamaMessageProps> = ({
+/**
+ * OllamaMessage component - renders assistant messages
+ * Memoized to prevent unnecessary re-renders during streaming
+ */
+const OllamaMessageComponent: React.FC<OllamaMessageProps> = ({
   text,
   isPending,
   availableTerminalHeight,
@@ -25,6 +30,12 @@ export const OllamaMessage: React.FC<OllamaMessageProps> = ({
 }) => {
   const prefix = '✦ ';
   const prefixWidth = prefix.length;
+
+  // Memoize calculated values
+  const markdownWidth = useMemo(
+    () => contentWidth - prefixWidth,
+    [contentWidth, prefixWidth],
+  );
 
   return (
     <Box flexDirection="row">
@@ -38,9 +49,15 @@ export const OllamaMessage: React.FC<OllamaMessageProps> = ({
           text={text}
           isPending={isPending}
           availableTerminalHeight={availableTerminalHeight}
-          contentWidth={contentWidth - prefixWidth}
+          contentWidth={markdownWidth}
         />
       </Box>
     </Box>
   );
 };
+
+/**
+ * Memoized OllamaMessage - only re-renders when props actually change
+ * Uses shallow comparison for props
+ */
+export const OllamaMessage = memo(OllamaMessageComponent);

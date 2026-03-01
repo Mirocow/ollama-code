@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { Box, Text } from 'ink';
 import type { IndividualToolCallDisplay } from '../../types.js';
 import { ToolCallStatus } from '../../types.js';
@@ -407,92 +407,101 @@ type ToolStatusIndicatorProps = {
   name: string;
 };
 
-const ToolStatusIndicator: React.FC<ToolStatusIndicatorProps> = ({
-  status,
-  name,
-}) => {
-  const isShell = name === SHELL_COMMAND_NAME || name === SHELL_NAME;
-  const statusColor = isShell ? theme.ui.symbol : theme.status.warning;
+/**
+ * ToolStatusIndicator - memoized component for showing tool execution status
+ */
+const ToolStatusIndicator: React.FC<ToolStatusIndicatorProps> = memo(
+  ({ status, name }) => {
+    const isShell = name === SHELL_COMMAND_NAME || name === SHELL_NAME;
+    const statusColor = isShell ? theme.ui.symbol : theme.status.warning;
 
-  return (
-    <Box minWidth={STATUS_INDICATOR_WIDTH}>
-      {status === ToolCallStatus.Pending && (
-        <Text color={theme.status.success}>{TOOL_STATUS.PENDING}</Text>
-      )}
-      {status === ToolCallStatus.Executing && (
-        <OllamaRespondingSpinner
-          spinnerType="toggle"
-          nonRespondingDisplay={TOOL_STATUS.EXECUTING}
-        />
-      )}
-      {status === ToolCallStatus.Success && (
-        <Text color={theme.status.success} aria-label={'Success:'}>
-          {TOOL_STATUS.SUCCESS}
-        </Text>
-      )}
-      {status === ToolCallStatus.Confirming && (
-        <Text color={statusColor} aria-label={'Confirming:'}>
-          {TOOL_STATUS.CONFIRMING}
-        </Text>
-      )}
-      {status === ToolCallStatus.Canceled && (
-        <Text color={statusColor} aria-label={'Canceled:'} bold>
-          {TOOL_STATUS.CANCELED}
-        </Text>
-      )}
-      {status === ToolCallStatus.Error && (
-        <Text color={theme.status.error} aria-label={'Error:'} bold>
-          {TOOL_STATUS.ERROR}
-        </Text>
-      )}
-    </Box>
-  );
-};
+    return (
+      <Box minWidth={STATUS_INDICATOR_WIDTH}>
+        {status === ToolCallStatus.Pending && (
+          <Text color={theme.status.success}>{TOOL_STATUS.PENDING}</Text>
+        )}
+        {status === ToolCallStatus.Executing && (
+          <OllamaRespondingSpinner
+            spinnerType="toggle"
+            nonRespondingDisplay={TOOL_STATUS.EXECUTING}
+          />
+        )}
+        {status === ToolCallStatus.Success && (
+          <Text color={theme.status.success} aria-label={'Success:'}>
+            {TOOL_STATUS.SUCCESS}
+          </Text>
+        )}
+        {status === ToolCallStatus.Confirming && (
+          <Text color={statusColor} aria-label={'Confirming:'}>
+            {TOOL_STATUS.CONFIRMING}
+          </Text>
+        )}
+        {status === ToolCallStatus.Canceled && (
+          <Text color={statusColor} aria-label={'Canceled:'} bold>
+            {TOOL_STATUS.CANCELED}
+          </Text>
+        )}
+        {status === ToolCallStatus.Error && (
+          <Text color={theme.status.error} aria-label={'Error:'} bold>
+            {TOOL_STATUS.ERROR}
+          </Text>
+        )}
+      </Box>
+    );
+  },
+);
+ToolStatusIndicator.displayName = 'ToolStatusIndicator';
 
-type ToolInfo = {
+type ToolInfoProps = {
   name: string;
   description: string;
   status: ToolCallStatus;
   emphasis: TextEmphasis;
 };
-const ToolInfo: React.FC<ToolInfo> = ({
-  name,
-  description,
-  status,
-  emphasis,
-}) => {
-  const nameColor = React.useMemo<string>(() => {
-    switch (emphasis) {
-      case 'high':
-        return theme.text.primary;
-      case 'medium':
-        return theme.text.primary;
-      case 'low':
-        return theme.text.secondary;
-      default: {
-        const exhaustiveCheck: never = emphasis;
-        return exhaustiveCheck;
-      }
-    }
-  }, [emphasis]);
-  return (
-    <Box>
-      <Text
-        wrap="truncate-end"
-        strikethrough={status === ToolCallStatus.Canceled}
-      >
-        <Text color={nameColor} bold>
-          {name}
-        </Text>{' '}
-        <Text color={theme.text.secondary}>{description}</Text>
-      </Text>
-    </Box>
-  );
-};
 
-const TrailingIndicator: React.FC = () => (
+/**
+ * ToolInfo - memoized component for displaying tool name and description
+ */
+const ToolInfo: React.FC<ToolInfoProps> = memo(
+  ({ name, description, status, emphasis }) => {
+    const nameColor = useMemo<string>(() => {
+      switch (emphasis) {
+        case 'high':
+          return theme.text.primary;
+        case 'medium':
+          return theme.text.primary;
+        case 'low':
+          return theme.text.secondary;
+        default: {
+          const exhaustiveCheck: never = emphasis;
+          return exhaustiveCheck;
+        }
+      }
+    }, [emphasis]);
+    return (
+      <Box>
+        <Text
+          wrap="truncate-end"
+          strikethrough={status === ToolCallStatus.Canceled}
+        >
+          <Text color={nameColor} bold>
+            {name}
+          </Text>{' '}
+          <Text color={theme.text.secondary}>{description}</Text>
+        </Text>
+      </Box>
+    );
+  },
+);
+ToolInfo.displayName = 'ToolInfo';
+
+/**
+ * TrailingIndicator - memoized component for showing active tool indicator
+ */
+const TrailingIndicator: React.FC = memo(() => (
   <Text color={theme.text.primary} wrap="truncate">
     {' '}
     ←
   </Text>
-);
+));
+TrailingIndicator.displayName = 'TrailingIndicator';

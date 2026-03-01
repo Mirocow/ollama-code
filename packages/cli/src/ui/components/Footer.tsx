@@ -5,6 +5,7 @@
  */
 
 import type React from 'react';
+import { memo, useMemo } from 'react';
 import { Box, Text } from 'ink';
 import { theme } from '../semantic-colors.js';
 import { ContextUsageDisplay } from './ContextUsageDisplay.js';
@@ -19,28 +20,39 @@ import { useVimMode } from '../contexts/VimModeContext.js';
 import { ApprovalMode } from '@ollama-code/ollama-code-core';
 import { t } from '../../i18n/index.js';
 
-export const Footer: React.FC = () => {
+/**
+ * Footer component - renders status bar at the bottom of the terminal
+ * Memoized to prevent unnecessary re-renders
+ */
+const FooterComponent: React.FC = () => {
   const uiState = useUIState();
   const config = useConfig();
   const { vimEnabled, vimMode } = useVimMode();
 
-  const { promptTokenCount, showAutoAcceptIndicator } = {
-    promptTokenCount: uiState.sessionStats.lastPromptTokenCount,
-    showAutoAcceptIndicator: uiState.showAutoAcceptIndicator,
-  };
+  const { promptTokenCount, showAutoAcceptIndicator } = useMemo(
+    () => ({
+      promptTokenCount: uiState.sessionStats.lastPromptTokenCount,
+      showAutoAcceptIndicator: uiState.showAutoAcceptIndicator,
+    }),
+    [
+      uiState.sessionStats.lastPromptTokenCount,
+      uiState.showAutoAcceptIndicator,
+    ],
+  );
 
   const { columns: terminalWidth } = useTerminalSize();
   const isNarrow = isNarrowWidth(terminalWidth);
 
-  // Determine sandbox info from environment
-  const sandboxEnv = process.env['SANDBOX'];
-  const sandboxInfo = sandboxEnv
-    ? sandboxEnv === 'sandbox-exec'
+  // Determine sandbox info from environment - memoized
+  const sandboxInfo = useMemo(() => {
+    const sandboxEnv = process.env['SANDBOX'];
+    if (!sandboxEnv) return null;
+    return sandboxEnv === 'sandbox-exec'
       ? 'seatbelt'
       : sandboxEnv.startsWith('ollama-code')
         ? 'docker'
-        : sandboxEnv
-    : null;
+        : sandboxEnv;
+  }, []);
 
   // Check if debug mode is enabled
   const debugMode = config.getDebugMode();
@@ -66,33 +78,44 @@ export const Footer: React.FC = () => {
     <Text color={theme.text.secondary}>{t('? for shortcuts')}</Text>
   );
 
-  const rightItems: Array<{ key: string; node: React.ReactNode }> = [];
-  if (sandboxInfo) {
-    rightItems.push({
-      key: 'sandbox',
-      node: <Text color={theme.status.success}>🔒 {sandboxInfo}</Text>,
-    });
-  }
-  if (debugMode) {
-    rightItems.push({
-      key: 'debug',
-      node: <Text color={theme.status.warning}>Debug Mode</Text>,
-    });
-  }
-  if (promptTokenCount > 0 && contextWindowSize) {
-    rightItems.push({
-      key: 'context',
-      node: (
-        <Text color={theme.text.accent}>
-          <ContextUsageDisplay
-            promptTokenCount={promptTokenCount}
-            terminalWidth={terminalWidth}
-            contextWindowSize={contextWindowSize}
-          />
-        </Text>
-      ),
-    });
-  }
+  // Memoize right items to prevent unnecessary recalculations
+  const rightItems = useMemo(() => {
+    const items: Array<{ key: string; node: React.ReactNode }> = [];
+    if (sandboxInfo) {
+      items.push({
+        key: 'sandbox',
+        node: <Text color={theme.status.success}>🔒 {sandboxInfo}</Text>,
+      });
+    }
+    if (debugMode) {
+      items.push({
+        key: 'debug',
+        node: <Text color={theme.status.warning}>Debug Mode</Text>,
+      });
+    }
+    if (promptTokenCount > 0 && contextWindowSize) {
+      items.push({
+        key: 'context',
+        node: (
+          <Text color={theme.text.accent}>
+            <ContextUsageDisplay
+              promptTokenCount={promptTokenCount}
+              terminalWidth={terminalWidth}
+              contextWindowSize={contextWindowSize}
+            />
+          </Text>
+        ),
+      });
+    }
+    return items;
+  }, [
+    sandboxInfo,
+    debugMode,
+    promptTokenCount,
+    contextWindowSize,
+    terminalWidth,
+  ]);
+
   return (
     <Box
       justifyContent="space-between"
@@ -122,3 +145,8 @@ export const Footer: React.FC = () => {
     </Box>
   );
 };
+
+/**
+ * Memoized Footer component
+ */
+export const Footer = memo(FooterComponent);
