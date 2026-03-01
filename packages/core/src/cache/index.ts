@@ -6,7 +6,7 @@
 
 /**
  * Cache Module
- * Provides caching utilities for responses and embeddings
+ * Provides caching utilities for responses, embeddings, and tool results
  */
 
 export {
@@ -28,3 +28,12 @@ export {
   type EmbeddingCacheConfig,
   type EmbeddingCacheStats,
 } from './embeddingCache.js';
+
+export {
+  ToolResultCache,
+  toolResultCache,
+  type ToolResultCacheEntry,
+  type ToolResultCacheConfig,
+  type ToolResultCacheStats,
+  type CacheLookupResult,
+} from './toolResultCache.js';
