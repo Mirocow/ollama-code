@@ -104,6 +104,21 @@ export {
   type RequestOptions,
 } from './core/ollamaNativeClient.js';
 
+// Context Caching
+export {
+  OllamaContextClient,
+  ollamaContextClient,
+  type OllamaContextGenerateRequest,
+  type OllamaContextGenerateResponse,
+  type ContextStreamCallback,
+} from './core/ollamaContextClient.js';
+
+export {
+  HybridContentGenerator,
+  createHybridContentGenerator,
+  type HybridContentGeneratorConfig,
+} from './core/hybridContentGenerator.js';
+
 // ============================================================================
 // Tools
 // ============================================================================

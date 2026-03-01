@@ -81,7 +81,11 @@ interface EventBusState {
   emit: <K extends keyof EventBusEvents>(event: K, data: EventBusEvents[K]) => void;
   unsubscribe: (subscriptionId: string) => void;
   clearHistory: () => void;
-  getHistory: <K extends keyof EventBusEvents>(event?: K) => typeof event extends K ? Array<{ data: EventBusEvents[K]; timestamp: number }> : typeof eventBus.getState().eventHistory;
+  getHistory: <K extends keyof EventBusEvents>(
+    event?: K
+  ) => typeof event extends K
+    ? Array<{ data: EventBusEvents[K]; timestamp: number }>
+    : Array<{ event: keyof EventBusEvents; data: unknown; timestamp: number }>;
 }
 
 /**

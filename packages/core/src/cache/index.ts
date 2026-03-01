@@ -6,7 +6,7 @@
 
 /**
  * Cache Module
- * Provides caching utilities for responses, embeddings, and tool results
+ * Provides caching utilities for responses, embeddings, tool results, and context tokens
  */
 
 export {
@@ -37,3 +37,10 @@ export {
   type ToolResultCacheStats,
   type CacheLookupResult,
 } from './toolResultCache.js';
+
+export {
+  ContextCacheManager,
+  contextCacheManager,
+  type ContextCacheConfig,
+  type ContextCacheStats,
+} from './contextCacheManager.js';
