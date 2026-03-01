@@ -19,6 +19,38 @@
 
 **Ollama Code** is a CLI tool for AI-powered programming assistance using local Ollama models. The project provides full control over code and data, working completely offline.
 
+## Interface Preview
+
+<p align="center">
+  <img src="./assets/interface-full.png" alt="Ollama Code Interface" width="100%">
+</p>
+
+### Main Interface Elements
+
+<p align="center">
+  <img src="./assets/interface-header.png" alt="Header with Context Bar" width="70%">
+</p>
+
+| Element | Description |
+|---------|-------------|
+| **Logo** | Animated gradient OLLAMA logo |
+| **Model Info** | Connection type, server URL, model name with capability badges (🔧 tools, 🧠 thinking, 📷 vision, 📋 structured output) |
+| **Context Bar** | Context window size (e.g., 131K), model size (e.g., 14B), visual usage progress bar |
+| **Session ID** | Unique session identifier for debugging |
+| **Working Directory** | Current project path |
+
+### Context Usage Progress Bar
+
+<p align="center">
+  <img src="./assets/interface-demo.png" alt="Context Progress Bar" width="60%">
+</p>
+
+The progress bar shows real-time context window usage:
+
+- **Green/Blue**: Normal usage (< 75%)
+- **Yellow**: Approaching limit (> 90%)
+- Progress bar fills as context window is consumed
+
 ## Features
 
 - 🚀 **Fully Local** — all models run locally via Ollama
