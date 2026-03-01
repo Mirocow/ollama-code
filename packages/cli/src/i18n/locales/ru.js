@@ -25,6 +25,24 @@ export default {
   'Token Budget': 'Бюджет токенов',
   'remaining': 'осталось',
   'Reserved': 'Зарезервировано',
+  'tokens': 'токенов',
+
+  // Model capabilities
+  'Features': 'Возможности',
+  'Tools': 'Инструменты',
+  'Thinking': 'Размышление',
+  'Vision': 'Зрение',
+  'Structured Output': 'Структурированный вывод',
+  'Basic': 'Базовые',
+  'Unknown': 'Неизвестно',
+
+  // Model dialog
+  'Select Model': 'Выбор модели',
+  'Current (effective) configuration': 'Текущая (эффективная) конфигурация',
+  '(default: http://localhost:11434)': '(по умолчанию: http://localhost:11434)',
+  '(set)': '(задан)',
+  '(optional)': '(опционально)',
+  '(Press Esc to close)': '(Esc для закрытия)',
 
   // Common
   '? for shortcuts': '? - горячие клавиши',
