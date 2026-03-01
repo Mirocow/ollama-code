@@ -80,30 +80,48 @@ npm run start -- "Explain how async/await works in JavaScript"
 npm run debug
 ```
 
+## What's New in v0.11.3
+
+### Bug Fixes
+
+- **React Hooks Rules Fix**: Fixed `LoadingIndicator.tsx` where `useMemo` hooks were called after early `return`, violating React Rules of Hooks
+
+### Complete Feature Set
+
+| Feature                | Description                                               |
+| ---------------------- | --------------------------------------------------------- |
+| **Plugin System v2**   | PluginLoader, PluginCLI, PluginMarketplace, PluginSandbox |
+| **HTTP Client**        | Axios with interceptors, retry logic, timeout handling    |
+| **React Optimization** | 6 specialized contexts, 11 memoized components            |
+| **Cancellation**       | CancellationToken, AbortController cleanup                |
+| **Context Caching**    | KV-cache reuse for 80-90% faster conversations            |
+
+---
+
 ## What's New in v0.11.0
 
 ### Architecture Improvements
 
 Major architectural enhancements for better performance and extensibility:
 
-| Feature | Description |
-|---------|-------------|
-| **Zustand Migration** | Replaced Context API, eliminates unnecessary re-renders |
-| **Event Bus** | Typed pub/sub system for loose component coupling |
-| **Command Pattern** | Full Undo/Redo support for reversible operations |
-| **Plugin System v1** | Dynamic tool loading, builtin plugins, lifecycle hooks |
-| **Context Caching** | KV-cache reuse for 80-90% faster conversations |
-| **Prompt Documentation** | Complete documentation of prompt formation system |
+| Feature                  | Description                                             |
+| ------------------------ | ------------------------------------------------------- |
+| **Zustand Migration**    | Replaced Context API, eliminates unnecessary re-renders |
+| **Event Bus**            | Typed pub/sub system for loose component coupling       |
+| **Command Pattern**      | Full Undo/Redo support for reversible operations        |
+| **Plugin System v1**     | Dynamic tool loading, builtin plugins, lifecycle hooks  |
+| **Context Caching**      | KV-cache reuse for 80-90% faster conversations          |
+| **Prompt Documentation** | Complete documentation of prompt formation system       |
 
 ### New Stores
 
-| Store | Purpose |
-|-------|---------|
-| `sessionStore` | Session state and metrics |
+| Store            | Purpose                           |
+| ---------------- | --------------------------------- |
+| `sessionStore`   | Session state and metrics         |
 | `streamingStore` | Streaming state + AbortController |
-| `uiStore` | UI settings with persistence |
-| `commandStore` | Command pattern for undo/redo |
-| `eventBus` | Event pub/sub system |
+| `uiStore`        | UI settings with persistence      |
+| `commandStore`   | Command pattern for undo/redo     |
+| `eventBus`       | Event pub/sub system              |
 
 ### Plugin System
 
@@ -112,7 +130,9 @@ Dynamic plugin architecture with lifecycle hooks:
 ```typescript
 const plugin: PluginDefinition = {
   metadata: { id: 'my-plugin', name: 'My Plugin', version: '1.0.0' },
-  tools: [{ id: 'hello', name: 'hello', execute: async () => ({ success: true }) }],
+  tools: [
+    { id: 'hello', name: 'hello', execute: async () => ({ success: true }) },
+  ],
   hooks: {
     onLoad: async (ctx) => ctx.logger.info('Loaded'),
     onBeforeToolExecute: async (id, params) => true,
@@ -121,6 +141,7 @@ const plugin: PluginDefinition = {
 ```
 
 **Builtin Plugins:**
+
 - `core-tools` — echo, timestamp, get_env
 - `dev-tools` — python_dev, nodejs_dev, golang_dev, rust_dev, typescript_dev
 - `file-tools` — read_file, write_file, edit_file
@@ -144,6 +165,7 @@ eventBus.emit('command:executed', { commandId: '123', type: 'edit' });
 ### Prompt System Documentation
 
 New comprehensive documentation in `docs/PROMPT_SYSTEM.md`:
+
 - `getCoreSystemPrompt()` — main system prompt construction
 - `getCompressionPrompt()` — history compression to XML
 - `getToolCallFormatInstructions()` — for models without native tools
@@ -158,18 +180,18 @@ New comprehensive documentation in `docs/PROMPT_SYSTEM.md`:
 
 Major performance improvement for multi-turn conversations:
 
-| Feature | Description |
-|---------|-------------|
-| **80-90% Faster** | Subsequent messages use cached context tokens |
-| **KV-cache Reuse** | Leverages Ollama's native context caching |
+| Feature                     | Description                                      |
+| --------------------------- | ------------------------------------------------ |
+| **80-90% Faster**           | Subsequent messages use cached context tokens    |
+| **KV-cache Reuse**          | Leverages Ollama's native context caching        |
 | **Auto Endpoint Selection** | Switches between `/api/generate` and `/api/chat` |
-| **Session Tracking** | Per-session context management |
+| **Session Tracking**        | Per-session context management                   |
 
 ```typescript
 // Enable context caching
 const config: ContentGeneratorConfig = {
   model: 'llama3.2',
-  enableContextCaching: true,  // Key improvement
+  enableContextCaching: true, // Key improvement
 };
 
 // Performance gains:
@@ -182,22 +204,22 @@ const config: ContentGeneratorConfig = {
 
 All context caching components are fully tested with **118 tests**:
 
-| Component | Tests | Coverage |
-|-----------|-------|----------|
-| ContextCacheManager | 50 | TTL, eviction, concurrency, edge cases |
-| OllamaContextClient | 32 | Streaming, errors, session management |
-| HybridContentGenerator | 36 | Endpoint selection, token counting |
+| Component              | Tests | Coverage                               |
+| ---------------------- | ----- | -------------------------------------- |
+| ContextCacheManager    | 50    | TTL, eviction, concurrency, edge cases |
+| OllamaContextClient    | 32    | Streaming, errors, session management  |
+| HybridContentGenerator | 36    | Endpoint selection, token counting     |
 
 See [docs/CONTEXT_CACHING.md](./docs/CONTEXT_CACHING.md) for full API documentation.
 
 ### Architecture Improvements
 
-| Component | Description |
-|-----------|-------------|
-| **Zustand Stores** | Replaced Context API for better performance |
-| **Event Bus** | Typed publish/subscribe for loose coupling |
+| Component           | Description                                 |
+| ------------------- | ------------------------------------------- |
+| **Zustand Stores**  | Replaced Context API for better performance |
+| **Event Bus**       | Typed publish/subscribe for loose coupling  |
 | **Command Pattern** | Undo/Redo support for reversible operations |
-| **Plugin System** | Dynamic tool loading at runtime |
+| **Plugin System**   | Dynamic tool loading at runtime             |
 
 ### New Configuration Options
 
@@ -205,7 +227,7 @@ See [docs/CONTEXT_CACHING.md](./docs/CONTEXT_CACHING.md) for full API documentat
 interface ContentGeneratorConfig {
   // Enable context caching for faster conversations
   enableContextCaching?: boolean;
-  
+
   // Session ID for context tracking
   sessionId?: string;
 }
@@ -219,12 +241,12 @@ interface ContentGeneratorConfig {
 
 The header now provides real-time context usage visualization:
 
-| Feature                      | Description                                              |
-| ---------------------------- | -------------------------------------------------------- |
-| **Token Progress Bar**       | Visual indicator of context window usage                 |
-| **Model Context Size**       | Shows model's context window (128K, 32K, etc.)           |
-| **Capability Icons**         | Visual indicators for vision, tools, streaming support   |
-| **Full-Width Display**       | Progress bar spans full info panel width                 |
+| Feature                | Description                                            |
+| ---------------------- | ------------------------------------------------------ |
+| **Token Progress Bar** | Visual indicator of context window usage               |
+| **Model Context Size** | Shows model's context window (128K, 32K, etc.)         |
+| **Capability Icons**   | Visual indicators for vision, tools, streaming support |
+| **Full-Width Display** | Progress bar spans full info panel width               |
 
 ### Command Cleanup
 
@@ -485,16 +507,16 @@ Full API docs: [OLLAMA_API.md](./docs/OLLAMA_API.md)
 
 ## Recommended Models
 
-| Model                | Purpose              | Size  |
-| -------------------- | -------------------- | ----- |
-| `llama3.2`           | General purpose      | 3B    |
-| `qwen2.5-coder:7b`   | Programming          | 7B    |
-| `qwen2.5-coder:14b`  | Programming          | 14B   |
-| `qwen3-coder:30b`    | Programming          | 30B   |
-| `deepseek-r1:8b`     | Reasoning (thinking) | 8B    |
-| `codellama`          | Programming          | 7B+   |
-| `mistral`            | General purpose      | 7B    |
-| `nomic-embed-text`   | Embeddings           | 274M  |
+| Model               | Purpose              | Size |
+| ------------------- | -------------------- | ---- |
+| `llama3.2`          | General purpose      | 3B   |
+| `qwen2.5-coder:7b`  | Programming          | 7B   |
+| `qwen2.5-coder:14b` | Programming          | 14B  |
+| `qwen3-coder:30b`   | Programming          | 30B  |
+| `deepseek-r1:8b`    | Reasoning (thinking) | 8B   |
+| `codellama`         | Programming          | 7B+  |
+| `mistral`           | General purpose      | 7B   |
+| `nomic-embed-text`  | Embeddings           | 274M |
 
 ## Development
 
