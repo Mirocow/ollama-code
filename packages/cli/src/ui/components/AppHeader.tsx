@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { memo, useMemo } from 'react';
 import { Box } from 'ink';
 import { Header } from './Header.js';
 import { Tips } from './Tips.js';
@@ -16,27 +17,45 @@ interface AppHeaderProps {
   version: string;
 }
 
-export const AppHeader = ({ version }: AppHeaderProps) => {
+/**
+ * AppHeader component - renders the application header with banner and tips
+ * Memoized to prevent unnecessary re-renders
+ */
+const AppHeaderComponent = ({ version }: AppHeaderProps) => {
   const settings = useSettings();
   const config = useConfig();
   const uiState = useUIState();
   const sessionStats = useSessionStats();
 
-  const contentGeneratorConfig = config.getContentGeneratorConfig();
-  const authType = contentGeneratorConfig?.authType;
-  const baseUrl = contentGeneratorConfig?.baseUrl;
+  // Memoize config-derived values
+  const { authType, baseUrl, targetDir, showBanner, contextWindowSize } = useMemo(() => {
+    const contentGeneratorConfig = config.getContentGeneratorConfig();
+    return {
+      authType: contentGeneratorConfig?.authType,
+      baseUrl: contentGeneratorConfig?.baseUrl,
+      targetDir: config.getTargetDir(),
+      showBanner: !config.getScreenReader(),
+      contextWindowSize: contentGeneratorConfig?.contextWindowSize,
+    };
+  }, [config]);
+
+  // Memoize settings-derived values
+  const showTips = useMemo(
+    () => !(settings.merged.ui?.hideTips || config.getScreenReader()),
+    [settings.merged.ui?.hideTips, config]
+  );
+
+  // Memoize session stats
+  const { sessionId, promptTokenCount } = useMemo(
+    () => ({
+      sessionId: sessionStats.stats.sessionId,
+      promptTokenCount: sessionStats.stats.lastPromptTokenCount,
+    }),
+    [sessionStats.stats.sessionId, sessionStats.stats.lastPromptTokenCount]
+  );
+
+  // Only subscribe to currentModel from UIState
   const model = uiState.currentModel;
-  const targetDir = config.getTargetDir();
-  const showBanner = !config.getScreenReader();
-  const showTips = !(settings.merged.ui?.hideTips || config.getScreenReader());
-  const sessionId = sessionStats.stats.sessionId;
-
-  // Get context window size from config or use default
-  const contextWindowSize = contentGeneratorConfig?.contextWindowSize;
-
-  // Get current context token count from session stats
-  // lastPromptTokenCount contains the total context size (history + current request) from Ollama
-  const promptTokenCount = sessionStats.stats.lastPromptTokenCount;
 
   return (
     <Box flexDirection="column">
@@ -56,3 +75,8 @@ export const AppHeader = ({ version }: AppHeaderProps) => {
     </Box>
   );
 };
+
+/**
+ * Memoized AppHeader component
+ */
+export const AppHeader = memo(AppHeaderComponent);

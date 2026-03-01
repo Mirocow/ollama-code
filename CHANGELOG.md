@@ -1,5 +1,56 @@
 # Changelog
 
+## 0.11.2
+
+### React Performance Optimization
+
+Major React performance improvements through context splitting and memoization:
+
+#### New Specialized Contexts
+
+Split the monolithic `UIStateContext` (70+ fields) into smaller, focused contexts:
+
+| Context | Purpose |
+|---------|---------|
+| `DialogStateContext` | Dialog visibility states |
+| `TerminalContext` | Terminal dimensions and layout |
+| `InputStateContext` | Input buffer and key press states |
+| `HistoryContext` | History items and pending messages |
+| `LoadingContext` | Streaming and loading states |
+| `ConfirmationContext` | Confirmation requests |
+
+#### Memoized Components
+
+Added `React.memo` and `useMemo` to frequently re-rendering components:
+
+- `Footer` — Status bar (already memoized, enhanced)
+- `AppHeader` — Application header with memoized selectors
+- `MainContent` — Main content area with optimized history rendering
+
+#### Performance Benefits
+
+- **Reduced re-renders**: Components only re-render when their specific context changes
+- **Memoized history items**: History rendering is cached and only updates when history changes
+- **Selective subscriptions**: Components can subscribe to specific state slices
+
+### Documentation Updates
+
+- Updated `ROADMAP.md` with React optimization progress
+- Added details about context splitting strategy
+
+### Files Added
+
+| File | Description |
+|------|-------------|
+| `packages/cli/src/ui/contexts/DialogStateContext.tsx` | Dialog state management |
+| `packages/cli/src/ui/contexts/TerminalContext.tsx` | Terminal dimensions |
+| `packages/cli/src/ui/contexts/InputStateContext.tsx` | Input state management |
+| `packages/cli/src/ui/contexts/HistoryContext.tsx` | History state management |
+| `packages/cli/src/ui/contexts/LoadingContext.tsx` | Loading state management |
+| `packages/cli/src/ui/contexts/ConfirmationContext.tsx` | Confirmation requests |
+
+---
+
 ## 0.11.1
 
 ### Documentation Updates
