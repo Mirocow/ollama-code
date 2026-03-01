@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getErrorMessage, isNodeError } from './errors.js';
+import axios, { AxiosError } from 'axios';
+import { getErrorMessage } from './errors.js';
 import { URL } from 'node:url';
 
 const PRIVATE_IP_RANGES = [
@@ -60,19 +61,34 @@ export async function fetchWithTimeout(
   url: string,
   timeout: number,
 ): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
   try {
-    const response = await fetch(url, { signal: controller.signal });
-    return response;
+    const response = await axios.get(url, {
+      timeout,
+      responseType: 'text',
+      transformResponse: [(data) => data], // Don't parse JSON automatically
+    });
+
+    // Convert Axios response to fetch-like Response object
+    return new Response(response.data, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: new Headers(
+        Object.entries(response.headers)
+          .filter(([, value]) => value !== undefined)
+          .map(([key, value]) => [key, String(value)]) as Array<[string, string]>,
+      ),
+    });
   } catch (error) {
-    if (isNodeError(error) && error.code === 'ABORT_ERR') {
-      throw new FetchError(`Request timed out after ${timeout}ms`, 'ETIMEDOUT');
+    if (error instanceof AxiosError) {
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        throw new FetchError(
+          `Request timed out after ${timeout}ms`,
+          'ETIMEDOUT',
+        );
+      }
+      throw new FetchError(getErrorMessage(error));
     }
     throw new FetchError(getErrorMessage(error));
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
