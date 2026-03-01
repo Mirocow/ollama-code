@@ -83,6 +83,17 @@ export function TerminalEmulator() {
     // Handle resize
     const handleResize = () => {
       fitAddon.fit();
+      // Send resize to backend if connected
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        const dims = fitAddon.proposeDimensions();
+        if (dims) {
+          socketRef.current.send(JSON.stringify({
+            type: 'resize',
+            cols: dims.cols,
+            rows: dims.rows,
+          }));
+        }
+      }
     };
     window.addEventListener('resize', handleResize);
 
@@ -107,7 +118,11 @@ export function TerminalEmulator() {
     }
 
     setIsConnecting(true);
-    const wsUrl = process.env.NEXT_PUBLIC_TERMINAL_WS || 'ws://localhost:3000/api/terminal';
+
+    // Determine WebSocket URL based on current location
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/terminal`;
+
     const socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
@@ -115,16 +130,38 @@ export function TerminalEmulator() {
       setIsConnecting(false);
       xtermRef.current?.writeln('\x1b[32m✓ Connected to shell\x1b[0m');
       xtermRef.current?.writeln('');
+
+      // Send initial resize
+      if (fitAddonRef.current && xtermRef.current) {
+        const dims = fitAddonRef.current.proposeDimensions();
+        if (dims) {
+          socket.send(JSON.stringify({
+            type: 'resize',
+            cols: dims.cols,
+            rows: dims.rows,
+          }));
+        }
+      }
     };
 
     socket.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        if (message.type === 'output') {
-          xtermRef.current?.write(message.data);
+        switch (message.type) {
+          case 'output':
+            xtermRef.current?.write(message.data);
+            break;
+          case 'exit':
+            xtermRef.current?.writeln('');
+            xtermRef.current?.writeln(`\x1b[33mProcess exited with code ${message.code}\x1b[0m`);
+            setIsConnected(false);
+            break;
+          case 'error':
+            xtermRef.current?.writeln(`\x1b[31mError: ${message.data}\x1b[0m`);
+            break;
         }
       } catch {
-        // Plain text
+        // Plain text fallback
         xtermRef.current?.write(event.data);
       }
     };
