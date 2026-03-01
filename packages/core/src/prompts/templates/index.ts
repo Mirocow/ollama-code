@@ -159,7 +159,7 @@ export function getSizeTier(modelName: string): ModelSizeTier {
 
 /**
  * Load a template file
- * 
+ *
  * @param templateName - Template filename
  * @returns Template content
  */
@@ -168,10 +168,10 @@ function loadTemplate(templateName: string): string {
   if (templateCache.has(templateName)) {
     return templateCache.get(templateName)!;
   }
-  
-  // Load from file
-  const templatePath = path.join(__dirname, 'templates', templateName);
-  
+
+  // Load from file - templates are in the same directory as this module
+  const templatePath = path.join(__dirname, templateName);
+
   try {
     const content = fs.readFileSync(templatePath, 'utf-8');
     templateCache.set(templateName, content);
