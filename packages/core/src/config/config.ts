@@ -176,10 +176,6 @@ export interface AccessibilitySettings {
   screenReader?: boolean;
 }
 
-export interface BugCommandSettings {
-  urlTemplate: string;
-}
-
 export interface ChatCompressionSettings {
   contextPercentageThreshold?: number;
 }
@@ -306,7 +302,6 @@ export interface ConfigParameters {
   cwd: string;
   fileDiscoveryService?: FileDiscoveryService;
   includeDirectories?: string[];
-  bugCommand?: BugCommandSettings;
   model?: string;
   outputLanguageFilePath?: string;
   maxSessionTurns?: number;
@@ -456,7 +451,6 @@ export class Config {
   private readonly checkpointing: boolean;
   private readonly proxy: string | undefined;
   private readonly cwd: string;
-  private readonly bugCommand: BugCommandSettings | undefined;
   private readonly outputLanguageFilePath?: string;
   private readonly noBrowser: boolean;
   private readonly folderTrustFeature: boolean;
@@ -564,7 +558,6 @@ export class Config {
     this.proxy = params.proxy;
     this.cwd = params.cwd ?? process.cwd();
     this.fileDiscoveryService = params.fileDiscoveryService ?? null;
-    this.bugCommand = params.bugCommand;
     this.maxSessionTurns = params.maxSessionTurns ?? -1;
     this.sessionTokenLimit = params.sessionTokenLimit ?? -1;
     this.experimentalZedIntegration =
@@ -1234,10 +1227,6 @@ export class Config {
 
   getWorkingDir(): string {
     return this.cwd;
-  }
-
-  getBugCommand(): BugCommandSettings | undefined {
-    return this.bugCommand;
   }
 
   getFileService(): FileDiscoveryService {

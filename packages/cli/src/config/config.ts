@@ -885,7 +885,6 @@ export async function loadCliConfig(
       process.env['http_proxy'],
     cwd,
     fileDiscoveryService: fileService,
-    bugCommand: settings.advanced?.bugCommand,
     model: resolvedModel,
     outputLanguageFilePath,
     sessionTokenLimit: settings.model?.sessionTokenLimit ?? -1,

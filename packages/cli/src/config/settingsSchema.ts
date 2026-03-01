@@ -6,7 +6,6 @@
 
 import type {
   MCPServerConfig,
-  BugCommandSettings,
   AuthType,
   ChatCompressionSettings,
   ModelProvidersConfig,
@@ -1126,15 +1125,6 @@ const SETTINGS_SCHEMA = {
         description: 'Environment variables to exclude from project context.',
         showInDialog: false,
         mergeStrategy: MergeStrategy.UNION,
-      },
-      bugCommand: {
-        type: 'object',
-        label: 'Bug Command',
-        category: 'Advanced',
-        requiresRestart: false,
-        default: undefined as BugCommandSettings | undefined,
-        description: 'Configuration for the bug report command.',
-        showInDialog: false,
       },
       tavilyApiKey: {
         type: 'string',
