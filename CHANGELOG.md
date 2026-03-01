@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.12.0
+
+### New Features
+
+#### Prompt System v2 — Model-Size-Optimized Templates
+
+Революционная система промптов, адаптирующаяся к размеру модели:
+
+| Model Size | Template | Размер промпта | Особенности |
+|------------|----------|----------------|-------------|
+| <= 10B | 8b | ~500 токенов | Компактные правила, минимум примеров |
+| <= 30B | 14b | ~800 токенов | Стандартные правила, таблицы инструментов |
+| <= 60B | 32b | ~1200 токенов | Расширенный workflow, security |
+| > 60B | 70b | ~1500 токенов | Полная документация, все примеры |
+
+**Ключевые улучшения:**
+- ✅ Иерархическая структура: Role → Rules → Tools → Workflow → Output
+- ✅ Приоритеты правил: `[CRITICAL]`, `[RECOMMENDED]`, `[OPTIONAL]`
+- ✅ Чек-листы вместо длинных описаний
+- ✅ 1-3 компактных примера вместо 5+ развёрнутых
+- ✅ Динамическое заполнение плейсхолдеров
+
+**Новые файлы:**
+- `packages/core/src/prompts/templates/system-8b.md` — Small models
+- `packages/core/src/prompts/templates/system-14b.md` — Medium models
+- `packages/core/src/prompts/templates/system-32b.md` — Large models
+- `packages/core/src/prompts/templates/system-70b.md` — XLarge models
+- `packages/core/src/prompts/templates/index.ts` — Template loader
+- `packages/core/src/core/promptsV2.ts` — v2 implementation
+
+**API:**
+```typescript
+import { getCoreSystemPrompt } from '@ollama-code/ollama-code-core';
+
+// Автоматический выбор шаблона по модели
+const prompt = getCoreSystemPrompt(userMemory, 'qwen2.5-coder:14b');
+
+// Определение размера модели
+import { extractModelSize, getSizeTier } from '@ollama-code/ollama-code-core';
+const size = extractModelSize('llama3.1:70b'); // 70
+const tier = getSizeTier('mistral:7b'); // 'medium'
+```
+
+**Переменные окружения:**
+| Переменная | Описание | По умолчанию |
+|------------|----------|--------------|
+| `OLLAMA_CODE_USE_TEMPLATES` | Использовать v2 | `true` |
+| `OLLAMA_CODE_SYSTEM_MD` | Кастомный промпт | - |
+
+**Документация:**
+- `docs/PROMPT_SYSTEM_V2.md` — Полная документация v2
+- `docs/PROMPT_SYSTEM.md` — Legacy документация
+
+---
+
 ## 0.11.3
 
 ### Bug Fixes

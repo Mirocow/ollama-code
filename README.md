@@ -447,6 +447,13 @@ ollama-code/
 | [PLUGIN_MARKETPLACE.md](./docs/PLUGIN_MARKETPLACE.md) | Plugin Marketplace usage guide   |
 | [PLUGIN_SANDBOX.md](./docs/PLUGIN_SANDBOX.md)       | Plugin security and sandboxing     |
 
+### Prompt System
+
+| Document                                            | Description                        |
+| --------------------------------------------------- | ---------------------------------- |
+| [PROMPT_SYSTEM_V2.md](./docs/PROMPT_SYSTEM_V2.md)   | Model-size-optimized prompts (NEW) |
+| [PROMPT_SYSTEM.md](./docs/PROMPT_SYSTEM.md)         | Legacy prompt system docs          |
+
 ## Commands
 
 | Command             | Description             |
