@@ -1,5 +1,136 @@
 # Changelog
 
+## 0.13.0
+
+### New Features
+
+#### Web UI (v0.15.0) — Full-Featured Web Interface
+
+Complete Next.js 15 web application with chat, file explorer, and terminal:
+
+| Feature | Description |
+|---------|-------------|
+| **Chat Interface** | Real-time streaming chat with model selection |
+| **File Explorer** | Monaco editor integration with syntax highlighting |
+| **Terminal Emulator** | xterm.js with PTY support via WebSocket |
+| **API Routes** | Full Ollama proxy with streaming support |
+| **Filesystem API** | CRUD operations with secure path resolution |
+
+**Components:**
+
+| Component | Technology | Features |
+|-----------|------------|----------|
+| `ChatInterface` | React + Zustand | Streaming, model selection, session management |
+| `FileExplorer` | Monaco Editor | Syntax highlighting, auto-save, resize |
+| `TerminalEmulator` | xterm.js + node-pty | Full PTY support, resize handling, colors |
+| `TerminalServer` | WebSocket + PTY | Session management, IP limits, timeout cleanup |
+
+**API Routes:**
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/ollama/[...path]` | * | Proxy for all Ollama API requests |
+| `/api/models` | GET | List available models |
+| `/api/chat` | POST | Chat with streaming support |
+| `/api/generate` | POST | Generate with streaming support |
+| `/api/fs` | GET/POST/PUT/DELETE | Filesystem operations |
+
+**Running the Web UI:**
+
+```bash
+# Development mode
+cd packages/web-app
+npm run dev
+
+# With terminal support (requires custom server)
+npm run dev:server
+```
+
+**WebSocket Terminal:**
+
+The terminal connects to `/terminal` WebSocket endpoint for PTY operations:
+
+```typescript
+// Client-side connection
+const socket = new WebSocket('ws://localhost:3000/terminal');
+
+// Send input
+socket.send(JSON.stringify({ type: 'input', data: 'ls -la\n' }));
+
+// Resize terminal
+socket.send(JSON.stringify({ type: 'resize', cols: 120, rows: 40 }));
+```
+
+#### TSDoc Documentation — API Reference
+
+Comprehensive TSDoc documentation added to all public packages:
+
+| Package | Coverage | Description |
+|---------|----------|-------------|
+| `@ollama-code/core` | 100% | Configuration, models, engine, tools, plugins |
+| `@ollama-code/sdk` | 100% | Query API, MCP integration, type definitions |
+| `@ollama-code/cli` | Partial | Internal CLI API |
+
+**Usage Examples:**
+
+```typescript
+// Core package
+import { getCoreSystemPrompt, createContextCache } from '@ollama-code/core';
+
+// SDK package
+import { query, createSdkMcpServer, tool } from '@ollama-code/sdk';
+
+const result = await query({
+  prompt: 'Explain TypeScript generics',
+  model: 'llama3.2',
+});
+```
+
+### Technical Improvements
+
+#### TypeScript Configuration
+
+Fixed monorepo TypeScript configuration for better IDE support:
+
+- Added project references for all packages
+- Added `composite: true` for referenced packages
+- Fixed ESLint configuration for web-app
+- Separated server code tsconfig (`tsconfig.server.json`)
+
+#### HTTP Client Migration
+
+Completed fetch to axios migration for all HTTP operations:
+
+- `packages/core/src/utils/httpClient.ts` — Axios instance with interceptors
+- `packages/core/src/core/ollamaNativeClient.ts` — Streaming with axios
+- `packages/core/src/tools/web-search/providers/*.ts` — Provider migration
+
+### Files Added
+
+| File | Description |
+|------|-------------|
+| `packages/web-app/src/app/api/ollama/[...path]/route.ts` | Ollama proxy |
+| `packages/web-app/src/app/api/models/route.ts` | Models list |
+| `packages/web-app/src/app/api/chat/route.ts` | Chat streaming |
+| `packages/web-app/src/app/api/generate/route.ts` | Generate streaming |
+| `packages/web-app/src/app/api/fs/route.ts` | Filesystem API |
+| `packages/web-app/src/components/chat/ChatInterface.tsx` | Chat UI |
+| `packages/web-app/src/components/explorer/FileExplorer.tsx` | File browser |
+| `packages/web-app/src/components/terminal/TerminalEmulator.tsx` | Terminal UI |
+| `packages/web-app/src/server/terminalServer.ts` | PTY WebSocket server |
+| `packages/web-app/server.ts` | Custom Next.js server |
+| `packages/web-app/src/stores/webSessionStore.ts` | Zustand store |
+| `packages/web-app/src/hooks/useWebSocket.ts` | WebSocket hook |
+
+### Documentation Updates
+
+| Document | Changes |
+|----------|---------|
+| `ROADMAP.md` | Updated Web UI progress (95%), added latest commits |
+| `packages/sdk-typescript/src/index.ts` | Added @packageDocumentation |
+
+---
+
 ## 0.12.0
 
 ### New Features

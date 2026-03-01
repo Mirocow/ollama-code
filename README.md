@@ -28,6 +28,7 @@
 - 🚀 **Fully Local** — all models run locally via Ollama
 - 💾 **Context Caching** — KV-cache reuse for 80-90% faster multi-turn conversations
 - 💻 **CLI Interface** — convenient terminal interface based on Ink (React for CLI)
+- 🌐 **Web UI** — full-featured Next.js web interface with chat, file explorer, terminal
 - 🔧 **Code Tools** — read, edit, search files, execute commands
 - 🔌 **MCP Support** — integration with Model Context Protocol servers
 - 🌐 **Web Search** — integration with Tavily and Google Custom Search
@@ -79,6 +80,81 @@ npm run start -- "Explain how async/await works in JavaScript"
 # Debug mode
 npm run debug
 ```
+
+### Web UI
+
+Ollama Code now includes a full-featured web interface:
+
+```bash
+# Start Web UI (development)
+cd packages/web-app
+npm run dev
+
+# Start with terminal support
+npm run dev:server
+```
+
+**Web UI Features:**
+
+| Tab | Features |
+|-----|----------|
+| **Chat** | Streaming responses, model selection, session management |
+| **Files** | File browser, Monaco editor, syntax highlighting |
+| **Terminal** | Full PTY terminal with xterm.js |
+
+**API Endpoints:**
+
+| Endpoint | Description |
+|----------|-------------|
+| `/api/models` | List available Ollama models |
+| `/api/chat` | Chat with streaming |
+| `/api/generate` | Generate with streaming |
+| `/api/fs` | Filesystem operations |
+| `/terminal` | WebSocket terminal |
+
+---
+
+## What's New in v0.13.0
+
+### Web UI — Complete Next.js Interface
+
+Full-featured web application with three main components:
+
+| Component | Technology | Features |
+|-----------|------------|----------|
+| **ChatInterface** | React + Zustand | Streaming, model selection, session persistence |
+| **FileExplorer** | Monaco Editor | Syntax highlighting, multi-language support, auto-save |
+| **TerminalEmulator** | xterm.js + node-pty | Full PTY support, resize, 256 colors |
+
+### TSDoc API Documentation
+
+Comprehensive API documentation for all packages:
+
+```typescript
+// SDK Usage
+import { query, createSdkMcpServer, tool } from '@ollama-code/sdk';
+
+const result = await query({
+  prompt: 'Explain async/await',
+  model: 'llama3.2',
+});
+
+// MCP Server
+const myTool = tool({
+  name: 'echo',
+  description: 'Echo back a message',
+  parameters: { message: { type: 'string' } },
+  execute: async (params) => ({ echo: params.message }),
+});
+```
+
+### Technical Improvements
+
+- **TypeScript Configuration**: Fixed monorepo project references
+- **HTTP Client**: Completed fetch → axios migration
+- **Terminal Server**: WebSocket-based PTY with session management
+
+---
 
 ## What's New in v0.11.3
 
@@ -404,6 +480,7 @@ ollama-code/
 ├── packages/
 │   ├── core/           # Core: Ollama client, tools, types
 │   ├── cli/            # CLI interface based on Ink
+│   ├── web-app/        # Web UI: Next.js application (NEW)
 │   ├── webui/          # Web components for UI
 │   └── sdk-typescript/ # SDK for programmatic use
 ├── scripts/            # Build and run scripts
@@ -417,6 +494,7 @@ ollama-code/
 
 | Document                                | Description                    |
 | --------------------------------------- | ------------------------------ |
+| [WEB_UI.md](./docs/WEB_UI.md)           | **Web UI documentation (NEW)** |
 | [FEATURES.md](./docs/FEATURES.md)       | **Complete feature reference** |
 | [TOOLS.md](./docs/TOOLS.md)             | **Detailed tools reference**   |
 | [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Usage guide                    |
