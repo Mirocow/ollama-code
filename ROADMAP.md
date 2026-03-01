@@ -300,7 +300,7 @@ await pluginManager.enablePlugin('my-plugin');
 
 ---
 
-### v0.14.0 — Memory & Performance
+### v0.14.0 — Memory & Performance ✅
 
 **Цель:** Исправление memory leaks, оптимизация
 
@@ -310,7 +310,7 @@ await pluginManager.enablePlugin('my-plugin');
 | AbortController cleanup  | P0        | 2d     | ✅ Завершено |
 | React мемоизация         | P1        | 3d     | 🔴 Не начато |
 | Virtual scrolling        | P2        | 3d     | 🔴 Не начато |
-| Token counting fallback  | P1        | 1d     | 🔴 Не начато |
+| Token counting fallback  | P1        | 1d     | ✅ Завершено |
 
 ---
 
