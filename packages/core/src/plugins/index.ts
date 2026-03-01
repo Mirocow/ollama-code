@@ -48,3 +48,16 @@
 
 export * from './types.js';
 export { PluginManager, pluginManager } from './pluginManager.js';
+export { PluginLoader, createPluginLoader } from './pluginLoader.js';
+export type { DiscoveredPlugin } from './pluginLoader.js';
+export { 
+  PluginToolAdapter, 
+  registerPluginTools, 
+  unregisterPluginTools,
+  pluginToolToDeclarative 
+} from './pluginToolAdapter.js';
+export { 
+  PluginRegistry, 
+  getPluginRegistry, 
+  initializePluginRegistry 
+} from './pluginRegistry.js';

@@ -22,6 +22,10 @@ import {
 } from '../utils/ollamaErrors.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 import { apiLogger } from '../utils/apiLogger.js';
+import {
+  createHttpClient,
+  type AxiosInstance,
+} from '../utils/httpClient.js';
 
 // Lazy-initialized debug logger to ensure session is set before use
 let _debugLogger: ReturnType<typeof createDebugLogger> | null = null;
@@ -541,6 +545,7 @@ export class OllamaNativeClient {
   private timeout: number;
   private keepAlive: string | number;
   private retryConfig: RetryConfig;
+  private httpClient: AxiosInstance;
 
   constructor(options?: OllamaClientOptions) {
     // Normalize baseUrl: remove /v1 suffix if present (OpenAI-compatible path)
@@ -555,6 +560,15 @@ export class OllamaNativeClient {
       ...DEFAULT_RETRY_CONFIG,
       ...options?.retry,
     };
+
+    // Create axios HTTP client with configuration
+    this.httpClient = createHttpClient({
+      baseURL: this.baseUrl,
+      timeout: this.timeout,
+      maxRetries: this.retryConfig.maxRetries,
+      retryDelay: this.retryConfig.retryDelayMs,
+      debug: process.env['DEBUG'] === '1' || process.env['DEBUG'] === 'true',
+    });
     // options.config is reserved for future use (e.g., proxy settings)
   }
 
@@ -635,7 +649,7 @@ export class OllamaNativeClient {
   }
 
   /**
-   * Make an HTTP request to the Ollama API
+   * Make an HTTP request to the Ollama API using Axios
    */
   private async request<T>(
     endpoint: string,
@@ -646,13 +660,6 @@ export class OllamaNativeClient {
   ): Promise<T> {
     return this.withRetry(async () => {
       const url = `${this.baseUrl}${endpoint}`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-      // Combine external signal with timeout signal
-      const combinedSignal = externalSignal
-        ? AbortSignal.any([externalSignal, controller.signal])
-        : controller.signal;
 
       debugLog('debug', 'Making API request', {
         method,
@@ -677,52 +684,36 @@ export class OllamaNativeClient {
       });
 
       try {
-        const response = await fetch(url, {
+        // Use axios for the request
+        const config: import('axios').AxiosRequestConfig = {
           method,
+          url: endpoint,
+          data: body,
+          signal: externalSignal,
           headers: {
-            'Content-Type': 'application/json',
             Accept: 'application/json',
           },
-          body: body ? JSON.stringify(body) : undefined,
-          signal: combinedSignal,
-        });
+        };
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorMessage = `Ollama API error: ${response.status} ${response.statusText}`;
-          try {
-            const errorJson = JSON.parse(errorText);
-            if (errorJson.error) {
-              errorMessage = errorJson.error;
-            }
-          } catch {
-            // Use default error message
-          }
-          debugLog('error', 'API request failed', {
-            status: response.status,
-            error: errorMessage,
-          });
-          const error = new Error(errorMessage);
-          apiLogger.logInteraction(requestLogData, { status: response.status, error: errorMessage, body: errorText }, error).catch(() => {});
-          throw detectOllamaError(new Error(errorMessage), {});
-        }
-
-        const result = (await response.json()) as T;
+        const response = await this.httpClient.request<T>(config);
         debugLog('debug', 'API request completed', { endpoint });
 
         // Log the response to API logger
         apiLogger.logInteraction(requestLogData, {
           type: 'response',
           status: response.status,
-          body: result,
+          body: response.data,
         }).catch(() => {
           // Ignore logging errors
         });
 
-        return result;
+        return response.data;
       } catch (error) {
+        // Handle Axios errors
+        const axiosError = error as { response?: { status: number; data?: { error?: string }; statusText?: string }; code?: string; message?: string };
+        
         // Handle timeout
-        if (error instanceof Error && error.name === 'AbortError') {
+        if (axiosError.code === 'ECONNABORTED' || axiosError.message?.includes('timeout')) {
           debugLog('error', 'API request timed out', {
             endpoint,
             timeout: this.timeout,
@@ -731,12 +722,29 @@ export class OllamaNativeClient {
           apiLogger.logInteraction(requestLogData, undefined, timeoutError).catch(() => {});
           throw timeoutError;
         }
+
+        // Handle HTTP errors
+        if (axiosError.response) {
+          const status = axiosError.response.status;
+          const errorData = axiosError.response.data;
+          const errorMessage = errorData?.error || `Ollama API error: ${status} ${axiosError.response.statusText}`;
+          
+          debugLog('error', 'API request failed', {
+            status,
+            error: errorMessage,
+          });
+          const wrappedError = detectOllamaError(new Error(errorMessage), {});
+          apiLogger.logInteraction(requestLogData, { status, error: errorMessage, body: errorData }, wrappedError).catch(() => {});
+          throw wrappedError;
+        }
+
         // Re-throw OllamaApiError as-is
         if (error instanceof OllamaApiError) {
           apiLogger.logInteraction(requestLogData, undefined, error).catch(() => {});
           throw error;
         }
-        // Wrap other errors
+
+        // Wrap other errors (network errors, etc.)
         debugLog('error', 'API request error', {
           endpoint,
           error: error instanceof Error ? error.message : String(error),
@@ -744,8 +752,6 @@ export class OllamaNativeClient {
         const wrappedError = detectOllamaError(error, { timeoutMs: this.timeout });
         apiLogger.logInteraction(requestLogData, undefined, wrappedError).catch(() => {});
         throw wrappedError;
-      } finally {
-        clearTimeout(timeoutId);
       }
     }, retryConfig);
   }

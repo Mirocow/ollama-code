@@ -1,0 +1,13 @@
+{
+  "entry": "index.js",
+  "metadata": {
+    "id": "core-tools",
+    "name": "Core Tools",
+    "version": "1.0.0",
+    "description": "Built-in core tools for file operations, shell execution, and more",
+    "author": "Ollama Code Team",
+    "builtin": true,
+    "tags": ["core", "builtin", "tools"],
+    "enabledByDefault": true
+  }
+}

@@ -148,7 +148,7 @@ export const eventBus = create<EventBusState>()((set, get) => ({
   },
 
   emit: (event, data) => {
-    const { subscriptions, eventHistory, maxHistorySize } = get();
+    const { subscriptions, maxHistorySize } = get();
     
     // Add to history
     set(state => ({

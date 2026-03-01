@@ -1,0 +1,13 @@
+{
+  "entry": "index.js",
+  "metadata": {
+    "id": "search-tools",
+    "name": "Search Tools",
+    "version": "1.0.0",
+    "description": "Search capabilities: grep, glob, web fetch, web search",
+    "author": "Ollama Code Team",
+    "builtin": true,
+    "tags": ["core", "search", "grep", "web"],
+    "enabledByDefault": true
+  }
+}

@@ -93,6 +93,10 @@ export type ContentGeneratorConfig = {
   customHeaders?: Record<string, string>;
   // Extra body parameters to be merged into the request body
   extra_body?: Record<string, unknown>;
+  // Enable context caching for faster multi-turn conversations using Ollama's KV-cache
+  enableContextCaching?: boolean;
+  // Session ID for context tracking (used with enableContextCaching)
+  sessionId?: string;
 };
 
 // Keep the public ContentGeneratorConfigSources API, but reuse the generic
@@ -246,7 +250,22 @@ export async function createContentGenerator(
     );
   }
 
-  // Use native Ollama API
+  // Check if context caching is enabled
+  if (generatorConfig.enableContextCaching) {
+    const { HybridContentGenerator } = await import('./hybridContentGenerator.js');
+    const hybridGenerator = new HybridContentGenerator({
+      model: generatorConfig.model,
+      baseUrl: generatorConfig.baseUrl,
+      timeout: generatorConfig.timeout,
+      contextWindowSize: generatorConfig.contextWindowSize,
+      preferGenerateEndpoint: true,
+      sessionId: generatorConfig.sessionId ?? config.getSessionId(),
+    });
+    
+    return new LoggingContentGenerator(hybridGenerator, config, generatorConfig);
+  }
+
+  // Use native Ollama API (default)
   const { createOllamaNativeContentGenerator } =
     await import('./ollamaNativeContentGenerator/index.js');
   const baseGenerator = createOllamaNativeContentGenerator(

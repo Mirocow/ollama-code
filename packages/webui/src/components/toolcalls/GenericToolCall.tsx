@@ -6,7 +6,7 @@
  * Generic tool call component - handles all tool call types as fallback
  */
 
-import type { FC } from 'react';
+import { memo, type FC } from 'react';
 import {
   ToolCallContainer,
   ToolCallCard,
@@ -21,8 +21,9 @@ import type { BaseToolCallProps } from './shared/index.js';
  * Generic tool call component that can display any tool call type
  * Used as fallback for unknown tool call kinds
  * Minimal display: show description and outcome
+ * Memoized to prevent unnecessary re-renders during streaming
  */
-export const GenericToolCall: FC<BaseToolCallProps> = ({
+const GenericToolCallComponent: FC<BaseToolCallProps> = ({
   toolCall,
   isFirst,
   isLast,
@@ -146,3 +147,9 @@ export const GenericToolCall: FC<BaseToolCallProps> = ({
 
   return null;
 };
+
+/**
+ * Memoized GenericToolCall component
+ * Only re-renders when toolCall, isFirst, or isLast changes
+ */
+export const GenericToolCall = memo(GenericToolCallComponent);

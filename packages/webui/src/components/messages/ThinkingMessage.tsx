@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FC } from 'react';
-import { useState } from 'react';
+import { memo, type FC } from 'react';
+import { useState, useCallback } from 'react';
 import { MessageContent } from './MessageContent.js';
 import { ChevronIcon } from '../icons/index.js';
 import './ThinkingMessage.css';
@@ -34,8 +34,9 @@ export interface ThinkingMessageProps {
  * - Collapsed: gray dot + "Thinking" + down arrow
  * - Expanded: solid dot + "Thinking" + up arrow + thinking content
  * - Aligned with other message items, with status icon and connector line
+ * Memoized to prevent unnecessary re-renders during streaming
  */
-export const ThinkingMessage: FC<ThinkingMessageProps> = ({
+const ThinkingMessageComponent: FC<ThinkingMessageProps> = ({
   content,
   timestamp: _timestamp,
   onFileClick,
@@ -44,9 +45,9 @@ export const ThinkingMessage: FC<ThinkingMessageProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
-  const handleToggle = () => {
-    setIsExpanded(!isExpanded);
-  };
+  const handleToggle = useCallback(() => {
+    setIsExpanded(prev => !prev);
+  }, []);
 
   return (
     <div
@@ -81,3 +82,9 @@ export const ThinkingMessage: FC<ThinkingMessageProps> = ({
     </div>
   );
 };
+
+/**
+ * Memoized ThinkingMessage component
+ * Only re-renders when content, status, or defaultExpanded changes
+ */
+export const ThinkingMessage = memo(ThinkingMessageComponent);
