@@ -439,6 +439,14 @@ ollama-code/
 | [ROADMAP.md](./ROADMAP.md)                     | Development roadmap     |
 | [CONTRIBUTING.md](./CONTRIBUTING.md)           | Contribution guidelines |
 
+### Plugin System
+
+| Document                                            | Description                        |
+| --------------------------------------------------- | ---------------------------------- |
+| [PLUGIN_SYSTEM.md](./docs/PLUGIN_SYSTEM.md)         | Plugin architecture and API        |
+| [PLUGIN_MARKETPLACE.md](./docs/PLUGIN_MARKETPLACE.md) | Plugin Marketplace usage guide   |
+| [PLUGIN_SANDBOX.md](./docs/PLUGIN_SANDBOX.md)       | Plugin security and sandboxing     |
+
 ## Commands
 
 | Command             | Description             |
