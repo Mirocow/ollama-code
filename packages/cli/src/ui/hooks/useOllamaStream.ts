@@ -717,6 +717,7 @@ export const useOllamaStream = (
 
       // Record token usage for context progress bar
       const usageMetadata = event.value.usageMetadata;
+      const model = config.getModel();
 
       // Debug log for token tracking
       debugLogger.info('Finished event received', {
@@ -726,17 +727,33 @@ export const useOllamaStream = (
         candidatesTokenCount: usageMetadata?.candidatesTokenCount,
       });
 
-      if (usageMetadata) {
-        const model = config.getModel();
+      // Use the new method with fallback support
+      // When Ollama doesn't return prompt_eval_count, the telemetry service
+      // will keep the last known value or use estimated tokens
+      const promptTokens = usageMetadata?.promptTokenCount;
+      const generatedTokens = usageMetadata?.candidatesTokenCount || 0;
+      
+      // If we have usageMetadata with prompt tokens, record them normally
+      if (promptTokens && promptTokens > 0) {
         uiTelemetryService.recordTokenUsage(
           model,
-          usageMetadata.promptTokenCount || 0,
+          promptTokens,
           0, // cached tokens - not available in this context
-          usageMetadata.candidatesTokenCount || 0,
+          generatedTokens,
         );
       } else {
+        // Fallback: Ollama didn't return prompt_eval_count
+        // Record with fallback - this keeps the previous prompt token count
+        // and only updates generated tokens
         debugLogger.warn(
-          'No usageMetadata in Finished event - token count will not update',
+          'No promptTokenCount in Finished event - using fallback token tracking',
+          { generatedTokens },
+        );
+        uiTelemetryService.recordTokenUsageWithFallback(
+          model,
+          promptTokens,
+          generatedTokens,
+          undefined, // No estimation available at this point
         );
       }
 

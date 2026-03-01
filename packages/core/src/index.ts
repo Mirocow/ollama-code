@@ -184,6 +184,9 @@ export * from './learning/index.js';
 // Export extension
 export * from './extension/index.js';
 
+// Export plugin system
+export * from './plugins/index.js';
+
 // Export prompt logic
 export * from './prompts/mcp-prompts.js';
 

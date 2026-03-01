@@ -91,6 +91,8 @@ class UiTelemetryService {
   private metrics: SessionMetrics;
   private listeners: Set<MetricsListener> = new Set();
   private lastPromptTokenCount: number = 0;
+  /** Accumulated prompt tokens for the current session (estimated when Ollama doesn't return them) */
+  private accumulatedPromptTokens: number = 0;
 
   constructor() {
     this.metrics = this.createEmptyMetrics();
@@ -159,6 +161,7 @@ class UiTelemetryService {
   reset(): void {
     this.metrics = this.createEmptyMetrics();
     this.lastPromptTokenCount = 0;
+    this.accumulatedPromptTokens = 0;
     this.notifyListeners();
   }
 
@@ -249,6 +252,7 @@ class UiTelemetryService {
     // This ensures we keep the last known context size even if Ollama doesn't return it
     if (promptTokens > 0) {
       this.lastPromptTokenCount = promptTokens;
+      this.accumulatedPromptTokens = promptTokens;
     }
 
     // Update nested metrics
@@ -275,6 +279,79 @@ class UiTelemetryService {
     this.metrics.models.totalGeneratedTokens += generatedTokens;
 
     this.notifyListeners();
+  }
+
+  /**
+   * Update token count with fallback estimation.
+   * Called when Ollama doesn't return prompt_eval_count in streaming response.
+   * Uses estimated tokens if provided, otherwise increments from previous value.
+   */
+  recordTokenUsageWithFallback(
+    model: string,
+    promptTokens: number | undefined,
+    generatedTokens: number,
+    estimatedPromptTokens?: number,
+  ): void {
+    const actualPromptTokens = promptTokens ?? 0;
+    
+    // If we have actual tokens from Ollama, use them
+    if (actualPromptTokens > 0) {
+      this.recordTokenUsage(model, actualPromptTokens, 0, generatedTokens);
+      return;
+    }
+
+    // Fallback: use estimated tokens if provided
+    if (estimatedPromptTokens && estimatedPromptTokens > 0) {
+      // Update the accumulated tokens with the new estimate
+      this.accumulatedPromptTokens = estimatedPromptTokens;
+      this.lastPromptTokenCount = estimatedPromptTokens;
+      
+      // Still record the generated tokens
+      this.metrics.totalGeneratedTokens += generatedTokens;
+      this.metrics.models.tokens.generated += generatedTokens;
+      
+      // Track by model
+      if (!this.metrics.models.byModel[model]) {
+        this.metrics.models.byModel[model] = {
+          promptTokens: 0,
+          generatedTokens: 0,
+          cachedTokens: 0,
+          apiTime: 0,
+        };
+      }
+      this.metrics.models.byModel[model].generatedTokens += generatedTokens;
+      this.metrics.models.totalGeneratedTokens += generatedTokens;
+      
+      this.notifyListeners();
+      return;
+    }
+
+    // Last resort: just record generated tokens and keep previous prompt token count
+    if (generatedTokens > 0) {
+      this.metrics.totalGeneratedTokens += generatedTokens;
+      this.metrics.models.tokens.generated += generatedTokens;
+      
+      if (!this.metrics.models.byModel[model]) {
+        this.metrics.models.byModel[model] = {
+          promptTokens: 0,
+          generatedTokens: 0,
+          cachedTokens: 0,
+          apiTime: 0,
+        };
+      }
+      this.metrics.models.byModel[model].generatedTokens += generatedTokens;
+      this.metrics.models.totalGeneratedTokens += generatedTokens;
+      
+      this.notifyListeners();
+    }
+  }
+
+  /**
+   * Get the accumulated prompt tokens for the session.
+   * This represents the total context size being sent to the model.
+   */
+  getAccumulatedPromptTokens(): number {
+    return this.accumulatedPromptTokens;
   }
 
   // API time tracking
