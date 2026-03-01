@@ -188,7 +188,6 @@ export const Header: React.FC<HeaderProps> = ({
   const contextUsagePercentage = promptTokenCount && contextSize 
     ? Math.min(promptTokenCount / contextSize, 1) 
     : 0;
-  const progressBar = createProgressBar(contextUsagePercentage, 8);
 
   // Calculate available space properly:
   // First determine if logo can be shown, then use remaining space for path
@@ -226,6 +225,11 @@ export const Header: React.FC<HeaderProps> = ({
     0,
     availableInfoPanelWidth - infoPanelChromeWidth,
   );
+  
+  // Calculate progress bar width to fill the panel
+  // Reserve space for percentage text: " 100.0%" = 7 chars
+  const progressBarWidth = Math.max(4, infoPanelContentWidth - 7);
+  const progressBar = createProgressBar(contextUsagePercentage, progressBarWidth);
 
   // Format server URL (show only host:port, hide http:// prefix for brevity)
   const displayBaseUrl = baseUrl
@@ -301,7 +305,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Text color={theme.text.secondary}>{modelHintText}</Text>
           )}
         </Text>
-        {/* Context and Size bar */}
+        {/* Context and Size info */}
         <Text>
           <Text color={theme.text.secondary}>{t('Context')}: </Text>
           <Text color={theme.text.accent}>{contextSizeFormatted}</Text>
@@ -311,13 +315,13 @@ export const Header: React.FC<HeaderProps> = ({
               <Text color={theme.text.accent}>{modelSize}</Text>
             </>
           )}
-          <Text color={theme.text.secondary}> | </Text>
-          <Text color={theme.text.secondary}>[</Text>
+        </Text>
+        {/* Context usage progress bar - full width */}
+        <Text>
           <Text color={contextUsagePercentage > 0.9 ? theme.status.warning : theme.text.accent}>
             {progressBar.filled}
           </Text>
           <Text color={theme.text.secondary}>{progressBar.empty}</Text>
-          <Text color={theme.text.secondary}>]</Text>
           <Text color={theme.text.secondary}> {(contextUsagePercentage * 100).toFixed(1)}%</Text>
         </Text>
         {/* Session ID line (if available) */}
