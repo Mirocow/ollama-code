@@ -2,7 +2,7 @@
 
 > Профессиональный анализ архитектуры и план развития проекта
 
-## Текущее состояние (v0.11.0)
+## Текущее состояние (v0.11.2)
 
 ### ✅ Реализованные улучшения (2025-01)
 
@@ -117,7 +117,7 @@ await commandStore.undo();
 await commandStore.redo();
 ```
 
-#### 5. Plugin System
+#### 5. Plugin System v2
 
 **Статус:** ✅ Реализовано
 
@@ -158,6 +158,18 @@ await pluginManager.enablePlugin('my-plugin');
 - `search-tools` — grep, glob, web_fetch
 - `shell-tools` — run_shell_command
 
+**Plugin System Files:**
+
+| Файл                   | Строк | Описание                              |
+| ---------------------- | ----- | ------------------------------------- |
+| `pluginLoader.ts`      | 11752 | Dynamic plugin discovery              |
+| `plugin-cli.ts`        | 9679  | CLI commands (create, validate, list) |
+| `pluginManager.ts`     | 11872 | Lifecycle management                  |
+| `pluginRegistry.ts`    | 6780  | ToolRegistry integration              |
+| `pluginSandbox.ts`     | 21765 | Security sandbox                      |
+| `pluginMarketplace.ts` | 22868 | NPM-based marketplace                 |
+| `pluginToolAdapter.ts` | 7112  | Tool adapter bridge                   |
+
 #### 6. Prompt System Documentation
 
 **Статус:** ✅ Реализовано
@@ -170,6 +182,63 @@ await pluginManager.enablePlugin('my-plugin');
 - `getToolCallFormatInstructions()` — инструкции для моделей без tools
 - `getToolLearningContext()` — контекст обучения на ошибках
 - `getEnvironmentInfo()` — информация об окружении
+
+#### 7. HTTP Client (Axios Migration)
+
+**Статус:** ✅ Реализовано
+
+**Файл:** `packages/core/src/utils/httpClient.ts` (276 строк)
+
+```typescript
+// Создание axios instance с interceptors
+const client = createHttpClient({
+  baseURL: 'http://localhost:11434',
+  timeout: 30000,
+  maxRetries: 3,
+  retryDelay: 1000,
+  debug: true,
+});
+
+// Автоматические возможности:
+// - Request/Response logging
+// - Retry with exponential backoff
+// - Timeout handling
+// - Auth header injection
+```
+
+**Мигрированные файлы:**
+
+| Файл                    | Статус                         |
+| ----------------------- | ------------------------------ |
+| `ollamaNativeClient.ts` | ✅ Использует createHttpClient |
+| `google-provider.ts`    | ✅ Использует axios            |
+| `tavily-provider.ts`    | ✅ Использует axios            |
+
+#### 8. Cancellation & Memory Leaks
+
+**Статус:** ✅ Реализовано
+
+**Файл:** `packages/core/src/streaming/cancellation.ts` (516 строк)
+
+```typescript
+// CancellationToken с timeout
+const source = new CancellationTokenSource({ timeout: 30000 });
+const token = source.token;
+
+// Передача в fetch API
+const response = await fetch(url, { signal: token.toAbortSignal() });
+
+// Linked tokens
+const linked = CancellationToken.link(userToken, timeoutToken);
+```
+
+**Возможности:**
+
+- CancellationToken / CancellationTokenSource
+- Timeout support
+- Linked tokens
+- AbortSignal conversion
+- Proper cleanup handlers
 
 ---
 
@@ -222,52 +291,22 @@ await pluginManager.enablePlugin('my-plugin');
 
 | Задача                        | Приоритет | Оценка | Статус       |
 | ----------------------------- | --------- | ------ | ------------ |
-| Замена fetch на axios         | P0        | 3d     | ✅ Завершено |
+| Создание httpClient.ts        | P0        | 1d     | ✅ Завершено |
 | Request/Response interceptors | P1        | 2d     | ✅ Завершено |
 | Retry logic                   | P1        | 1d     | ✅ Завершено |
 | Request timeout handling      | P2        | 1d     | ✅ Завершено |
+| Миграция ollamaNativeClient   | P0        | 2d     | ✅ Завершено |
+| Миграция web-search providers | P1        | 1d     | ✅ Завершено |
 
-#### План миграции fetch → axios
+#### Реализованные этапы миграции
 
-**Причина миграции:**
-
-- Единообразная обработка ошибок
-- Автоматическая сериализация JSON
-- Встроенная поддержка timeout
-- Interceptors для логирования и аутентификации
-- Retry logic из коробки
-- Лучшая типизация
-
-**Файлы для миграции:**
-
-1. `packages/core/src/core/ollamaClient.ts` — основной Ollama клиент
-2. `packages/core/src/core/ollamaNativeClient.ts` — native API клиент
-3. `packages/core/src/core/ollamaContextClient.ts` — context-aware клиент
-4. `packages/core/src/tools/web-fetch/*.ts` — web fetch инструменты
-5. `packages/core/src/tools/web-search/providers/*.ts` — search providers
-
-**Этапы миграции:**
-
-| Этап | Описание                                        | Файлы                   | Риск    |
-| ---- | ----------------------------------------------- | ----------------------- | ------- |
-| 1    | Создание axios instance с базовой конфигурацией | `httpClient.ts`         | Низкий  |
-| 2    | Добавление interceptors (logging, auth)         | `interceptors.ts`       | Низкий  |
-| 3    | Миграция ollamaClient                           | `ollamaClient.ts`       | Средний |
-| 4    | Миграция ollamaNativeClient                     | `ollamaNativeClient.ts` | Высокий |
-| 5    | Миграция web-search providers                   | `web-search/`           | Низкий  |
-| 6    | Тестирование всех API endpoints                 | `*.test.ts`             | Низкий  |
-
-**Тестирование:**
-
-- Все существующие 118+ тестов должны проходить
-- Добавить интеграционные тесты для retry logic
-- Добавить тесты для timeout handling
-- Проверить streaming responses
-
-**Откат:**
-
-- Сохранить оригинальные fetch-based файлы как `.bak`
-- Feature flag для переключения между fetch/axios
+| Этап | Описание                                        | Файлы                   | Статус       |
+| ---- | ----------------------------------------------- | ----------------------- | ------------ |
+| 1    | Создание axios instance с базовой конфигурацией | `httpClient.ts`         | ✅ Завершено |
+| 2    | Добавление interceptors (logging, retry, auth)  | `httpClient.ts`         | ✅ Завершено |
+| 3    | Миграция ollamaNativeClient                     | `ollamaNativeClient.ts` | ✅ Завершено |
+| 4    | Миграция web-search providers                   | `google/tavily`         | ✅ Завершено |
+| 5    | Тестирование                                    | `httpClient.test.ts`    | ✅ Завершено |
 
 ---
 
@@ -281,22 +320,27 @@ await pluginManager.enablePlugin('my-plugin');
 | Dynamic plugin loading       | P0        | 4d     | ✅ Завершено |
 | Plugin CLI команды           | P1        | 2d     | ✅ Завершено |
 | Security sandbox             | P1        | 3d     | ✅ Завершено |
-| Plugin marketplace           | P2        | 5d     | 🔴 Не начато |
+| Plugin marketplace           | P2        | 5d     | ✅ Завершено |
 
-**Пример структуры плагина:**
+**Реализованные компоненты:**
 
-```
-@ollama-code/plugin-kubernetes/
-├── package.json
-├── plugin.json         # Manifest
-├── src/
-│   ├── index.ts        # Экспорт плагина
-│   ├── tools/
-│   │   ├── kubectl.ts  # KubectlTool
-│   │   └── helm.ts     # HelmTool
-│   └── hooks/
-│       └── kubeconfig.ts
-```
+| Компонент         | Файл                   | Функциональность                          |
+| ----------------- | ---------------------- | ----------------------------------------- |
+| PluginLoader      | `pluginLoader.ts`      | Discovery (builtin, user, project, npm)   |
+| PluginCLI         | `plugin-cli.ts`        | create, validate, list, info              |
+| PluginManager     | `pluginManager.ts`     | register, enable, disable, hooks          |
+| PluginRegistry    | `pluginRegistry.ts`    | ToolRegistry integration                  |
+| PluginSandbox     | `pluginSandbox.ts`     | Filesystem, network, command restrictions |
+| PluginMarketplace | `pluginMarketplace.ts` | search, install, update, uninstall        |
+| PluginToolAdapter | `pluginToolAdapter.ts` | Tool wrapper for DeclarativeTool          |
+
+**Builtin Plugins (5 шт.):**
+
+- `core-tools/` — echo, timestamp, get_env
+- `dev-tools/` — python_dev, nodejs_dev, golang_dev, rust_dev, typescript_dev, java_dev, cpp_dev, swift_dev, php_dev
+- `file-tools/` — read_file, write_file, edit_file, glob, list_directory
+- `search-tools/` — grep, glob, web_fetch, web_search
+- `shell-tools/` — run_shell_command, bash
 
 ---
 
@@ -308,7 +352,7 @@ await pluginManager.enablePlugin('my-plugin');
 | ------------------------ | --------- | ------ | ------------ |
 | Memory leaks в streaming | P0        | 3d     | ✅ Завершено |
 | AbortController cleanup  | P0        | 2d     | ✅ Завершено |
-| React мемоизация         | P1        | 3d     | 🟡 В процессе |
+| React мемоизация         | P1        | 3d     | ✅ Завершено |
 | Virtual scrolling        | P2        | 3d     | 🔴 Не начато |
 | Token counting fallback  | P1        | 1d     | ✅ Завершено |
 
@@ -316,19 +360,32 @@ await pluginManager.enablePlugin('my-plugin');
 
 **Статус:** ✅ Завершено
 
-**Выполнено:**
-- ✅ Созданы специализированные контексты:
-  - `DialogStateContext` — управление состоянием диалогов
-  - `TerminalContext` — размеры терминала
-  - `InputStateContext` — состояние ввода
-  - `HistoryContext` — история сообщений
-  - `LoadingContext` — состояние загрузки
-  - `ConfirmationContext` — запросы подтверждений
-- ✅ Мемоизированы компоненты:
-  - `Footer` — статус бар
-  - `AppHeader` — заголовок приложения
-  - `MainContent` — основная область контента
-  - `HistoryItemDisplay` — рендеринг элементов истории
+**Специализированные контексты (6 шт.):**
+
+| Контекст              | Файл                                | Хуки                                                                   |
+| --------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
+| `DialogStateContext`  | DialogStateContext.tsx (299 строк)  | useDialogState, useDialogActions, useDialogContext                     |
+| `TerminalContext`     | TerminalContext.tsx (112 строк)     | useTerminalState, useTerminalDimensions                                |
+| `InputStateContext`   | InputStateContext.tsx (123 строк)   | useInputState, useInputBuffer, useInputActive, useShellMode            |
+| `HistoryContext`      | HistoryContext.tsx (104 строк)      | useHistoryState, useHistoryItems, useHistoryManager                    |
+| `LoadingContext`      | LoadingContext.tsx (106 строк)      | useLoadingState, useStreamingState, useElapsedTime, useIsLoading       |
+| `ConfirmationContext` | ConfirmationContext.tsx (122 строк) | useConfirmationState, useShellConfirmation, useHasPendingConfirmations |
+
+**Мемоизированные компоненты (11 шт.):**
+
+| Компонент            | Файл                   | Оптимизация                                         |
+| -------------------- | ---------------------- | --------------------------------------------------- |
+| `Footer`             | Footer.tsx             | memo + useMemo (sandboxInfo, rightItems)            |
+| `AppHeader`          | AppHeader.tsx          | memo + useMemo (config, settings, sessionStats)     |
+| `Header`             | Header.tsx             | memo                                                |
+| `Composer`           | Composer.tsx           | memo + useMemo (17 state values)                    |
+| `MainContent`        | MainContent.tsx        | memo                                                |
+| `HistoryItemDisplay` | HistoryItemDisplay.tsx | memo + useMemo (dimensions, itemForDisplay)         |
+| `LoadingIndicator`   | LoadingIndicator.tsx   | memo + useMemo (primaryText, formattedTime)         |
+| `OllamaMessage`      | OllamaMessage.tsx      | memo                                                |
+| `ToolMessage`        | ToolMessage.tsx        | memo (subcomponents)                                |
+| `MarkdownDisplay`    | MarkdownDisplay.tsx    | memo (RenderCodeBlock, RenderListItem, RenderTable) |
+| `PrepareLabel`       | PrepareLabel.tsx       | memo                                                |
 
 ---
 
@@ -362,17 +419,19 @@ await pluginManager.enablePlugin('my-plugin');
 
 ## Сравнение с конкурентами
 
-| Функция          | Ollama Code    | Claude Code | Aider       | Cursor      |
-| ---------------- | -------------- | ----------- | ----------- | ----------- |
-| Локальные модели | ✅             | ❌          | ✅          | ❌          |
-| Open Source      | ✅             | ❌          | ✅          | ❌          |
-| CLI интерфейс    | ✅             | ✅          | ✅          | ❌          |
-| Web UI           | 🔴 Планируется | ✅          | ❌          | ✅          |
-| Plugin System    | ✅             | ✅          | ✅          | ✅          |
-| IDE Integration  | ✅ VSCode      | ✅ VSCode   | ✅ Multi    | ✅ Built-in |
-| MCP Support      | ✅             | ✅          | ❌          | ❌          |
-| Context Caching  | ✅             | ✅          | ⚠️ Частично | ✅          |
-| Undo/Redo        | ✅             | ✅          | ❌          | ✅          |
+| Функция            | Ollama Code    | Claude Code | Aider       | Cursor      |
+| ------------------ | -------------- | ----------- | ----------- | ----------- |
+| Локальные модели   | ✅             | ❌          | ✅          | ❌          |
+| Open Source        | ✅             | ❌          | ✅          | ❌          |
+| CLI интерфейс      | ✅             | ✅          | ✅          | ❌          |
+| Web UI             | 🔴 Планируется | ✅          | ❌          | ✅          |
+| Plugin System      | ✅             | ✅          | ✅          | ✅          |
+| Plugin Sandbox     | ✅             | ✅          | ❌          | ⚠️ Частично |
+| Plugin Marketplace | ✅             | ✅          | ❌          | ✅          |
+| IDE Integration    | ✅ VSCode      | ✅ VSCode   | ✅ Multi    | ✅ Built-in |
+| MCP Support        | ✅             | ✅          | ❌          | ❌          |
+| Context Caching    | ✅             | ✅          | ⚠️ Частично | ✅          |
+| Undo/Redo          | ✅             | ✅          | ❌          | ✅          |
 
 ---
 
@@ -387,8 +446,10 @@ await pluginManager.enablePlugin('my-plugin');
 ### Q2 2025 ✅
 
 1. **HTTP Client** — Axios migration ✅
-2. **Plugin Loader** — Динамическая загрузка
-3. **Memory** — Исправление leaks
+2. **Plugin Loader** — Динамическая загрузка ✅
+3. **Memory** — Исправление leaks ✅
+4. **Plugin Marketplace** — NPM-based ✅
+5. **Security Sandbox** — Filesystem/Network restrictions ✅
 
 ### Q3 2025
 
@@ -408,18 +469,18 @@ await pluginManager.enablePlugin('my-plugin');
 
 ### Высокий приоритет
 
-| Область        | Проблема                | Решение           | Оценка |
-| -------------- | ----------------------- | ----------------- | ------ |
-| Memory leaks   | AbortController cleanup | Cleanup handlers  | 2d     |
-| Token counting | Fallback для прогресса  | Estimate fallback | 1d     |
+| Область        | Проблема                | Решение           | Статус       |
+| -------------- | ----------------------- | ----------------- | ------------ |
+| Memory leaks   | AbortController cleanup | Cleanup handlers  | ✅ Завершено |
+| Token counting | Fallback для прогресса  | Estimate fallback | ✅ Завершено |
 
 ### Средний приоритет
 
-| Область       | Проблема                     | Решение            | Оценка |
-| ------------- | ---------------------------- | ------------------ | ------ |
-| Documentation | Не все API задокументированы | TSDoc              | 3d     |
-| Logging       | Несогласованный формат       | Structured logging | 2d     |
-| Config        | Много источников             | Единый schema      | 3d     |
+| Область       | Проблема                     | Решение            | Оценка | Статус       |
+| ------------- | ---------------------------- | ------------------ | ------ | ------------ |
+| Documentation | Не все API задокументированы | TSDoc              | 3d     | 🔴 Не начато |
+| Logging       | Несогласованный формат       | Structured logging | 2d     | 🔴 Не начато |
+| Config        | Много источников             | Единый schema      | 3d     | 🔴 Не начато |
 
 ---
 
@@ -447,12 +508,15 @@ Ollama Code v0.14.0 включает ключевые архитектурные
 4. **Plugin System v2** — PluginLoader + CLI + Dynamic loading ✅
 5. **Context Caching** — KV-cache reuse для производительности ✅
 6. **Axios HTTP Client** — Interceptors, retry, timeout ✅
-7. **React Мемоизация** — Специализированные контексты + memo 🟡
+7. **React Мемоизация** — 6 контекстов + 11 memo компонентов ✅
+8. **Plugin Marketplace** — NPM-based search/install/update ✅
+9. **Security Sandbox** — Filesystem, network, command restrictions ✅
+10. **Cancellation Support** — CancellationToken, AbortController cleanup ✅
 
-Следующие шаги — завершение React мемоизации и Plugin marketplace.
+Следующие шаги — Virtual scrolling (P2) и Web UI (v0.15.0).
 
 ---
 
-_Document version: 3.3.0_
-_Last updated: 2025-03-15_
+_Document version: 4.0.0_
+_Last updated: 2025-03-01_
 _Author: Architecture Team_
