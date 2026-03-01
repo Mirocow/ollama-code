@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.11.3
+
+### Bug Fixes
+
+#### React Hooks Rules Violation Fix
+
+Fixed critical bug in `LoadingIndicator.tsx` where `useMemo` hooks were called after an early `return` statement, violating React Rules of Hooks:
+
+```
+Error: Rendered more hooks than during the previous render.
+```
+
+**Changes:**
+
+- Moved all `useMemo` calls before the early `return null;` statement
+- All hooks are now called in consistent order on every render
+
+**File Modified:**
+
+- `packages/cli/src/ui/components/LoadingIndicator.tsx`
+
+### Documentation Updates
+
+- Updated `ROADMAP.md` with complete status of all tasks
+- All major features now marked as completed
+
+---
+
 ## 0.11.2
 
 ### React Performance Optimization
@@ -10,14 +38,14 @@ Major React performance improvements through context splitting and memoization:
 
 Split the monolithic `UIStateContext` (70+ fields) into smaller, focused contexts:
 
-| Context | Purpose |
-|---------|---------|
-| `DialogStateContext` | Dialog visibility states |
-| `TerminalContext` | Terminal dimensions and layout |
-| `InputStateContext` | Input buffer and key press states |
-| `HistoryContext` | History items and pending messages |
-| `LoadingContext` | Streaming and loading states |
-| `ConfirmationContext` | Confirmation requests |
+| Context               | Purpose                            |
+| --------------------- | ---------------------------------- |
+| `DialogStateContext`  | Dialog visibility states           |
+| `TerminalContext`     | Terminal dimensions and layout     |
+| `InputStateContext`   | Input buffer and key press states  |
+| `HistoryContext`      | History items and pending messages |
+| `LoadingContext`      | Streaming and loading states       |
+| `ConfirmationContext` | Confirmation requests              |
 
 #### Memoized Components
 
@@ -43,23 +71,23 @@ Added `React.memo` and `useMemo` to frequently re-rendering components:
 
 ### Files Added
 
-| File | Description |
-|------|-------------|
-| `packages/cli/src/ui/contexts/DialogStateContext.tsx` | Dialog state management |
-| `packages/cli/src/ui/contexts/TerminalContext.tsx` | Terminal dimensions |
-| `packages/cli/src/ui/contexts/InputStateContext.tsx` | Input state management |
-| `packages/cli/src/ui/contexts/HistoryContext.tsx` | History state management |
-| `packages/cli/src/ui/contexts/LoadingContext.tsx` | Loading state management |
-| `packages/cli/src/ui/contexts/ConfirmationContext.tsx` | Confirmation requests |
+| File                                                   | Description              |
+| ------------------------------------------------------ | ------------------------ |
+| `packages/cli/src/ui/contexts/DialogStateContext.tsx`  | Dialog state management  |
+| `packages/cli/src/ui/contexts/TerminalContext.tsx`     | Terminal dimensions      |
+| `packages/cli/src/ui/contexts/InputStateContext.tsx`   | Input state management   |
+| `packages/cli/src/ui/contexts/HistoryContext.tsx`      | History state management |
+| `packages/cli/src/ui/contexts/LoadingContext.tsx`      | Loading state management |
+| `packages/cli/src/ui/contexts/ConfirmationContext.tsx` | Confirmation requests    |
 
 ### Files Modified
 
-| File | Changes |
-|------|---------|
-| `packages/cli/src/ui/components/AppHeader.tsx` | Added memo and useMemo |
-| `packages/cli/src/ui/components/MainContent.tsx` | Added memo, simplified rendering |
-| `packages/cli/src/ui/components/HistoryItemDisplay.tsx` | Added memo, memoized dimensions |
-| `packages/cli/src/ui/components/Composer.tsx` | Added memo, memoized state selectors |
+| File                                                    | Changes                              |
+| ------------------------------------------------------- | ------------------------------------ |
+| `packages/cli/src/ui/components/AppHeader.tsx`          | Added memo and useMemo               |
+| `packages/cli/src/ui/components/MainContent.tsx`        | Added memo, simplified rendering     |
+| `packages/cli/src/ui/components/HistoryItemDisplay.tsx` | Added memo, memoized dimensions      |
+| `packages/cli/src/ui/components/Composer.tsx`           | Added memo, memoized state selectors |
 
 ---
 
@@ -87,26 +115,26 @@ Added `React.memo` and `useMemo` to frequently re-rendering components:
 
 Major architectural enhancements for better performance and extensibility:
 
-| Feature | Description |
-|---------|-------------|
-| **Zustand Migration** | Replaced Context API with Zustand for atomic state updates |
-| **Event Bus** | Typed pub/sub system for loose component coupling |
-| **Command Pattern** | Full Undo/Redo support for reversible operations |
-| **Plugin System v1** | Dynamic tool loading with lifecycle hooks |
-| **Context Caching** | KV-cache reuse for 80-90% faster conversations |
-| **Prompt Documentation** | Comprehensive prompt system documentation |
+| Feature                  | Description                                                |
+| ------------------------ | ---------------------------------------------------------- |
+| **Zustand Migration**    | Replaced Context API with Zustand for atomic state updates |
+| **Event Bus**            | Typed pub/sub system for loose component coupling          |
+| **Command Pattern**      | Full Undo/Redo support for reversible operations           |
+| **Plugin System v1**     | Dynamic tool loading with lifecycle hooks                  |
+| **Context Caching**      | KV-cache reuse for 80-90% faster conversations             |
+| **Prompt Documentation** | Comprehensive prompt system documentation                  |
 
 #### Zustand Stores
 
 Five new stores replacing Context API:
 
-| Store | Purpose |
-|-------|---------|
-| `sessionStore` | Session state and metrics |
+| Store            | Purpose                           |
+| ---------------- | --------------------------------- |
+| `sessionStore`   | Session state and metrics         |
 | `streamingStore` | Streaming state + AbortController |
-| `uiStore` | UI settings with persistence |
-| `commandStore` | Command pattern for undo/redo |
-| `eventBus` | Event pub/sub system |
+| `uiStore`        | UI settings with persistence      |
+| `commandStore`   | Command pattern for undo/redo     |
+| `eventBus`       | Event pub/sub system              |
 
 #### Event Bus
 
@@ -123,6 +151,7 @@ eventBus.emit('command:executed', { commandId: '123', commandType: 'edit' });
 ```
 
 **Supported Events:**
+
 - `stream:started/chunk/finished/error/cancelled`
 - `tool:started/progress/completed/error`
 - `session:started/ended/cleared`
@@ -138,8 +167,12 @@ Full implementation of the Command pattern:
 await commandStore.execute({
   description: 'Change theme',
   type: 'theme',
-  execute: async () => { /* action */ },
-  undo: async () => { /* reverse action */ },
+  execute: async () => {
+    /* action */
+  },
+  undo: async () => {
+    /* reverse action */
+  },
   canUndo: true,
 });
 
@@ -162,16 +195,21 @@ const plugin: PluginDefinition = {
     version: '1.0.0',
     description: 'My custom tools',
   },
-  tools: [{
-    id: 'hello',
-    name: 'hello',
-    description: 'Say hello',
-    parameters: { type: 'object', properties: { message: { type: 'string' } } },
-    execute: async (params, context) => ({
-      success: true,
-      data: `Hello, ${params['message']}!`,
-    }),
-  }],
+  tools: [
+    {
+      id: 'hello',
+      name: 'hello',
+      description: 'Say hello',
+      parameters: {
+        type: 'object',
+        properties: { message: { type: 'string' } },
+      },
+      execute: async (params, context) => ({
+        success: true,
+        data: `Hello, ${params['message']}!`,
+      }),
+    },
+  ],
   hooks: {
     onLoad: async (context) => context.logger.info('Plugin loaded'),
     onEnable: async (context) => context.logger.info('Plugin enabled'),
@@ -183,27 +221,27 @@ const plugin: PluginDefinition = {
 
 **Builtin Plugins:**
 
-| Plugin | Tools |
-|--------|-------|
-| `core-tools` | echo, timestamp, get_env |
-| `dev-tools` | python_dev, nodejs_dev, golang_dev, rust_dev, typescript_dev, java_dev, cpp_dev, swift_dev, php_dev |
-| `file-tools` | read_file, write_file, edit_file |
-| `search-tools` | grep, glob, web_fetch |
-| `shell-tools` | run_shell_command |
+| Plugin         | Tools                                                                                               |
+| -------------- | --------------------------------------------------------------------------------------------------- |
+| `core-tools`   | echo, timestamp, get_env                                                                            |
+| `dev-tools`    | python_dev, nodejs_dev, golang_dev, rust_dev, typescript_dev, java_dev, cpp_dev, swift_dev, php_dev |
+| `file-tools`   | read_file, write_file, edit_file                                                                    |
+| `search-tools` | grep, glob, web_fetch                                                                               |
+| `shell-tools`  | run_shell_command                                                                                   |
 
 #### Prompt System Documentation
 
 New comprehensive documentation in `docs/PROMPT_SYSTEM.md`:
 
-| Function | Purpose |
-|----------|---------|
-| `getCoreSystemPrompt()` | Main system prompt construction |
-| `getCompressionPrompt()` | History compression to XML format |
-| `getProjectSummaryPrompt()` | Markdown project summaries |
-| `getToolCallFormatInstructions()` | For models without native tools |
-| `getToolLearningContext()` | Learning from past mistakes |
-| `getEnvironmentInfo()` | Runtime environment context |
-| `getCustomSystemPrompt()` | Custom instruction processing |
+| Function                          | Purpose                           |
+| --------------------------------- | --------------------------------- |
+| `getCoreSystemPrompt()`           | Main system prompt construction   |
+| `getCompressionPrompt()`          | History compression to XML format |
+| `getProjectSummaryPrompt()`       | Markdown project summaries        |
+| `getToolCallFormatInstructions()` | For models without native tools   |
+| `getToolLearningContext()`        | Learning from past mistakes       |
+| `getEnvironmentInfo()`            | Runtime environment context       |
+| `getCustomSystemPrompt()`         | Custom instruction processing     |
 
 ### Technical Improvements
 
@@ -216,25 +254,25 @@ New comprehensive documentation in `docs/PROMPT_SYSTEM.md`:
 
 ### Files Added/Modified
 
-| File | Description |
-|------|-------------|
-| `packages/cli/src/ui/stores/commandStore.ts` | Command pattern implementation |
-| `packages/cli/src/ui/stores/eventBus.ts` | Event bus implementation |
-| `packages/core/src/plugins/types.ts` | Plugin system types |
-| `packages/core/src/plugins/pluginManager.ts` | Plugin lifecycle management |
-| `packages/core/src/plugins/pluginLoader.ts` | Plugin discovery |
-| `packages/core/src/plugins/pluginRegistry.ts` | Plugin registration |
-| `packages/core/src/plugins/builtin/*/index.ts` | Builtin plugins |
-| `docs/PROMPT_SYSTEM.md` | Prompt system documentation |
+| File                                           | Description                    |
+| ---------------------------------------------- | ------------------------------ |
+| `packages/cli/src/ui/stores/commandStore.ts`   | Command pattern implementation |
+| `packages/cli/src/ui/stores/eventBus.ts`       | Event bus implementation       |
+| `packages/core/src/plugins/types.ts`           | Plugin system types            |
+| `packages/core/src/plugins/pluginManager.ts`   | Plugin lifecycle management    |
+| `packages/core/src/plugins/pluginLoader.ts`    | Plugin discovery               |
+| `packages/core/src/plugins/pluginRegistry.ts`  | Plugin registration            |
+| `packages/core/src/plugins/builtin/*/index.ts` | Builtin plugins                |
+| `docs/PROMPT_SYSTEM.md`                        | Prompt system documentation    |
 
 ### Documentation Updates
 
-| Document | Changes |
-|----------|---------|
-| `README.md` | Updated for v0.11.0 |
-| `README.ru.md` | Russian version updated |
-| `ROADMAP.md` | Updated with completed tasks |
-| `CHANGELOG.md` | This changelog |
+| Document       | Changes                      |
+| -------------- | ---------------------------- |
+| `README.md`    | Updated for v0.11.0          |
+| `README.ru.md` | Russian version updated      |
+| `ROADMAP.md`   | Updated with completed tasks |
+| `CHANGELOG.md` | This changelog               |
 
 ### Breaking Changes
 
@@ -250,7 +288,7 @@ If you were using Context API directly (internal):
 const state = useContext(UIStateContext);
 
 // After (Zustand)
-const value = useUIStore(state => state.value);
+const value = useUIStore((state) => state.value);
 ```
 
 ---
@@ -271,7 +309,7 @@ const value = useUIStore(state => state.value);
 // Enable context caching in config
 const config: ContentGeneratorConfig = {
   model: 'llama3.2',
-  enableContextCaching: true,  // Enables KV-cache reuse
+  enableContextCaching: true, // Enables KV-cache reuse
 };
 
 // First message: full processing
@@ -329,17 +367,17 @@ const config: ContentGeneratorConfig = {
 
 ### Files Added
 
-| File | Description |
-|------|-------------|
-| `packages/core/src/cache/contextCacheManager.ts` | Context token caching |
-| `packages/core/src/core/ollamaContextClient.ts` | /api/generate client |
-| `packages/core/src/core/hybridContentGenerator.ts` | Endpoint selection |
-| `packages/cli/src/ui/stores/sessionStore.ts` | Session state (Zustand) |
-| `packages/cli/src/ui/stores/streamingStore.ts` | Streaming state |
-| `packages/cli/src/ui/stores/uiStore.ts` | UI preferences |
-| `packages/cli/src/ui/stores/eventBus.ts` | Event bus |
-| `packages/cli/src/ui/stores/commandStore.ts` | Undo/Redo |
-| `packages/core/src/plugins/index.ts` | Plugin system |
+| File                                               | Description             |
+| -------------------------------------------------- | ----------------------- |
+| `packages/core/src/cache/contextCacheManager.ts`   | Context token caching   |
+| `packages/core/src/core/ollamaContextClient.ts`    | /api/generate client    |
+| `packages/core/src/core/hybridContentGenerator.ts` | Endpoint selection      |
+| `packages/cli/src/ui/stores/sessionStore.ts`       | Session state (Zustand) |
+| `packages/cli/src/ui/stores/streamingStore.ts`     | Streaming state         |
+| `packages/cli/src/ui/stores/uiStore.ts`            | UI preferences          |
+| `packages/cli/src/ui/stores/eventBus.ts`           | Event bus               |
+| `packages/cli/src/ui/stores/commandStore.ts`       | Undo/Redo               |
+| `packages/core/src/plugins/index.ts`               | Plugin system           |
 
 ### Configuration Options
 
@@ -348,10 +386,10 @@ New options in `ContentGeneratorConfig`:
 ```typescript
 interface ContentGeneratorConfig {
   // ... existing options
-  
+
   /** Enable context caching for faster multi-turn conversations */
   enableContextCaching?: boolean;
-  
+
   /** Session ID for context tracking */
   sessionId?: string;
 }
@@ -366,20 +404,20 @@ interface ContentGeneratorConfig {
 
 ### Documentation
 
-| Document | Description |
-|----------|-------------|
-| `docs/CONTEXT_CACHING.md` | Context caching API reference |
-| `docs/STATE_MANAGEMENT.md` | Zustand stores documentation |
-| `docs/EVENT_BUS.md` | Event bus architecture |
-| `docs/PLUGIN_SYSTEM.md` | Plugin system reference |
+| Document                   | Description                   |
+| -------------------------- | ----------------------------- |
+| `docs/CONTEXT_CACHING.md`  | Context caching API reference |
+| `docs/STATE_MANAGEMENT.md` | Zustand stores documentation  |
+| `docs/EVENT_BUS.md`        | Event bus architecture        |
+| `docs/PLUGIN_SYSTEM.md`    | Plugin system reference       |
 
 ### Performance Metrics
 
-| Metric | Without Caching | With Caching |
-|--------|-----------------|--------------|
-| 1st message | 100% | 100% |
-| 2nd message | 100% | ~15% |
-| 10th message | 100% | ~7% |
+| Metric       | Without Caching | With Caching |
+| ------------ | --------------- | ------------ |
+| 1st message  | 100%            | 100%         |
+| 2nd message  | 100%            | ~15%         |
+| 10th message | 100%            | ~7%          |
 
 ---
 
@@ -412,18 +450,18 @@ interface ContentGeneratorConfig {
 
 Removed unused commands to streamline the CLI:
 
-| Removed Command | Alternative |
-| --------------- | ----------- |
-| `/bug` | Use direct message |
-| `/docs` | See `docs/` folder |
-| `/help` | See documentation |
+| Removed Command | Alternative        |
+| --------------- | ------------------ |
+| `/bug`          | Use direct message |
+| `/docs`         | See `docs/` folder |
+| `/help`         | See documentation  |
 | `/setup-github` | Configure manually |
 
 Merged commands for better organization:
 
-| Merged Commands | New Command |
-| --------------- | ----------- |
-| `/stats` + `/about` | `/info` |
+| Merged Commands     | New Command |
+| ------------------- | ----------- |
+| `/stats` + `/about` | `/info`     |
 
 #### Technical Improvements
 
