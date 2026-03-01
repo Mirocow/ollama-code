@@ -371,7 +371,10 @@ export class PluginSandbox {
     return pattern
       .replace('${workingDir}', this.workingDir)
       .replace('${tempDir}', this.tempDir)
-      .replace('${home}', process.env.HOME ?? process.env.USERPROFILE ?? '')
+      .replace(
+        '${home}',
+        process.env['HOME'] ?? process.env['USERPROFILE'] ?? '',
+      )
       .replace('${pluginId}', this.config.pluginId);
   }
 
