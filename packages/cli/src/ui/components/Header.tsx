@@ -22,19 +22,69 @@ import { t } from '../../i18n/index.js';
 
 /**
  * Extract model size from model name (e.g., "14b" from "qwen2.5-coder:14b")
+ * Supports various formats:
+ * - Standard: 7b, 14b, 32b, 70b, 72b, 120b, 405b, etc.
+ * - Decimal: 0.5b, 1.5b, 2.7b, 8.7b, etc.
+ * - MoE: 8x7b, 8x22b, 16x12b, etc.
+ * - With suffixes: 7b-q4, 14b-q8, etc.
+ * - In name: llama3-70b, mistral-7b, qwen2.5-32b
  */
 function extractModelSize(model: string): string | null {
-  // Match patterns like :14b, :7b, :70b, :0.5b, :1.5b, :32k, etc.
-  const sizeMatch = model.match(/:(\d+\.?\d*[bkmb]?)(?:-|$)/i);
-  if (sizeMatch) {
-    return sizeMatch[1].toLowerCase();
+  const lowerModel = model.toLowerCase();
+  
+  // Skip common non-size suffixes
+  const skipSuffixes = ['instruct', 'chat', 'base', 'preview', 'latest', 'quantized'];
+  if (skipSuffixes.some(suffix => lowerModel.endsWith(suffix))) {
+    // Try to extract size before the suffix
+    const beforeSuffix = lowerModel.replace(new RegExp(`[-:]?(${skipSuffixes.join('|')})$`), '');
+    return extractModelSize(beforeSuffix);
   }
-  // Also match patterns like -14b, -7b in model name
-  const sizeMatch2 = model.match(/-(\d+\.?\d*[bkmb]?)(?:-|$)/i);
-  if (sizeMatch2) {
-    return sizeMatch2[1].toLowerCase();
+  
+  // Pattern 1: MoE models like 8x7b, 8x22b, 16x12b, a3.1b (A3.1B is a special MoE format)
+  const moeMatch = lowerModel.match(/(\d+(?:\.\d+)?x\d+(?:\.\d+)?b)|(a\d+(?:\.\d+)?b)/i);
+  if (moeMatch) {
+    return moeMatch[1].toLowerCase();
   }
+  
+  // Pattern 2: Size after colon (Ollama format): model:14b, model:70b-q4
+  const colonMatch = lowerModel.match(/:(\d+(?:\.\d+)?b)(?:[-._]|$)/i);
+  if (colonMatch) {
+    return colonMatch[1].toLowerCase();
+  }
+  
+  // Pattern 3: Size in name with dash: llama3-70b, mistral-7b, qwen2.5-32b
+  // Match sizes like: 0.5b, 1.5b, 7b, 8b, 14b, 27b, 32b, 34b, 70b, 72b, 90b, 120b, 405b, 671b
+  const dashMatch = lowerModel.match(/[-_](\d+(?:\.\d+)?b)(?:[-._]|$)/i);
+  if (dashMatch) {
+    return dashMatch[1].toLowerCase();
+  }
+  
+  // Pattern 4: Size at end without separator: model70b, model14b
+  const endMatch = lowerModel.match(/(\d+(?:\.\d+)?b)$/i);
+  if (endMatch) {
+    return endMatch[1].toLowerCase();
+  }
+  
+  // Pattern 5: Size with quantization suffix: 14b-q4_0, 70b-q8_0
+  const quantMatch = lowerModel.match(/[:_-](\d+(?:\.\d+)?b)[_-](?:q|iq|fp|bf|fp16|bf16)/i);
+  if (quantMatch) {
+    return quantMatch[1].toLowerCase();
+  }
+  
   return null;
+}
+
+/**
+ * Format model size for display (add commas for large numbers)
+ */
+function formatModelSize(size: string): string {
+  // Handle MoE models like 8x7b -> "8x7B"
+  if (size.includes('x')) {
+    return size.toUpperCase();
+  }
+  // Handle decimal sizes like 0.5b, 1.5b -> "0.5B"
+  // Handle integer sizes like 7b, 14b, 70b -> "7B", "14B", "70B"
+  return size.toUpperCase();
 }
 
 /**
@@ -137,7 +187,8 @@ export const Header: React.FC<HeaderProps> = ({
 
   // Get context window size (use provided or auto-detect from model)
   const contextSize = contextWindowSize ?? tokenLimit(model, 'input');
-  const modelSize = extractModelSize(model);
+  const extractedSize = extractModelSize(model);
+  const modelSize = extractedSize ? formatModelSize(extractedSize) : null;
   const contextSizeFormatted = formatContextSize(contextSize);
   
   // Calculate context usage if promptTokenCount is provided
