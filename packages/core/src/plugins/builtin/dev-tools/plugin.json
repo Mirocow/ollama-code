@@ -1,0 +1,13 @@
+{
+  "entry": "index.js",
+  "metadata": {
+    "id": "dev-tools",
+    "name": "Development Tools",
+    "version": "1.0.0",
+    "description": "Language-specific development tools: Python, Node.js, Go, Rust, Java, C++",
+    "author": "Ollama Code Team",
+    "builtin": true,
+    "tags": ["core", "dev", "languages"],
+    "enabledByDefault": true
+  }
+}

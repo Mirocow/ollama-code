@@ -1,0 +1,13 @@
+{
+  "entry": "index.js",
+  "metadata": {
+    "id": "file-tools",
+    "name": "File Tools",
+    "version": "1.0.0",
+    "description": "File system operations: read, write, edit, glob, list directory",
+    "author": "Ollama Code Team",
+    "builtin": true,
+    "tags": ["core", "file", "filesystem"],
+    "enabledByDefault": true
+  }
+}

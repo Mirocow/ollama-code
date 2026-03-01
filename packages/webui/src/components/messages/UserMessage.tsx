@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FC } from 'react';
+import { memo, type FC } from 'react';
 import { CollapsibleFileContent } from './CollapsibleFileContent.js';
 
 export interface FileContext {
@@ -21,7 +21,11 @@ export interface UserMessageProps {
   fileContext?: FileContext;
 }
 
-export const UserMessage: FC<UserMessageProps> = ({
+/**
+ * UserMessage component - renders user messages with optional file context
+ * Memoized to prevent unnecessary re-renders
+ */
+const UserMessageComponent: FC<UserMessageProps> = ({
   content,
   timestamp: _timestamp,
   onFileClick,
@@ -89,3 +93,9 @@ export const UserMessage: FC<UserMessageProps> = ({
     </div>
   );
 };
+
+/**
+ * Memoized UserMessage component
+ * Only re-renders when content, timestamp, or fileContext changes
+ */
+export const UserMessage = memo(UserMessageComponent);

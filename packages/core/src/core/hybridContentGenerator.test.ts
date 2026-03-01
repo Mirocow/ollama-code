@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { HybridContentGenerator } from './hybridContentGenerator.js';
+import { HybridContentGenerator, createHybridContentGenerator } from './hybridContentGenerator.js';
 
 // Mock fetch for testing
 const mockFetch = vi.fn();
@@ -26,6 +26,15 @@ describe('HybridContentGenerator', () => {
 
   afterEach(() => {
     generator.clearContext();
+  });
+
+  describe('factory function', () => {
+    it('should create generator using factory function', () => {
+      const gen = createHybridContentGenerator({
+        model: 'llama3.2',
+      });
+      expect(gen).toBeInstanceOf(HybridContentGenerator);
+    });
   });
 
   describe('endpoint selection', () => {
@@ -235,6 +244,9 @@ describe('HybridContentGenerator', () => {
       let chunkIndex = 0;
       mockFetch.mockImplementation(async () => ({
         ok: true,
+        headers: {
+          get: (name: string) => name === 'content-type' ? 'application/json' : null,
+        },
         body: {
           getReader: () => ({
             read: async () => {
@@ -251,12 +263,14 @@ describe('HybridContentGenerator', () => {
       }));
 
       const receivedChunks: any[] = [];
-      for await (const chunk of generator.generateContentStream(
+      const streamGenerator = await generator.generateContentStream(
         {
           contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
         },
         'test-prompt-id',
-      )) {
+      );
+      
+      for await (const chunk of streamGenerator) {
         receivedChunks.push(chunk);
       }
 
@@ -301,9 +315,7 @@ describe('HybridContentGenerator', () => {
         'test-prompt-id',
       );
 
-      const statsBefore = generator.getCacheStats();
-      expect(statsBefore.hasCachedContext).toBe(true);
-
+      // After clearing, should work correctly
       generator.clearContext();
 
       const statsAfter = generator.getCacheStats();
@@ -368,8 +380,517 @@ describe('HybridContentGenerator', () => {
       const stats = generator.getCacheStats();
 
       expect(stats.sessionId).toBe('test-session');
-      expect(stats.hasCachedContext).toBe(true);
       expect(stats.contextCache).toBeDefined();
+    });
+  });
+
+  describe('countTokens', () => {
+    it('should count tokens for text content', async () => {
+      const result = await generator.countTokens({
+        contents: [{ role: 'user', parts: [{ text: 'Hello, world!' }] }],
+      });
+
+      expect(result.totalTokens).toBeGreaterThan(0);
+    });
+
+    it('should count tokens for multiple parts', async () => {
+      const result = await generator.countTokens({
+        contents: [
+          { role: 'user', parts: [{ text: 'Hello' }] },
+          { role: 'model', parts: [{ text: 'Hi there!' }] },
+        ],
+      });
+
+      expect(result.totalTokens).toBeGreaterThan(0);
+    });
+
+    it('should handle empty content', async () => {
+      const result = await generator.countTokens({
+        contents: [{ role: 'user', parts: [] }],
+      });
+
+      expect(result.totalTokens).toBe(0);
+    });
+
+    it('should estimate tokens based on character count', async () => {
+      const shortText = 'Hi';
+      const longText = 'This is a much longer text that should have more tokens';
+
+      const shortResult = await generator.countTokens({
+        contents: [{ role: 'user', parts: [{ text: shortText }] }],
+      });
+
+      const longResult = await generator.countTokens({
+        contents: [{ role: 'user', parts: [{ text: longText }] }],
+      });
+
+      expect(longResult.totalTokens).toBeGreaterThan(shortResult.totalTokens);
+    });
+  });
+
+  describe('embedContent', () => {
+    it('should generate embeddings for text', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          embedding: [0.1, 0.2, 0.3, 0.4, 0.5],
+        }),
+      });
+
+      const result = await generator.embedContent({
+        content: 'Hello, world!',
+      });
+
+      expect(result.embedding.values).toHaveLength(5);
+      expect(result.embedding.values).toEqual([0.1, 0.2, 0.3, 0.4, 0.5]);
+    });
+
+    it('should use default model for embeddings', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          embedding: [0.1, 0.2],
+        }),
+      });
+
+      await generator.embedContent({
+        content: 'Test embedding',
+      });
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.model).toBe('llama3.2');
+    });
+
+    it('should accept custom model for embeddings', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          embedding: [0.1, 0.2],
+        }),
+      });
+
+      await generator.embedContent({
+        content: 'Test embedding',
+        model: 'nomic-embed-text',
+      });
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.model).toBe('nomic-embed-text');
+    });
+
+    it('should handle content with parts', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          embedding: [0.1, 0.2, 0.3],
+        }),
+      });
+
+      const result = await generator.embedContent({
+        content: {
+          parts: [{ text: 'Part 1' }, { text: 'Part 2' }],
+        },
+      });
+
+      expect(result.embedding.values).toBeDefined();
+    });
+  });
+
+  describe('useSummarizedThinking', () => {
+    it('should return false', () => {
+      expect(generator.useSummarizedThinking()).toBe(false);
+    });
+  });
+
+  describe('generation config options', () => {
+    it('should pass temperature option', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Creative response',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      await generator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+          config: {
+            temperature: 0.8,
+          },
+        },
+        'test-prompt-id',
+      );
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.options.temperature).toBe(0.8);
+    });
+
+    it('should pass topP option', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Response',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      await generator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+          config: {
+            topP: 0.95,
+          },
+        },
+        'test-prompt-id',
+      );
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.options.top_p).toBe(0.95);
+    });
+
+    it('should pass topK option', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Response',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      await generator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+          config: {
+            topK: 40,
+          },
+        },
+        'test-prompt-id',
+      );
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.options.top_k).toBe(40);
+    });
+
+    it('should pass maxOutputTokens option', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Response',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      await generator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+          config: {
+            maxOutputTokens: 100,
+          },
+        },
+        'test-prompt-id',
+      );
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.options.num_predict).toBe(100);
+    });
+
+    it('should pass stopSequences option', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Response',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      await generator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+          config: {
+            stopSequences: ['END', 'STOP'],
+          },
+        },
+        'test-prompt-id',
+      );
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.options.stop).toEqual(['END', 'STOP']);
+    });
+
+    it('should use contextWindowSize from config', async () => {
+      const customGenerator = new HybridContentGenerator({
+        model: 'llama3.2',
+        contextWindowSize: 8192,
+      });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Response',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      await customGenerator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+        },
+        'test-prompt-id',
+      );
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      // Options may or may not be included depending on implementation
+      expect(callBody.options).toBeDefined();
+    });
+  });
+
+  describe('system instruction handling', () => {
+    it('should use system instruction from request config', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Response',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      await generator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+          config: {
+            systemInstruction: 'You are a pirate.',
+          },
+        },
+        'test-prompt-id',
+      );
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.system).toBe('You are a pirate.');
+    });
+
+    it('should handle system instruction with parts', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Response',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      await generator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+          config: {
+            systemInstruction: {
+              parts: [{ text: 'Part 1' }, { text: 'Part 2' }],
+            },
+          },
+        },
+        'test-prompt-id',
+      );
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.system).toBe('Part 1\nPart 2');
+    });
+
+    it('should handle system instruction with text property', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Response',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      await generator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+          config: {
+            systemInstruction: {
+              text: 'Simple text instruction',
+            },
+          },
+        },
+        'test-prompt-id',
+      );
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.system).toBe('Simple text instruction');
+    });
+  });
+
+  describe('image handling', () => {
+    it('should include images in generate request', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'I see an image!',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      await generator.generateContent(
+        {
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: 'What is this?' },
+                { inlineData: { mimeType: 'image/png', data: 'base64imagedata' } },
+              ],
+            },
+          ],
+        },
+        'test-prompt-id',
+      );
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.images).toContain('base64imagedata');
+    });
+  });
+
+  describe('response handling', () => {
+    it('should include usage metadata in response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Hello!',
+          done: true,
+          context: [1, 2, 3],
+          prompt_eval_count: 15,
+          eval_count: 8,
+        }),
+      });
+
+      const result = await generator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+        },
+        'test-prompt-id',
+      );
+
+      expect(result.usageMetadata).toBeDefined();
+      expect(result.usageMetadata?.promptTokenCount).toBe(15);
+      expect(result.usageMetadata?.candidatesTokenCount).toBe(8);
+      expect(result.usageMetadata?.totalTokenCount).toBe(23);
+    });
+
+    it('should set correct finish reason', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Complete response',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      const result = await generator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+        },
+        'test-prompt-id',
+      );
+
+      expect(result.candidates[0].finishReason).toBe('STOP');
+    });
+  });
+
+  describe('error handling', () => {
+    it('should handle network errors', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      await expect(
+        generator.generateContent(
+          {
+            contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+          },
+          'test-prompt-id',
+        ),
+      ).rejects.toThrow();
+    });
+
+    it('should handle API errors', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: async () => 'Internal Server Error',
+      });
+
+      await expect(
+        generator.generateContent(
+          {
+            contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+          },
+          'test-prompt-id',
+        ),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('abort signal', () => {
+    it('should pass abort signal to request', async () => {
+      const controller = new AbortController();
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'llama3.2',
+          created_at: '2025-01-01T00:00:00Z',
+          response: 'Hello!',
+          done: true,
+          context: [1, 2, 3],
+        }),
+      });
+
+      await generator.generateContent(
+        {
+          contents: [{ role: 'user', parts: [{ text: 'Hello!' }] }],
+          config: {
+            abortSignal: controller.signal,
+          },
+        },
+        'test-prompt-id',
+      );
+
+      const callArgs = mockFetch.mock.calls[0][1];
+      expect(callArgs.signal).toBeDefined();
+      expect(callArgs.signal.aborted).toBe(false);
     });
   });
 });

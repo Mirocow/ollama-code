@@ -11,8 +11,7 @@
  * allowing dynamic loading and management of tools and extensions.
  */
 
-import type { Tool, FunctionDeclaration } from '../types/content.js';
-import type { DeclarativeTool } from '../tools/tools.js';
+import type { FunctionDeclaration } from '../types/content.js';
 
 /**
  * Plugin metadata

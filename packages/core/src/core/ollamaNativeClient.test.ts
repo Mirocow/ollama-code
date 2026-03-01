@@ -35,6 +35,21 @@ vi.mock('../utils/apiLogger.js', () => ({
   },
 }));
 
+// Mock httpClient module for axios-based requests
+const mockHttpClient = {
+  request: vi.fn(),
+  interceptors: {
+    request: { use: vi.fn() },
+    response: { use: vi.fn() },
+  },
+};
+
+vi.mock('../utils/httpClient.js', () => ({
+  createHttpClient: vi.fn(() => mockHttpClient),
+  getDefaultHttpClient: vi.fn(() => mockHttpClient),
+  resetDefaultHttpClient: vi.fn(),
+}));
+
 // Test configuration
 const OLLAMA_TEST_URL = process.env['OLLAMA_URL'] || 'http://localhost:11434';
 const OLLAMA_TEST_MODEL = process.env['OLLAMA_TEST_MODEL'] || 'llama3.2';
@@ -88,6 +103,7 @@ describe('OllamaNativeClient', () => {
 
     beforeEach(() => {
       mockFetch.mockReset();
+      mockHttpClient.request.mockReset();
       (apiLogger.logInteraction as any).mockClear();
     });
 
@@ -95,9 +111,9 @@ describe('OllamaNativeClient', () => {
       it('should call /api/generate with correct parameters', async () => {
         const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
 
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
+        // Mock axios response
+        mockHttpClient.request.mockResolvedValueOnce({
+          data: {
             model: 'llama3.2',
             created_at: '2024-01-01T00:00:00Z',
             response: 'Hello, World!',
@@ -106,7 +122,11 @@ describe('OllamaNativeClient', () => {
             total_duration: 1000000000,
             prompt_eval_count: 10,
             eval_count: 5,
-          }),
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {},
         });
 
         const result = await client.generate({
@@ -114,11 +134,13 @@ describe('OllamaNativeClient', () => {
           prompt: 'Why is the sky blue?',
         });
 
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/generate',
+        expect(mockHttpClient.request).toHaveBeenCalledWith(
           expect.objectContaining({
             method: 'POST',
-            body: expect.stringContaining('"model":"llama3.2"'),
+            url: '/api/generate',
+            data: expect.objectContaining({
+              model: 'llama3.2',
+            }),
           })
         );
         expect(result.response).toBe('Hello, World!');

@@ -7,7 +7,7 @@
  * Pure UI component - platform interactions via usePlatform hook
  */
 
-import type { FC } from 'react';
+import { memo, type FC } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FileLink } from '../layout/FileLink.js';
 import {
@@ -59,8 +59,9 @@ const ReadToolCallContainer: FC<ToolCallContainerProps> = ({
 /**
  * ReadToolCall - displays file reading operations
  * Shows: Read filename (no content preview)
+ * Memoized to prevent unnecessary re-renders during streaming
  */
-export const ReadToolCall: FC<BaseToolCallProps> = ({
+const ReadToolCallComponent: FC<BaseToolCallProps> = ({
   toolCall,
   isFirst,
   isLast,
@@ -336,3 +337,5 @@ export const ReadToolCall: FC<BaseToolCallProps> = ({
   // No file info and no content - nothing to display
   return null;
 };
+
+export const ReadToolCall = memo(ReadToolCallComponent);

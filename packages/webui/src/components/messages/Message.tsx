@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FC } from 'react';
+import { memo, type FC } from 'react';
 
 interface MessageProps {
   id: string;
@@ -14,7 +14,11 @@ interface MessageProps {
   className?: string;
 }
 
-const Message: FC<MessageProps> = ({
+/**
+ * Message component - renders individual chat messages
+ * Memoized to prevent unnecessary re-renders when parent components update
+ */
+const MessageComponent: FC<MessageProps> = ({
   content,
   sender,
   timestamp,
@@ -41,5 +45,11 @@ const Message: FC<MessageProps> = ({
     </div>
   );
 };
+
+/**
+ * Memoized Message component
+ * Only re-renders when props change (id, content, sender, timestamp, className)
+ */
+const Message = memo(MessageComponent);
 
 export default Message;

@@ -55,7 +55,9 @@ export class OllamaChat {
   private tools?: Tool[];
   private enableContextCaching: boolean;
   private sessionId: string;
-  private contextCache: ContextCacheManager;
+  // Reserved for future context caching implementation
+  // @ts-expect-error Reserved for future use
+  private _contextCache: ContextCacheManager;
   private messageCount: number = 0;
   private cachedContext: number[] | null = null;
 
@@ -69,7 +71,7 @@ export class OllamaChat {
     this.history = history;
     this.enableContextCaching = options.enableContextCaching ?? false;
     this.sessionId = options.sessionId ?? `session-${Date.now()}`;
-    this.contextCache = contextCacheManager;
+    this._contextCache = contextCacheManager;
     
     debugLogger.info('OllamaChat initialized', {
       enableContextCaching: this.enableContextCaching,

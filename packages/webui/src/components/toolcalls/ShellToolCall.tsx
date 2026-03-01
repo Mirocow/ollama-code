@@ -7,7 +7,7 @@
  * Pure UI component - platform interactions via usePlatform hook
  */
 
-import type { FC } from 'react';
+import { memo, type FC } from 'react';
 import {
   ToolCallContainer,
   CopyButton,
@@ -288,10 +288,13 @@ const ShellToolCallImpl: FC<BaseToolCallProps & { variant: ShellVariant }> = ({
 /**
  * ShellToolCall - displays bash/execute command tool calls
  * Shows command input and output with IN/OUT cards
+ * Memoized to prevent unnecessary re-renders during streaming
  */
-export const ShellToolCall: FC<BaseToolCallProps> = (props) => {
+const ShellToolCallComponent: FC<BaseToolCallProps> = (props) => {
   const normalizedKind = props.toolCall.kind.toLowerCase();
   const variant: ShellVariant =
     normalizedKind === 'execute' ? 'execute' : 'bash';
   return <ShellToolCallImpl {...props} variant={variant} />;
 };
+
+export const ShellToolCall = memo(ShellToolCallComponent);

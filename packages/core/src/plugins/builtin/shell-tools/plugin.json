@@ -1,0 +1,13 @@
+{
+  "entry": "index.js",
+  "metadata": {
+    "id": "shell-tools",
+    "name": "Shell Tools",
+    "version": "1.0.0",
+    "description": "Shell command execution with safety features",
+    "author": "Ollama Code Team",
+    "builtin": true,
+    "tags": ["core", "shell", "execute"],
+    "enabledByDefault": true
+  }
+}
