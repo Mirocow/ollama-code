@@ -32,43 +32,36 @@ import { t } from '../../i18n/index.js';
 function extractModelSize(model: string): string | null {
   const lowerModel = model.toLowerCase();
   
-  // Skip common non-size suffixes
+  // Skip common non-size suffixes and try again
   const skipSuffixes = ['instruct', 'chat', 'base', 'preview', 'latest', 'quantized'];
-  if (skipSuffixes.some(suffix => lowerModel.endsWith(suffix))) {
-    // Try to extract size before the suffix
-    const beforeSuffix = lowerModel.replace(new RegExp(`[-:]?(${skipSuffixes.join('|')})$`), '');
-    return extractModelSize(beforeSuffix);
+  for (const suffix of skipSuffixes) {
+    if (lowerModel.endsWith('-' + suffix) || lowerModel.endsWith(':' + suffix)) {
+      return extractModelSize(lowerModel.slice(0, -(suffix.length + 1)));
+    }
   }
   
-  // Pattern 1: MoE models like 8x7b, 8x22b, 16x12b, a3.1b (A3.1B is a special MoE format)
-  const moeMatch = lowerModel.match(/(\d+(?:\.\d+)?x\d+(?:\.\d+)?b)|(a\d+(?:\.\d+)?b)/i);
+  // Pattern 1: MoE models like 8x7b, 8x22b, 16x12b
+  const moeMatch = lowerModel.match(/(\d+x\d+b)$/i);
   if (moeMatch) {
     return moeMatch[1].toLowerCase();
   }
   
-  // Pattern 2: Size after colon (Ollama format): model:14b, model:70b-q4
-  const colonMatch = lowerModel.match(/:(\d+(?:\.\d+)?b)(?:[-._]|$)/i);
+  // Pattern 2: Size after colon (Ollama format): model:14b, model:0.5b
+  const colonMatch = lowerModel.match(/:(\d+\.?\d*b)$/i);
   if (colonMatch) {
     return colonMatch[1].toLowerCase();
   }
   
-  // Pattern 3: Size in name with dash: llama3-70b, mistral-7b, qwen2.5-32b
-  // Match sizes like: 0.5b, 1.5b, 7b, 8b, 14b, 27b, 32b, 34b, 70b, 72b, 90b, 120b, 405b, 671b
-  const dashMatch = lowerModel.match(/[-_](\d+(?:\.\d+)?b)(?:[-._]|$)/i);
+  // Pattern 3: Size at end with dash: llama3-70b, mistral-7b
+  const dashMatch = lowerModel.match(/-(\d+\.?\d*b)$/i);
   if (dashMatch) {
     return dashMatch[1].toLowerCase();
   }
   
-  // Pattern 4: Size at end without separator: model70b, model14b
-  const endMatch = lowerModel.match(/(\d+(?:\.\d+)?b)$/i);
+  // Pattern 4: Size at very end: model70b
+  const endMatch = lowerModel.match(/(\d+\.?\d*b)$/i);
   if (endMatch) {
     return endMatch[1].toLowerCase();
-  }
-  
-  // Pattern 5: Size with quantization suffix: 14b-q4_0, 70b-q8_0
-  const quantMatch = lowerModel.match(/[:_-](\d+(?:\.\d+)?b)[_-](?:q|iq|fp|bf|fp16|bf16)/i);
-  if (quantMatch) {
-    return quantMatch[1].toLowerCase();
   }
   
   return null;
@@ -318,18 +311,14 @@ export const Header: React.FC<HeaderProps> = ({
               <Text color={theme.text.accent}>{modelSize}</Text>
             </>
           )}
-          {promptTokenCount && promptTokenCount > 0 && (
-            <>
-              <Text color={theme.text.secondary}> | </Text>
-              <Text color={theme.text.secondary}>[</Text>
-              <Text color={contextUsagePercentage > 0.9 ? theme.status.warning : theme.text.accent}>
-                {progressBar.filled}
-              </Text>
-              <Text color={theme.text.secondary}>{progressBar.empty}</Text>
-              <Text color={theme.text.secondary}>]</Text>
-              <Text color={theme.text.secondary}> {(contextUsagePercentage * 100).toFixed(1)}%</Text>
-            </>
-          )}
+          <Text color={theme.text.secondary}> | </Text>
+          <Text color={theme.text.secondary}>[</Text>
+          <Text color={contextUsagePercentage > 0.9 ? theme.status.warning : theme.text.accent}>
+            {progressBar.filled}
+          </Text>
+          <Text color={theme.text.secondary}>{progressBar.empty}</Text>
+          <Text color={theme.text.secondary}>]</Text>
+          <Text color={theme.text.secondary}> {(contextUsagePercentage * 100).toFixed(1)}%</Text>
         </Text>
         {/* Session ID line (if available) */}
         {sessionId && (
