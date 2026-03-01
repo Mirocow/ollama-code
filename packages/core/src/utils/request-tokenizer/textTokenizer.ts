@@ -35,7 +35,14 @@ export class TextTokenizer {
     return texts.map((text) => this.calculateTokensSync(text));
   }
 
-  private calculateTokensSync(text: string): number {
+  /**
+   * Synchronously calculate tokens for text content.
+   * Uses character-based estimation: ASCII = 0.25 tokens/char, non-ASCII = 1.1 tokens/char.
+   *
+   * @param text - The text to estimate tokens for
+   * @returns The estimated token count
+   */
+  calculateTokensSync(text: string): number {
     if (!text || text.length === 0) {
       return 0;
     }
