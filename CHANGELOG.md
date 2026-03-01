@@ -27,6 +27,7 @@ Added `React.memo` and `useMemo` to frequently re-rendering components:
 - `AppHeader` — Application header with memoized selectors
 - `MainContent` — Main content area with optimized rendering
 - `HistoryItemDisplay` — Individual history item rendering with memoized dimensions
+- `Composer` — Input area with memoized state selectors
 
 #### Performance Benefits
 
@@ -58,6 +59,7 @@ Added `React.memo` and `useMemo` to frequently re-rendering components:
 | `packages/cli/src/ui/components/AppHeader.tsx` | Added memo and useMemo |
 | `packages/cli/src/ui/components/MainContent.tsx` | Added memo, simplified rendering |
 | `packages/cli/src/ui/components/HistoryItemDisplay.tsx` | Added memo, memoized dimensions |
+| `packages/cli/src/ui/components/Composer.tsx` | Added memo, memoized state selectors |
 
 ---
 
