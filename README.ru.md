@@ -26,7 +26,9 @@
 ## Возможности
 
 - 🚀 **Полностью локальная работа** — все модели запускаются локально через Ollama
+- 💾 **Context Caching** — KV-cache reuse для 80-90% более быстрых диалогов
 - 💻 **CLI-интерфейс** — удобный терминальный интерфейс на базе Ink (React for CLI)
+- 🌐 **Web UI** — полнофункциональный Next.js веб-интерфейс с чатом, файловым менеджером, терминалом
 - 🔧 **Инструменты для кода** — чтение, редактирование, поиск файлов, выполнение команд
 - 🔌 **MCP поддержка** — интеграция с Model Context Protocol серверами
 - 🌐 **Веб-поиск** — интеграция с Tavily и Google Custom Search
@@ -39,6 +41,8 @@
 - 🌐 **API Tester** — тестирование REST API endpoints
 - 🏷️ **Алиасы инструментов** — короткие имена для инструментов (`run` → `run_shell_command`)
 - 🧠 **Самообучение** — автоматическое обучение правильным именам инструментов
+- 🔄 **Undo/Redo** — обратимые операции с command pattern
+- 🔌 **Plugin System** — динамическая загрузка инструментов
 
 ## Требования
 
@@ -76,6 +80,81 @@ npm run start -- "Объясни, как работает async/await в JavaScr
 # Режим отладки
 npm run debug
 ```
+
+### Web UI
+
+Ollama Code теперь включает полнофункциональный веб-интерфейс:
+
+```bash
+# Запуск Web UI (разработка)
+cd packages/web-app
+npm run dev
+
+# Запуск с поддержкой терминала
+npm run dev:server
+```
+
+**Возможности Web UI:**
+
+| Вкладка | Функции |
+|---------|---------|
+| **Chat** | Streaming ответы, выбор модели, управление сессиями |
+| **Files** | Файловый менеджер, Monaco editor, подсветка синтаксиса |
+| **Terminal** | Полноценный PTY терминал на xterm.js |
+
+**API Endpoints:**
+
+| Endpoint | Описание |
+|----------|----------|
+| `/api/models` | Список доступных моделей Ollama |
+| `/api/chat` | Чат со streaming |
+| `/api/generate` | Генерация со streaming |
+| `/api/fs` | Операции с файловой системой |
+| `/terminal` | WebSocket терминал |
+
+---
+
+## Новые возможности v0.13.0
+
+### Web UI — Полноценный Next.js интерфейс
+
+Полнофункциональное веб-приложение с тремя основными компонентами:
+
+| Компонент | Технология | Возможности |
+|-----------|------------|-------------|
+| **ChatInterface** | React + Zustand | Streaming, выбор модели, сохранение сессий |
+| **FileExplorer** | Monaco Editor | Подсветка синтаксиса, мультиязычность, автосохранение |
+| **TerminalEmulator** | xterm.js + node-pty | Полная PTY поддержка, resize, 256 цветов |
+
+### TSDoc документация API
+
+Комплексная документация API для всех пакетов:
+
+```typescript
+// Использование SDK
+import { query, createSdkMcpServer, tool } from '@ollama-code/sdk';
+
+const result = await query({
+  prompt: 'Объясни async/await',
+  model: 'llama3.2',
+});
+
+// MCP сервер
+const myTool = tool({
+  name: 'echo',
+  description: 'Вернуть сообщение',
+  parameters: { message: { type: 'string' } },
+  execute: async (params) => ({ echo: params.message }),
+});
+```
+
+### Технические улучшения
+
+- **TypeScript конфигурация**: Исправлены project references для monorepo
+- **HTTP клиент**: Завершена миграция fetch → axios
+- **Terminal Server**: WebSocket-based PTY с управлением сессиями
+
+---
 
 ## Новые возможности v0.11.0
 
@@ -374,6 +453,7 @@ ollama-code/
 ├── packages/
 │   ├── core/           # Ядро: Ollama клиент, инструменты, типы
 │   ├── cli/            # CLI интерфейс на базе Ink
+│   ├── web-app/        # Web UI: Next.js приложение (NEW)
 │   ├── webui/          # Веб-компоненты для UI
 │   └── sdk-typescript/ # SDK для программного использования
 ├── scripts/            # Скрипты сборки и запуска
@@ -385,13 +465,14 @@ ollama-code/
 
 ### Краткий справочник
 
-| Документ                                | Описание                      |
-| --------------------------------------- | ----------------------------- |
-| [FEATURES.ru.md](./docs/FEATURES.ru.md) | **Полный справочник функций** |
-| [TOOLS.ru.md](./docs/TOOLS.ru.md)       | **Справочник инструментов**   |
-| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Руководство по использованию  |
-| [EXAMPLES.md](./docs/EXAMPLES.md)       | Примеры использования         |
-| [OLLAMA_API.md](./docs/OLLAMA_API.md)   | Документация API              |
+| Документ                                | Описание                                  |
+| --------------------------------------- | ----------------------------------------- |
+| [WEB_UI.md](./docs/WEB_UI.md)           | **Документация Web UI (NEW)**             |
+| [FEATURES.ru.md](./docs/FEATURES.ru.md) | **Полный справочник функций**             |
+| [TOOLS.ru.md](./docs/TOOLS.ru.md)       | **Справочник инструментов**               |
+| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Руководство по использованию              |
+| [EXAMPLES.md](./docs/EXAMPLES.md)       | Примеры использования                     |
+| [OLLAMA_API.md](./docs/OLLAMA_API.md)   | Документация API                          |
 
 ### Английская документация (English Documentation)
 
