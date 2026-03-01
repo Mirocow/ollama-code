@@ -1,6 +1,6 @@
 {
   "name": "@ollama-code/webui",
-  "version": "0.10.5",
+  "version": "0.11.0",
   "description": "Shared UI components for Ollama Code packages",
   "type": "module",
   "main": "./dist/index.cjs",
