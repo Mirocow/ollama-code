@@ -241,10 +241,12 @@ class UiTelemetryService {
     cachedTokens: number,
     generatedTokens: number,
   ): void {
+    console.log('[DEBUG uiTelemetry] recordTokenUsage - promptTokens:', promptTokens, 'cachedTokens:', cachedTokens, 'generatedTokens:', generatedTokens);
     this.metrics.totalPromptTokens += promptTokens;
     this.metrics.totalCachedTokens += cachedTokens;
     this.metrics.totalGeneratedTokens += generatedTokens;
     this.lastPromptTokenCount = promptTokens;
+    console.log('[DEBUG uiTelemetry] lastPromptTokenCount set to:', this.lastPromptTokenCount);
 
     // Update nested metrics
     this.metrics.models.tokens.prompt += promptTokens;

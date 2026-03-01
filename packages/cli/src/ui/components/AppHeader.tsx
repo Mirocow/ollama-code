@@ -34,9 +34,10 @@ export const AppHeader = ({ version }: AppHeaderProps) => {
   // Get context window size from config or use default
   const contextWindowSize = contentGeneratorConfig?.contextWindowSize;
 
-  // Get cumulative prompt token count from session stats for context usage
-  // Using totalPromptTokens instead of lastPromptTokenCount for accurate context tracking
-  const promptTokenCount = sessionStats.stats.metrics.totalPromptTokens;
+  // Get current context token count from session stats
+  // lastPromptTokenCount contains the total context size (history + current request) from Ollama
+  const promptTokenCount = sessionStats.stats.lastPromptTokenCount;
+  console.log('[DEBUG AppHeader] promptTokenCount:', promptTokenCount, 'totalPromptTokens:', sessionStats.stats.metrics.totalPromptTokens);
 
   return (
     <Box flexDirection="column">
