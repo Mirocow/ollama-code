@@ -5,7 +5,7 @@
  */
 
 import type React from 'react';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { escapeAnsiCtrlCodes } from '../utils/textUtils.js';
 import type { HistoryItem } from '../types.js';
 import { UserMessage } from './messages/UserMessage.js';
@@ -48,6 +48,10 @@ interface HistoryItemDisplayProps {
   availableTerminalHeightGemini?: number;
 }
 
+/**
+ * HistoryItemDisplay component - renders individual history items
+ * Memoized to prevent unnecessary re-renders when other items change
+ */
 const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
   item,
   availableTerminalHeight,
@@ -61,8 +65,19 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
   availableTerminalHeightGemini,
 }) => {
   const itemForDisplay = useMemo(() => escapeAnsiCtrlCodes(item), [item]);
-  const contentWidth = terminalWidth - 4;
-  const boxWidth = mainAreaWidth || contentWidth;
+  
+  // Memoize computed dimensions
+  const dimensions = useMemo(() => {
+    const contentWidth = terminalWidth - 4;
+    const boxWidth = mainAreaWidth || contentWidth;
+    return { contentWidth, boxWidth };
+  }, [terminalWidth, mainAreaWidth]);
+
+  // Memoize terminal height for gemini/ollama messages
+  const effectiveHeight = useMemo(
+    () => availableTerminalHeightGemini ?? availableTerminalHeight,
+    [availableTerminalHeightGemini, availableTerminalHeight]
+  );
 
   return (
     <Box
@@ -82,40 +97,32 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
         <OllamaMessage
           text={itemForDisplay.text}
           isPending={isPending}
-          availableTerminalHeight={
-            availableTerminalHeightGemini ?? availableTerminalHeight
-          }
-          contentWidth={contentWidth}
+          availableTerminalHeight={effectiveHeight}
+          contentWidth={dimensions.contentWidth}
         />
       )}
       {itemForDisplay.type === 'ollama_content' && (
         <OllamaMessageContent
           text={itemForDisplay.text}
           isPending={isPending}
-          availableTerminalHeight={
-            availableTerminalHeightGemini ?? availableTerminalHeight
-          }
-          contentWidth={contentWidth}
+          availableTerminalHeight={effectiveHeight}
+          contentWidth={dimensions.contentWidth}
         />
       )}
       {itemForDisplay.type === 'ollama_thought' && (
         <OllamaThoughtMessage
           text={itemForDisplay.text}
           isPending={isPending}
-          availableTerminalHeight={
-            availableTerminalHeightGemini ?? availableTerminalHeight
-          }
-          contentWidth={contentWidth}
+          availableTerminalHeight={effectiveHeight}
+          contentWidth={dimensions.contentWidth}
         />
       )}
       {itemForDisplay.type === 'ollama_thought_content' && (
         <OllamaThoughtMessageContent
           text={itemForDisplay.text}
           isPending={isPending}
-          availableTerminalHeight={
-            availableTerminalHeightGemini ?? availableTerminalHeight
-          }
-          contentWidth={contentWidth}
+          availableTerminalHeight={effectiveHeight}
+          contentWidth={dimensions.contentWidth}
         />
       )}
       {itemForDisplay.type === 'info' && (
@@ -131,24 +138,24 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
         <RetryCountdownMessage text={itemForDisplay.text} />
       )}
       {itemForDisplay.type === 'about' && (
-        <AboutBox {...itemForDisplay.systemInfo} width={boxWidth} />
+        <AboutBox {...itemForDisplay.systemInfo} width={dimensions.boxWidth} />
       )}
       {itemForDisplay.type === 'help' && commands && (
-        <Help commands={commands} width={boxWidth} />
+        <Help commands={commands} width={dimensions.boxWidth} />
       )}
       {itemForDisplay.type === 'stats' && (
-        <StatsDisplay duration={itemForDisplay.duration} width={boxWidth} />
+        <StatsDisplay duration={itemForDisplay.duration} width={dimensions.boxWidth} />
       )}
       {itemForDisplay.type === 'model_stats' && (
-        <ModelStatsDisplay width={boxWidth} />
+        <ModelStatsDisplay width={dimensions.boxWidth} />
       )}
       {itemForDisplay.type === 'tool_stats' && (
-        <ToolStatsDisplay width={boxWidth} />
+        <ToolStatsDisplay width={dimensions.boxWidth} />
       )}
       {itemForDisplay.type === 'quit' && (
         <SessionSummaryDisplay
           duration={itemForDisplay.duration}
-          width={boxWidth}
+          width={dimensions.boxWidth}
         />
       )}
       {itemForDisplay.type === 'tool_group' && (
@@ -156,7 +163,7 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
           toolCalls={itemForDisplay.tools}
           groupId={itemForDisplay.id}
           availableTerminalHeight={availableTerminalHeight}
-          contentWidth={contentWidth}
+          contentWidth={dimensions.contentWidth}
           isFocused={isFocused}
           activeShellPtyId={activeShellPtyId}
           embeddedShellFocused={embeddedShellFocused}
@@ -169,7 +176,7 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
       {itemForDisplay.type === 'extensions_list' && <ExtensionsList />}
       {itemForDisplay.type === 'tools_list' && (
         <ToolsList
-          contentWidth={contentWidth}
+          contentWidth={dimensions.contentWidth}
           tools={itemForDisplay.tools}
           showDescriptions={itemForDisplay.showDescriptions}
         />
@@ -184,5 +191,8 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
   );
 };
 
-// Export alias for backward compatibility
-export { HistoryItemDisplayComponent as HistoryItemDisplay };
+/**
+ * Memoized HistoryItemDisplay component
+ * Only re-renders when item props actually change
+ */
+export const HistoryItemDisplay = memo(HistoryItemDisplayComponent);

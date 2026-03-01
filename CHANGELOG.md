@@ -25,12 +25,14 @@ Added `React.memo` and `useMemo` to frequently re-rendering components:
 
 - `Footer` — Status bar (already memoized, enhanced)
 - `AppHeader` — Application header with memoized selectors
-- `MainContent` — Main content area with optimized history rendering
+- `MainContent` — Main content area with optimized rendering
+- `HistoryItemDisplay` — Individual history item rendering with memoized dimensions
 
 #### Performance Benefits
 
 - **Reduced re-renders**: Components only re-render when their specific context changes
-- **Memoized history items**: History rendering is cached and only updates when history changes
+- **Memoized history items**: Each history item is independently memoized
+- **Memoized dimensions**: Layout calculations cached to prevent recalculation
 - **Selective subscriptions**: Components can subscribe to specific state slices
 
 ### Documentation Updates
@@ -48,6 +50,14 @@ Added `React.memo` and `useMemo` to frequently re-rendering components:
 | `packages/cli/src/ui/contexts/HistoryContext.tsx` | History state management |
 | `packages/cli/src/ui/contexts/LoadingContext.tsx` | Loading state management |
 | `packages/cli/src/ui/contexts/ConfirmationContext.tsx` | Confirmation requests |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `packages/cli/src/ui/components/AppHeader.tsx` | Added memo and useMemo |
+| `packages/cli/src/ui/components/MainContent.tsx` | Added memo, simplified rendering |
+| `packages/cli/src/ui/components/HistoryItemDisplay.tsx` | Added memo, memoized dimensions |
 
 ---
 
