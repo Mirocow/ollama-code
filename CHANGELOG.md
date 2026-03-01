@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.10.8
+
+### New Features
+
+#### Context Progress Bar in Header
+
+- **Visual Token Usage Display**: The header now shows a progress bar indicating context token usage relative to the model's context window
+- **Model Size Indicator**: Displays the model's context window size (e.g., "128K", "32K") extracted from model metadata
+- **Full-Width Progress Bar**: Progress bar now spans the full width of the info panel for better visibility
+- **Cumulative Token Tracking**: Progress bar accurately shows cumulative context tokens throughout the session
+
+#### Model Capabilities Display
+
+- **Capability Icons**: Visual indicators for model capabilities (vision, tools, streaming support)
+- **Context Information**: Shows model context window and current usage percentage
+- **Enhanced Model Metadata**: Better extraction of model context sizes for various formats (128K, 32K, 8K, etc.)
+
+#### System Prompt & Tool Optimization
+
+- **Streamlined System Prompts**: Optimized system prompts for better model performance
+- **Tool Call Format Instructions**: Added automatic tool call format instructions for models without native tool support
+- **Priority 3 Features**: Implemented streaming, caching, and observability improvements
+
+### Improvements
+
+#### Command Cleanup
+
+Removed unused commands to streamline the CLI:
+
+| Removed Command | Alternative |
+| --------------- | ----------- |
+| `/bug` | Use direct message |
+| `/docs` | See `docs/` folder |
+| `/help` | See documentation |
+| `/setup-github` | Configure manually |
+
+Merged commands for better organization:
+
+| Merged Commands | New Command |
+| --------------- | ----------- |
+| `/stats` + `/about` | `/info` |
+
+#### Technical Improvements
+
+- Fixed progress bar not updating: token usage now properly recorded in telemetry service
+- Fixed AppHeader component placement for dynamic updates
+- Replaced `require()` with ES module imports in development tools
+- Removed debug logging for cleaner output
+
+### Bug Fixes
+
+- Progress bar now correctly shows cumulative context tokens
+- Model size extraction works with more model name formats
+- Header component updates dynamically during streaming
+
 ## 0.10.7
 
 ### New Features
