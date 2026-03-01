@@ -77,6 +77,35 @@ npm run start -- "Explain how async/await works in JavaScript"
 npm run debug
 ```
 
+## What's New in v0.10.8
+
+### Context Progress Bar & Model Info Display
+
+The header now provides real-time context usage visualization:
+
+| Feature                      | Description                                              |
+| ---------------------------- | -------------------------------------------------------- |
+| **Token Progress Bar**       | Visual indicator of context window usage                 |
+| **Model Context Size**       | Shows model's context window (128K, 32K, etc.)           |
+| **Capability Icons**         | Visual indicators for vision, tools, streaming support   |
+| **Full-Width Display**       | Progress bar spans full info panel width                 |
+
+### Command Cleanup
+
+Streamlined CLI by removing unused commands:
+
+- Removed: `/bug`, `/docs`, `/help`, `/setup-github`
+- Merged: `/stats` + `/about` → `/info`
+
+### Technical Improvements
+
+- Optimized system prompts for better model performance
+- Added tool call format instructions for models without native support
+- Fixed progress bar cumulative token tracking
+- ES module imports in development tools
+
+---
+
 ## What's New in v0.10.7
 
 ### Self-Learning System for Tool Calling
