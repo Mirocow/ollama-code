@@ -308,9 +308,36 @@ await pluginManager.enablePlugin('my-plugin');
 | ------------------------ | --------- | ------ | ------------ |
 | Memory leaks в streaming | P0        | 3d     | ✅ Завершено |
 | AbortController cleanup  | P0        | 2d     | ✅ Завершено |
-| React мемоизация         | P1        | 3d     | 🔴 Не начато |
+| React мемоизация         | P1        | 3d     | 🟡 В процессе |
 | Virtual scrolling        | P2        | 3d     | 🔴 Не начато |
 | Token counting fallback  | P1        | 1d     | ✅ Завершено |
+
+#### React Мемоизация — Детали
+
+**Статус:** 🟡 В процессе
+
+**Выполнено:**
+- ✅ Созданы специализированные контексты:
+  - `DialogStateContext` — управление состоянием диалогов
+  - `TerminalContext` — размеры терминала
+  - `InputStateContext` — состояние ввода
+  - `HistoryContext` — история сообщений
+  - `LoadingContext` — состояние загрузки
+  - `ConfirmationContext` — запросы подтверждений
+- ✅ Мемоизированы компоненты:
+  - `Footer` — статус бар
+  - `AppHeader` — заголовок приложения
+  - `MainContent` — основная область контента
+
+**В процессе:**
+- 🟡 Оптимизация `HistoryItemDisplay` — тяжелый компонент рендеринга сообщений
+- 🟡 Мемоизация `InputPrompt` — компонент ввода
+- 🟡 Оптимизация селекторов в компонентах
+
+**План:**
+- Перевести компоненты на новые контексты
+- Добавить `useMemo` для вычисляемых значений
+- Оптимизировать колбэсы с `useCallback`
 
 ---
 
@@ -421,7 +448,7 @@ await pluginManager.enablePlugin('my-plugin');
 
 ## Заключение
 
-Ollama Code v0.13.0 включает ключевые архитектурные улучшения:
+Ollama Code v0.14.0 включает ключевые архитектурные улучшения:
 
 1. **Zustand** — Оптимизация React-рендеринга ✅
 2. **Event Bus** — Слабая связность компонентов ✅
@@ -429,11 +456,12 @@ Ollama Code v0.13.0 включает ключевые архитектурные
 4. **Plugin System v2** — PluginLoader + CLI + Dynamic loading ✅
 5. **Context Caching** — KV-cache reuse для производительности ✅
 6. **Axios HTTP Client** — Interceptors, retry, timeout ✅
+7. **React Мемоизация** — Специализированные контексты + memo 🟡
 
-Следующие шаги — исправление memory leaks и Security sandbox для плагинов.
+Следующие шаги — завершение React мемоизации и Plugin marketplace.
 
 ---
 
-_Document version: 3.2.0_
-_Last updated: 2025-03-01_
+_Document version: 3.3.0_
+_Last updated: 2025-03-15_
 _Author: Architecture Team_
