@@ -66,7 +66,6 @@ const MIGRATION_MAP: Record<string, string> = {
   allowMCPServers: 'mcp.allowed',
   autoAccept: 'tools.autoAccept',
   autoConfigureMaxOldSpaceSize: 'advanced.autoConfigureMemory',
-  bugCommand: 'advanced.bugCommand',
   chatCompression: 'model.chatCompression',
   checkpointing: 'general.checkpointing',
   coreTools: 'tools.core',

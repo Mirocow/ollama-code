@@ -7,21 +7,18 @@
 import type { ICommandLoader } from './types.js';
 import type { SlashCommand } from '../ui/commands/types.js';
 import type { Config } from '@ollama-code/ollama-code-core';
-import { aboutCommand } from '../ui/commands/aboutCommand.js';
 import { agentsCommand } from '../ui/commands/agentsCommand.js';
 import { approvalModeCommand } from '../ui/commands/approvalModeCommand.js';
 import { authCommand } from '../ui/commands/authCommand.js';
-import { bugCommand } from '../ui/commands/bugCommand.js';
 import { clearCommand } from '../ui/commands/clearCommand.js';
 import { compressCommand } from '../ui/commands/compressCommand.js';
 import { copyCommand } from '../ui/commands/copyCommand.js';
-import { docsCommand } from '../ui/commands/docsCommand.js';
 import { directoryCommand } from '../ui/commands/directoryCommand.js';
 import { editorCommand } from '../ui/commands/editorCommand.js';
 import { exportCommand } from '../ui/commands/exportCommand.js';
 import { extensionsCommand } from '../ui/commands/extensionsCommand.js';
-import { helpCommand } from '../ui/commands/helpCommand.js';
 import { ideCommand } from '../ui/commands/ideCommand.js';
+import { infoCommand } from '../ui/commands/infoCommand.js';
 import { initCommand } from '../ui/commands/initCommand.js';
 import { languageCommand } from '../ui/commands/languageCommand.js';
 import { mcpCommand } from '../ui/commands/mcpCommand.js';
@@ -33,13 +30,11 @@ import { restoreCommand } from '../ui/commands/restoreCommand.js';
 import { resumeCommand } from '../ui/commands/resumeCommand.js';
 import { settingsCommand } from '../ui/commands/settingsCommand.js';
 import { skillsCommand } from '../ui/commands/skillsCommand.js';
-import { statsCommand } from '../ui/commands/statsCommand.js';
 import { summaryCommand } from '../ui/commands/summaryCommand.js';
 import { terminalSetupCommand } from '../ui/commands/terminalSetupCommand.js';
 import { themeCommand } from '../ui/commands/themeCommand.js';
 import { toolsCommand } from '../ui/commands/toolsCommand.js';
 import { vimCommand } from '../ui/commands/vimCommand.js';
-import { setupGithubCommand } from '../ui/commands/setupGithubCommand.js';
 
 /**
  * Loads the core, hard-coded slash commands that are an integral part
@@ -57,21 +52,18 @@ export class BuiltinCommandLoader implements ICommandLoader {
    */
   async loadCommands(_signal: AbortSignal): Promise<SlashCommand[]> {
     const allDefinitions: Array<SlashCommand | null> = [
-      aboutCommand,
       agentsCommand,
       approvalModeCommand,
       authCommand,
-      bugCommand,
       clearCommand,
       compressCommand,
       copyCommand,
-      docsCommand,
       directoryCommand,
       editorCommand,
       exportCommand,
       extensionsCommand,
-      helpCommand,
       await ideCommand(),
+      infoCommand,
       initCommand,
       languageCommand,
       mcpCommand,
@@ -82,13 +74,11 @@ export class BuiltinCommandLoader implements ICommandLoader {
       restoreCommand(this.config),
       resumeCommand,
       skillsCommand,
-      statsCommand,
       summaryCommand,
       themeCommand,
       toolsCommand,
       settingsCommand,
       vimCommand,
-      setupGithubCommand,
       terminalSetupCommand,
     ];
 

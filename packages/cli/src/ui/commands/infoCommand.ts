@@ -1,10 +1,14 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { HistoryItemStats } from '../types.js';
+/**
+ * Info command - combines session stats and system information
+ */
+
+import type { HistoryItemStats, HistoryItemAbout } from '../types.js';
 import { MessageType } from '../types.js';
 import { formatDuration } from '../utils/formatters.js';
 import {
@@ -12,36 +16,37 @@ import {
   type SlashCommand,
   CommandKind,
 } from './types.js';
+import { getExtendedSystemInfo } from '../../utils/systemInfo.js';
 import { t } from '../../i18n/index.js';
 
-export const statsCommand: SlashCommand = {
-  name: 'stats',
-  altNames: ['usage'],
+export const infoCommand: SlashCommand = {
+  name: 'info',
+  altNames: ['status', 'about', 'stats', 'usage'],
   get description() {
-    return t('check session stats. Usage: /stats [model|tools]');
+    return t('Show session stats and system information');
   },
   kind: CommandKind.BUILT_IN,
-  action: (context: CommandContext) => {
+  action: async (context: CommandContext) => {
+    // Show session stats
     const now = new Date();
     const { sessionStartTime } = context.session.stats;
-    if (!sessionStartTime) {
-      context.ui.addItem(
-        {
-          type: MessageType.ERROR,
-          text: t('Session start time is unavailable, cannot calculate stats.'),
-        },
-        Date.now(),
-      );
-      return;
+
+    if (sessionStartTime) {
+      const wallDuration = now.getTime() - sessionStartTime.getTime();
+      const statsItem: HistoryItemStats = {
+        type: MessageType.STATS,
+        duration: formatDuration(wallDuration),
+      };
+      context.ui.addItem(statsItem, Date.now());
     }
-    const wallDuration = now.getTime() - sessionStartTime.getTime();
 
-    const statsItem: HistoryItemStats = {
-      type: MessageType.STATS,
-      duration: formatDuration(wallDuration),
+    // Show system info
+    const systemInfo = await getExtendedSystemInfo(context);
+    const aboutItem: Omit<HistoryItemAbout, 'id'> = {
+      type: MessageType.ABOUT,
+      systemInfo,
     };
-
-    context.ui.addItem(statsItem, Date.now());
+    context.ui.addItem(aboutItem, Date.now());
   },
   subCommands: [
     {
