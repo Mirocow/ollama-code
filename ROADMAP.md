@@ -306,8 +306,8 @@ await pluginManager.enablePlugin('my-plugin');
 
 | Задача                   | Приоритет | Оценка | Статус       |
 | ------------------------ | --------- | ------ | ------------ |
-| Memory leaks в streaming | P0        | 3d     | 🔴 Не начато |
-| AbortController cleanup  | P0        | 2d     | 🔴 Не начато |
+| Memory leaks в streaming | P0        | 3d     | ✅ Завершено |
+| AbortController cleanup  | P0        | 2d     | ✅ Завершено |
 | React мемоизация         | P1        | 3d     | 🔴 Не начато |
 | Virtual scrolling        | P2        | 3d     | 🔴 Не начато |
 | Token counting fallback  | P1        | 1d     | 🔴 Не начато |
