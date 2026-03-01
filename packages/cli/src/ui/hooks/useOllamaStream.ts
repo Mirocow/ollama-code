@@ -33,6 +33,8 @@ import {
   promptIdContext,
   ToolConfirmationOutcome,
   uiTelemetryService,
+  TextTokenizer,
+  partToString,
 } from '@ollama-code/ollama-code-core';
 import type {
   HistoryItem,
@@ -132,6 +134,9 @@ export const useOllamaStream = (
     null,
   );
   const processedMemoryToolsRef = useRef<Set<string>>(new Set());
+  // Store prompt text for token estimation fallback
+  const currentPromptTextRef = useRef<string>('');
+  const textTokenizer = useMemo(() => new TextTokenizer(), []);
   const {
     startNewPrompt,
     getPromptCount,
@@ -732,7 +737,7 @@ export const useOllamaStream = (
       // will keep the last known value or use estimated tokens
       const promptTokens = usageMetadata?.promptTokenCount;
       const generatedTokens = usageMetadata?.candidatesTokenCount || 0;
-      
+
       // If we have usageMetadata with prompt tokens, record them normally
       if (promptTokens && promptTokens > 0) {
         uiTelemetryService.recordTokenUsage(
@@ -743,17 +748,26 @@ export const useOllamaStream = (
         );
       } else {
         // Fallback: Ollama didn't return prompt_eval_count
-        // Record with fallback - this keeps the previous prompt token count
-        // and only updates generated tokens
-        debugLogger.warn(
-          'No promptTokenCount in Finished event - using fallback token tracking',
-          { generatedTokens },
+        // Use TextTokenizer to estimate tokens from the stored prompt text
+        const promptText = currentPromptTextRef.current;
+        const estimatedTokens = promptText
+          ? textTokenizer.calculateTokensSync(promptText)
+          : undefined;
+
+        debugLogger.info(
+          'No promptTokenCount in Finished event - using fallback token estimation',
+          {
+            generatedTokens,
+            estimatedTokens,
+            promptTextLength: promptText?.length,
+          },
         );
+
         uiTelemetryService.recordTokenUsageWithFallback(
           model,
           promptTokens,
           generatedTokens,
-          undefined, // No estimation available at this point
+          estimatedTokens,
         );
       }
 
@@ -796,7 +810,7 @@ export const useOllamaStream = (
       }
       clearRetryCountdown();
     },
-    [addItem, clearRetryCountdown, config],
+    [addItem, clearRetryCountdown, config, textTokenizer],
   );
 
   const handleChatCompressionEvent = useCallback(
@@ -1063,6 +1077,9 @@ export const useOllamaStream = (
         }
 
         const finalQueryToSend = queryToSend;
+
+        // Store prompt text for token estimation fallback
+        currentPromptTextRef.current = partToString(finalQueryToSend);
 
         if (!options?.isContinuation) {
           // trigger new prompt event for session stats in CLI
