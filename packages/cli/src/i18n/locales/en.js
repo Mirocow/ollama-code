@@ -25,6 +25,24 @@ export default {
   'Token Budget': 'Token Budget',
   'remaining': 'remaining',
   'Reserved': 'Reserved',
+  'tokens': 'tokens',
+
+  // Model capabilities
+  'Features': 'Features',
+  'Tools': 'Tools',
+  'Thinking': 'Thinking',
+  'Vision': 'Vision',
+  'Structured Output': 'Structured Output',
+  'Basic': 'Basic',
+  'Unknown': 'Unknown',
+
+  // Model dialog
+  'Select Model': 'Select Model',
+  'Current (effective) configuration': 'Current (effective) configuration',
+  '(default: http://localhost:11434)': '(default: http://localhost:11434)',
+  '(set)': '(set)',
+  '(optional)': '(optional)',
+  '(Press Esc to close)': '(Press Esc to close)',
 
   // Common
   '? for shortcuts': '? for shortcuts',

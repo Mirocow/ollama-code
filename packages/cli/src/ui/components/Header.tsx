@@ -79,6 +79,12 @@ export const Header: React.FC<HeaderProps> = ({
   if (capabilities.thinking) {
     capabilityBadges.push('🧠');
   }
+  if (capabilities.vision) {
+    capabilityBadges.push('📷');
+  }
+  if (capabilities.structuredOutput) {
+    capabilityBadges.push('📋');
+  }
   const capabilitiesText =
     capabilityBadges.length > 0 ? ` ${capabilityBadges.join(' ')}` : '';
 

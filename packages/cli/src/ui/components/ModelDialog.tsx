@@ -15,6 +15,8 @@ import {
   type ContentGeneratorConfig,
   type ContentGeneratorConfigSource,
   type ContentGeneratorConfigSources,
+  getModelCapabilities,
+  tokenLimit,
 } from '@ollama-code/ollama-code-core';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { theme } from '../semantic-colors.js';
@@ -174,6 +176,54 @@ function ConfigRow({
       ) : null}
     </Box>
   );
+}
+
+/**
+ * Format context window size for display
+ */
+function formatContextSize(size: number | undefined): string {
+  if (!size) return t('Unknown');
+  if (size >= 1_000_000) {
+    return `${(size / 1_000_000).toFixed(1)}M`;
+  }
+  if (size >= 1_000) {
+    return `${(size / 1_000).toFixed(0)}K`;
+  }
+  return size.toString();
+}
+
+/**
+ * Get capabilities badges for a model
+ */
+function getCapabilityBadges(modelName: string): string {
+  const capabilities = getModelCapabilities(modelName);
+  const badges: string[] = [];
+  if (capabilities.tools) {
+    badges.push('🔧');
+  }
+  if (capabilities.thinking) {
+    badges.push('🧠');
+  }
+  if (capabilities.vision) {
+    badges.push('📷');
+  }
+  if (capabilities.structuredOutput) {
+    badges.push('📋');
+  }
+  return badges.length > 0 ? badges.join(' ') : '';
+}
+
+/**
+ * Get capabilities description for a model
+ */
+function getCapabilityDescription(modelName: string): string {
+  const capabilities = getModelCapabilities(modelName);
+  const parts: string[] = [];
+  if (capabilities.tools) parts.push(t('Tools'));
+  if (capabilities.thinking) parts.push(t('Thinking'));
+  if (capabilities.vision) parts.push(t('Vision'));
+  if (capabilities.structuredOutput) parts.push(t('Structured Output'));
+  return parts.length > 0 ? parts.join(', ') : t('Basic');
 }
 
 export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
@@ -390,6 +440,12 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
 
   const hasModels = MODEL_OPTIONS.length > 0;
 
+  // Get current model info
+  const currentModelId = effectiveConfig?.model ?? config?.getModel?.() ?? '';
+  const contextSize = effectiveConfig?.contextWindowSize ?? tokenLimit(currentModelId, 'input');
+  const capabilityBadges = getCapabilityBadges(currentModelId);
+  const capabilityDesc = getCapabilityDescription(currentModelId);
+
   return (
     <Box
       borderStyle="round"
@@ -408,8 +464,32 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
           <ConfigRow label="AuthType" value={authType} />
           <ConfigRow
             label="Model"
-            value={effectiveConfig?.model ?? config?.getModel?.() ?? ''}
+            value={
+              <Text>
+                <Text>{currentModelId}</Text>
+                {capabilityBadges && (
+                  <Text color={theme.text.accent}> {capabilityBadges}</Text>
+                )}
+              </Text>
+            }
             badge={formatSourceBadge(sources['model'])}
+          />
+          <ConfigRow
+            label={t('Context')}
+            value={
+              <Text>
+                <Text color={theme.text.accent} bold>
+                  {formatContextSize(contextSize)}
+                </Text>
+                <Text color={theme.text.secondary}> {t('tokens')}</Text>
+              </Text>
+            }
+          />
+          <ConfigRow
+            label={t('Features')}
+            value={
+              <Text color={theme.text.secondary}>{capabilityDesc}</Text>
+            }
           />
 
           {authType === AuthType.USE_OLLAMA && (
