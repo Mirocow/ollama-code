@@ -5,7 +5,8 @@
  */
 
 import { execSync } from 'node:child_process';
-import { ProxyAgent } from 'undici';
+import axios from 'axios';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { createDebugLogger } from '@ollama-code/ollama-code-core';
 
 const debugLogger = createDebugLogger('GIT');
@@ -59,28 +60,19 @@ export const getLatestGitHubRelease = async (
   proxy?: string,
 ): Promise<string> => {
   try {
-    const controller = new AbortController();
-
     const endpoint = `https://api.github.com/repos/ollama-code/ollama-code-action/releases/latest`;
 
-    const response = await fetch(endpoint, {
-      method: 'GET',
+    const response = await axios.get(endpoint, {
       headers: {
         Accept: 'application/vnd.github+json',
         'Content-Type': 'application/json',
         'X-GitHub-Api-Version': '2022-11-28',
       },
-      dispatcher: proxy ? new ProxyAgent(proxy) : undefined,
-      signal: AbortSignal.any([AbortSignal.timeout(30_000), controller.signal]),
-    } as RequestInit);
+      timeout: 30000,
+      ...(proxy ? { httpsAgent: new HttpsProxyAgent(proxy) } : {}),
+    });
 
-    if (!response.ok) {
-      throw new Error(
-        `Invalid response code: ${response.status} - ${response.statusText}`,
-      );
-    }
-
-    const releaseTag = (await response.json()).tag_name;
+    const releaseTag = response.data?.tag_name;
     if (!releaseTag) {
       throw new Error(`Response did not include tag_name field`);
     }

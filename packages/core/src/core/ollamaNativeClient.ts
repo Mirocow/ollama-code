@@ -14,7 +14,6 @@
 import type { Config } from '../config/config.js';
 import {
   OllamaApiError,
-  OllamaConnectionError,
   OllamaTimeoutError,
   OllamaAbortError,
   OllamaStreamingError,
@@ -831,14 +830,14 @@ export class OllamaNativeClient {
       }
     }
 
-    const requestBody = JSON.stringify({
+    const requestBody = {
       ...(body as Record<string, unknown>),
       stream: true,
-    });
+    };
 
     debugLog('info', 'Starting streaming request', {
       url,
-      bodySize: `${(requestBody.length / 1024).toFixed(1)}KB`,
+      bodySize: `${(JSON.stringify(requestBody).length / 1024).toFixed(1)}KB`,
       timeout: this.timeout,
       hasExternalSignal: !!externalSignal,
       externalSignalAborted: externalSignal?.aborted,
@@ -864,47 +863,37 @@ export class OllamaNativeClient {
     const responseChunks: T[] = [];
     let responseError: Error | undefined;
 
-    let response: Response;
     try {
       const fetchStartTime = Date.now();
-      response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/x-ndjson',
+      const response = await this.httpClient.post<import('stream').Readable>(
+        endpoint,
+        requestBody,
+        {
+          responseType: 'stream',
+          signal: combinedSignal,
+          headers: {
+            Accept: 'application/x-ndjson',
+          },
         },
-        body: requestBody,
-        signal: combinedSignal,
-      });
+      );
       const fetchDuration = Date.now() - fetchStartTime;
 
-      debugLog('info', 'Fetch response received', {
+      debugLog('info', 'Axios streaming response received', {
         status: response.status,
-        ok: response.ok,
-        contentType: response.headers.get('content-type'),
+        statusText: response.statusText,
+        contentType: response.headers['content-type'],
         fetchDuration: `${fetchDuration}ms`,
       });
-    } catch (fetchError) {
-      responseError =
-        fetchError instanceof Error
-          ? fetchError
-          : new Error(String(fetchError));
-      debugLog('error', 'Fetch request failed', {
-        error:
-          fetchError instanceof Error ? fetchError.message : String(fetchError),
-        name: fetchError instanceof Error ? fetchError.name : 'Unknown',
-      });
-      // Log the error to API logger
-      apiLogger
-        .logInteraction(requestLogData, undefined, responseError)
-        .catch(() => {});
-      throw fetchError;
-    }
 
-    try {
-      if (!response.ok) {
-        const errorText = await response.text();
+      // Check for non-OK status
+      if (response.status < 200 || response.status >= 300) {
         let errorMessage = `Ollama API error: ${response.status} ${response.statusText}`;
+        // Try to read error from stream
+        const chunks: Buffer[] = [];
+        for await (const chunk of response.data) {
+          chunks.push(chunk);
+        }
+        const errorText = Buffer.concat(chunks).toString('utf-8');
         try {
           const errorJson = JSON.parse(errorText);
           if (errorJson.error) {
@@ -918,7 +907,6 @@ export class OllamaNativeClient {
           error: errorMessage,
         });
         responseError = new Error(errorMessage);
-        // Log the error to API logger
         apiLogger
           .logInteraction(
             requestLogData,
@@ -929,53 +917,29 @@ export class OllamaNativeClient {
         throw detectOllamaError(new Error(errorMessage), {});
       }
 
-      debugLog('debug', 'Getting reader from response body...');
-      const reader = response.body?.getReader();
-      if (!reader) {
-        debugLog('error', 'Response body is not readable');
-        responseError = new OllamaConnectionError(
-          'Response body is not readable',
-        );
-        apiLogger
-          .logInteraction(requestLogData, undefined, responseError)
-          .catch(() => {});
-        throw responseError;
-      }
-      debugLog('debug', 'Reader obtained, starting to read chunks...');
+      // Process the stream
+      const stream = response.data;
+      let buffer = '';
+      let chunkCount = 0;
+      let bytesRead = 0;
 
-      // Wrap reader operations in try-finally to ensure cleanup on abort/error
-      try {
-        const decoder = new TextDecoder();
-        let buffer = '';
-        let chunkCount = 0;
-        let bytesRead = 0;
-
-        while (true) {
-          debugLog('debug', 'Waiting for next chunk...');
-          const { done, value } = await reader.read();
-
-          if (done) {
-            debugLog('info', 'Streaming completed', {
-              totalChunks: chunkCount,
-              totalBytes: bytesRead,
-            });
-            break;
-          }
-
+      // Handle stream events
+      await new Promise<void>((resolve, reject) => {
+        stream.on('data', (chunk: Buffer) => {
           // Refresh timeout on each chunk to handle long-running generations
           refreshTimeout();
           chunkCount++;
-          bytesRead += value?.length ?? 0;
+          bytesRead += chunk.length;
 
           // Log chunk details for debugging (first 5 and every 10th)
           if (chunkCount <= 5 || chunkCount % 10 === 0) {
             debugLog('debug', `Received chunk #${chunkCount}`, {
-              size: value?.length ?? 0,
+              size: chunk.length,
               totalBytes: bytesRead,
             });
           }
 
-          buffer += decoder.decode(value, { stream: true });
+          buffer += chunk.toString('utf-8');
           const lines = buffer.split('\n');
           buffer = lines.pop() ?? '';
 
@@ -998,7 +962,9 @@ export class OllamaNativeClient {
                       responseError,
                     )
                     .catch(() => {});
-                  throw responseError;
+                  reject(responseError);
+                  stream.destroy();
+                  return;
                 }
 
                 // Log first few parsed chunks for debugging
@@ -1042,7 +1008,9 @@ export class OllamaNativeClient {
               } catch (parseError) {
                 // If it's already an OllamaStreamingError, re-throw it
                 if (parseError instanceof OllamaStreamingError) {
-                  throw parseError;
+                  reject(parseError);
+                  stream.destroy();
+                  return;
                 }
                 // Skip malformed JSON lines but log them
                 debugLog('warn', 'Skipping malformed JSON line', {
@@ -1051,60 +1019,76 @@ export class OllamaNativeClient {
               }
             }
           }
-        }
+        });
 
-        // Process any remaining data
-        if (buffer.trim()) {
-          try {
-            const parsed = JSON.parse(buffer) as T;
-
-            // Check for error in final chunk
-            if (parsed && typeof parsed === 'object' && 'error' in parsed) {
-              const errorMsg = (parsed as { error: string }).error;
-              responseError = new OllamaStreamingError(errorMsg, parsed);
-              apiLogger
-                .logInteraction(
-                  requestLogData,
-                  { chunks: responseChunks, error: errorMsg },
-                  responseError,
-                )
-                .catch(() => {});
-              throw responseError;
-            }
-
-            responseChunks.push(parsed);
-            callback(parsed);
-          } catch (parseError) {
-            if (parseError instanceof OllamaStreamingError) {
-              throw parseError;
-            }
-            // Skip malformed JSON
-            debugLog('warn', 'Skipping malformed JSON in final buffer', {
-              buffer: buffer.slice(0, 100),
-            });
-          }
-        }
-
-        // Log the complete response to API logger
-        apiLogger
-          .logInteraction(requestLogData, {
-            type: 'streaming_response',
-            totalChunks: responseChunks.length,
-            chunks: responseChunks,
-          })
-          .catch(() => {
-            // Ignore logging errors
+        stream.on('end', () => {
+          debugLog('info', 'Streaming completed', {
+            totalChunks: chunkCount,
+            totalBytes: bytesRead,
           });
-      } finally {
-        // Always release the reader lock to prevent memory leaks
-        // Some mock readers may not have releaseLock, so check first
-        if (reader && typeof reader.releaseLock === 'function') {
-          reader.releaseLock();
-        }
-      }
+
+          // Process any remaining data
+          if (buffer.trim()) {
+            try {
+              const parsed = JSON.parse(buffer) as T;
+
+              // Check for error in final chunk
+              if (parsed && typeof parsed === 'object' && 'error' in parsed) {
+                const errorMsg = (parsed as { error: string }).error;
+                responseError = new OllamaStreamingError(errorMsg, parsed);
+                apiLogger
+                  .logInteraction(
+                    requestLogData,
+                    { chunks: responseChunks, error: errorMsg },
+                    responseError,
+                  )
+                  .catch(() => {});
+                reject(responseError);
+                return;
+              }
+
+              responseChunks.push(parsed);
+              callback(parsed);
+            } catch (parseError) {
+              if (parseError instanceof OllamaStreamingError) {
+                reject(parseError);
+                return;
+              }
+              // Skip malformed JSON
+              debugLog('warn', 'Skipping malformed JSON in final buffer', {
+                buffer: buffer.slice(0, 100),
+              });
+            }
+          }
+
+          // Log the complete response to API logger
+          apiLogger
+            .logInteraction(requestLogData, {
+              type: 'streaming_response',
+              totalChunks: responseChunks.length,
+              chunks: responseChunks,
+            })
+            .catch(() => {
+              // Ignore logging errors
+            });
+
+          resolve();
+        });
+
+        stream.on('error', (error: Error) => {
+          debugLog('error', 'Stream error', {
+            error: error.message,
+          });
+          reject(error);
+        });
+      });
     } catch (error) {
       // Handle timeout
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (
+        (error as Error).name === 'AbortError' ||
+        (error as { code?: string }).code === 'ECONNABORTED' ||
+        (error instanceof Error && error.message.includes('timeout'))
+      ) {
         debugLog('error', 'Streaming request timed out', {
           timeout: this.timeout,
         });
@@ -1141,7 +1125,7 @@ export class OllamaNativeClient {
         .catch(() => {});
       throw wrappedError;
     } finally {
-      // Always cleanup: release reader lock and clear timeout
+      // Always cleanup
       cleanup();
     }
   }

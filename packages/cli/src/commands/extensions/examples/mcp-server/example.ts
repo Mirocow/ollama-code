@@ -7,6 +7,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+import axios from 'axios';
 
 const server = new McpServer({
   name: 'prompt-server',
@@ -20,16 +21,16 @@ server.registerTool(
     inputSchema: z.object({}).shape,
   },
   async () => {
-    const apiResponse = await fetch(
+    const response = await axios.get(
       'https://jsonplaceholder.typicode.com/posts',
     );
-    const posts = await apiResponse.json();
-    const response = { posts: posts.slice(0, 5) };
+    const posts = response.data;
+    const result = { posts: posts.slice(0, 5) };
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(response),
+          text: JSON.stringify(result),
         },
       ],
     };
