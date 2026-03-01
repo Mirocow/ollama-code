@@ -10,6 +10,7 @@ import type {
   WebSearchResultItem,
   GoogleProviderConfig,
 } from '../types.js';
+import { createHttpClient } from '../../../utils/httpClient.js';
 
 interface GoogleSearchItem {
   title: string;
@@ -32,6 +33,11 @@ interface GoogleSearchResponse {
  */
 export class GoogleProvider extends BaseWebSearchProvider {
   readonly name = 'Google';
+
+  private readonly httpClient = createHttpClient({
+    timeout: 30000,
+    debug: process.env['DEBUG'] === '1' || process.env['DEBUG'] === 'true',
+  });
 
   constructor(private readonly config: GoogleProviderConfig) {
     super();
@@ -63,19 +69,11 @@ export class GoogleProvider extends BaseWebSearchProvider {
 
     const url = `https://www.googleapis.com/customsearch/v1?${params.toString()}`;
 
-    const response = await fetch(url, {
-      method: 'GET',
+    const response = await this.httpClient.get<GoogleSearchResponse>(url, {
       signal,
     });
 
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(
-        `API error: ${response.status} ${response.statusText}${text ? ` - ${text}` : ''}`,
-      );
-    }
-
-    const data = (await response.json()) as GoogleSearchResponse;
+    const data = response.data;
 
     const results: WebSearchResultItem[] = (data.items || []).map((item) => ({
       title: item.title,
