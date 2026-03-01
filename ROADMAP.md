@@ -487,19 +487,19 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 
 #### TSDoc Documentation — 🟡 В процессе
 
-**Статус:** Частично реализовано
+**Статус:** Частично реализовано (80%)
 
 **Реализовано:**
 
 - TSDoc для `packages/core/src/index.ts` — API documentation
-- @packageDocumentation с обзором модуля
+- TSDoc для `packages/sdk-typescript/src/index.ts` — SDK documentation
+- @packageDocumentation с обзором модулей
 - Документация configuration, models, core engine, tools, plugins
+- Usage examples для query и MCP server
 
 **Осталось:**
 
-- TSDoc для packages/cli
-- TSDoc для packages/sdk-typescript
-- Автогенерация API reference
+- TSDoc для packages/cli (internal CLI API)
 
 ---
 
@@ -592,7 +592,7 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 | Задача                  | Приоритет | Прогресс | Что осталось                     |
 | ----------------------- | --------- | -------- | -------------------------------- |
 | Web UI (v0.15.0)        | P0        | 70%      | Terminal WebSocket backend       |
-| TSDoc Documentation     | P1        | 20%      | CLI, SDK packages                |
+| TSDoc Documentation     | P1        | 80%      | CLI package                      |
 | Virtual scrolling (P2)  | P2        | 0%       | Не начато                        |
 | Structured logging (P2) | P2        | 0%       | Не начато                        |
 
