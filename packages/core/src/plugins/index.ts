@@ -88,3 +88,15 @@ export type {
   SandboxViolation,
   SandboxContext,
 } from './pluginSandbox.js';
+
+// Plugin Marketplace
+export {
+  PluginMarketplace,
+  createPluginMarketplace,
+} from './pluginMarketplace.js';
+export type {
+  MarketplacePlugin,
+  MarketplaceSearchOptions,
+  PluginInstallOptions,
+  PluginUpdateOptions,
+} from './pluginMarketplace.js';
