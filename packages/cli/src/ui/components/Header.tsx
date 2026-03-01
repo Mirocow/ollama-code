@@ -322,7 +322,10 @@ export const Header: React.FC<HeaderProps> = ({
             {progressBar.filled}
           </Text>
           <Text color={theme.text.secondary}>{progressBar.empty}</Text>
-          <Text color={theme.text.secondary}> {(contextUsagePercentage * 100).toFixed(1)}%</Text>
+          <Text color={theme.text.secondary}>
+            {' '}{promptTokenCount?.toLocaleString() ?? 0} / {contextSizeFormatted}
+            {' '}({(contextUsagePercentage * 100).toFixed(1)}%)
+          </Text>
         </Text>
         {/* Session ID line (if available) */}
         {sessionId && (
