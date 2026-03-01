@@ -244,7 +244,12 @@ class UiTelemetryService {
     this.metrics.totalPromptTokens += promptTokens;
     this.metrics.totalCachedTokens += cachedTokens;
     this.metrics.totalGeneratedTokens += generatedTokens;
-    this.lastPromptTokenCount = promptTokens;
+
+    // Only update lastPromptTokenCount if we received a non-zero value
+    // This ensures we keep the last known context size even if Ollama doesn't return it
+    if (promptTokens > 0) {
+      this.lastPromptTokenCount = promptTokens;
+    }
 
     // Update nested metrics
     this.metrics.models.tokens.prompt += promptTokens;
