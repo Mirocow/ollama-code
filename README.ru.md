@@ -9,6 +9,10 @@
 </p>
 
 <p align="center">
+  <img src="./assets/interface-context-bar.png" alt="Interface Preview" width="800">
+</p>
+
+<p align="center">
   <a href="./README.md">English Version</a> •
   <a href="./docs/FEATURES.ru.md">Функции</a> •
   <a href="./docs/instruments.ru.md">Инструменты</a> •
