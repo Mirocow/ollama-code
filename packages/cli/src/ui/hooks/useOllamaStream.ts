@@ -32,7 +32,8 @@ import {
   parseAndFormatApiError,
   promptIdContext,
   ToolConfirmationOutcome,
- uiTelemetryService } from '@ollama-code/ollama-code-core';
+  uiTelemetryService,
+} from '@ollama-code/ollama-code-core';
 import type {
   HistoryItem,
   HistoryItemWithoutId,
@@ -716,6 +717,15 @@ export const useOllamaStream = (
 
       // Record token usage for context progress bar
       const usageMetadata = event.value.usageMetadata;
+
+      // Debug log for token tracking
+      debugLogger.info('Finished event received', {
+        finishReason,
+        hasUsageMetadata: !!usageMetadata,
+        promptTokenCount: usageMetadata?.promptTokenCount,
+        candidatesTokenCount: usageMetadata?.candidatesTokenCount,
+      });
+
       if (usageMetadata) {
         const model = config.getModel();
         uiTelemetryService.recordTokenUsage(
@@ -723,6 +733,10 @@ export const useOllamaStream = (
           usageMetadata.promptTokenCount || 0,
           0, // cached tokens - not available in this context
           usageMetadata.candidatesTokenCount || 0,
+        );
+      } else {
+        debugLogger.warn(
+          'No usageMetadata in Finished event - token count will not update',
         );
       }
 
