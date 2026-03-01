@@ -1130,3 +1130,26 @@ The sandbox integrates with:
 - **PluginLoader**: Apply sandbox when loading plugins
 - **PluginToolAdapter**: Wrap tool execution with sandbox checks
 - **PluginManager**: Enforce sandbox per plugin trust level
+
+---
+
+## Session: Documentation Update - 2025-03-01
+
+### Summary
+
+Created comprehensive documentation for Plugin Security Sandbox.
+
+### Documentation Created
+
+**File:** `docs/PLUGIN_SANDBOX.md` (~400 lines)
+
+#### Sections Covered
+
+1. **Overview** - Purpose and architecture
+2. **Trust Levels** - Detailed permission tables for untrusted/trusted/builtin
+3. **Usage** - API examples and code snippets
+4. **Configuration** - Custom sandbox configuration
+5. **Integration** - Integration with PluginLoader and PluginToolAdapter
+6. **Error Handling** - SandboxViolationError handling
+7. **Best Practices** - Security recommendations
+8. **Architecture Diagram** - Visual flow of sandbox execution
