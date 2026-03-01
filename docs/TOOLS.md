@@ -771,5 +771,3 @@ Tools can be enabled/disabled in `settings.json`:
   "excludeTools": ["web_search"]
 }
 ```
-
-See the [Configuration Guide](./CONFIGURATION.md) for more details.
