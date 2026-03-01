@@ -543,3 +543,54 @@ bun run test --run src/ui/stores/sessionStore.test.ts
 bun run test --run src/ui/stores/streamingStore.test.ts
 bun run test --run src/ui/stores/uiStore.test.ts
 ```
+
+## Specialized React Contexts
+
+In addition to Zustand stores, we've created specialized React contexts to further optimize re-renders. These contexts split the monolithic `UIStateContext` (70+ fields) into smaller, focused contexts:
+
+### Available Contexts
+
+| Context | Purpose | Location |
+|---------|---------|----------|
+| `DialogStateContext` | Dialog visibility states | `contexts/DialogStateContext.tsx` |
+| `TerminalContext` | Terminal dimensions and layout | `contexts/TerminalContext.tsx` |
+| `InputStateContext` | Input buffer and key press states | `contexts/InputStateContext.tsx` |
+| `HistoryContext` | History items and pending messages | `contexts/HistoryContext.tsx` |
+| `LoadingContext` | Streaming and loading states | `contexts/LoadingContext.tsx` |
+| `ConfirmationContext` | Confirmation requests | `contexts/ConfirmationContext.tsx` |
+
+### Usage Examples
+
+```typescript
+// Subscribe to dialog state
+const isThemeDialogOpen = useDialogState(state => state.isThemeDialogOpen);
+
+// Subscribe to terminal dimensions
+const terminalWidth = useTerminalState(state => state.terminalWidth);
+
+// Subscribe to loading state
+const isStreaming = useLoadingState(state => state.streamingState !== StreamingState.Idle);
+
+// Subscribe to pending confirmations
+const hasPendingConfirmations = useConfirmationState(state => 
+  state.confirmationRequest !== null || 
+  state.confirmUpdateExtensionRequests.length > 0
+);
+```
+
+### Memoized Components
+
+The following components are memoized to prevent unnecessary re-renders:
+
+| Component | Optimization | Location |
+|-----------|-------------|----------|
+| `Footer` | `React.memo` + `useMemo` | `components/Footer.tsx` |
+| `AppHeader` | `React.memo` + memoized selectors | `components/AppHeader.tsx` |
+| `MainContent` | `React.memo` | `components/MainContent.tsx` |
+| `HistoryItemDisplay` | `React.memo` + memoized dimensions | `components/HistoryItemDisplay.tsx` |
+
+### When to Use Contexts vs Stores
+
+- **Use Zustand Stores** for global application state that multiple components need to access
+- **Use Specialized Contexts** for UI state that only specific components need
+- **Use React.memo** for components that receive many props but rarely change

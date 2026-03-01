@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import { Box, Static } from 'ink';
 import { HistoryItemDisplay } from './HistoryItemDisplay.js';
 import { ShowMoreLines } from './ShowMoreLines.js';
@@ -29,7 +29,7 @@ const MainContentComponent = () => {
   const { version } = useAppContext();
   const uiState = useUIState();
 
-  // Memoize frequently used values
+  // Extract only the values needed for rendering
   const {
     pendingHistoryItems,
     terminalWidth,
@@ -44,110 +44,48 @@ const MainContentComponent = () => {
     isEditorDialogOpen,
     activePtyId,
     embeddedShellFocused,
-  } = useMemo(
-    () => ({
-      pendingHistoryItems: uiState.pendingHistoryItems,
-      terminalWidth: uiState.terminalWidth,
-      mainAreaWidth: uiState.mainAreaWidth,
-      staticAreaMaxItemHeight: uiState.staticAreaMaxItemHeight,
-      availableTerminalHeight: uiState.availableTerminalHeight,
-      historyRemountKey: uiState.historyRemountKey,
-      currentModel: uiState.currentModel,
-      history: uiState.history,
-      slashCommands: uiState.slashCommands,
-      constrainHeight: uiState.constrainHeight,
-      isEditorDialogOpen: uiState.isEditorDialogOpen,
-      activePtyId: uiState.activePtyId,
-      embeddedShellFocused: uiState.embeddedShellFocused,
-    }),
-    [
-      uiState.pendingHistoryItems,
-      uiState.terminalWidth,
-      uiState.mainAreaWidth,
-      uiState.staticAreaMaxItemHeight,
-      uiState.availableTerminalHeight,
-      uiState.historyRemountKey,
-      uiState.currentModel,
-      uiState.history,
-      uiState.slashCommands,
-      uiState.constrainHeight,
-      uiState.isEditorDialogOpen,
-      uiState.activePtyId,
-      uiState.embeddedShellFocused,
-    ]
-  );
-
-  // Memoize history items rendering
-  const historyItems = useMemo(
-    () =>
-      history.map((h) => (
-        <HistoryItemDisplay
-          terminalWidth={terminalWidth}
-          mainAreaWidth={mainAreaWidth}
-          availableTerminalHeight={staticAreaMaxItemHeight}
-          availableTerminalHeightGemini={MAX_GEMINI_MESSAGE_LINES}
-          key={h.id}
-          item={h}
-          isPending={false}
-          commands={slashCommands}
-        />
-      )),
-    [history, terminalWidth, mainAreaWidth, staticAreaMaxItemHeight, slashCommands]
-  );
-
-  // Memoize static items
-  const staticItems = useMemo(
-    () => [
-      <DebugModeNotification key="debug-notification" />,
-      <Notifications key="notifications" />,
-      ...historyItems,
-    ],
-    [historyItems]
-  );
-
-  // Memoize pending items rendering
-  const pendingItems = useMemo(
-    () =>
-      pendingHistoryItems.map((item, i) => (
-        <HistoryItemDisplay
-          key={i}
-          availableTerminalHeight={
-            constrainHeight ? availableTerminalHeight : undefined
-          }
-          terminalWidth={terminalWidth}
-          mainAreaWidth={mainAreaWidth}
-          item={{ ...item, id: 0 }}
-          isPending={true}
-          isFocused={!isEditorDialogOpen}
-          activeShellPtyId={activePtyId}
-          embeddedShellFocused={embeddedShellFocused}
-        />
-      )),
-    [
-      pendingHistoryItems,
-      constrainHeight,
-      availableTerminalHeight,
-      terminalWidth,
-      mainAreaWidth,
-      isEditorDialogOpen,
-      activePtyId,
-      embeddedShellFocused,
-    ]
-  );
+  } = uiState;
 
   return (
     <>
       {/* AppHeader is outside Static to allow dynamic updates (e.g., context progress bar) */}
       <AppHeader version={version} />
-      <Static key={`${historyRemountKey}-${currentModel}`} items={staticItems}>
-        {(item) => item}
+      <Static key={`${historyRemountKey}-${currentModel}`} items={history}>
+        {(item) => (
+          <HistoryItemDisplay
+            key={item.id}
+            terminalWidth={terminalWidth}
+            mainAreaWidth={mainAreaWidth}
+            availableTerminalHeight={staticAreaMaxItemHeight}
+            availableTerminalHeightGemini={MAX_GEMINI_MESSAGE_LINES}
+            item={item}
+            isPending={false}
+            commands={slashCommands}
+          />
+        )}
       </Static>
       <OverflowProvider>
         <Box flexDirection="column">
-          {pendingItems}
+          {pendingHistoryItems.map((item, i) => (
+            <HistoryItemDisplay
+              key={i}
+              availableTerminalHeight={
+                constrainHeight ? availableTerminalHeight : undefined
+              }
+              terminalWidth={terminalWidth}
+              mainAreaWidth={mainAreaWidth}
+              item={{ ...item, id: 0 }}
+              isPending={true}
+              isFocused={!isEditorDialogOpen}
+              activeShellPtyId={activePtyId}
+              embeddedShellFocused={embeddedShellFocused}
+            />
+          ))}
           <ShowMoreLines constrainHeight={constrainHeight} />
         </Box>
       </OverflowProvider>
+      <DebugModeNotification />
+      <Notifications />
     </>
   );
 };
