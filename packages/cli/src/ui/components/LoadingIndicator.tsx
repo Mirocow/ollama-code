@@ -38,35 +38,30 @@ const LoadingIndicatorComponent: React.FC<LoadingIndicatorProps> = ({
   const { columns: terminalWidth } = useTerminalSize();
   const isNarrow = isNarrowWidth(terminalWidth);
 
-  // Early return if not streaming
-  if (streamingState === StreamingState.Idle) {
-    return null;
-  }
-
-  // Memoize computed values
+  // Memoize computed values - MUST be called before any early return (Rules of Hooks)
   const primaryText = useMemo(
     () => thought?.subject || currentLoadingPhrase,
-    [thought?.subject, currentLoadingPhrase]
+    [thought?.subject, currentLoadingPhrase],
   );
 
-  const formattedTime = useMemo(() => {
-    return elapsedTime < 60
+  const formattedTime = useMemo(() => elapsedTime < 60
       ? `${elapsedTime}s`
-      : formatDuration(elapsedTime * 1000);
-  }, [elapsedTime]);
+      : formatDuration(elapsedTime * 1000), [elapsedTime]);
 
-  const cancelAndTimerContent = useMemo(() => {
-    return streamingState !== StreamingState.WaitingForConfirmation
+  const cancelAndTimerContent = useMemo(() => streamingState !== StreamingState.WaitingForConfirmation
       ? t('(esc to cancel, {{time}})', { time: formattedTime })
-      : null;
-  }, [streamingState, formattedTime]);
+      : null, [streamingState, formattedTime]);
 
   // Memoize spinner props
   const spinnerDisplay = useMemo(
-    () =>
-      streamingState === StreamingState.WaitingForConfirmation ? '⠏' : '',
-    [streamingState]
+    () => (streamingState === StreamingState.WaitingForConfirmation ? '⠏' : ''),
+    [streamingState],
   );
+
+  // Early return if not streaming - AFTER all hooks
+  if (streamingState === StreamingState.Idle) {
+    return null;
+  }
 
   return (
     <Box paddingLeft={0} flexDirection="column">
