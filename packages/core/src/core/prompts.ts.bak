@@ -72,13 +72,8 @@ function getToolLearningContext(): string {
  * These models need explicit instructions on how to format tool calls in JSON.
  */
 function getToolCallFormatInstructions(model?: string): string {
-  // If no model specified, assume it supports tools (default behavior)
-  if (!model) {
-    return '';
-  }
-
   // Only add instructions for models without native tool support
-  if (supportsTools(model)) {
+  if (model && supportsTools(model)) {
     return '';
   }
 

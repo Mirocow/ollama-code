@@ -143,6 +143,26 @@ export const MODEL_FAMILIES: ModelFamilyDefinition[] = [
   },
 
   {
+    id: 'openai',
+    displayName: 'OpenAI',
+    description: 'OpenAI GPT models (gpt-4, gpt-3.5, o1, o3)',
+    pattern: /gpt|o1|o3/i,
+    defaultCapabilities: {
+      tools: true,
+      vision: false,
+      thinking: false,
+      structuredOutput: true,
+    },
+    defaultOutputFormat: 'native',
+    modelOverrides: [
+      { pattern: /gpt[-_]?4[-_]?o/i, capabilities: { vision: true } },
+      { pattern: /gpt[-_]?4[-_]?turbo/i, capabilities: { vision: true } },
+      { pattern: /o1/i, capabilities: { thinking: true } },
+      { pattern: /o3/i, capabilities: { thinking: true, vision: true } },
+    ],
+  },
+
+  {
     id: 'mistral',
     displayName: 'Mistral',
     description: 'Mistral AI models (mistral, mixtral, codestral)',

@@ -30,6 +30,12 @@ export const AppHeader = ({ version }: AppHeaderProps) => {
   const showBanner = !config.getScreenReader();
   const showTips = !(settings.merged.ui?.hideTips || config.getScreenReader());
   const sessionId = sessionStats.stats.sessionId;
+  
+  // Get context window size from config or use default
+  const contextWindowSize = contentGeneratorConfig?.contextWindowSize;
+  
+  // Get current prompt token count from session stats
+  const promptTokenCount = uiState.sessionStats.lastPromptTokenCount;
 
   return (
     <Box flexDirection="column">
@@ -41,6 +47,8 @@ export const AppHeader = ({ version }: AppHeaderProps) => {
           model={model}
           workingDirectory={targetDir}
           sessionId={sessionId}
+          contextWindowSize={contextWindowSize}
+          promptTokenCount={promptTokenCount}
         />
       )}
       {showTips && <Tips />}
