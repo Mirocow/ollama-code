@@ -172,11 +172,11 @@ await pluginManager.enablePlugin('my-plugin');
 
 **Plugin Documentation:**
 
-| Документ                       | Описание                                     |
-| ------------------------------ | -------------------------------------------- |
-| `docs/PLUGIN_SYSTEM.md`        | Архитектура и API плагинов                   |
-| `docs/PLUGIN_MARKETPLACE.md`   | Руководство по Marketplace (NEW!)            |
-| `docs/PLUGIN_SANDBOX.md`       | Безопасность и sandboxing                    |
+| Документ                     | Описание                          |
+| ---------------------------- | --------------------------------- |
+| `docs/PLUGIN_SYSTEM.md`      | Архитектура и API плагинов        |
+| `docs/PLUGIN_MARKETPLACE.md` | Руководство по Marketplace (NEW!) |
+| `docs/PLUGIN_SANDBOX.md`     | Безопасность и sandboxing         |
 
 #### 6. Prompt System Documentation
 
@@ -401,13 +401,38 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 
 **Цель:** Полноценный веб-интерфейс
 
-| Задача                       | Приоритет | Оценка | Статус       |
-| ---------------------------- | --------- | ------ | ------------ |
-| Next.js App Router setup     | P0        | 3d     | 🔴 Не начато |
-| Chat interface component     | P0        | 4d     | 🔴 Не начато |
-| File explorer integration    | P1        | 3d     | 🔴 Не начато |
-| Terminal emulator (xterm.js) | P1        | 4d     | 🔴 Не начато |
-| WebSocket streaming          | P0        | 3d     | 🔴 Не начато |
+| Задача                       | Приоритет | Оценка | Статус        |
+| ---------------------------- | --------- | ------ | ------------- |
+| Next.js App Router setup     | P0        | 3d     | 🟡 В процессе |
+| Chat interface component     | P0        | 4d     | 🟡 В процессе |
+| File explorer integration    | P1        | 3d     | 🔴 Не начато  |
+| Terminal emulator (xterm.js) | P1        | 4d     | 🔴 Не начато  |
+| WebSocket streaming          | P0        | 3d     | 🟡 В процессе |
+
+#### Web UI — Реализовано (частично)
+
+**Статус:** 🟡 В процессе
+
+**Созданные файлы:**
+
+| Файл                                    | Описание                         |
+| --------------------------------------- | -------------------------------- |
+| `packages/web-app/package.json`         | Next.js 15, React 18, Zustand    |
+| `packages/web-app/tsconfig.json`        | TypeScript конфигурация          |
+| `packages/web-app/next.config.mjs`      | Next.js конфигурация             |
+| `packages/web-app/src/app/layout.tsx`   | Root layout с провайдерами       |
+| `packages/web-app/src/app/page.tsx`     | Главная страница с ChatInterface |
+| `packages/web-app/src/app/globals.css`  | Глобальные стили (Tailwind)      |
+| `packages/web-app/src/stores/`          | Zustand stores                   |
+| `packages/web-app/src/hooks/`           | Custom hooks (useWebSocket)      |
+| `packages/web-app/src/components/chat/` | ChatInterface компонент          |
+
+**Осталось реализовать:**
+
+- API routes для proxy к Ollama
+- File explorer с Monaco editor
+- Terminal emulator (xterm.js)
+- Полноценная интеграция с CLI backend
 
 ---
 
@@ -415,31 +440,72 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 
 **Цель:** Готовность к продакшену
 
-| Задача                     | Приоритет | Оценка | Статус       |
-| -------------------------- | --------- | ------ | ------------ |
-| Security audit             | P0        | 5d     | 🔴 Не начато |
-| Performance benchmarks     | P0        | 3d     | 🔴 Не начато |
-| Documentation v2           | P0        | 5d     | 🔴 Не начато |
-| CI/CD pipeline             | P0        | 3d     | 🔴 Не начато |
-| Monitoring (OpenTelemetry) | P1        | 4d     | 🔴 Не начато |
+| Задача                     | Приоритет | Оценка | Статус        |
+| -------------------------- | --------- | ------ | ------------- |
+| Security audit             | P0        | 5d     | 🔴 Не начато  |
+| Performance benchmarks     | P0        | 3d     | 🔴 Не начато  |
+| Documentation v2           | P0        | 5d     | 🟡 В процессе |
+| CI/CD pipeline             | P0        | 3d     | ✅ Завершено  |
+| Monitoring (OpenTelemetry) | P1        | 4d     | 🔴 Не начато  |
+
+#### CI/CD Pipeline — ✅ Завершено
+
+**GitHub Actions Workflows (17 шт.):**
+
+| Workflow                    | Назначение               |
+| --------------------------- | ------------------------ |
+| `ci.yml`                    | Main CI pipeline         |
+| `codeql.yml`                | Security analysis        |
+| `dependabot-auto-merge.yml` | Auto-merge dependencies  |
+| `dependency-review.yml`     | Dependency review        |
+| `discord-notify.yml`        | Discord notifications    |
+| `labeler.yml`               | Auto-labeling PRs        |
+| `npm-publish.yml`           | NPM publishing           |
+| `pr-auto-assign.yml`        | Auto-assign reviewers    |
+| `pr-validation.yml`         | PR validation            |
+| `release-drafter.yml`       | Release notes drafting   |
+| `scorecard.yml`             | Security scorecard       |
+| `stale.yml`                 | Stale issues management  |
+| `sync-labels.yml`           | Label synchronization    |
+| `test-coverage.yml`         | Test coverage reporting  |
+| `typescript-validation.yml` | TypeScript validation    |
+| `update-changelog.yml`      | Changelog updates        |
+| `welcome.yml`               | Welcome new contributors |
+
+#### TSDoc Documentation — 🟡 В процессе
+
+**Статус:** Частично реализовано
+
+**Реализовано:**
+
+- TSDoc для `packages/core/src/index.ts` — API documentation
+- @packageDocumentation с обзором модуля
+- Документация configuration, models, core engine, tools, plugins
+
+**Осталось:**
+
+- TSDoc для packages/cli
+- TSDoc для packages/sdk-typescript
+- Автогенерация API reference
 
 ---
 
 ## Сравнение с конкурентами
 
-| Функция            | Ollama Code    | Claude Code | Aider       | Cursor      |
-| ------------------ | -------------- | ----------- | ----------- | ----------- |
-| Локальные модели   | ✅             | ❌          | ✅          | ❌          |
-| Open Source        | ✅             | ❌          | ✅          | ❌          |
-| CLI интерфейс      | ✅             | ✅          | ✅          | ❌          |
-| Web UI             | 🔴 Планируется | ✅          | ❌          | ✅          |
-| Plugin System      | ✅             | ✅          | ✅          | ✅          |
-| Plugin Sandbox     | ✅             | ✅          | ❌          | ⚠️ Частично |
-| Plugin Marketplace | ✅             | ✅          | ❌          | ✅          |
-| IDE Integration    | ✅ VSCode      | ✅ VSCode   | ✅ Multi    | ✅ Built-in |
-| MCP Support        | ✅             | ✅          | ❌          | ❌          |
-| Context Caching    | ✅             | ✅          | ⚠️ Частично | ✅          |
-| Undo/Redo          | ✅             | ✅          | ❌          | ✅          |
+| Функция            | Ollama Code     | Claude Code | Aider       | Cursor      |
+| ------------------ | --------------- | ----------- | ----------- | ----------- |
+| Локальные модели   | ✅              | ❌          | ✅          | ❌          |
+| Open Source        | ✅              | ❌          | ✅          | ❌          |
+| CLI интерфейс      | ✅              | ✅          | ✅          | ❌          |
+| Web UI             | 🟡 В разработке | ✅          | ❌          | ✅          |
+| Plugin System      | ✅              | ✅          | ✅          | ✅          |
+| Plugin Sandbox     | ✅              | ✅          | ❌          | ⚠️ Частично |
+| Plugin Marketplace | ✅              | ✅          | ❌          | ✅          |
+| IDE Integration    | ✅ VSCode       | ✅ VSCode   | ✅ Multi    | ✅ Built-in |
+| MCP Support        | ✅              | ✅          | ❌          | ❌          |
+| Context Caching    | ✅              | ✅          | ⚠️ Частично | ✅          |
+| Undo/Redo          | ✅              | ✅          | ❌          | ✅          |
+| CI/CD              | ✅ 17 workflows | ✅          | ⚠️ Частично | ✅          |
 
 ---
 
@@ -461,7 +527,7 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 
 ### Q3 2025
 
-1. **Web UI** — Next.js приложение
+1. **Web UI** — Next.js приложение 🟡 В процессе
 2. **Enterprise** — Authentication
 3. **AI Features** — Multi-model routing
 
@@ -484,11 +550,49 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 
 ### Средний приоритет
 
-| Область       | Проблема                     | Решение            | Оценка | Статус       |
-| ------------- | ---------------------------- | ------------------ | ------ | ------------ |
-| Documentation | Не все API задокументированы | TSDoc              | 3d     | 🔴 Не начато |
-| Logging       | Несогласованный формат       | Structured logging | 2d     | 🔴 Не начато |
-| Config        | Много источников             | Единый schema      | 3d     | 🔴 Не начато |
+| Область       | Проблема                     | Решение            | Оценка | Статус        |
+| ------------- | ---------------------------- | ------------------ | ------ | ------------- |
+| Documentation | Не все API задокументированы | TSDoc              | 3d     | 🟡 В процессе |
+| Logging       | Несогласованный формат       | Structured logging | 2d     | 🔴 Не начато  |
+| Config        | Много источников             | Единый schema      | 3d     | 🔴 Не начато  |
+
+---
+
+## Последние изменения (Сессия 2025-03-01)
+
+### Завершенные задачи
+
+| Коммит     | Описание                                        |
+| ---------- | ----------------------------------------------- |
+| `db4088db` | fix: TypeScript configuration and web-app fixes |
+| `c04881dc` | feat(web-app): add ChatInterface component      |
+| `afd70c0c` | fix: correct template path loading              |
+| `ddfc7241` | docs: add TSDoc documentation to core exports   |
+| `cf333c0f` | refactor: migrate fetch to axios for HTTP       |
+| `8e764201` | feat: migrate fetch to axios in core package    |
+| `131cfdef` | fix: unify @types/node versions to 22.x         |
+
+### Начатые, но не завершенные задачи
+
+| Задача                  | Приоритет | Прогресс | Что осталось                     |
+| ----------------------- | --------- | -------- | -------------------------------- |
+| Web UI (v0.15.0)        | P0        | 40%      | API routes, File explorer, xterm |
+| TSDoc Documentation     | P1        | 20%      | CLI, SDK packages                |
+| Virtual scrolling (P2)  | P2        | 0%       | Не начато                        |
+| Structured logging (P2) | P2        | 0%       | Не начато                        |
+
+### Обнаруженные и исправленные проблемы
+
+1. **Template path bug** — двойной `templates/` в пути (`templates/templates/`)
+   - Исправлено в `packages/core/src/prompts/templates/index.ts`
+
+2. **TypeScript config issues** — несоответствие конфигурации monorepo
+   - Добавлены project references
+   - Добавлен `composite: true` в пакеты
+   - Исправлены ESLint правила для web-app
+
+3. **webSessionStore Zustand** — неверный параметр `revive`
+   - Заменен на `onRehydrateStorage` callback
 
 ---
 
@@ -508,7 +612,7 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 
 ## Заключение
 
-Ollama Code v0.14.0 включает ключевые архитектурные улучшения:
+Ollama Code v0.11.0+ включает ключевые архитектурные улучшения:
 
 1. **Zustand** — Оптимизация React-рендеринга ✅
 2. **Event Bus** — Слабая связность компонентов ✅
@@ -520,11 +624,22 @@ Ollama Code v0.14.0 включает ключевые архитектурные
 8. **Plugin Marketplace** — NPM-based search/install/update ✅
 9. **Security Sandbox** — Filesystem, network, command restrictions ✅
 10. **Cancellation Support** — CancellationToken, AbortController cleanup ✅
+11. **CI/CD Pipeline** — 17 GitHub Actions workflows ✅
 
-Следующие шаги — Virtual scrolling (P2) и Web UI (v0.15.0).
+### В процессе:
+
+12. **Web UI (v0.15.0)** — Next.js 15, ChatInterface, Zustand stores 🟡
+13. **TSDoc Documentation** — API documentation для core 🟡
+
+### Следующие шаги:
+
+- Завершить Web UI (API routes, File explorer, Terminal)
+- Virtual scrolling (P2)
+- Security audit (v1.0.0)
+- Performance benchmarks (v1.0.0)
 
 ---
 
-_Document version: 4.2.0_
+_Document version: 5.0.0_
 _Last updated: 2025-03-01_
 _Author: Architecture Team_
