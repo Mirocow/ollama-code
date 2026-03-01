@@ -716,6 +716,7 @@ export const useOllamaStream = (
 
       // Record token usage for context progress bar
       const usageMetadata = event.value.usageMetadata;
+      console.log('[DEBUG] usageMetadata:', JSON.stringify(usageMetadata));
       if (usageMetadata) {
         const model = config.getModel();
         uiTelemetryService.recordTokenUsage(
