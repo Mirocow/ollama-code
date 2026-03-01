@@ -271,15 +271,15 @@ await pluginManager.enablePlugin('my-plugin');
 
 ---
 
-### v0.13.0 — Plugin System v2
+### v0.13.0 — Plugin System v2 ✅
 
 **Цель:** Динамическая загрузка плагинов
 
 | Задача                       | Приоритет | Оценка | Статус       |
 | ---------------------------- | --------- | ------ | ------------ |
-| PluginLoader для обнаружения | P0        | 3d     | 🔴 Не начато |
-| Dynamic plugin loading       | P0        | 4d     | 🔴 Не начато |
-| Plugin CLI команды           | P1        | 2d     | 🔴 Не начато |
+| PluginLoader для обнаружения | P0        | 3d     | ✅ Завершено |
+| Dynamic plugin loading       | P0        | 4d     | ✅ Завершено |
+| Plugin CLI команды           | P1        | 2d     | ✅ Завершено |
 | Plugin marketplace           | P2        | 5d     | 🔴 Не начато |
 | Security sandbox             | P1        | 3d     | 🔴 Не начато |
 
@@ -421,16 +421,16 @@ await pluginManager.enablePlugin('my-plugin');
 
 ## Заключение
 
-Ollama Code v0.12.0 включает ключевые архитектурные улучшения:
+Ollama Code v0.13.0 включает ключевые архитектурные улучшения:
 
 1. **Zustand** — Оптимизация React-рендеринга ✅
 2. **Event Bus** — Слабая связность компонентов ✅
 3. **Command Pattern** — Undo/Redo для операций ✅
-4. **Plugin System** — Расширяемость через плагины ✅
+4. **Plugin System v2** — PluginLoader + CLI + Dynamic loading ✅
 5. **Context Caching** — KV-cache reuse для производительности ✅
 6. **Axios HTTP Client** — Interceptors, retry, timeout ✅
 
-Следующие шаги — доработка Plugin Loader и исправление memory leaks.
+Следующие шаги — исправление memory leaks и Security sandbox для плагинов.
 
 ---
 
