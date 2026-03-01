@@ -563,7 +563,6 @@ The model receives environment information at session start:
 
 - [Tools Reference](./TOOLS.md) - Detailed tool parameters
 - [Usage Guide](./USAGE_GUIDE.md) - How to use Ollama Code
-- [Configuration](./CONFIGURATION.md) - Setup and settings
 - [API Reference](./OLLAMA_API.md) - API documentation
 
 ---
