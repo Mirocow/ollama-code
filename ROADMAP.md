@@ -170,6 +170,14 @@ await pluginManager.enablePlugin('my-plugin');
 | `pluginMarketplace.ts` | 22868 | NPM-based marketplace                 |
 | `pluginToolAdapter.ts` | 7112  | Tool adapter bridge                   |
 
+**Plugin Documentation:**
+
+| Документ                       | Описание                                     |
+| ------------------------------ | -------------------------------------------- |
+| `docs/PLUGIN_SYSTEM.md`        | Архитектура и API плагинов                   |
+| `docs/PLUGIN_MARKETPLACE.md`   | Руководство по Marketplace (NEW!)            |
+| `docs/PLUGIN_SANDBOX.md`       | Безопасность и sandboxing                    |
+
 #### 6. Prompt System Documentation
 
 **Статус:** ✅ Реализовано
@@ -517,6 +525,6 @@ Ollama Code v0.14.0 включает ключевые архитектурные
 
 ---
 
-_Document version: 4.1.0_
+_Document version: 4.2.0_
 _Last updated: 2025-03-01_
 _Author: Architecture Team_
