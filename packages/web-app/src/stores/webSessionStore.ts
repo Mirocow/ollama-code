@@ -78,8 +78,15 @@ interface WebSessionState {
   createSession: (model: string) => string;
   deleteSession: (id: string) => void;
   setActiveSession: (id: string) => void;
-  addMessage: (sessionId: string, message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
-  updateMessage: (sessionId: string, messageId: string, updates: Partial<ChatMessage>) => void;
+  addMessage: (
+    sessionId: string,
+    message: Omit<ChatMessage, 'id' | 'timestamp'>,
+  ) => void;
+  updateMessage: (
+    sessionId: string,
+    messageId: string,
+    updates: Partial<ChatMessage>,
+  ) => void;
   clearSession: (sessionId: string) => void;
 
   // Streaming actions
@@ -149,7 +156,8 @@ export const useWebSessionStore = create<WebSessionState>()(
           sessions.delete(id);
           return {
             sessions,
-            activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
+            activeSessionId:
+              state.activeSessionId === id ? null : state.activeSessionId,
           };
         });
       },
@@ -173,7 +181,9 @@ export const useWebSessionStore = create<WebSessionState>()(
             session.updatedAt = Date.now();
             // Update title from first user message
             if (message.role === 'user' && session.messages.length === 1) {
-              session.title = message.content.slice(0, 50) + (message.content.length > 50 ? '...' : '');
+              session.title =
+                message.content.slice(0, 50) +
+                (message.content.length > 50 ? '...' : '');
             }
             sessions.set(sessionId, { ...session });
           }
@@ -187,7 +197,7 @@ export const useWebSessionStore = create<WebSessionState>()(
           const session = sessions.get(sessionId);
           if (session) {
             session.messages = session.messages.map((msg) =>
-              msg.id === messageId ? { ...msg, ...updates } : msg
+              msg.id === messageId ? { ...msg, ...updates } : msg,
             );
             session.updatedAt = Date.now();
             sessions.set(sessionId, { ...session });
@@ -306,14 +316,22 @@ export const useWebSessionStore = create<WebSessionState>()(
         theme: state.theme,
         selectedModel: state.selectedModel,
       }),
-      revive: (savedState) => ({
-        ...savedState,
-        sessions: new Map(savedState.sessions),
-        streaming: { isStreaming: false, currentContent: '' },
-        sidebarOpen: true,
-      }),
-    }
-  )
+      onRehydrateStorage: () => (state) => {
+        if (
+          state &&
+          Array.isArray(
+            (state as unknown as { sessions: Array<[string, Session]> }).sessions,
+          )
+        ) {
+          // Convert array back to Map after rehydration
+          const sessionsArray = (
+            state as unknown as { sessions: Array<[string, Session]> }
+          ).sessions;
+          (state as WebSessionState).sessions = new Map(sessionsArray);
+        }
+      },
+    },
+  ),
 );
 
 export default useWebSessionStore;

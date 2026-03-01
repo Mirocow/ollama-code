@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "dist",
     "jsx": "react-jsx",
-    "lib": ["DOM", "DOM.Iterable", "ES2023"]
+    "lib": ["DOM", "DOM.Iterable", "ES2023"],
+    "composite": true
   },
   "include": [
     "index.ts",

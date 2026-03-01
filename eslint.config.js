@@ -243,6 +243,21 @@ export default tseslint.config(
       'import/no-internal-modules': 'off',
     },
   },
+  // Web App package - Next.js web application
+  {
+    files: ['packages/web-app/**/*.ts', 'packages/web-app/**/*.tsx'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+    rules: { 
+      'no-console': 'off',
+      'no-undef': 'off',
+      'import/no-internal-modules': 'off',
+    },
+  },
   // Specific CLI files that intentionally wrap console usage
   {
     files: [
