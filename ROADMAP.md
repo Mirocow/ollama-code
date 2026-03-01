@@ -280,8 +280,8 @@ await pluginManager.enablePlugin('my-plugin');
 | PluginLoader для обнаружения | P0        | 3d     | ✅ Завершено |
 | Dynamic plugin loading       | P0        | 4d     | ✅ Завершено |
 | Plugin CLI команды           | P1        | 2d     | ✅ Завершено |
+| Security sandbox             | P1        | 3d     | ✅ Завершено |
 | Plugin marketplace           | P2        | 5d     | 🔴 Не начато |
-| Security sandbox             | P1        | 3d     | 🔴 Не начато |
 
 **Пример структуры плагина:**
 
