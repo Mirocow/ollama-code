@@ -7,6 +7,7 @@
 import type { MCPOAuthConfig } from './oauth-provider.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
+import axios from 'axios';
 
 const debugLogger = createDebugLogger('MCP_OAUTH');
 
@@ -91,11 +92,9 @@ export class OAuthUtils {
     resourceMetadataUrl: string,
   ): Promise<OAuthProtectedResourceMetadata | null> {
     try {
-      const response = await fetch(resourceMetadataUrl);
-      if (!response.ok) {
-        return null;
-      }
-      return (await response.json()) as OAuthProtectedResourceMetadata;
+      const response =
+        await axios.get<OAuthProtectedResourceMetadata>(resourceMetadataUrl);
+      return response.data;
     } catch (error) {
       debugLogger.debug(
         `Failed to fetch protected resource metadata from ${resourceMetadataUrl}: ${getErrorMessage(error)}`,
@@ -114,11 +113,10 @@ export class OAuthUtils {
     authServerMetadataUrl: string,
   ): Promise<OAuthAuthorizationServerMetadata | null> {
     try {
-      const response = await fetch(authServerMetadataUrl);
-      if (!response.ok) {
-        return null;
-      }
-      return (await response.json()) as OAuthAuthorizationServerMetadata;
+      const response = await axios.get<OAuthAuthorizationServerMetadata>(
+        authServerMetadataUrl,
+      );
+      return response.data;
     } catch (error) {
       debugLogger.debug(
         `Failed to fetch authorization server metadata from ${authServerMetadataUrl}: ${getErrorMessage(error)}`,

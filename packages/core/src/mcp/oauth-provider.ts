@@ -19,6 +19,7 @@ import {
   OAUTH_REDIRECT_PORT,
   OAUTH_REDIRECT_PATH,
 } from './constants.js';
+import axios from 'axios';
 
 export const OAUTH_DISPLAY_MESSAGE_EVENT = 'oauth-display-message' as const;
 
@@ -134,22 +135,31 @@ export class MCPOAuthProvider {
       scope: config.scopes?.join(' ') || '',
     };
 
-    const response = await fetch(registrationUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(registrationRequest),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `Client registration failed: ${response.status} ${response.statusText} - ${errorText}`,
+    try {
+      const response = await axios.post<OAuthClientRegistrationResponse>(
+        registrationUrl,
+        registrationRequest,
+        {
+          headers: { 'Content-Type': 'application/json' },
+          validateStatus: () => true,
+        },
       );
-    }
 
-    return (await response.json()) as OAuthClientRegistrationResponse;
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(
+          `Client registration failed: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(
+          `Client registration failed: ${error.response.status} ${error.response.statusText}`,
+        );
+      }
+      throw error;
+    }
   }
 
   /**
@@ -391,35 +401,47 @@ export class MCPOAuthProvider {
       }
     }
 
-    const response = await fetch(config.tokenUrl!, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Accept: 'application/json, application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    });
+    let responseText: string;
+    let contentType: string;
+    let statusCode: number;
 
-    const responseText = await response.text();
-    const contentType = response.headers.get('content-type') || '';
+    try {
+      const response = await axios.post(config.tokenUrl!, params.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json, application/x-www-form-urlencoded',
+        },
+        transformResponse: [(data) => data], // Get raw response
+        validateStatus: () => true,
+      });
 
-    if (!response.ok) {
-      // Try to parse error from form-urlencoded response
-      let errorMessage: string | null = null;
-      try {
-        const errorParams = new URLSearchParams(responseText);
-        const error = errorParams.get('error');
-        const errorDescription = errorParams.get('error_description');
-        if (error) {
-          errorMessage = `Token exchange failed: ${error} - ${errorDescription || 'No description'}`;
+      responseText = response.data;
+      contentType = (response.headers['content-type'] as string) || '';
+      statusCode = response.status;
+
+      if (statusCode < 200 || statusCode >= 300) {
+        // Try to parse error from form-urlencoded response
+        let errorMessage: string | null = null;
+        try {
+          const errorParams = new URLSearchParams(responseText);
+          const error = errorParams.get('error');
+          const errorDescription = errorParams.get('error_description');
+          if (error) {
+            errorMessage = `Token exchange failed: ${error} - ${errorDescription || 'No description'}`;
+          }
+        } catch {
+          // Fall back to raw error
         }
-      } catch {
-        // Fall back to raw error
+        throw new Error(
+          errorMessage ||
+            `Token exchange failed: ${statusCode} - ${responseText}`,
+        );
       }
-      throw new Error(
-        errorMessage ||
-          `Token exchange failed: ${response.status} - ${responseText}`,
-      );
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`Token exchange failed: ${String(error)}`);
     }
 
     // Log unexpected content types for debugging
@@ -513,35 +535,47 @@ export class MCPOAuthProvider {
       }
     }
 
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Accept: 'application/json, application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    });
+    let responseText: string;
+    let contentType: string;
+    let statusCode: number;
 
-    const responseText = await response.text();
-    const contentType = response.headers.get('content-type') || '';
+    try {
+      const response = await axios.post(tokenUrl, params.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json, application/x-www-form-urlencoded',
+        },
+        transformResponse: [(data) => data], // Get raw response
+        validateStatus: () => true,
+      });
 
-    if (!response.ok) {
-      // Try to parse error from form-urlencoded response
-      let errorMessage: string | null = null;
-      try {
-        const errorParams = new URLSearchParams(responseText);
-        const error = errorParams.get('error');
-        const errorDescription = errorParams.get('error_description');
-        if (error) {
-          errorMessage = `Token refresh failed: ${error} - ${errorDescription || 'No description'}`;
+      responseText = response.data;
+      contentType = (response.headers['content-type'] as string) || '';
+      statusCode = response.status;
+
+      if (statusCode < 200 || statusCode >= 300) {
+        // Try to parse error from form-urlencoded response
+        let errorMessage: string | null = null;
+        try {
+          const errorParams = new URLSearchParams(responseText);
+          const error = errorParams.get('error');
+          const errorDescription = errorParams.get('error_description');
+          if (error) {
+            errorMessage = `Token refresh failed: ${error} - ${errorDescription || 'No description'}`;
+          }
+        } catch {
+          // Fall back to raw error
         }
-      } catch {
-        // Fall back to raw error
+        throw new Error(
+          errorMessage ||
+            `Token refresh failed: ${statusCode} - ${responseText}`,
+        );
       }
-      throw new Error(
-        errorMessage ||
-          `Token refresh failed: ${response.status} - ${responseText}`,
-      );
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`Token refresh failed: ${String(error)}`);
     }
 
     // Log unexpected content types for debugging
@@ -618,17 +652,21 @@ export class MCPOAuthProvider {
 
       // First check if the server requires authentication via WWW-Authenticate header
       try {
-        const headers: HeadersInit = OAuthUtils.isSSEEndpoint(mcpServerUrl)
+        const headers: Record<string, string> = OAuthUtils.isSSEEndpoint(
+          mcpServerUrl,
+        )
           ? { Accept: 'text/event-stream' }
           : { Accept: 'application/json' };
 
-        const response = await fetch(mcpServerUrl, {
-          method: 'HEAD',
+        const response = await axios.head(mcpServerUrl, {
           headers,
+          validateStatus: () => true,
         });
 
         if (response.status === 401 || response.status === 307) {
-          const wwwAuthenticate = response.headers.get('www-authenticate');
+          const wwwAuthenticate = response.headers['www-authenticate'] as
+            | string
+            | undefined;
 
           if (wwwAuthenticate) {
             const discoveredConfig =
