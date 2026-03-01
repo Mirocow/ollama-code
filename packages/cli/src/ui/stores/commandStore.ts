@@ -124,7 +124,7 @@ export const commandStore = create<CommandStoreState>()((set, get) => ({
   isRedoing: false,
   lastError: null,
 
-  execute: async (commandInput) => {
+  execute: async <T>(commandInput: Omit<Command<T>, 'id' | 'timestamp'>): Promise<T> => {
     const { isExecuting, maxHistorySize, history, currentIndex } = get();
     
     if (isExecuting) {
@@ -133,7 +133,7 @@ export const commandStore = create<CommandStoreState>()((set, get) => ({
     
     set({ isExecuting: true, lastError: null });
     
-    const command: Command = {
+    const command: Command<T> = {
       ...commandInput,
       id: generateCommandId(),
       timestamp: Date.now(),
@@ -141,10 +141,10 @@ export const commandStore = create<CommandStoreState>()((set, get) => ({
     };
     
     try {
-      const result = await command.execute();
+      const result: T = await command.execute();
       
       // Create history entry
-      const entry: CommandHistoryEntry = {
+      const entry: CommandHistoryEntry<T> = {
         command,
         result,
         undone: false,
@@ -164,7 +164,7 @@ export const commandStore = create<CommandStoreState>()((set, get) => ({
       });
       
       // Emit event
-      eventBus.emit('command:executed', {
+      eventBus.getState().emit('command:executed', {
         commandId: command.id,
         commandType: command.type,
         result,
@@ -212,7 +212,7 @@ export const commandStore = create<CommandStoreState>()((set, get) => ({
       });
       
       // Emit event
-      eventBus.emit('command:undone', {
+      eventBus.getState().emit('command:undone', {
         commandId: entry.command.id,
         commandType: entry.command.type,
       });
@@ -261,7 +261,7 @@ export const commandStore = create<CommandStoreState>()((set, get) => ({
       });
       
       // Emit event
-      eventBus.emit('command:redone', {
+      eventBus.getState().emit('command:redone', {
         commandId: entry.command.id,
         commandType: entry.command.type,
       });

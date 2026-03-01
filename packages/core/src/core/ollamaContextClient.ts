@@ -47,6 +47,23 @@ import { createDebugLogger } from '../utils/debugLogger.js';
 const debugLogger = createDebugLogger('OLLAMA_CONTEXT_CLIENT');
 
 /**
+ * Internal generate request for Ollama API
+ */
+interface InternalGenerateRequest {
+  model: string;
+  prompt: string;
+  stream?: boolean;
+  context?: number[];
+  system?: string;
+  images?: string[];
+  template?: string;
+  options?: Record<string, unknown>;
+  keep_alive?: string | number;
+  raw?: boolean;
+  format?: 'json' | string | Record<string, unknown>;
+}
+
+/**
  * Generate request with context support
  */
 export interface OllamaContextGenerateRequest {
@@ -170,7 +187,7 @@ export class OllamaContextClient {
     const contextReused = cachedContext !== null && cachedContext.length > 0;
 
     // Build generate request
-    const generateRequest: Record<string, unknown> = {
+    const generateRequest: InternalGenerateRequest = {
       model,
       prompt,
       ...rest,
@@ -192,7 +209,7 @@ export class OllamaContextClient {
 
     // Make the request
     const response = await this.client.generate(
-      generateRequest as any,
+      generateRequest as unknown as import('./ollamaNativeClient.js').OllamaGenerateRequest,
       undefined,
       { signal },
     );
@@ -250,7 +267,7 @@ export class OllamaContextClient {
     const contextReused = cachedContext !== null && cachedContext.length > 0;
 
     // Build generate request
-    const generateRequest: Record<string, unknown> = {
+    const generateRequest: InternalGenerateRequest = {
       model,
       prompt,
       stream: true,
@@ -271,7 +288,7 @@ export class OllamaContextClient {
     let finalResponse: OllamaContextGenerateResponse | null = null;
 
     await this.client.generate(
-      generateRequest as any,
+      generateRequest as unknown as import('./ollamaNativeClient.js').OllamaGenerateRequest,
       (chunk) => {
         callback({
           model: chunk.model,
@@ -313,19 +330,21 @@ export class OllamaContextClient {
       throw new Error('Stream ended without final response');
     }
 
-    // Cache the context
-    if (finalResponse.context && finalResponse.context.length > 0) {
+    // Cache the context - finalResponse is guaranteed to be OllamaContextGenerateResponse here
+    // Use non-null assertion since we've already checked for null above
+    const ctx = (finalResponse as OllamaContextGenerateResponse).context;
+    if (ctx && ctx.length > 0) {
       session.messageCount++;
       this.contextCache.setContext(
         sessionId,
-        finalResponse.context,
+        ctx,
         model,
         session.messageCount,
       );
-      debugLogger.info(`Cached context from stream (${finalResponse.context.length} tokens)`);
+      debugLogger.info(`Cached context from stream (${ctx.length} tokens)`);
     }
 
-    return finalResponse;
+    return finalResponse as OllamaContextGenerateResponse;
   }
 
   /**
