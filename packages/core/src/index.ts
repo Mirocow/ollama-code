@@ -60,6 +60,7 @@ export * from './core/coreToolScheduler.js';
 export * from './core/logger.js';
 export * from './core/nonInteractiveToolExecutor.js';
 export * from './core/prompts.js';
+export * from './core/promptOptimizer.js';
 export * from './core/tokenLimits.js';
 export * from './core/turn.js';
 export { OllamaChat, type StreamEvent } from './core/ollamaChat.js';
