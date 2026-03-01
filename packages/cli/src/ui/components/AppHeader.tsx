@@ -34,8 +34,9 @@ export const AppHeader = ({ version }: AppHeaderProps) => {
   // Get context window size from config or use default
   const contextWindowSize = contentGeneratorConfig?.contextWindowSize;
 
-  // Get current prompt token count from session stats
-  const promptTokenCount = sessionStats.stats.lastPromptTokenCount;
+  // Get cumulative prompt token count from session stats for context usage
+  // Using totalPromptTokens instead of lastPromptTokenCount for accurate context tracking
+  const promptTokenCount = sessionStats.stats.metrics.totalPromptTokens;
 
   return (
     <Box flexDirection="column">
