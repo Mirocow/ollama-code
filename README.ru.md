@@ -77,6 +77,78 @@ npm run start -- "Объясни, как работает async/await в JavaScr
 npm run debug
 ```
 
+## Новые возможности v0.11.0
+
+### Архитектурные улучшения
+
+Крупные улучшения архитектуры для лучшей производительности и расширяемости:
+
+| Функция | Описание |
+|---------|-------------|
+| **Миграция на Zustand** | Заменил Context API, устраняет лишние ре-рендеры |
+| **Event Bus** | Типизированная система pub/sub для слабой связности |
+| **Command Pattern** | Полная поддержка Undo/Redo для обратимых операций |
+| **Plugin System v1** | Динамическая загрузка инструментов, builtin плагины, lifecycle hooks |
+| **Context Caching** | KV-cache reuse для 80-90% более быстрых диалогов |
+| **Документация промптов** | Полная документация системы формирования промптов |
+
+### Новые Stores
+
+| Store | Назначение |
+|-------|---------|
+| `sessionStore` | Состояние сессии и метрики |
+| `streamingStore` | Состояние стриминга + AbortController |
+| `uiStore` | UI настройки с персистентностью |
+| `commandStore` | Command pattern для undo/redo |
+| `eventBus` | Система событий pub/sub |
+
+### Plugin System
+
+Динамическая архитектура плагинов с lifecycle hooks:
+
+```typescript
+const plugin: PluginDefinition = {
+  metadata: { id: 'my-plugin', name: 'My Plugin', version: '1.0.0' },
+  tools: [{ id: 'hello', name: 'hello', execute: async () => ({ success: true }) }],
+  hooks: {
+    onLoad: async (ctx) => ctx.logger.info('Загружен'),
+    onBeforeToolExecute: async (id, params) => true,
+  },
+};
+```
+
+**Builtin Плагины:**
+- `core-tools` — echo, timestamp, get_env
+- `dev-tools` — python_dev, nodejs_dev, golang_dev, rust_dev, typescript_dev
+- `file-tools` — read_file, write_file, edit_file
+- `search-tools` — grep, glob, web_fetch
+- `shell-tools` — run_shell_command
+
+### Event Bus
+
+Типизированные события для коммуникации между компонентами:
+
+```typescript
+// Подписка на события
+eventBus.subscribe('stream:finished', (data) => {
+  console.log('Токены:', data.tokenCount);
+});
+
+// Эмиссия событий
+eventBus.emit('command:executed', { commandId: '123', type: 'edit' });
+```
+
+### Документация системы промптов
+
+Новая комплексная документация в `docs/PROMPT_SYSTEM.md`:
+- `getCoreSystemPrompt()` — построение основного системного промпта
+- `getCompressionPrompt()` — сжатие истории в XML
+- `getToolCallFormatInstructions()` — для моделей без нативных tools
+- `getToolLearningContext()` — обучение на прошлых ошибках
+- `getEnvironmentInfo()` — контекст runtime окружения
+
+---
+
 ## Новые возможности v0.10.7
 
 ### Система самообучения для вызова инструментов

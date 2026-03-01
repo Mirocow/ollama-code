@@ -2,12 +2,12 @@
 
 > Профессиональный анализ архитектуры и план развития проекта
 
-## Текущее состояние (v0.10.8)
+## Текущее состояние (v0.11.0)
 
-### ✅ Реализованные улучшения (2025-03-01)
+### ✅ Реализованные улучшения (2025-01)
 
 #### 1. Context Caching — KV-cache Reuse
-**Статус:** ✅ Реализовано
+**Статус:** ✅ Реализовано и интегрировано
 
 ```typescript
 // До: каждый запрос отправлял ВСЮ историю
@@ -60,6 +60,8 @@ const tokenCount = useSessionStore(state => state.lastPromptTokenCount);
 - `sessionStore` — сессия и метрики
 - `streamingStore` — состояние стриминга + AbortController
 - `uiStore` — UI настройки с persistence
+- `commandStore` — Command Pattern для Undo/Redo
+- `eventBus` — Event Bus для слабой связности
 
 #### 3. Event Bus
 **Статус:** ✅ Реализовано
@@ -75,6 +77,13 @@ eventBus.subscribe('stream:finished', (data) => {
 // Эмиссия событий
 eventBus.emit('stream:finished', { promptId: '123', tokenCount: 1500 });
 ```
+
+**Поддерживаемые события:**
+- `stream:started/chunk/finished/error/cancelled`
+- `tool:started/progress/completed/error`
+- `session:started/ended/cleared`
+- `command:executed/undone/redone`
+- `plugin:loaded/unloaded/error`
 
 #### 4. Command Pattern (Undo/Redo)
 **Статус:** ✅ Реализовано
@@ -110,15 +119,40 @@ const myPlugin: PluginDefinition = {
     id: 'hello',
     name: 'hello_world',
     description: 'Say hello',
+    parameters: { type: 'object', properties: { message: { type: 'string' } } },
     execute: async (params) => ({ success: true, data: 'Hello!' }),
   }],
+  hooks: {
+    onLoad: async (context) => context.logger.info('Plugin loaded'),
+    onBeforeToolExecute: async (toolId, params) => true,
+  },
 };
 
 await pluginManager.registerPlugin(myPlugin);
 await pluginManager.enablePlugin('my-plugin');
 ```
 
-### Архитектурный обзор
+**Builtin Plugins:**
+- `core-tools` — echo, timestamp, env
+- `dev-tools` — python_dev, nodejs_dev, golang_dev, rust_dev, etc.
+- `file-tools` — read_file, write_file, edit_file, glob
+- `search-tools` — grep, glob, web_fetch
+- `shell-tools` — run_shell_command
+
+#### 6. Prompt System Documentation
+**Статус:** ✅ Реализовано
+
+Полная документация системы промптов в `docs/PROMPT_SYSTEM.md`:
+- `getCoreSystemPrompt()` — основной системный промпт
+- `getCompressionPrompt()` — сжатие истории в XML
+- `getProjectSummaryPrompt()` — суммаризация проекта
+- `getToolCallFormatInstructions()` — инструкции для моделей без tools
+- `getToolLearningContext()` — контекст обучения на ошибках
+- `getEnvironmentInfo()` — информация об окружении
+
+---
+
+## Архитектурный обзор
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -127,7 +161,7 @@ await pluginManager.enablePlugin('my-plugin');
 │  packages/cli         │ Ink (React) + Terminal UI           │
 │  packages/core        │ Business Logic + Tools + Ollama API │
 │  packages/webui       │ React Components (Storybook)        │
-│  packages/sdk-ts      │ TypeScript SDK for integrations     │
+│  packages/sdk-typescript │ TypeScript SDK for integrations  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -136,312 +170,88 @@ await pluginManager.enablePlugin('my-plugin');
 | Слой | Технологии | Оценка |
 |------|------------|--------|
 | UI Layer | Ink (React 18), React Hooks | ✅ Современно |
-| State Management | Context API + useReducer | ⚠️ Можно улучшить |
-| API Client | Native fetch, Custom OllamaClient | ✅ Хорошо |
-| Tools System | DeclarativeTool pattern | ✅ Расширяемо |
+| State Management | Zustand + Event Bus | ✅ Оптимизировано |
+| API Client | Native fetch → Axios (planned) | ⏳ В процессе |
+| Tools System | Plugin System + DeclarativeTool | ✅ Расширяемо |
 | Testing | Vitest, MSW | ✅ Покрытие 80%+ |
 | Build | esbuild, TypeScript 5.x | ✅ Быстро |
 
 ---
 
-## Анализ проблем и возможностей
-
-### 🔴 Критические проблемы
-
-#### 1. React Performance в CLI
-
-**Проблема:** Использование Context API для глобального состояния приводит к лишним ре-рендерам при каждом изменении.
-
-```typescript
-// Текущая проблема: UIStateContext вызывает ре-рендер всех компонентов
-const uiState = useUIState(); // ❌ Подписка на всё состояние
-
-// Решение: Атомарные подписки через Zustand/Jotai
-const streamingState = useUIState(state => state.streaming); // ✅ Только нужное
-```
-
-**Рекомендация:** Миграция на Zustand или Jotai для атомарных обновлений.
-
-#### 2. Отсутствие мемоизации компонентов
-
-**Проблема:** Инструменты не мемоизированы, создаются при каждом рендере.
-
-```typescript
-// Текущее (packages/cli/src/ui/components/Header.tsx)
-function Header({ model, tokens, ... }) {
-  // ❌ Вычисления при каждом рендере
-  const progress = (tokens / maxTokens) * 100;
-}
-
-// Рекомендуемое
-const Header = memo(function Header({ model, tokens, ... }) {
-  // ✅ Мемоизированные вычисления
-  const progress = useMemo(() =>
-    (tokens / maxTokens) * 100,
-    [tokens, maxTokens]
-  );
-});
-```
-
-#### 3. Streaming Memory Leaks
-
-**Проблема:** Неполная очистка AbortController при прерывании стриминга.
-
-```typescript
-// ollamaNativeClient.ts - необходима очистка
-useEffect(() => {
-  const controller = new AbortController();
-
-  streamChat(controller.signal);
-
-  return () => {
-    controller.abort(); // ✅ Есть
-    // ❌ Но нет очистки readers и timeout
-  };
-}, []);
-```
-
----
-
-### 🟡 Архитектурные улучшения
-
-#### 1. Plugin System для инструментов
-
-**Текущее состояние:** Инструменты регистрируются статически.
-
-**Предложение:** Динамическая система плагинов.
-
-```typescript
-// packages/core/src/plugins/types.ts
-interface ToolPlugin {
-  name: string;
-  version: string;
-  tools: AnyDeclarativeTool[];
-  hooks?: {
-    beforeExecute?: (tool: string, params: unknown) => Promise<void>;
-    afterExecute?: (tool: string, result: ToolResult) => Promise<void>;
-  };
-}
-
-// Пример плагина
-const databasePlugin: ToolPlugin = {
-  name: '@ollama-code/database-tools',
-  version: '1.0.0',
-  tools: [new PostgresTool(), new MySQLTool(), new RedisTool()],
-  hooks: {
-    beforeExecute: async (tool, params) => {
-      logger.info(`Executing ${tool}`, params);
-    }
-  }
-};
-
-// Регистрация
-pluginManager.register(databasePlugin);
-```
-
-#### 2. Event-Driven Architecture
-
-**Проблема:** Прямые вызовы между компонентами создают coupling.
-
-**Решение:** Event Bus для слабой связности.
-
-```typescript
-// packages/core/src/events/index.ts
-type EventMap = {
-  'tool:execute': { name: string; params: unknown };
-  'tool:complete': { name: string; result: ToolResult };
-  'model:switch': { from: string; to: string };
-  'session:start': { id: string };
-  'session:end': { id: string; reason: string };
-};
-
-class EventBus<T extends Record<string, unknown>> {
-  private listeners = new Map<keyof T, Set<(data: T[keyof T]) => void>>();
-
-  on<K extends keyof T>(event: K, handler: (data: T[K]) => void) {
-    // ...
-  }
-
-  emit<K extends keyof T>(event: K, data: T[K]) {
-    // ...
-  }
-}
-```
-
-#### 3. Command Pattern для Undo/Redo
-
-**Отсутствует:** Возможность отмены операций.
-
-```typescript
-interface Command {
-  execute(): Promise<void>;
-  undo(): Promise<void>;
-  redo(): Promise<void>;
-}
-
-class EditFileCommand implements Command {
-  private originalContent: string;
-
-  constructor(
-    private filePath: string,
-    private newContent: string
-  ) {}
-
-  async execute() {
-    this.originalContent = await readFile(this.filePath);
-    await writeFile(this.filePath, this.newContent);
-  }
-
-  async undo() {
-    await writeFile(this.filePath, this.originalContent);
-  }
-}
-
-// Command Manager
-class CommandManager {
-  private history: Command[] = [];
-  private position = -1;
-
-  async execute(command: Command) {
-    await command.execute();
-    this.history = this.history.slice(0, this.position + 1);
-    this.history.push(command);
-    this.position++;
-  }
-
-  async undo() {
-    if (this.position >= 0) {
-      await this.history[this.position--].undo();
-    }
-  }
-}
-```
-
----
-
 ## Roadmap по версиям
 
-### v0.11.0 — Performance & Developer Experience
+### v0.11.0 — Performance & Developer Experience ✅
 
 **Цель:** Улучшение производительности и DX
 
 | Задача | Приоритет | Оценка | Статус |
 |--------|-----------|--------|--------|
-| Миграция на Zustand/Jotai | P0 | 5d | 🔴 Не начато |
-| Мемоизация React компонентов | P0 | 3d | 🔴 Не начато |
-| Virtual scrolling для истории | P1 | 3d | 🔴 Не начато |
-| React DevTools интеграция | P2 | 2d | 🔴 Не начато |
-| Hot Module Replacement | P2 | 2d | 🔴 Не начато |
-
-**Технические детали:**
-
-```typescript
-// Zustand store пример
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
-
-interface AppState {
-  // State
-  model: string;
-  messages: Message[];
-  streaming: boolean;
-  tokens: { used: number; max: number };
-
-  // Actions
-  setModel: (model: string) => void;
-  addMessage: (message: Message) => void;
-  setStreaming: (streaming: boolean) => void;
-}
-
-const useAppStore = create<AppState>()(
-  devtools(
-    persist(
-      (set) => ({
-        model: 'llama3.2',
-        messages: [],
-        streaming: false,
-        tokens: { used: 0, max: 128000 },
-
-        setModel: (model) => set({ model }),
-        addMessage: (message) => set((state) => ({
-          messages: [...state.messages, message]
-        })),
-        setStreaming: (streaming) => set({ streaming }),
-      }),
-      { name: 'ollama-code-store' }
-    )
-  )
-);
-```
+| Миграция на Zustand | P0 | 5d | ✅ Завершено |
+| Event Bus | P0 | 3d | ✅ Завершено |
+| Command Pattern (Undo/Redo) | P0 | 4d | ✅ Завершено |
+| Plugin System | P0 | 5d | ✅ Завершено |
+| Context Caching | P0 | 4d | ✅ Завершено |
+| Prompt System Docs | P1 | 2d | ✅ Завершено |
 
 ---
 
-### v0.12.0 — Plugin System
+### v0.12.0 — HTTP Client & API Improvements
 
-**Цель:** Расширяемость через плагины
+**Цель:** Замена fetch на axios, улучшение API
 
 | Задача | Приоритет | Оценка | Статус |
 |--------|-----------|--------|--------|
-| Plugin API дизайн | P0 | 3d | 🔴 Не начато |
-| Dynamic tool loading | P0 | 4d | 🔴 Не начато |
+| Замена fetch на axios | P0 | 3d | 🔴 Не начато |
+| Request/Response interceptors | P1 | 2d | 🔴 Не начато |
+| Retry logic | P1 | 1d | 🔴 Не начато |
+| Request timeout handling | P2 | 1d | 🔴 Не начато |
+
+---
+
+### v0.13.0 — Plugin System v2
+
+**Цель:** Динамическая загрузка плагинов
+
+| Задача | Приоритет | Оценка | Статус |
+|--------|-----------|--------|--------|
+| PluginLoader для обнаружения | P0 | 3d | 🔴 Не начато |
+| Dynamic plugin loading | P0 | 4d | 🔴 Не начато |
 | Plugin CLI команды | P1 | 2d | 🔴 Не начато |
 | Plugin marketplace | P2 | 5d | 🔴 Не начато |
-| Security sandbox для плагинов | P1 | 3d | 🔴 Не начато |
+| Security sandbox | P1 | 3d | 🔴 Не начато |
 
 **Пример структуры плагина:**
 
 ```
 @ollama-code/plugin-kubernetes/
 ├── package.json
+├── plugin.json         # Manifest
 ├── src/
-│   ├── index.ts          # Экспорт плагина
+│   ├── index.ts        # Экспорт плагина
 │   ├── tools/
-│   │   ├── kubectl.ts    # KubectlTool
-│   │   ├── helm.ts       # HelmTool
-│   │   └── k9s.ts        # K9sTool
+│   │   ├── kubectl.ts  # KubectlTool
+│   │   └── helm.ts     # HelmTool
 │   └── hooks/
-│       └── kubeconfig.ts # Автодетект контекста
-└── manifest.json         # Метаданные плагина
+│       └── kubeconfig.ts
 ```
 
 ---
 
-### v0.13.0 — Advanced Features
+### v0.14.0 — Memory & Performance
 
-**Цель:** Enterprise-функции
+**Цель:** Исправление memory leaks, оптимизация
 
 | Задача | Приоритет | Оценка | Статус |
 |--------|-----------|--------|--------|
-| Undo/Redo система | P0 | 5d | 🔴 Не начато |
-| Multi-file refactoring | P0 | 4d | 🔴 Не начато |
-| Code suggestions (LSP) | P1 | 5d | 🔴 Не начато |
-| Project templates | P2 | 3d | 🔴 Не начато |
-| Git integration v2 | P1 | 4d | 🔴 Не начато |
-
-**Multi-file refactoring:**
-
-```typescript
-interface RefactoringOperation {
-  type: 'rename' | 'extract' | 'move' | 'inline';
-  files: string[];
-  preview: () => Promise<FileDiff[]>;
-  apply: () => Promise<void>;
-  rollback: () => Promise<void>;
-}
-
-// Пример использования
-await refactoring.rename({
-  type: 'symbol',
-  from: 'oldFunctionName',
-  to: 'newFunctionName',
-  scope: 'project', // или 'file', 'directory'
-  dryRun: false
-});
-```
+| Memory leaks в streaming | P0 | 3d | 🔴 Не начато |
+| AbortController cleanup | P0 | 2d | 🔴 Не начато |
+| React мемоизация | P1 | 3d | 🔴 Не начато |
+| Virtual scrolling | P2 | 3d | 🔴 Не начато |
+| Token counting fallback | P1 | 1d | 🔴 Не начато |
 
 ---
 
-### v0.14.0 — Web UI
+### v0.15.0 — Web UI
 
 **Цель:** Полноценный веб-интерфейс
 
@@ -452,80 +262,6 @@ await refactoring.rename({
 | File explorer integration | P1 | 3d | 🔴 Не начато |
 | Terminal emulator (xterm.js) | P1 | 4d | 🔴 Не начато |
 | WebSocket streaming | P0 | 3d | 🔴 Не начато |
-| Authentication (OAuth) | P1 | 3d | 🔴 Не начато |
-
-**Архитектура Web UI:**
-
-```
-packages/web-ui/
-├── app/
-│   ├── layout.tsx
-│   ├── page.tsx           # Главная страница
-│   ├── chat/
-│   │   └── [id]/page.tsx  # Чат по ID
-│   └── settings/
-│       └── page.tsx
-├── components/
-│   ├── chat/
-│   │   ├── MessageList.tsx
-│   │   ├── InputArea.tsx
-│   │   └── ToolCallDisplay.tsx
-│   ├── editor/
-│   │   ├── CodeEditor.tsx # Monaco Editor
-│   │   └── FileTree.tsx
-│   └── terminal/
-│       └── Terminal.tsx   # xterm.js
-├── lib/
-│   ├── api-client.ts
-│   └── websocket.ts
-└── hooks/
-    ├── useChat.ts
-    └── useStreaming.ts
-```
-
----
-
-### v0.15.0 — AI Enhancements
-
-**Цель:** Улучшение AI-возможностей
-
-| Задача | Приоритет | Оценка | Статус |
-|--------|-----------|--------|--------|
-| Multi-model routing | P0 | 4d | 🔴 Не начато |
-| Context compression | P0 | 5d | 🔴 Не начато |
-| RAG integration | P1 | 5d | 🔴 Не начато |
-| Tool chains | P1 | 3d | 🔴 Не начато |
-| Model fine-tuning support | P2 | 5d | 🔴 Не начато |
-
-**Multi-model routing:**
-
-```typescript
-interface ModelRouter {
-  // Автоматический выбор модели по задаче
-  selectModel(task: TaskType): string;
-
-  // Параллельное выполнение на разных моделях
-  parallelExecute<T>(
-    tasks: Task[],
-    models: string[]
-  ): Promise<T[]>;
-
-  // Fallback цепочка
-  withFallback<T>(
-    primary: string,
-    fallbacks: string[],
-    operation: () => Promise<T>
-  ): Promise<T>;
-}
-
-// Примеры routing правил
-const routingRules = [
-  { task: 'code_generation', model: 'codellama' },
-  { task: 'code_review', model: 'deepseek-r1' },
-  { task: 'documentation', model: 'llama3.2' },
-  { task: 'vision', model: 'llava' },
-];
-```
 
 ---
 
@@ -539,8 +275,6 @@ const routingRules = [
 | Performance benchmarks | P0 | 3d | 🔴 Не начато |
 | Documentation v2 | P0 | 5d | 🔴 Не начато |
 | CI/CD pipeline | P0 | 3d | 🔴 Не начато |
-| Docker optimization | P1 | 2d | 🔴 Не начато |
-| Kubernetes manifests | P2 | 3d | 🔴 Не начато |
 | Monitoring (OpenTelemetry) | P1 | 4d | 🔴 Не начато |
 
 ---
@@ -553,35 +287,35 @@ const routingRules = [
 | Open Source | ✅ | ❌ | ✅ | ❌ |
 | CLI интерфейс | ✅ | ✅ | ✅ | ❌ |
 | Web UI | 🔴 Планируется | ✅ | ❌ | ✅ |
-| Plugin System | 🔴 Планируется | ✅ | ✅ | ✅ |
+| Plugin System | ✅ | ✅ | ✅ | ✅ |
 | IDE Integration | ✅ VSCode | ✅ VSCode | ✅ Multi | ✅ Built-in |
 | MCP Support | ✅ | ✅ | ❌ | ❌ |
-| Multi-model | 🔴 Планируется | ❌ | ✅ | ✅ |
-| Context Management | ✅ | ✅ | ✅ | ✅ |
+| Context Caching | ✅ | ✅ | ⚠️ Частично | ✅ |
+| Undo/Redo | ✅ | ✅ | ❌ | ✅ |
 
 ---
 
 ## Приоритеты развития
 
-### Q1 2025
-1. **Performance** — Zustand миграция, мемоизация
-2. **DX** — HMR, DevTools
-3. **Stability** — Исправление memory leaks
+### Q1 2025 ✅
+1. **Performance** — Zustand миграция ✅
+2. **Plugin System** — Динамические инструменты ✅
+3. **Context Caching** — KV-cache reuse ✅
 
 ### Q2 2025
-1. **Plugin System** — Динамические инструменты
-2. **Web UI** — Next.js приложение
-3. **Enterprise** — Authentication, Authorization
+1. **HTTP Client** — Axios migration
+2. **Plugin Loader** — Динамическая загрузка
+3. **Memory** — Исправление leaks
 
 ### Q3 2025
-1. **AI Features** — Multi-model routing, RAG
-2. **Refactoring** — Multi-file, Undo/Redo
-3. **Integrations** — GitHub, GitLab, Jira
+1. **Web UI** — Next.js приложение
+2. **Enterprise** — Authentication
+3. **AI Features** — Multi-model routing
 
 ### Q4 2025
 1. **v1.0.0** — Production release
 2. **Cloud offering** — SaaS версия
-3. **Enterprise** — Self-hosted
+3. **Documentation** — Полная документация
 
 ---
 
@@ -591,10 +325,9 @@ const routingRules = [
 
 | Область | Проблема | Решение | Оценка |
 |---------|----------|---------|--------|
-| React Context | Лишние ре-рендеры | Zustand/Jotai | 5d |
-| Error Handling | Неструктурированные ошибки | Result pattern | 3d |
-| Testing | Недостаточные e2e тесты | Playwright | 4d |
-| Types | Any типы в критических местах | Строгая типизация | 3d |
+| Memory leaks | AbortController cleanup | Cleanup handlers | 2d |
+| Token counting | Fallback для прогресса | Estimate fallback | 1d |
+| HTTP Client | Native fetch | Axios | 3d |
 
 ### Средний приоритет
 
@@ -602,7 +335,7 @@ const routingRules = [
 |---------|----------|---------|--------|
 | Documentation | Не все API задокументированы | TSDoc | 3d |
 | Logging | Несогласованный формат | Structured logging | 2d |
-| Config | Много источников конфигурации | Единый config schema | 3d |
+| Config | Много источников | Единый schema | 3d |
 
 ---
 
@@ -622,17 +355,18 @@ const routingRules = [
 
 ## Заключение
 
-Ollama Code имеет прочную архитектурную основу с хорошим разделением ответственности между пакетами. Основные направления развития:
+Ollama Code v0.11.0 включает ключевые архитектурные улучшения:
 
-1. **Performance** — Оптимизация React-рендеринга через современный state management
-2. **Extensibility** — Plugin system для сообщества
-3. **UX** — Web UI для более широкой аудитории
-4. **AI** — Multi-model routing и RAG для лучших результатов
+1. **Zustand** — Оптимизация React-рендеринга
+2. **Event Bus** — Слабая связность компонентов  
+3. **Command Pattern** — Undo/Redo для операций
+4. **Plugin System** — Расширяемость через плагины
+5. **Context Caching** — KV-cache reuse для производительности
 
-Проект имеет потенциал стать ведущим open-source инструментом для AI-assisted разработки с локальными моделями.
+Следующие шаги — миграция на axios, доработка Plugin Loader и исправление memory leaks.
 
 ---
 
-*Document version: 2.0.0*
-*Last updated: 2025-01-XX*
+*Document version: 3.0.0*
+*Last updated: 2025-01-27*
 *Author: Architecture Team*

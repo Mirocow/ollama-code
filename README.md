@@ -26,6 +26,7 @@
 ## Features
 
 - 🚀 **Fully Local** — all models run locally via Ollama
+- 💾 **Context Caching** — KV-cache reuse for 80-90% faster multi-turn conversations
 - 💻 **CLI Interface** — convenient terminal interface based on Ink (React for CLI)
 - 🔧 **Code Tools** — read, edit, search files, execute commands
 - 🔌 **MCP Support** — integration with Model Context Protocol servers
@@ -39,6 +40,8 @@
 - 🌐 **API Tester** — REST API endpoint testing
 - 🏷️ **Tool Aliases** — short names for tools (`run` → `run_shell_command`)
 - 🧠 **Self-Learning** — automatic learning of tool names from errors
+- 🔄 **Undo/Redo** — reversible operations with command pattern
+- 🔌 **Plugin System** — dynamic tool loading and runtime registration
 
 ## Requirements
 
@@ -76,6 +79,139 @@ npm run start -- "Explain how async/await works in JavaScript"
 # Debug mode
 npm run debug
 ```
+
+## What's New in v0.11.0
+
+### Architecture Improvements
+
+Major architectural enhancements for better performance and extensibility:
+
+| Feature | Description |
+|---------|-------------|
+| **Zustand Migration** | Replaced Context API, eliminates unnecessary re-renders |
+| **Event Bus** | Typed pub/sub system for loose component coupling |
+| **Command Pattern** | Full Undo/Redo support for reversible operations |
+| **Plugin System v1** | Dynamic tool loading, builtin plugins, lifecycle hooks |
+| **Context Caching** | KV-cache reuse for 80-90% faster conversations |
+| **Prompt Documentation** | Complete documentation of prompt formation system |
+
+### New Stores
+
+| Store | Purpose |
+|-------|---------|
+| `sessionStore` | Session state and metrics |
+| `streamingStore` | Streaming state + AbortController |
+| `uiStore` | UI settings with persistence |
+| `commandStore` | Command pattern for undo/redo |
+| `eventBus` | Event pub/sub system |
+
+### Plugin System
+
+Dynamic plugin architecture with lifecycle hooks:
+
+```typescript
+const plugin: PluginDefinition = {
+  metadata: { id: 'my-plugin', name: 'My Plugin', version: '1.0.0' },
+  tools: [{ id: 'hello', name: 'hello', execute: async () => ({ success: true }) }],
+  hooks: {
+    onLoad: async (ctx) => ctx.logger.info('Loaded'),
+    onBeforeToolExecute: async (id, params) => true,
+  },
+};
+```
+
+**Builtin Plugins:**
+- `core-tools` — echo, timestamp, get_env
+- `dev-tools` — python_dev, nodejs_dev, golang_dev, rust_dev, typescript_dev
+- `file-tools` — read_file, write_file, edit_file
+- `search-tools` — grep, glob, web_fetch
+- `shell-tools` — run_shell_command
+
+### Event Bus
+
+Typed events for cross-component communication:
+
+```typescript
+// Subscribe to events
+eventBus.subscribe('stream:finished', (data) => {
+  console.log('Tokens:', data.tokenCount);
+});
+
+// Emit events
+eventBus.emit('command:executed', { commandId: '123', type: 'edit' });
+```
+
+### Prompt System Documentation
+
+New comprehensive documentation in `docs/PROMPT_SYSTEM.md`:
+- `getCoreSystemPrompt()` — main system prompt construction
+- `getCompressionPrompt()` — history compression to XML
+- `getToolCallFormatInstructions()` — for models without native tools
+- `getToolLearningContext()` — learning from past mistakes
+- `getEnvironmentInfo()` — runtime environment context
+
+---
+
+## What's New in v0.10.9
+
+### Context Caching with KV-cache Reuse
+
+Major performance improvement for multi-turn conversations:
+
+| Feature | Description |
+|---------|-------------|
+| **80-90% Faster** | Subsequent messages use cached context tokens |
+| **KV-cache Reuse** | Leverages Ollama's native context caching |
+| **Auto Endpoint Selection** | Switches between `/api/generate` and `/api/chat` |
+| **Session Tracking** | Per-session context management |
+
+```typescript
+// Enable context caching
+const config: ContentGeneratorConfig = {
+  model: 'llama3.2',
+  enableContextCaching: true,  // Key improvement
+};
+
+// Performance gains:
+// Message 1: 100% (baseline)
+// Message 2: ~15% tokens processed (85% cached)
+// Message 10: ~7% tokens processed (93% cached)
+```
+
+### Test Coverage
+
+All context caching components are fully tested with **118 tests**:
+
+| Component | Tests | Coverage |
+|-----------|-------|----------|
+| ContextCacheManager | 50 | TTL, eviction, concurrency, edge cases |
+| OllamaContextClient | 32 | Streaming, errors, session management |
+| HybridContentGenerator | 36 | Endpoint selection, token counting |
+
+See [docs/CONTEXT_CACHING.md](./docs/CONTEXT_CACHING.md) for full API documentation.
+
+### Architecture Improvements
+
+| Component | Description |
+|-----------|-------------|
+| **Zustand Stores** | Replaced Context API for better performance |
+| **Event Bus** | Typed publish/subscribe for loose coupling |
+| **Command Pattern** | Undo/Redo support for reversible operations |
+| **Plugin System** | Dynamic tool loading at runtime |
+
+### New Configuration Options
+
+```typescript
+interface ContentGeneratorConfig {
+  // Enable context caching for faster conversations
+  enableContextCaching?: boolean;
+  
+  // Session ID for context tracking
+  sessionId?: string;
+}
+```
+
+---
 
 ## What's New in v0.10.8
 
