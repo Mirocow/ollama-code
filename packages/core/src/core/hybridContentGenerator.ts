@@ -34,11 +34,15 @@
  */
 
 import type {
-  Content,
   GenerateContentParameters,
   GenerateContentResponse,
-  Tool,
+  CountTokensParameters,
+  CountTokensResponse,
+  EmbedContentParameters,
+  EmbedContentResponse,
 } from '../types/content.js';
+import { FinishReason } from '../types/content.js';
+import type { ContentGenerator } from './contentGenerator.js';
 import { OllamaNativeClient } from './ollamaNativeClient.js';
 import { OllamaContextClient, type OllamaContextGenerateResponse } from './ollamaContextClient.js';
 import { ContextCacheManager } from '../cache/contextCacheManager.js';
@@ -79,8 +83,9 @@ interface EndpointSelection {
  * Hybrid Content Generator
  * 
  * Intelligently selects the optimal Ollama API endpoint based on request requirements.
+ * Implements ContentGenerator interface for seamless integration.
  */
-export class HybridContentGenerator {
+export class HybridContentGenerator implements ContentGenerator {
   private contextClient: OllamaContextClient;
   private chatClient: OllamaNativeClient;
   private converter: OllamaContentConverter;
@@ -154,10 +159,10 @@ export class HybridContentGenerator {
   /**
    * Generate content stream - automatically selects optimal endpoint
    */
-  async *generateContentStream(
+  generateContentStream(
     request: GenerateContentParameters,
     userPromptId: string,
-  ): AsyncGenerator<GenerateContentResponse> {
+  ): Promise<AsyncGenerator<GenerateContentResponse>> {
     const selection = this.selectEndpoint(request);
 
     debugLogger.info(`Selected endpoint for stream: ${selection.endpoint}`, {
@@ -165,9 +170,9 @@ export class HybridContentGenerator {
     });
 
     if (selection.endpoint === 'generate') {
-      yield* this.generateStreamWithCache(request, userPromptId);
+      return Promise.resolve(this.generateStreamWithCache(request, userPromptId));
     } else {
-      yield* this.generateStreamWithChat(request, userPromptId);
+      return Promise.resolve(this.generateStreamWithChat(request, userPromptId));
     }
   }
 
@@ -319,7 +324,7 @@ export class HybridContentGenerator {
             parts: [{ text: accumulatedResponse }],
             role: 'model',
           },
-          finishReason: 'STOP',
+          finishReason: FinishReason.STOP,
           index: 0,
           safetyRatings: [],
         },
@@ -378,12 +383,13 @@ export class HybridContentGenerator {
     const accumulatedContent = { text: '' };
 
     await this.chatClient.chat(ollamaRequest, (chunk) => {
-      const response = this.converter.convertOllamaChunkToGenAI(
+      this.converter.convertOllamaChunkToGenAI(
         chunk,
         accumulatedToolCalls,
         accumulatedContent,
       );
       // We'll yield responses after accumulation
+      void chunk; // Acknowledge chunk for accumulation
     });
 
     // Yield final response
@@ -394,7 +400,7 @@ export class HybridContentGenerator {
             parts: [{ text: accumulatedContent.text }],
             role: 'model',
           },
-          finishReason: 'STOP',
+          finishReason: FinishReason.STOP,
           index: 0,
           safetyRatings: [],
         },
@@ -436,25 +442,26 @@ export class HybridContentGenerator {
     const config = request.config;
     if (!config) return options;
 
-    if (config.temperature !== undefined) {
-      options.temperature = config.temperature;
+    // Use bracket notation for strict TypeScript compatibility
+    if ('temperature' in config && config.temperature !== undefined) {
+      options['temperature'] = config.temperature;
     }
-    if (config.topP !== undefined) {
-      options.top_p = config.topP;
+    if ('topP' in config && config.topP !== undefined) {
+      options['top_p'] = config.topP;
     }
-    if (config.topK !== undefined) {
-      options.top_k = config.topK;
+    if ('topK' in config && config.topK !== undefined) {
+      options['top_k'] = config.topK;
     }
-    if (config.maxOutputTokens !== undefined) {
-      options.num_predict = config.maxOutputTokens;
+    if ('maxOutputTokens' in config && config.maxOutputTokens !== undefined) {
+      options['num_predict'] = config.maxOutputTokens;
     }
-    if (config.stopSequences && config.stopSequences.length > 0) {
-      options.stop = config.stopSequences;
+    if ('stopSequences' in config && config.stopSequences && config.stopSequences.length > 0) {
+      options['stop'] = config.stopSequences;
     }
 
     // Add context window size
     if (this.config.contextWindowSize !== undefined) {
-      options.num_ctx = this.config.contextWindowSize;
+      options['num_ctx'] = this.config.contextWindowSize;
     }
 
     return options;
@@ -473,7 +480,7 @@ export class HybridContentGenerator {
             parts: [{ text: response.response }],
             role: 'model',
           },
-          finishReason: response.done ? 'STOP' : 'FINISH_REASON_UNSPECIFIED',
+          finishReason: response.done ? FinishReason.STOP : FinishReason.FINISH_REASON_UNSPECIFIED,
           index: 0,
           safetyRatings: [],
         },
@@ -504,6 +511,74 @@ export class HybridContentGenerator {
       sessionId: this.sessionId,
       hasCachedContext: this.contextCache.hasContext(this.sessionId),
     };
+  }
+
+  /**
+   * Count tokens in the request content
+   * Delegates to chatClient for accurate token counting
+   */
+  async countTokens(request: CountTokensParameters): Promise<CountTokensResponse> {
+    // Use the chat client for token counting
+    const contents = Array.isArray(request.contents) ? request.contents : [request.contents];
+    let totalTokens = 0;
+
+    for (const content of contents) {
+      for (const part of content.parts ?? []) {
+        if (typeof part === 'string') {
+          totalTokens += this.estimateTokenCount(part);
+        } else if ('text' in part && part.text) {
+          totalTokens += this.estimateTokenCount(part.text);
+        }
+      }
+    }
+
+    return { totalTokens };
+  }
+
+  /**
+   * Embed content using Ollama embedding API
+   * Delegates to chatClient for embedding
+   */
+  async embedContent(request: EmbedContentParameters): Promise<EmbedContentResponse> {
+    const model = request.model || this.config.model;
+    
+    // Extract text from content
+    let text = '';
+    if (typeof request.content === 'string') {
+      text = request.content;
+    } else if (request.content && 'parts' in request.content) {
+      text = request.content.parts
+        .map((p: any) => ('text' in p ? p.text : ''))
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    const embedding = await this.chatClient.embeddings({
+      model,
+      prompt: text,
+    });
+
+    return {
+      embedding: {
+        values: embedding.embedding,
+      },
+    };
+  }
+
+  /**
+   * Check if summarized thinking should be used
+   * Currently returns false as this is a hybrid generator
+   */
+  useSummarizedThinking(): boolean {
+    return false;
+  }
+
+  /**
+   * Estimate token count for text
+   * Simple estimation: ~4 characters per token on average
+   */
+  private estimateTokenCount(text: string): number {
+    return Math.ceil(text.length / 4);
   }
 }
 
