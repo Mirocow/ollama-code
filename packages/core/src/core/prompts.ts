@@ -15,6 +15,10 @@ import type { GenerateContentConfig } from '../types/content.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 import { getToolLearningManager } from '../learning/tool-learning.js';
 import { supportsTools } from '../model-definitions/index.js';
+import { 
+  getCoreSystemPromptV2, 
+  shouldUseTemplates as shouldUseTemplatesInternal 
+} from './promptsV2.js';
 
 const debugLogger = createDebugLogger('PROMPTS');
 
@@ -284,6 +288,16 @@ export function getCoreSystemPrompt(
   userMemory?: string,
   model?: string,
 ): string {
+  // Check if we should use the new template-based system
+  // Default to templates unless OLLAMA_CODE_USE_TEMPLATES=false
+  const useTemplates = shouldUseTemplatesInternal();
+  
+  if (useTemplates) {
+    // Use new template-based prompt
+    return getCoreSystemPromptV2(userMemory, model);
+  }
+  
+  // Legacy prompt (original implementation below)
   // if OLLAMA_CODE_SYSTEM_MD is set (and not 0|false), override system prompt from file
   // default path is .ollama-code/system.md but can be modified via custom path in OLLAMA_CODE_SYSTEM_MD
   let systemMdEnabled = false;
