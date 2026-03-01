@@ -10,6 +10,7 @@ import type {
   WebSearchResultItem,
   TavilyProviderConfig,
 } from '../types.js';
+import { createHttpClient } from '../../../utils/httpClient.js';
 
 interface TavilyResultItem {
   title: string;
@@ -31,6 +32,11 @@ interface TavilySearchResponse {
 export class TavilyProvider extends BaseWebSearchProvider {
   readonly name = 'Tavily';
 
+  private readonly httpClient = createHttpClient({
+    timeout: 30000,
+    debug: process.env['DEBUG'] === '1' || process.env['DEBUG'] === 'true',
+  });
+
   constructor(private readonly config: TavilyProviderConfig) {
     super();
   }
@@ -43,29 +49,24 @@ export class TavilyProvider extends BaseWebSearchProvider {
     query: string,
     signal: AbortSignal,
   ): Promise<WebSearchResult> {
-    const response = await fetch('https://api.tavily.com/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const response = await this.httpClient.post<TavilySearchResponse>(
+      'https://api.tavily.com/search',
+      {
         api_key: this.config.apiKey,
         query,
         search_depth: this.config.searchDepth || 'advanced',
         max_results: this.config.maxResults || 5,
         include_answer: this.config.includeAnswer !== false,
-      }),
-      signal,
-    });
+      },
+      {
+        signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
 
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(
-        `API error: ${response.status} ${response.statusText}${text ? ` - ${text}` : ''}`,
-      );
-    }
-
-    const data = (await response.json()) as TavilySearchResponse;
+    const data = response.data;
 
     const results: WebSearchResultItem[] = (data.results || []).map((r) => ({
       title: r.title,
