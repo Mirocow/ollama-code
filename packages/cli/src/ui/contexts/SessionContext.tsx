@@ -205,7 +205,6 @@ export const SessionStatsProvider: React.FC<{
         metrics: SessionMetrics;
         lastPromptTokenCount: number;
       };
-      console.log('[DEBUG SessionContext] handleUpdate - lastPromptTokenCount:', lastPromptTokenCount);
       setStats((prevState) => {
         if (
           prevState.lastPromptTokenCount === lastPromptTokenCount &&
@@ -213,7 +212,6 @@ export const SessionStatsProvider: React.FC<{
         ) {
           return prevState;
         }
-        console.log('[DEBUG SessionContext] Updating state with lastPromptTokenCount:', lastPromptTokenCount);
         return {
           ...prevState,
           metrics,
