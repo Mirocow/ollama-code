@@ -407,11 +407,11 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 | Chat interface component     | P0        | 4d     | ✅ Завершено  |
 | File explorer integration    | P1        | 3d     | ✅ Завершено  |
 | Terminal emulator (xterm.js) | P1        | 4d     | ✅ Завершено  |
-| WebSocket streaming          | P0        | 3d     | 🟡 В процессе |
+| WebSocket streaming          | P0        | 3d     | ✅ Завершено  |
 
 #### Web UI — Реализовано (частично)
 
-**Статус:** 🟡 В процессе (70%)
+**Статус:** ✅ Завершено (95%)
 
 **Созданные файлы:**
 
@@ -433,6 +433,8 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 | `packages/web-app/src/app/api/chat/`    | Chat streaming API                   |
 | `packages/web-app/src/app/api/generate/`| Generate streaming API               |
 | `packages/web-app/src/app/api/fs/`      | Filesystem operations API            |
+| `packages/web-app/server.ts`            | Custom Next.js server with WebSocket |
+| `packages/web-app/src/server/`          | Terminal WebSocket server (PTY)      |
 
 **Реализовано:**
 - ✅ ChatInterface с streaming
@@ -441,11 +443,11 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 - ✅ API routes для Ollama proxy
 - ✅ Filesystem API (CRUD)
 - ✅ Tabbed interface (Chat/Files/Terminal)
+- ✅ Terminal WebSocket server с PTY support
 
 **Осталось реализовать:**
 
-- Terminal WebSocket backend
-- Полноценная интеграция с CLI backend
+- Полноценная интеграция с CLI backend (context sharing)
 
 ---
 
@@ -577,9 +579,11 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 
 | Коммит     | Описание                                            |
 | ---------- | --------------------------------------------------- |
+| `32409019` | feat(web-app): add Terminal WebSocket server with PTY |
+| `b2f64aaf` | docs: update ROADMAP with TSDoc progress            |
+| `4e078a35` | docs(sdk): add TSDoc package documentation          |
 | `76163a8b` | feat(web-app): add API routes, FileExplorer, Terminal |
 | `afe080c6` | docs: update ROADMAP with actual project status     |
-| `db4088db` | fix: TypeScript configuration and web-app fixes     |
 | `c04881dc` | feat(web-app): add ChatInterface component      |
 | `afd70c0c` | fix: correct template path loading              |
 | `ddfc7241` | docs: add TSDoc documentation to core exports   |
@@ -591,7 +595,7 @@ const linked = CancellationToken.link(userToken, timeoutToken);
 
 | Задача                  | Приоритет | Прогресс | Что осталось                     |
 | ----------------------- | --------- | -------- | -------------------------------- |
-| Web UI (v0.15.0)        | P0        | 70%      | Terminal WebSocket backend       |
+| Web UI (v0.15.0)        | P0        | 95%      | CLI backend integration          |
 | TSDoc Documentation     | P1        | 80%      | CLI package                      |
 | Virtual scrolling (P2)  | P2        | 0%       | Не начато                        |
 | Structured logging (P2) | P2        | 0%       | Не начато                        |
@@ -655,6 +659,6 @@ Ollama Code v0.11.0+ включает ключевые архитектурны�
 
 ---
 
-_Document version: 5.0.0_
+_Document version: 5.1.0_
 _Last updated: 2025-03-01_
 _Author: Architecture Team_
