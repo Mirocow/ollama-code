@@ -32,7 +32,7 @@ import {
   parseAndFormatApiError,
   promptIdContext,
   ToolConfirmationOutcome,
-} from '@ollama-code/ollama-code-core';
+ uiTelemetryService } from '@ollama-code/ollama-code-core';
 import type {
   HistoryItem,
   HistoryItemWithoutId,
@@ -714,6 +714,18 @@ export const useOllamaStream = (
         return;
       }
 
+      // Record token usage for context progress bar
+      const usageMetadata = event.value.usageMetadata;
+      if (usageMetadata) {
+        const model = config.getModel();
+        uiTelemetryService.recordTokenUsage(
+          model,
+          usageMetadata.promptTokenCount || 0,
+          0, // cached tokens - not available in this context
+          usageMetadata.candidatesTokenCount || 0,
+        );
+      }
+
       const finishReasonMessages: Record<FinishReason, string | undefined> = {
         [FinishReason.FINISH_REASON_UNSPECIFIED]: undefined,
         [FinishReason.STOP]: undefined,
@@ -753,7 +765,7 @@ export const useOllamaStream = (
       }
       clearRetryCountdown();
     },
-    [addItem, clearRetryCountdown],
+    [addItem, clearRetryCountdown, config],
   );
 
   const handleChatCompressionEvent = useCallback(

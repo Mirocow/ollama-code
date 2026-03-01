@@ -642,14 +642,16 @@ export class OllamaContentConverter {
     // NOTE: This must be OUTSIDE the tool_calls check above, because the final
     // chunk with done=true may not contain tool_calls, but we still need to emit
     // the previously accumulated ones.
-    if (ollamaChunk.done && accumulatedToolCalls && accumulatedToolCalls.size > 0) {
+    if (
+      ollamaChunk.done &&
+      accumulatedToolCalls &&
+      accumulatedToolCalls.size > 0
+    ) {
       debugLogger.info('Emitting accumulated tool calls', {
         count: accumulatedToolCalls.size,
         tools: [...accumulatedToolCalls.values()].map((tc) => tc.name),
       });
-      console.error('\n[CONVERTER] Emitting %d accumulated tool_calls:', accumulatedToolCalls.size);
-      for (const [idx, toolCall] of accumulatedToolCalls) {
-        console.error('  [%d] %s(%s)', idx, toolCall.name, toolCall.args);
+      for (const [_idx, toolCall] of accumulatedToolCalls) {
         parts.push({
           functionCall: {
             id: `call_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
@@ -733,6 +735,20 @@ export class OllamaContentConverter {
 
     response.modelVersion = this.model;
     response.promptFeedback = { safetyRatings: [] };
+
+    // Add usage metadata if available (in final chunk with done=true)
+    if (
+      ollamaChunk.done &&
+      (ollamaChunk.prompt_eval_count !== undefined ||
+        ollamaChunk.eval_count !== undefined)
+    ) {
+      response.usageMetadata = {
+        promptTokenCount: ollamaChunk.prompt_eval_count || 0,
+        candidatesTokenCount: ollamaChunk.eval_count || 0,
+        totalTokenCount:
+          (ollamaChunk.prompt_eval_count || 0) + (ollamaChunk.eval_count || 0),
+      };
+    }
 
     return response;
   }
