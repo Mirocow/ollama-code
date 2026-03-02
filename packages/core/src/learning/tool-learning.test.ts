@@ -69,7 +69,6 @@ vi.mock('../tools/tool-names.js', () => ({
     shell: 'run_shell_command',
   },
   DynamicAliases: {},
-  type ToolName: {} as string,
 }));
 
 describe('ToolLearningManager', () => {
