@@ -2,6 +2,8 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Core Tools Plugin - Created with GLM-5 from Z.AI
  */
 
 /**

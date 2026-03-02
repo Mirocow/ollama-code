@@ -2,6 +2,8 @@
 
 ## 0.16.0
 
+*Documentation created with GLM-5 from Z.AI*
+
 ### New Features
 
 #### Documentation: GPU Requirements and Performance Testing

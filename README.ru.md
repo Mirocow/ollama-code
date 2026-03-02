@@ -664,6 +664,10 @@ npm run test:integration:sandbox:none
 
 Apache License 2.0
 
+---
+
+*Документация создана с помощью GLM-5 от Z.AI*
+
 ## Содействие
 
 См. [CONTRIBUTING.md](./CONTRIBUTING.md) для руководства по участию в разработке.
