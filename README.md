@@ -557,24 +557,40 @@ ollama-code/
 
 ## Documentation
 
+### 📚 Complete Guides (English)
+
+| Guide                                      | Description                              |
+| ------------------------------------------ | ---------------------------------------- |
+| [**CLI_GUIDE.md**](./docs/CLI_GUIDE.md)    | Complete CLI usage guide                 |
+| [**CORE_GUIDE.md**](./docs/CORE_GUIDE.md)  | Core library developer guide             |
+| [**WEB_UI_GUIDE.md**](./docs/WEB_UI_GUIDE.md) | Web UI complete usage guide           |
+| [FEATURES.md](./docs/FEATURES.md)          | Feature reference                        |
+| [TOOLS.md](./docs/TOOLS.md)                | Tools reference                          |
+| [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md)    | Usage guide                              |
+| [EXAMPLES.md](./docs/EXAMPLES.md)          | Usage examples                           |
+| [OLLAMA_API.md](./docs/OLLAMA_API.md)      | API documentation                        |
+
+### 📚 Полные руководства (Русский)
+
+| Руководство                                      | Описание                           |
+| ------------------------------------------------ | ---------------------------------- |
+| [**CLI_GUIDE.ru.md**](./docs/CLI_GUIDE.ru.md)    | Полное руководство по CLI          |
+| [**CORE_GUIDE.ru.md**](./docs/CORE_GUIDE.ru.md)  | Руководство разработчика Core      |
+| [**WEB_UI_GUIDE.ru.md**](./docs/WEB_UI_GUIDE.ru.md) | Полное руководство по Web UI    |
+| [FEATURES.ru.md](./docs/FEATURES.ru.md)          | Справочник функций                 |
+| [TOOLS.ru.md](./docs/TOOLS.ru.md)                | Справочник инструментов            |
+| [README.ru.md](./README.ru.md)                   | README на русском                  |
+
 ### Quick Reference
 
 | Document                                | Description                    |
 | --------------------------------------- | ------------------------------ |
-| [WEB_UI.md](./docs/WEB_UI.md)           | **Web UI documentation (NEW)** |
-| [FEATURES.md](./docs/FEATURES.md)       | **Complete feature reference** |
-| [TOOLS.md](./docs/TOOLS.md)             | **Detailed tools reference**   |
+| [WEB_UI.md](./docs/WEB_UI.md)           | Web UI technical docs          |
+| [FEATURES.md](./docs/FEATURES.md)       | Complete feature reference     |
+| [TOOLS.md](./docs/TOOLS.md)             | Detailed tools reference       |
 | [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) | Usage guide                    |
 | [EXAMPLES.md](./docs/EXAMPLES.md)       | Usage examples                 |
 | [OLLAMA_API.md](./docs/OLLAMA_API.md)   | API documentation              |
-
-### Russian Documentation (Русская документация)
-
-| Документ                                | Описание                      |
-| --------------------------------------- | ----------------------------- |
-| [FEATURES.ru.md](./docs/FEATURES.ru.md) | **Полный справочник функций** |
-| [TOOLS.ru.md](./docs/TOOLS.ru.md)       | **Справочник инструментов**   |
-| [README.ru.md](./README.ru.md)          | README на русском             |
 
 ### Project Resources
 
