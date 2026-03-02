@@ -1,44 +1,94 @@
+import { Cards, Card } from 'nextra/components'
+
 # 🦙 Ollama Code
 
 **Open Source AI Coding Assistant** — work with local AI models privately and securely.
 
-<div style={{ display: 'flex', gap: '1rem', margin: '2rem 0' }}>
-  <a href="https://github.com/mirocow/ollama-code" style={{ padding: '0.75rem 1.5rem', background: '#0070f3', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600' }}>
-    GitHub →
+<div style={{ display: 'flex', gap: '1rem', margin: '2rem 0', flexWrap: 'wrap' }}>
+  <a href="https://github.com/mirocow/ollama-code" style={{
+    padding: '0.75rem 1.5rem',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    fontWeight: '600',
+    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+  }}>
+    ⭐ Star on GitHub
   </a>
-  <a href="./users/quickstart" style={{ padding: '0.75rem 1.5rem', background: '#1a1a1a', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600' }}>
-    Quick Start →
+  <a href="./users/quickstart" style={{
+    padding: '0.75rem 1.5rem',
+    background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+    color: 'white',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    fontWeight: '600',
+    boxShadow: '0 4px 15px rgba(17, 153, 142, 0.4)'
+  }}>
+    🚀 Quick Start
+  </a>
+  <a href="./users/overview" style={{
+    padding: '0.75rem 1.5rem',
+    background: 'linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%)',
+    color: 'white',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    fontWeight: '600',
+    boxShadow: '0 4px 15px rgba(44, 62, 80, 0.4)'
+  }}>
+    📚 Documentation
   </a>
 </div>
 
 ---
 
-## English
+## ✨ Features
 
-### ✨ Features
+<Cards>
+  <Card title="🔒 Local Models" href="./users/configuration/model-providers">
+    Work with Ollama models locally without sending data to the cloud. Complete privacy and control over your code.
+  </Card>
+  <Card title="💻 CLI Interface" href="./users/quickstart">
+    Powerful terminal interface built with Ink (React) for comfortable work directly from the command line.
+  </Card>
+  <Card title="🌐 Web UI" href="./users/features/web-ui">
+    Modern web interface on Next.js with Monaco Editor and built-in terminal.
+  </Card>
+  <Card title="🔌 Plugin System" href="./developers/plugins">
+    Extend functionality with plugins. Dynamic loading and sandbox security for safe extensibility.
+  </Card>
+  <Card title="🛡️ Security Sandbox" href="./users/features/sandbox">
+    Plugin isolation with trust levels. Control access to files, network, and commands.
+  </Card>
+  <Card title="⚡ Context Caching" href="./users/features/token-caching">
+    KV-cache reuse for faster repeated requests. Save tokens and reduce response time.
+  </Card>
+  <Card title="↩️ Undo/Redo" href="./users/features/checkpointing">
+    Command Pattern for undoing and redoing operations. Safe code editing with history.
+  </Card>
+  <Card title="📡 MCP Support" href="./users/features/mcp">
+    Integration with Model Context Protocol for extended capabilities and tool integration.
+  </Card>
+</Cards>
 
-- **🔒 Local Models** — Work with Ollama models locally without sending data to the cloud. Complete privacy and control.
-- **💻 CLI Interface** — Powerful terminal interface built with Ink (React) for comfortable work directly from the command line.
-- **🌐 Web UI** — Modern web interface on Next.js with Monaco Editor and built-in terminal.
-- **🔌 Plugin System** — Extend functionality with plugins. Dynamic loading and sandbox security.
-- **🛡️ Security Sandbox** — Plugin isolation with trust levels. Control access to files, network, and commands.
-- **⚡ Context Caching** — KV-cache reuse for faster repeated requests. Save tokens and time.
-- **↩️ Undo/Redo** — Command Pattern for undoing and redoing operations. Safe code editing.
-- **📡 MCP Support** — Integration with Model Context Protocol for extended capabilities.
+---
 
-### 📊 Comparison
+## 📊 Comparison
 
 | Feature | Ollama Code | Claude Code | Aider | Cursor |
-|---------|-------------|-------------|-------|--------|
-| Local models | ✅ | ❌ | ✅ | ❌ |
-| Open Source | ✅ | ❌ | ✅ | ❌ |
-| CLI interface | ✅ | ✅ | ✅ | ❌ |
-| Web UI | ✅ | ✅ | ❌ | ✅ |
-| Plugin System | ✅ | ✅ | ✅ | ✅ |
-| MCP Support | ✅ | ✅ | ❌ | ❌ |
-| Context Caching | ✅ | ✅ | ❌ | ✅ |
+|---------|:-----------:|:-----------:|:-----:|:------:|
+| **Local models** | ✅ | ❌ | ✅ | ❌ |
+| **Open Source** | ✅ | ❌ | ✅ | ❌ |
+| **CLI interface** | ✅ | ✅ | ✅ | ❌ |
+| **Web UI** | ✅ | ✅ | ❌ | ✅ |
+| **Plugin System** | ✅ | ✅ | ✅ | ✅ |
+| **MCP Support** | ✅ | ✅ | ❌ | ❌ |
+| **Context Caching** | ✅ | ✅ | ❌ | ✅ |
+| **Sandbox Security** | ✅ | ❌ | ❌ | ❌ |
 
-### 🚀 Quick Start
+---
+
+## 🚀 Quick Start
 
 ```bash
 # Install via npm
@@ -51,83 +101,70 @@ pnpm install -g @ollama-code/ollama-code
 ollama-code
 ```
 
-### 📚 Documentation
+### Prerequisites
 
-- **[User Guide](./users/overview)** — Installation, configuration, usage
-- **[Developer Guide](./developers/architecture)** — Architecture, contributing, tools
-
-### 🛠️ 22+ Built-in Tools
-
-**File System:** `read_file` `write_file` `edit` `glob` `list_directory`
-
-**Development:** `python_dev` `nodejs_dev` `golang_dev` `rust_dev` `java_dev`
-
-**Search:** `grep_search` `web_search` `web_fetch`
-
-**Shell:** `run_shell_command` `bash`
-
-**AI:** `task` `skill` `todo_write`
+1. **Ollama** installed and running ([ollama.ai](https://ollama.ai))
+2. **Node.js** 18+ installed
+3. A compatible model pulled (e.g., `ollama pull qwen2.5-coder:7b`)
 
 ---
 
-## Русский
+## 🛠️ 22+ Built-in Tools
 
-### ✨ Возможности
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', margin: '1rem 0' }}>
 
-- **🔒 Локальные модели** — Работайте с Ollama моделями локально без отправки данных в облако. Полная приватность и контроль.
-- **💻 CLI интерфейс** — Мощный терминальный интерфейс на Ink (React) для комфортной работы прямо из командной строки.
-- **🌐 Web UI** — Современный веб-интерфейс на Next.js с Monaco Editor и встроенным терминалом.
-- **🔌 Plugin System** — Расширяйте функциональность с помощью плагинов. Динамическая загрузка и sandbox безопасность.
-- **🛡️ Security Sandbox** — Изоляция плагинов с уровнями доверия. Контроль доступа к файлам, сети и командам.
-- **⚡ Context Caching** — KV-cache reuse для ускорения повторных запросов. Экономия токенов и времени.
-- **↩️ Undo/Redo** — Command Pattern для отмены и повтора операций. Безопасное редактирование кода.
-- **📡 MCP Support** — Интеграция с Model Context Protocol для расширенных возможностей.
+**File System:**
+- `read_file` - Read file contents
+- `write_file` - Create/overwrite files
+- `edit` - Edit existing files
+- `glob` - Find files by pattern
+- `list_directory` - List directory contents
 
-### 📊 Сравнение
+**Development:**
+- `python_dev` - Python execution
+- `nodejs_dev` - Node.js execution
+- `golang_dev` - Go development
+- `rust_dev` - Rust development
+- `java_dev` - Java development
 
-| Функция | Ollama Code | Claude Code | Aider | Cursor |
-|---------|-------------|-------------|-------|--------|
-| Локальные модели | ✅ | ❌ | ✅ | ❌ |
-| Open Source | ✅ | ❌ | ✅ | ❌ |
-| CLI интерфейс | ✅ | ✅ | ✅ | ❌ |
-| Web UI | ✅ | ✅ | ❌ | ✅ |
-| Plugin System | ✅ | ✅ | ✅ | ✅ |
-| MCP Support | ✅ | ✅ | ❌ | ❌ |
-| Context Caching | ✅ | ✅ | ❌ | ✅ |
+**Search:**
+- `grep_search` - Search in files
+- `web_search` - Search the web
+- `web_fetch` - Fetch web content
 
-### 🚀 Быстрый старт
+**Shell:**
+- `run_shell_command` - Execute commands
+- `bash` - Run bash scripts
 
-```bash
-# Установка через npm
-npm install -g @ollama-code/ollama-code
+**AI:**
+- `task` - Spawn sub-agents
+- `skill` - Use specialized skills
+- `todo_write` - Manage tasks
 
-# Или через pnpm
-pnpm install -g @ollama-code/ollama-code
-
-# Запуск
-ollama-code
-```
-
-### 📚 Документация
-
-- **[Руководство пользователя](./users/overview)** — Установка, настройка, использование
-- **[Руководство разработчика](./developers/architecture)** — Архитектура, контрибуция, инструменты
-
-### 🛠️ 22+ встроенных инструментов
-
-**Файловая система:** `read_file` `write_file` `edit` `glob` `list_directory`
-
-**Разработка:** `python_dev` `nodejs_dev` `golang_dev` `rust_dev` `java_dev`
-
-**Поиск:** `grep_search` `web_search` `web_fetch`
-
-**Shell:** `run_shell_command` `bash`
-
-**AI:** `task` `skill` `todo_write`
+</div>
 
 ---
 
-## 🏗️ Architecture / Архитектура
+## 📚 Documentation
+
+<Cards>
+  <Card title="📖 User Guide" href="./users/overview">
+    Installation, configuration, usage patterns, and troubleshooting for end users.
+  </Card>
+  <Card title="🔧 Developer Guide" href="./developers/architecture">
+    Architecture, contributing guidelines, and development workflow.
+  </Card>
+  <Card title="⚡ Tools Reference" href="./developers/tools/introduction">
+    Complete reference for all built-in tools and their parameters.
+  </Card>
+  <Card title="🔌 Plugin Development" href="./users/extension/introduction">
+    Learn how to create and publish your own plugins.
+  </Card>
+</Cards>
+
+---
+
+## 🏗️ Architecture
 
 ```
 ollama-code/
@@ -137,18 +174,42 @@ ollama-code/
 └── packages/sdk/      # TypeScript SDK, MCP Server
 ```
 
-## ⚙️ Tech Stack / Технологии
+---
 
-TypeScript 5.x • React 19 • Next.js 15 • Ink • Zustand • Tailwind CSS • Vitest • esbuild • Ollama
+## ⚙️ Tech Stack
+
+<div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', margin: '1rem 0' }}>
+  {['TypeScript 5.x', 'React 19', 'Next.js 15', 'Ink', 'Zustand', 'Tailwind CSS', 'Vitest', 'esbuild', 'Ollama'].map(tech => (
+    <span key={tech} style={{
+      padding: '0.25rem 0.75rem',
+      background: '#f0f0f0',
+      borderRadius: '9999px',
+      fontSize: '0.875rem',
+      color: '#333'
+    }}>
+      {tech}
+    </span>
+  ))}
+</div>
 
 ---
 
-<div style={{ textAlign: 'center', padding: '2rem 0' }}>
+## 🌍 Community & Support
+
+<div style={{ display: 'flex', gap: '1rem', margin: '1rem 0', flexWrap: 'wrap' }}>
+  <a href="https://github.com/mirocow/ollama-code">GitHub</a>
+  <span>•</span>
+  <a href="https://github.com/mirocow/ollama-code/issues">Issues</a>
+  <span>•</span>
+  <a href="https://github.com/mirocow/ollama-code/discussions">Discussions</a>
+</div>
+
+---
+
+<div style={{ textAlign: 'center', padding: '2rem 0', marginTop: '2rem', borderTop: '1px solid #eee' }}>
 
 **Apache 2.0 License** © 2025 Ollama Code Team
 
-<!-- Updated: trigger deployment -->
-
-[GitHub](https://github.com/mirocow/ollama-code) • [Issues](https://github.com/mirocow/ollama-code/issues) • [Discussions](https://github.com/mirocow/ollama-code/discussions)
+Made with ❤️ by the Ollama Code Community
 
 </div>
