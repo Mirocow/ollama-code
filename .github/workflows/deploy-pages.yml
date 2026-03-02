@@ -8,6 +8,8 @@ on:
       - 'docs-site/**'
       - 'docs/**'
       - '.github/workflows/deploy-pages.yml'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
   workflow_dispatch:
 
 permissions:
