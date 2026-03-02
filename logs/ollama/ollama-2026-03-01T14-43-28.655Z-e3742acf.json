@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-03-01T14:43:28.655Z",
+  "request": {
+    "type": "request",
+    "method": "POST",
+    "url": "http://localhost:11434/api/generate",
+    "endpoint": "/api/generate",
+    "body": {
+      "model": "llama3.2",
+      "prompt": "Hello!",
+      "stream": true,
+      "options": {},
+      "system": "You are helpful.",
+      "keep_alive": "5m"
+    },
+    "headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/x-ndjson"
+    }
+  },
+  "response": null,
+  "error": {
+    "message": "Cannot read properties of undefined (reading 'get')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'get')\n    at OllamaNativeClient.streamingRequest (/home/z/my-project/ollana-dode/packages/core/src/core/ollamaNativeClient.ts:833:39)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at OllamaNativeClient.generate (/home/z/my-project/ollana-dode/packages/core/src/core/ollamaNativeClient.ts:1333:7)\n    at OllamaContextClient.generateStream (/home/z/my-project/ollana-dode/packages/core/src/core/ollamaContextClient.ts:273:5)\n    at HybridContentGenerator.generateStreamWithCache (/home/z/my-project/ollana-dode/packages/core/src/core/hybridContentGenerator.ts:298:5)\n    at HybridContentGenerator.generateContentStream (/home/z/my-project/ollana-dode/packages/core/src/core/hybridContentGenerator.ts:168:7)\n    at /home/z/my-project/ollana-dode/packages/core/src/core/hybridContentGenerator.test.ts:254:24\n    at file:///home/z/.npm/_npx/69c381f8ad94b576/node_modules/@vitest/runner/dist/index.js:915:20"
+  },
+  "system": {
+    "hostname": "c-69a45035-148f475d-dbba94009a5d",
+    "platform": "linux",
+    "release": "5.10.134-013.5.kangaroo.al8.x86_64",
+    "nodeVersion": "v24.13.1"
+  }
+}

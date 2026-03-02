@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-03-01T14:43:28.532Z",
+  "request": {
+    "type": "request",
+    "method": "POST",
+    "url": "http://localhost:11434/api/generate",
+    "endpoint": "/api/generate",
+    "body": {
+      "model": "llama3.2",
+      "prompt": "What is 2 + 2?",
+      "context": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "keep_alive": "5m",
+      "stream": false
+    },
+    "headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    }
+  },
+  "response": null,
+  "error": null,
+  "system": {
+    "hostname": "c-69a45035-148f475d-dbba94009a5d",
+    "platform": "linux",
+    "release": "5.10.134-013.5.kangaroo.al8.x86_64",
+    "nodeVersion": "v24.13.1"
+  }
+}

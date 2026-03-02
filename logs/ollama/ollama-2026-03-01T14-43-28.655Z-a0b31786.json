@@ -1,0 +1,61 @@
+{
+  "timestamp": "2026-03-01T14:43:28.655Z",
+  "request": {
+    "type": "request",
+    "method": "POST",
+    "url": "http://localhost:11434/api/chat",
+    "endpoint": "/api/chat",
+    "body": {
+      "model": "llama3.2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "What time?"
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "function": {
+                "name": "get_time",
+                "arguments": {}
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "{\"time\":\"12:00\"}",
+          "tool_name": "get_time"
+        }
+      ],
+      "stream": false,
+      "options": {},
+      "keep_alive": "5m"
+    },
+    "headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    }
+  },
+  "response": {
+    "type": "response",
+    "body": {
+      "model": "llama3.2",
+      "created_at": "2025-01-01T00:00:00Z",
+      "message": {
+        "role": "assistant",
+        "content": "The time is 12:00."
+      },
+      "done": true
+    }
+  },
+  "error": null,
+  "system": {
+    "hostname": "c-69a45035-148f475d-dbba94009a5d",
+    "platform": "linux",
+    "release": "5.10.134-013.5.kangaroo.al8.x86_64",
+    "nodeVersion": "v24.13.1"
+  }
+}
