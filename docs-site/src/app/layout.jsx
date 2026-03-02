@@ -4,48 +4,52 @@ import { getPageMap } from 'nextra/page-map';
 import 'nextra-theme-docs/style.css';
 
 export const metadata = {
-  // Define your metadata here
-  // For more information on metadata API, see: https://nextjs.org/docs/app/building-your-application/optimizing/metadata
+  title: 'Ollama Code - AI Coding Assistant',
+  description:
+    'Open Source AI Coding Assistant for developers. Work with local AI models privately.',
 };
 
 const banner = (
-  <Banner storageKey="some-key">Qwen Code 0.5.0 is released 🎉</Banner>
+  <Banner storageKey="ollama-code-release">
+    Ollama Code v0.11.0 is released! 🚀
+  </Banner>
 );
+
 const navbar = (
   <Navbar
-    logo={<b>Qwen Code</b>}
-    // ... Your additional navbar options
+    logo={<b>🦙 Ollama Code</b>}
+    projectLink="https://github.com/mirocow/ollama-code"
   />
 );
-const footer = <Footer>MIT {new Date().getFullYear()} © Ollama Code Team.</Footer>;
+
+const footer = (
+  <Footer>Apache 2.0 {new Date().getFullYear()} © Ollama Code Team.</Footer>
+);
 
 export default async function RootLayout({ children }) {
   return (
-    <html
-      // Not required, but good for SEO
-      lang="en"
-      // Required to be set
-      dir="ltr"
-      // Suggested by `next-themes` package https://github.com/pacocoursey/next-themes#with-app
-      suppressHydrationWarning
-    >
-      <Head
-      // ... Your additional head options
-      >
-        {/* Your additional tags should be passed as `children` of `<Head>` element */}
+    <html lang="en" dir="ltr" suppressHydrationWarning>
+      <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta property="og:title" content="Ollama Code - AI Coding Assistant" />
+        <meta
+          property="og:description"
+          content="Open Source AI Coding Assistant for developers"
+        />
+        <meta
+          property="og:image"
+          content="https://mirocow.github.io/ollama-code/og-image.png"
+        />
       </Head>
       <body>
         <Layout
           banner={banner}
           navbar={navbar}
           pageMap={await getPageMap()}
-          docsRepositoryBase="https://github.com/QwenLM/qwen-code/docs"
-          // Use a very large finite integer to expand all folders by default.
-          // (Some schema validators reject `Infinity`.)
+          docsRepositoryBase="https://github.com/mirocow/ollama-code/tree/main/docs"
           sidebar={{ defaultMenuCollapseLevel: 9999 }}
           footer={footer}
           search={false}
-          // ... Your additional layout options
         >
           {children}
         </Layout>

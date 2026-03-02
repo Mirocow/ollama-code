@@ -1,11 +1,11 @@
 export default {
-    settings: 'Settings',
-    auth: 'Authentication',
-    memory: {
-        display: 'hidden',
-    },
-    'qwen-ignore': 'Ignoring Files',
-    'trusted-folders': 'Trusted Folders',
-    themes: 'Themes',
+  settings: 'Settings',
+  auth: 'Authentication',
+  memory: {
+    display: 'hidden',
+  },
+  'ollama-ignore': 'Ignoring Files',
+  'trusted-folders': 'Trusted Folders',
+  themes: 'Themes',
 };
 //# sourceMappingURL=_meta.js.map
