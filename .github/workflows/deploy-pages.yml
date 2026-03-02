@@ -39,7 +39,7 @@ jobs:
           version: 9
 
       - name: Install dependencies
-        run: pnpm install --ignore-scripts
+        run: pnpm install --ignore-scripts --no-frozen-lockfile
 
       - name: Build for GitHub Pages
         run: |
