@@ -1,6 +1,6 @@
 # .github/workflows/ci.yml
 
-name: 'Qwen Code CI'
+name: 'Ollama Code CI'
 
 on:
   push:
@@ -45,22 +45,26 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        uses: 'actions/checkout@v4'
         with:
           ref: '${{ github.event.inputs.branch_ref || github.ref }}'
           fetch-depth: 0
 
       - name: 'Set up Node.js'
-        uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions/setup-node@v4.4.0
+        uses: 'actions/setup-node@v4'
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
+
+      - name: 'Setup pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
 
       - name: 'Install dependencies'
-        run: 'npm ci'
+        run: pnpm install --no-frozen-lockfile
 
       - name: 'Check lockfile'
-        run: 'npm run check:lockfile'
+        run: pnpm run check:lockfile
 
       - name: 'Install linters'
         run: 'node scripts/lint.js --setup'
@@ -108,40 +112,47 @@ jobs:
           - '24.x'
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        uses: 'actions/checkout@v4'
 
       - name: 'Set up Node.js ${{ matrix.node-version }}'
-        uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions/setup-node@v4
+        uses: 'actions/setup-node@v4'
         with:
           node-version: '${{ matrix.node-version }}'
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
-          registry-url: 'https://registry.npmjs.org/'
 
-      - name: 'Configure npm for rate limiting'
-        run: |-
-          npm config set fetch-retry-mintimeout 20000
-          npm config set fetch-retry-maxtimeout 120000
-          npm config set fetch-retries 5
-          npm config set fetch-timeout 300000
+      - name: 'Setup pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: 'Get pnpm store directory'
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        id: pnpm-cache
+
+      - name: 'Setup pnpm cache'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: 'Install dependencies'
-        run: |-
-          npm ci --prefer-offline --no-audit --progress=false
+        run: pnpm install --no-frozen-lockfile
 
       - name: 'Build project'
-        run: |-
-          npm run build
+        run: pnpm run build
 
       - name: 'Run tests and generate reports'
         env:
           NO_COLOR: true
-        run: 'npm run test:ci'
+        run: pnpm run test:ci
 
       - name: 'Publish Test Report (for non-forks)'
         if: |-
           ${{ always() && (github.event.pull_request.head.repo.full_name == github.repository) }}
-        uses: 'dorny/test-reporter@dc3a92680fcc15842eef52e8c4606ea7ce6bd3f3' # ratchet:dorny/test-reporter@v2
+        uses: 'dorny/test-reporter@v2'
         with:
           name: 'Test Results (Node ${{ matrix.node-version }})'
           path: 'packages/*/junit.xml'
@@ -151,7 +162,7 @@ jobs:
       - name: 'Upload Test Results Artifact (for forks)'
         if: |-
           ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) }}
-        uses: 'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02' # ratchet:actions/upload-artifact@v4
+        uses: 'actions/upload-artifact@v4'
         with:
           name: 'test-results-fork-${{ matrix.node-version }}-${{ matrix.os }}'
           path: 'packages/*/junit.xml'
@@ -159,7 +170,7 @@ jobs:
       - name: 'Upload coverage reports'
         if: |-
           ${{ always() }}
-        uses: 'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02' # ratchet:actions/upload-artifact@v4
+        uses: 'actions/upload-artifact@v4'
         with:
           name: 'coverage-reports-${{ matrix.node-version }}-${{ matrix.os }}'
           path: 'packages/*/coverage'
@@ -183,10 +194,10 @@ jobs:
           - '22.x'
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        uses: 'actions/checkout@v4'
 
       - name: 'Download coverage reports artifact'
-        uses: 'actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0' # ratchet:actions/download-artifact@v5
+        uses: 'actions/download-artifact@v4'
         with:
           name: 'coverage-reports-${{ matrix.node-version }}-${{ matrix.os }}'
           path: 'coverage_artifact' # Download to a specific directory
@@ -211,12 +222,12 @@ jobs:
       security-events: 'write'
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        uses: 'actions/checkout@v4'
 
       - name: 'Initialize CodeQL'
-        uses: 'github/codeql-action/init@df559355d593797519d70b90fc8edd5db049e7a2' # ratchet:github/codeql-action/init@v3
+        uses: 'github/codeql-action/init@v3'
         with:
           languages: 'javascript'
 
       - name: 'Perform CodeQL Analysis'
-        uses: 'github/codeql-action/analyze@df559355d593797519d70b90fc8edd5db049e7a2' # ratchet:github/codeql-action/analyze@v3
+        uses: 'github/codeql-action/analyze@v3'

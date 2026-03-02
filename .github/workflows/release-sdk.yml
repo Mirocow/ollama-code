@@ -95,16 +95,19 @@ jobs:
           echo "is_dry_run=${is_dry_run}" >> "${GITHUB_OUTPUT}"
 
       - name: 'Setup Node.js'
-        uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions/setup-node@v4
+        uses: 'actions/setup-node@v4'
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
           scope: '@qwen-code'
 
+      - name: 'Setup pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
       - name: 'Install Dependencies'
-        run: |-
-          npm ci
+        run: pnpm install --no-frozen-lockfile
 
       - name: 'Get the version'
         id: 'version'
