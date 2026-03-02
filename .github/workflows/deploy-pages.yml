@@ -37,14 +37,13 @@ jobs:
           version: 9
 
       - name: Install dependencies
-        run: pnpm install
-        working-directory: docs-site
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build for GitHub Pages
         run: |
+          cd docs-site
           pnpm run build
           touch out/.nojekyll
-        working-directory: docs-site
         env:
           GITHUB_PAGES: true
           REPO_NAME: ollama-code
