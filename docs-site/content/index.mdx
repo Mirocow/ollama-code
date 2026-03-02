@@ -1,0 +1,156 @@
+# 🦙 Ollama Code
+
+**Open Source AI Coding Assistant** — work with local AI models privately and securely.
+
+<div style={{ display: 'flex', gap: '1rem', margin: '2rem 0', flexWrap: 'wrap' }}>
+  <a href="https://github.com/mirocow/ollama-code" style={{
+    padding: '0.75rem 1.5rem',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    fontWeight: '600',
+    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+  }}>
+    ⭐ Star on GitHub
+  </a>
+  <a href="./users/quickstart" style={{
+    padding: '0.75rem 1.5rem',
+    background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+    color: 'white',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    fontWeight: '600',
+    boxShadow: '0 4px 15px rgba(17, 153, 142, 0.4)'
+  }}>
+    🚀 Quick Start
+  </a>
+  <a href="./users/overview" style={{
+    padding: '0.75rem 1.5rem',
+    background: 'linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%)',
+    color: 'white',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    fontWeight: '600',
+    boxShadow: '0 4px 15px rgba(44, 62, 80, 0.4)'
+  }}>
+    📚 Documentation
+  </a>
+</div>
+
+---
+
+## ✨ Features
+
+### 🔒 Local Models
+Work with Ollama models locally without sending data to the cloud. Complete privacy and control over your code.
+
+### 💻 CLI Interface
+Powerful terminal interface built with Ink (React) for comfortable work directly from the command line.
+
+### 🌐 Web UI
+Modern web interface on Next.js with Monaco Editor and built-in terminal.
+
+### 🔌 Plugin System
+Extend functionality with plugins. Dynamic loading and sandbox security for safe extensibility.
+
+### 🛡️ Security Sandbox
+Plugin isolation with trust levels. Control access to files, network, and commands.
+
+### ⚡ Context Caching
+KV-cache reuse for faster repeated requests. Save tokens and reduce response time.
+
+### ↩️ Undo/Redo
+Command Pattern for undoing and redoing operations. Safe code editing with history.
+
+### 📡 MCP Support
+Integration with Model Context Protocol for extended capabilities and tool integration.
+
+---
+
+## 📊 Comparison
+
+| Feature | Ollama Code | Claude Code | Aider | Cursor |
+|---------|:-----------:|:-----------:|:-----:|:------:|
+| **Local models** | ✅ | ❌ | ✅ | ❌ |
+| **Open Source** | ✅ | ❌ | ✅ | ❌ |
+| **CLI interface** | ✅ | ✅ | ✅ | ❌ |
+| **Web UI** | ✅ | ✅ | ❌ | ✅ |
+| **Plugin System** | ✅ | ✅ | ✅ | ✅ |
+| **MCP Support** | ✅ | ✅ | ❌ | ❌ |
+| **Context Caching** | ✅ | ✅ | ❌ | ✅ |
+| **Sandbox Security** | ✅ | ❌ | ❌ | ❌ |
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# Install via npm
+npm install -g @ollama-code/ollama-code
+
+# Or via pnpm
+pnpm install -g @ollama-code/ollama-code
+
+# Run
+ollama-code
+```
+
+### Prerequisites
+
+1. **Ollama** installed and running ([ollama.ai](https://ollama.ai))
+2. **Node.js** 18+ installed
+3. A compatible model pulled (e.g., `ollama pull qwen2.5-coder:7b`)
+
+---
+
+## 🛠️ 22+ Built-in Tools
+
+**File System:** `read_file` `write_file` `edit` `glob` `list_directory`
+
+**Development:** `python_dev` `nodejs_dev` `golang_dev` `rust_dev` `java_dev`
+
+**Search:** `grep_search` `web_search` `web_fetch`
+
+**Shell:** `run_shell_command` `bash`
+
+**AI:** `task` `skill` `todo_write`
+
+---
+
+## 📚 Documentation
+
+- **[User Guide](./users/overview)** — Installation, configuration, usage patterns, and troubleshooting for end users.
+- **[Developer Guide](./developers/architecture)** — Architecture, contributing guidelines, and development workflow.
+- **[Tools Reference](./developers/tools/introduction)** — Complete reference for all built-in tools and their parameters.
+- **[Plugin Development](./users/extension/introduction)** — Learn how to create and publish your own plugins.
+
+---
+
+## 🏗️ Architecture
+
+```
+ollama-code/
+├── packages/cli/      # CLI (Ink/React Terminal UI)
+├── packages/core/     # Business Logic, Tools, Ollama API
+├── packages/webui/    # React Components, Storybook
+└── packages/sdk/      # TypeScript SDK, MCP Server
+```
+
+---
+
+## ⚙️ Tech Stack
+
+TypeScript 5.x • React 19 • Next.js 15 • Ink • Zustand • Tailwind CSS • Vitest • esbuild • Ollama
+
+---
+
+## 🌍 Community & Support
+
+[GitHub](https://github.com/mirocow/ollama-code) • [Issues](https://github.com/mirocow/ollama-code/issues) • [Discussions](https://github.com/mirocow/ollama-code/discussions)
+
+---
+
+**Apache 2.0 License** © 2025 Ollama Code Team
+
+Made with ❤️ by the Ollama Code Community

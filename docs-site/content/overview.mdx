@@ -1,0 +1,32 @@
+# Overview
+
+Ollama Code is an open-source AI coding assistant that works with local Ollama models.
+
+## What is Ollama Code?
+
+Ollama Code brings the power of AI coding assistants to your local machine. Unlike cloud-based solutions, it runs entirely on your hardware, giving you complete control over your code and data.
+
+## Why Ollama Code?
+
+- **🔒 Privacy First** - Your code never leaves your machine
+- **💰 No API Costs** - Use local models for free
+- **⚡ Fast** - No network latency for model responses
+- **🔌 Extensible** - Plugin system for custom functionality
+- **🛡️ Secure** - Sandboxed plugins with trust levels
+
+## Architecture
+
+Ollama Code consists of several packages:
+
+| Package | Description |
+|---------|-------------|
+| `cli` | Terminal UI built with Ink (React) |
+| `core` | Business logic, tools, Ollama API |
+| `webui` | React components and web interface |
+| `sdk` | TypeScript SDK for programmatic access |
+
+## Requirements
+
+- Node.js 18 or higher
+- Ollama installed and running
+- A supported model (qwen2.5-coder, deepseek-r1, llama3.2, etc.)

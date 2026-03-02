@@ -1,0 +1,88 @@
+# Configuration
+
+Configure Ollama Code to suit your needs.
+
+## Environment Variables
+
+```bash
+# Ollama server
+OLLAMA_BASE_URL=http://localhost:11434
+
+# Default model
+OLLAMA_MODEL=qwen2.5-coder:7b
+
+# Keep alive duration
+OLLAMA_KEEP_ALIVE=30m
+```
+
+## Settings File
+
+Location: `~/.ollama-code/settings.json`
+
+```json
+{
+  "model": {
+    "name": "qwen2.5-coder:7b",
+    "temperature": 0.7,
+    "maxTokens": 4096
+  },
+  "ui": {
+    "theme": "dark"
+  }
+}
+```
+
+## Recommended Models
+
+| Model | Size | Best For |
+|-------|------|----------|
+| `qwen2.5-coder:7b` | 7B | General coding |
+| `deepseek-r1:8b` | 8B | Complex reasoning |
+| `llama3.2:3b` | 3B | Quick responses |
+| `mistral:7b` | 7B | Balanced work |
+
+## Plugin Configuration
+
+Configure plugin trust levels:
+
+```json
+{
+  "plugins": {
+    "trust": {
+      "low": ["read-only-plugin"],
+      "medium": ["file-editor-plugin"],
+      "high": ["system-plugin"]
+    }
+  }
+}
+```
+
+## Context Settings
+
+```json
+{
+  "context": {
+    "maxTokens": 128000,
+    "compressionThreshold": 0.7,
+    "cachingEnabled": true
+  }
+}
+```
+
+## UI Themes
+
+Available themes:
+- `dark` (default)
+- `light`
+- `dracula`
+- `github-dark`
+- `monokai`
+
+Set in settings:
+```json
+{
+  "ui": {
+    "theme": "dracula"
+  }
+}
+```
