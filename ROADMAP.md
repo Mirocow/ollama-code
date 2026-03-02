@@ -7,6 +7,7 @@
 ### ✅ Реализованные улучшения (2025-03)
 
 #### 1. Context Caching — KV-cache Reuse
+
 **Статус:** ✅ Реализовано
 
 ```typescript
@@ -34,16 +35,19 @@ await client.generate({
 ```
 
 **Производительность:**
+
 - 1-е сообщение: 100% (baseline)
 - 2-е сообщение: ~10-20% токенов
 - 10-е сообщение: ~5-10% токенов
 
 **Файлы:**
+
 - `packages/core/src/cache/contextCacheManager.ts`
 - `packages/core/src/core/ollamaContextClient.ts`
 - `packages/core/src/core/hybridContentGenerator.ts`
 
 #### 2. Zustand Migration
+
 **Статус:** ✅ Реализовано
 
 Заменен Context API на Zustand для оптимизации re-render'ов:
@@ -53,10 +57,11 @@ await client.generate({
 const state = useContext(UIStateContext);
 
 // После: Zustand - только нужные подписки
-const tokenCount = useSessionStore(state => state.lastPromptTokenCount);
+const tokenCount = useSessionStore((state) => state.lastPromptTokenCount);
 ```
 
 **Stores:**
+
 - `sessionStore` — сессия и метрики
 - `streamingStore` — состояние стриминга + AbortController
 - `uiStore` — UI настройки с persistence
@@ -64,6 +69,7 @@ const tokenCount = useSessionStore(state => state.lastPromptTokenCount);
 - `eventBus` — Event Bus для слабой связности
 
 #### 3. Event Bus
+
 **Статус:** ✅ Реализовано
 
 Типизированный Event Bus для слабой связности:
@@ -79,6 +85,7 @@ eventBus.emit('stream:finished', { promptId: '123', tokenCount: 1500 });
 ```
 
 **Поддерживаемые события:**
+
 - `stream:started/chunk/finished/error/cancelled`
 - `tool:started/progress/completed/error`
 - `session:started/ended/cleared`
@@ -86,6 +93,7 @@ eventBus.emit('stream:finished', { promptId: '123', tokenCount: 1500 });
 - `plugin:loaded/unloaded/error`
 
 #### 4. Command Pattern (Undo/Redo)
+
 **Статус:** ✅ Реализовано
 
 ```typescript
@@ -93,8 +101,12 @@ eventBus.emit('stream:finished', { promptId: '123', tokenCount: 1500 });
 await commandStore.execute({
   description: 'Change theme',
   type: 'theme',
-  execute: async () => { /* ... */ },
-  undo: async () => { /* reverse action */ },
+  execute: async () => {
+    /* ... */
+  },
+  undo: async () => {
+    /* reverse action */
+  },
   canUndo: true,
 });
 
@@ -106,6 +118,7 @@ await commandStore.redo();
 ```
 
 #### 5. Plugin System v2
+
 **Статус:** ✅ Реализовано
 
 ```typescript
@@ -115,13 +128,18 @@ const myPlugin: PluginDefinition = {
     name: 'My Plugin',
     version: '1.0.0',
   },
-  tools: [{
-    id: 'hello',
-    name: 'hello_world',
-    description: 'Say hello',
-    parameters: { type: 'object', properties: { message: { type: 'string' } } },
-    execute: async (params) => ({ success: true, data: 'Hello!' }),
-  }],
+  tools: [
+    {
+      id: 'hello',
+      name: 'hello_world',
+      description: 'Say hello',
+      parameters: {
+        type: 'object',
+        properties: { message: { type: 'string' } },
+      },
+      execute: async (params) => ({ success: true, data: 'Hello!' }),
+    },
+  ],
   hooks: {
     onLoad: async (context) => context.logger.info('Plugin loaded'),
     onBeforeToolExecute: async (toolId, params) => true,
@@ -133,6 +151,7 @@ await pluginManager.enablePlugin('my-plugin');
 ```
 
 **Builtin Plugins:**
+
 - `core-tools` — echo, timestamp, env
 - `dev-tools` — python_dev, nodejs_dev, golang_dev, rust_dev, etc.
 - `file-tools` — read_file, write_file, edit_file, glob
@@ -140,6 +159,7 @@ await pluginManager.enablePlugin('my-plugin');
 - `shell-tools` — run_shell_command
 
 #### 6. Axios HTTP Client
+
 **Статус:** ✅ Реализовано
 
 Миграция с fetch на axios для улучшенной обработки HTTP:
@@ -152,10 +172,11 @@ const httpClient = axios.create({
 });
 
 // Retry logic
-axios-retry(httpClient, {
-  retries: 3,
-  retryDelay: axiosRetry.exponentialDelay,
-});
+axios -
+  retry(httpClient, {
+    retries: 3,
+    retryDelay: axiosRetry.exponentialDelay,
+  });
 
 // Interceptors для логирования и аутентификации
 httpClient.interceptors.request.use(loggingInterceptor);
@@ -163,9 +184,11 @@ httpClient.interceptors.response.use(responseInterceptor, errorInterceptor);
 ```
 
 #### 7. React Performance Optimization
+
 **Статус:** ✅ Реализовано
 
 **Специализированные контексты:**
+
 - `DialogStateContext` — управление состоянием диалогов
 - `TerminalContext` — размеры терминала и layout
 - `InputStateContext` — состояние ввода
@@ -174,6 +197,7 @@ httpClient.interceptors.response.use(responseInterceptor, errorInterceptor);
 - `ConfirmationContext` — запросы подтверждений
 
 **Мемоизированные компоненты:**
+
 - `Footer` — статус бар
 - `AppHeader` — заголовок приложения
 - `MainContent` — основная область контента
@@ -249,8 +273,8 @@ httpClient.interceptors.response.use(responseInterceptor, errorInterceptor);
 | PluginLoader для обнаружения | P0        | 3d     | ✅ Завершено |
 | Dynamic plugin loading       | P0        | 4d     | ✅ Завершено |
 | Plugin CLI команды           | P1        | 2d     | ✅ Завершено |
-| Security sandbox             | P1        | 3d     | 🔴 Не начато |
-| Plugin marketplace           | P2        | 5d     | 🔴 Не начато |
+| Security sandbox             | P1        | 3d     | ✅ Завершено |
+| Plugin marketplace           | P2        | 5d     | ✅ Завершено |
 
 ---
 
@@ -384,11 +408,13 @@ Ollama Code v0.14.0 включает ключевые архитектурные
 5. **Context Caching** — KV-cache reuse для производительности ✅
 6. **Axios HTTP Client** — Interceptors, retry, timeout ✅
 7. **React Мемоизация** — Специализированные контексты + memo ✅
+8. **Security Sandbox** — Изоляция плагинов с уровнями доверия ✅
+9. **Plugin Marketplace** — Поиск, установка, обновление плагинов ✅
 
-Следующие шаги — Security sandbox для плагинов и Plugin marketplace.
+Следующие шаги — Web UI (v0.15.0) и Production Ready (v1.0.0).
 
 ---
 
-_Document version: 3.4.0_
-_Last updated: 2025-03-15_
+_Document version: 3.5.0_
+_Last updated: 2025-03-01_
 _Author: Architecture Team_
