@@ -227,6 +227,7 @@ export function getCoreSystemPromptV2(
     TOOL_CALL_FORMAT: getToolCallFormatInstructions(model),
     SANDBOX_INFO: getSandboxInfo(),
     GIT_INFO: getGitInfo(),
+    ROOT: process.cwd(),
   };
   
   // Fill template

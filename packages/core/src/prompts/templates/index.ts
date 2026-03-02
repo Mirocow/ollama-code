@@ -226,6 +226,7 @@ export interface TemplatePlaceholders {
   TOOL_CALL_FORMAT: string;
   SANDBOX_INFO: string;
   GIT_INFO: string;
+  ROOT: string;
 }
 
 /**
