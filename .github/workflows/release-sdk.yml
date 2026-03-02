@@ -107,7 +107,7 @@ jobs:
           version: 9
 
       - name: 'Install Dependencies'
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: 'Get the version'
         id: 'version'
