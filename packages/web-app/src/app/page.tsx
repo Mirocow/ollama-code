@@ -7,9 +7,30 @@
 'use client';
 
 import { useState } from 'react';
-import { ChatInterface } from '@/components/chat/ChatInterface';
-import { FileExplorer } from '@/components/explorer/FileExplorer';
-import { TerminalEmulator } from '@/components/terminal/TerminalEmulator';
+import dynamic from 'next/dynamic';
+
+// Dynamic imports to avoid SSR issues with browser-only libraries
+const ChatInterface = dynamic(
+  () =>
+    import('@/components/chat/ChatInterface').then((mod) => mod.ChatInterface),
+  { ssr: false, loading: () => <_LoadingPlaceholder /> },
+);
+
+const FileExplorer = dynamic(
+  () =>
+    import('@/components/explorer/FileExplorer').then(
+      (mod) => mod.FileExplorer,
+    ),
+  { ssr: false, loading: () => <_LoadingPlaceholder /> },
+);
+
+const TerminalEmulator = dynamic(
+  () =>
+    import('@/components/terminal/TerminalEmulator').then(
+      (mod) => mod.TerminalEmulator,
+    ),
+  { ssr: false, loading: () => <_LoadingPlaceholder /> },
+);
 
 /**
  * Tab configuration
@@ -20,7 +41,18 @@ const tabs = [
   { id: 'terminal', label: 'Terminal', icon: '⌨️' },
 ] as const;
 
-type TabId = typeof tabs[number]['id'];
+type TabId = (typeof tabs)[number]['id'];
+
+/**
+ * Loading placeholder
+ */
+function _LoadingPlaceholder() {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <div className="text-muted-foreground">Loading...</div>
+    </div>
+  );
+}
 
 /**
  * Main application page with tabbed interface
@@ -49,7 +81,9 @@ export default function Home() {
           ))}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Ollama Code v0.11.0</span>
+          <span className="text-xs text-muted-foreground">
+            Ollama Code v0.11.0
+          </span>
         </div>
       </header>
 
