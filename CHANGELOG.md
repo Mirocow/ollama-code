@@ -1,39 +1,39 @@
 # Changelog
 
-## 0.13.0
+## 0.15.0
 
 ### New Features
 
-#### Web UI (v0.15.0) — Full-Featured Web Interface
+#### Web UI — Full-Featured Next.js Web Interface (95% Complete)
 
 Complete Next.js 15 web application with chat, file explorer, and terminal:
 
-| Feature | Description |
-|---------|-------------|
-| **Chat Interface** | Real-time streaming chat with model selection |
-| **File Explorer** | Monaco editor integration with syntax highlighting |
-| **Terminal Emulator** | xterm.js with PTY support via WebSocket |
-| **API Routes** | Full Ollama proxy with streaming support |
-| **Filesystem API** | CRUD operations with secure path resolution |
+| Feature               | Description                                        |
+| --------------------- | -------------------------------------------------- |
+| **Chat Interface**    | Real-time streaming chat with model selection      |
+| **File Explorer**     | Monaco editor integration with syntax highlighting |
+| **Terminal Emulator** | xterm.js with PTY support via WebSocket            |
+| **API Routes**        | Full Ollama proxy with streaming support           |
+| **Filesystem API**    | CRUD operations with secure path resolution        |
 
 **Components:**
 
-| Component | Technology | Features |
-|-----------|------------|----------|
-| `ChatInterface` | React + Zustand | Streaming, model selection, session management |
-| `FileExplorer` | Monaco Editor | Syntax highlighting, auto-save, resize |
-| `TerminalEmulator` | xterm.js + node-pty | Full PTY support, resize handling, colors |
-| `TerminalServer` | WebSocket + PTY | Session management, IP limits, timeout cleanup |
+| Component          | Technology          | Features                                       |
+| ------------------ | ------------------- | ---------------------------------------------- |
+| `ChatInterface`    | React + Zustand     | Streaming, model selection, session management |
+| `FileExplorer`     | Monaco Editor       | Syntax highlighting, auto-save, resize         |
+| `TerminalEmulator` | xterm.js + node-pty | Full PTY support, resize handling, colors      |
+| `TerminalServer`   | WebSocket + PTY     | Session management, IP limits, timeout cleanup |
 
 **API Routes:**
 
-| Route | Method | Description |
-|-------|--------|-------------|
-| `/api/ollama/[...path]` | * | Proxy for all Ollama API requests |
-| `/api/models` | GET | List available models |
-| `/api/chat` | POST | Chat with streaming support |
-| `/api/generate` | POST | Generate with streaming support |
-| `/api/fs` | GET/POST/PUT/DELETE | Filesystem operations |
+| Route                   | Method              | Description                       |
+| ----------------------- | ------------------- | --------------------------------- |
+| `/api/ollama/[...path]` | \*                  | Proxy for all Ollama API requests |
+| `/api/models`           | GET                 | List available models             |
+| `/api/chat`             | POST                | Chat with streaming support       |
+| `/api/generate`         | POST                | Generate with streaming support   |
+| `/api/fs`               | GET/POST/PUT/DELETE | Filesystem operations             |
 
 **Running the Web UI:**
 
@@ -65,11 +65,11 @@ socket.send(JSON.stringify({ type: 'resize', cols: 120, rows: 40 }));
 
 Comprehensive TSDoc documentation added to all public packages:
 
-| Package | Coverage | Description |
-|---------|----------|-------------|
-| `@ollama-code/core` | 100% | Configuration, models, engine, tools, plugins |
-| `@ollama-code/sdk` | 100% | Query API, MCP integration, type definitions |
-| `@ollama-code/cli` | Partial | Internal CLI API |
+| Package             | Coverage | Description                                   |
+| ------------------- | -------- | --------------------------------------------- |
+| `@ollama-code/core` | 100%     | Configuration, models, engine, tools, plugins |
+| `@ollama-code/sdk`  | 100%     | Query API, MCP integration, type definitions  |
+| `@ollama-code/cli`  | Partial  | Internal CLI API                              |
 
 **Usage Examples:**
 
@@ -107,27 +107,137 @@ Completed fetch to axios migration for all HTTP operations:
 
 ### Files Added
 
-| File | Description |
-|------|-------------|
-| `packages/web-app/src/app/api/ollama/[...path]/route.ts` | Ollama proxy |
-| `packages/web-app/src/app/api/models/route.ts` | Models list |
-| `packages/web-app/src/app/api/chat/route.ts` | Chat streaming |
-| `packages/web-app/src/app/api/generate/route.ts` | Generate streaming |
-| `packages/web-app/src/app/api/fs/route.ts` | Filesystem API |
-| `packages/web-app/src/components/chat/ChatInterface.tsx` | Chat UI |
-| `packages/web-app/src/components/explorer/FileExplorer.tsx` | File browser |
-| `packages/web-app/src/components/terminal/TerminalEmulator.tsx` | Terminal UI |
-| `packages/web-app/src/server/terminalServer.ts` | PTY WebSocket server |
-| `packages/web-app/server.ts` | Custom Next.js server |
-| `packages/web-app/src/stores/webSessionStore.ts` | Zustand store |
-| `packages/web-app/src/hooks/useWebSocket.ts` | WebSocket hook |
+| File                                                            | Description           |
+| --------------------------------------------------------------- | --------------------- |
+| `packages/web-app/src/app/api/ollama/[...path]/route.ts`        | Ollama proxy          |
+| `packages/web-app/src/app/api/models/route.ts`                  | Models list           |
+| `packages/web-app/src/app/api/chat/route.ts`                    | Chat streaming        |
+| `packages/web-app/src/app/api/generate/route.ts`                | Generate streaming    |
+| `packages/web-app/src/app/api/fs/route.ts`                      | Filesystem API        |
+| `packages/web-app/src/components/chat/ChatInterface.tsx`        | Chat UI               |
+| `packages/web-app/src/components/explorer/FileExplorer.tsx`     | File browser          |
+| `packages/web-app/src/components/terminal/TerminalEmulator.tsx` | Terminal UI           |
+| `packages/web-app/src/server/terminalServer.ts`                 | PTY WebSocket server  |
+| `packages/web-app/server.ts`                                    | Custom Next.js server |
+| `packages/web-app/src/stores/webSessionStore.ts`                | Zustand store         |
+| `packages/web-app/src/hooks/useWebSocket.ts`                    | WebSocket hook        |
+
+### Session Commits (2025-03-01)
+
+| Commit     | Description                                       |
+| ---------- | ------------------------------------------------- |
+| `4b189ab5` | docs: update ROADMAP - Web UI 95% complete        |
+| `32409019` | feat(web-app): Terminal WebSocket server with PTY |
+| `b2f64aaf` | docs: update ROADMAP with TSDoc progress          |
+| `4e078a35` | docs(sdk): add TSDoc package documentation        |
+| `bf311f21` | docs: update ROADMAP with Web UI progress         |
+| `76163a8b` | feat(web-app): API routes, FileExplorer, Terminal |
+| `afe080c6` | docs: update ROADMAP with actual status           |
+| `db4088db` | fix: TypeScript configuration and web-app fixes   |
 
 ### Documentation Updates
 
-| Document | Changes |
-|----------|---------|
-| `ROADMAP.md` | Updated Web UI progress (95%), added latest commits |
-| `packages/sdk-typescript/src/index.ts` | Added @packageDocumentation |
+| Document                               | Changes                                             |
+| -------------------------------------- | --------------------------------------------------- |
+| `ROADMAP.md`                           | Updated Web UI progress (95%), added latest commits |
+| `packages/sdk-typescript/src/index.ts` | Added @packageDocumentation                         |
+| `packages/core/src/index.ts`           | Added TSDoc API documentation                       |
+| `docs/WEB_UI.md`                       | Complete Web UI documentation                       |
+
+### Remaining Tasks (5%)
+
+- CLI backend integration for Web UI (context sharing)
+- TSDoc for packages/cli (20% remaining)
+- Virtual scrolling (P2)
+- Structured logging (P2)
+
+---
+
+## 0.14.0
+
+### New Features
+
+#### Plugin System v2 — Complete Implementation
+
+Full plugin system with dynamic loading, marketplace, and security sandbox:
+
+| Component             | Description                                        |
+| --------------------- | -------------------------------------------------- |
+| **PluginLoader**      | Discovery from builtin, user, project, npm sources |
+| **PluginManager**     | Lifecycle management with enable/disable hooks     |
+| **PluginRegistry**    | ToolRegistry integration                           |
+| **PluginSandbox**     | Filesystem, network, command restrictions          |
+| **PluginMarketplace** | NPM-based search, install, update, uninstall       |
+| **PluginToolAdapter** | Tool wrapper for DeclarativeTool                   |
+
+**Builtin Plugins (5):**
+
+- `core-tools` — echo, timestamp, get_env
+- `dev-tools` — python_dev, nodejs_dev, golang_dev, rust_dev, typescript_dev, etc.
+- `file-tools` — read_file, write_file, edit_file, glob, list_directory
+- `search-tools` — grep, glob, web_fetch, web_search
+- `shell-tools` — run_shell_command, bash
+
+**Plugin CLI Commands:**
+
+```bash
+plugin-cli create my-plugin    # Create new plugin
+plugin-cli validate ./plugin   # Validate plugin
+plugin-cli list                # List all plugins
+plugin-cli info my-plugin      # Show plugin info
+```
+
+#### Prompt System v2 — Model-Size-Optimized Templates
+
+Adaptive prompts based on model size:
+
+| Model Size | Template | Prompt Size  | Features                        |
+| ---------- | -------- | ------------ | ------------------------------- |
+| <= 10B     | 8b       | ~500 tokens  | Compact rules, minimal examples |
+| <= 30B     | 14b      | ~800 tokens  | Standard rules, tool tables     |
+| <= 60B     | 32b      | ~1200 tokens | Extended workflow, security     |
+| > 60B      | 70b      | ~1500 tokens | Full docs, all examples         |
+
+**API:**
+
+```typescript
+import { getCoreSystemPrompt } from '@ollama-code/ollama-code-core';
+
+// Auto-select template based on model
+const prompt = getCoreSystemPrompt(userMemory, 'qwen2.5-coder:14b');
+```
+
+---
+
+## 0.13.0
+
+### New Features
+
+#### HTTP Client Migration (fetch → axios)
+
+Completed migration to axios for all HTTP operations:
+
+| File                                                | Changes                          |
+| --------------------------------------------------- | -------------------------------- |
+| `packages/core/src/utils/httpClient.ts`             | Axios instance with interceptors |
+| `packages/core/src/core/ollamaNativeClient.ts`      | Streaming with axios             |
+| `packages/core/src/tools/web-search/providers/*.ts` | Provider migration               |
+
+**Features:**
+
+- Request/Response logging
+- Retry with exponential backoff
+- Timeout handling
+- Auth header injection
+
+#### TypeScript Configuration
+
+Fixed monorepo TypeScript configuration:
+
+- Added project references for all packages
+- Added `composite: true` for referenced packages
+- Fixed ESLint configuration for web-app
+- Separated server code tsconfig (`tsconfig.server.json`)
 
 ---
 
@@ -139,14 +249,15 @@ Completed fetch to axios migration for all HTTP operations:
 
 Революционная система промптов, адаптирующаяся к размеру модели:
 
-| Model Size | Template | Размер промпта | Особенности |
-|------------|----------|----------------|-------------|
-| <= 10B | 8b | ~500 токенов | Компактные правила, минимум примеров |
-| <= 30B | 14b | ~800 токенов | Стандартные правила, таблицы инструментов |
-| <= 60B | 32b | ~1200 токенов | Расширенный workflow, security |
-| > 60B | 70b | ~1500 токенов | Полная документация, все примеры |
+| Model Size | Template | Размер промпта | Особенности                               |
+| ---------- | -------- | -------------- | ----------------------------------------- |
+| <= 10B     | 8b       | ~500 токенов   | Компактные правила, минимум примеров      |
+| <= 30B     | 14b      | ~800 токенов   | Стандартные правила, таблицы инструментов |
+| <= 60B     | 32b      | ~1200 токенов  | Расширенный workflow, security            |
+| > 60B      | 70b      | ~1500 токенов  | Полная документация, все примеры          |
 
 **Ключевые улучшения:**
+
 - ✅ Иерархическая структура: Role → Rules → Tools → Workflow → Output
 - ✅ Приоритеты правил: `[CRITICAL]`, `[RECOMMENDED]`, `[OPTIONAL]`
 - ✅ Чек-листы вместо длинных описаний
@@ -154,6 +265,7 @@ Completed fetch to axios migration for all HTTP operations:
 - ✅ Динамическое заполнение плейсхолдеров
 
 **Новые файлы:**
+
 - `packages/core/src/prompts/templates/system-8b.md` — Small models
 - `packages/core/src/prompts/templates/system-14b.md` — Medium models
 - `packages/core/src/prompts/templates/system-32b.md` — Large models
@@ -162,6 +274,7 @@ Completed fetch to axios migration for all HTTP operations:
 - `packages/core/src/core/promptsV2.ts` — v2 implementation
 
 **API:**
+
 ```typescript
 import { getCoreSystemPrompt } from '@ollama-code/ollama-code-core';
 
@@ -181,6 +294,7 @@ const tier = getSizeTier('mistral:7b'); // 'medium'
 | `OLLAMA_CODE_SYSTEM_MD` | Кастомный промпт | - |
 
 **Документация:**
+
 - `docs/PROMPT_SYSTEM_V2.md` — Полная документация v2
 - `docs/PROMPT_SYSTEM.md` — Legacy документация
 
