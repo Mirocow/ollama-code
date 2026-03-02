@@ -38,7 +38,6 @@ vi.mock('node:child_process', () => ({
     }
     return '';
   }),
-  type ExecException: {} as any,
 }));
 
 describe('GitAdvancedTool', () => {
