@@ -15,6 +15,14 @@
 
 import type { PluginDefinition, PluginTool } from '../../types.js';
 
+// Re-export actual tool instances for direct use (now from local tools/)
+export { databaseTool } from './tools/database.js';
+export { redisTool } from './tools/redis.js';
+
+// Import for toolClasses
+import { databaseTool } from './tools/database.js';
+import { redisTool } from './tools/redis.js';
+
 /**
  * Tool: redis
  * Redis database operations
@@ -124,14 +132,17 @@ const databaseToolsPlugin: PluginDefinition = {
   metadata: {
     id: 'database-tools',
     name: 'Database Tools',
-    version: '1.0.0',
-    description: 'Database interaction tools: Redis, PostgreSQL, MySQL, SQLite, MongoDB',
+    version: '1.1.0',
+    description: 'Database interaction tools: Redis, PostgreSQL, MySQL, SQLite, MongoDB. Now with integrated tool classes.',
     author: 'Ollama Code Team',
     tags: ['database', 'redis', 'sql', 'mongodb', 'storage'],
     enabledByDefault: false, // Requires configuration
   },
 
   tools: [redisTool, databaseTool],
+
+  // Real tool instances for full integration
+  toolClasses: [databaseTool, redisTool] as unknown[],
 
   hooks: {
     onLoad: async (context) => {

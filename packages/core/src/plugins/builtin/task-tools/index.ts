@@ -14,7 +14,12 @@
  */
 
 import type { PluginDefinition, PluginTool } from '../../types.js';
-import { TaskTool } from '../../../tools/task.js';
+
+// Re-export actual tool class for direct use (now from local task/ folder)
+export { TaskTool } from './task/index.js';
+
+// Import for toolClasses
+import { TaskTool } from './task/index.js';
 
 /**
  * Tool: task
@@ -145,6 +150,9 @@ const taskToolsPlugin: PluginDefinition = {
   },
 
   tools: [taskTool, todoWriteTool],
+
+  // Real tool classes for full integration
+  toolClasses: [TaskTool] as unknown[],
 
   hooks: {
     onLoad: async (context) => {
