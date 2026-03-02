@@ -49,7 +49,7 @@ jobs:
 
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        uses: 'actions/checkout@v4'
         with:
           ref: '${{ github.event.inputs.ref || github.sha }}'
           fetch-depth: 0
@@ -73,17 +73,17 @@ jobs:
           echo "is_dry_run=${is_dry_run}" >> "${GITHUB_OUTPUT}"
 
       - name: 'Setup Node.js'
-        uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions/setup-node@v4
+        uses: 'actions/setup-node@v4'
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+
+      - name: 'Setup pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
 
       - name: 'Install Dependencies'
-        env:
-          NPM_CONFIG_PREFER_OFFLINE: 'true'
-        run: |-
-          npm ci
+        run: pnpm install --no-frozen-lockfile
 
       - name: 'Get the version'
         id: 'version'
@@ -137,14 +137,14 @@ jobs:
         if: |-
           ${{ github.event.inputs.force_skip_tests != 'true' }}
         run: |
-          npm run build --workspace=@qwen-code/webui
+          pnpm run build --filter=@qwen-code/webui
 
       - name: 'Run Tests'
         if: |-
           ${{ github.event.inputs.force_skip_tests != 'true' }}
         working-directory: 'packages/vscode-ide-companion'
         run: |
-          npm run test:ci
+          pnpm run test:ci
         env:
           OPENAI_API_KEY: '${{ secrets.OPENAI_API_KEY }}'
           OPENAI_BASE_URL: '${{ secrets.OPENAI_BASE_URL }}'
@@ -185,23 +185,23 @@ jobs:
 
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        uses: 'actions/checkout@v4'
         with:
           ref: '${{ github.event.inputs.ref || github.sha }}'
           fetch-depth: 0
 
       - name: 'Setup Node.js'
-        uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions/setup-node@v4
+        uses: 'actions/setup-node@v4'
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+
+      - name: 'Setup pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
 
       - name: 'Install Dependencies'
-        env:
-          NPM_CONFIG_PREFER_OFFLINE: 'true'
-        run: |-
-          npm ci
+        run: pnpm install --no-frozen-lockfile
 
       - name: 'Install VSCE'
         run: |-
@@ -212,7 +212,7 @@ jobs:
           RELEASE_VERSION: '${{ needs.prepare.outputs.release_version }}'
         shell: 'bash'
         run: |-
-          npm run release:version -- "${RELEASE_VERSION}"
+          pnpm run release:version -- "${RELEASE_VERSION}"
 
       - name: 'Prepare VSCode Extension'
         env:
@@ -220,7 +220,7 @@ jobs:
           VSCODE_TARGET: '${{ matrix.target }}'
         run: |
           # Build and stage the extension + bundled CLI
-          npm --workspace=qwen-code-vscode-ide-companion run prepackage
+          pnpm --filter=qwen-code-vscode-ide-companion run prepackage
 
       - name: 'Package VSIX (platform-specific)'
         if: '${{ matrix.target != '''' }}'
@@ -270,7 +270,7 @@ jobs:
 
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        uses: 'actions/checkout@v4'
         with:
           ref: '${{ github.event.inputs.ref || github.sha }}'
 
@@ -303,7 +303,7 @@ jobs:
           done
 
       - name: 'Publish to OpenVSX'
-        if: '${{ needs.prepare.outputs.is_dry_run == ''false'' }}'
+        if: '${{ needs.prepare.outputs.is_dry_run == ''true'' }}'
         env:
           OVSX_TOKEN: '${{ secrets.OVSX_TOKEN }}'
         run: |-

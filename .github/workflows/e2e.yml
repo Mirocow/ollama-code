@@ -20,40 +20,47 @@ jobs:
           - '20.x'
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        uses: 'actions/checkout@v4'
 
       - name: 'Set up Node.js ${{ matrix.node-version }}'
-        uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions/setup-node@v4
+        uses: 'actions/setup-node@v4'
         with:
           node-version: '${{ matrix.node-version }}'
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
-          registry-url: 'https://registry.npmjs.org/'
 
-      - name: 'Configure npm for rate limiting'
-        run: |-
-          npm config set fetch-retry-mintimeout 20000
-          npm config set fetch-retry-maxtimeout 120000
-          npm config set fetch-retries 5
-          npm config set fetch-timeout 300000
+      - name: 'Setup pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: 'Get pnpm store directory'
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        id: pnpm-cache
+
+      - name: 'Setup pnpm cache'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: 'Install dependencies'
-        run: |-
-          npm ci --prefer-offline --no-audit --progress=false
+        run: pnpm install --no-frozen-lockfile
 
       - name: 'Build project'
-        run: |-
-          npm run build
+        run: pnpm run build
 
       - name: 'Set up Docker'
         if: |-
           ${{ matrix.sandbox == 'sandbox:docker' }}
-        uses: 'docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435' # ratchet:docker/setup-buildx-action@v3
+        uses: 'docker/setup-buildx-action@v3'
 
       - name: 'Set up Podman'
         if: |-
           ${{ matrix.sandbox == 'sandbox:podman' }}
-        uses: 'redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603' # ratchet:redhat-actions/podman-login@v1
+        uses: 'redhat-actions/podman-login@v1'
         with:
           registry: 'docker.io'
           username: '${{ secrets.DOCKERHUB_USERNAME }}'
@@ -68,9 +75,9 @@ jobs:
           VERBOSE: 'true'
         run: |-
           if [[ "${{ matrix.sandbox }}" == "sandbox:docker" ]]; then
-            npm run test:integration:sandbox:docker
+            pnpm run test:integration:sandbox:docker
           else
-            npm run test:integration:sandbox:none
+            pnpm run test:integration:sandbox:none
           fi
 
   e2e-test-macos:
@@ -78,34 +85,41 @@ jobs:
     runs-on: 'macos-latest'
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        uses: 'actions/checkout@v4'
 
       - name: 'Set up Node.js'
-        uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions/setup-node@v4
+        uses: 'actions/setup-node@v4'
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
-          registry-url: 'https://registry.npmjs.org/'
 
-      - name: 'Configure npm for rate limiting'
-        run: |-
-          npm config set fetch-retry-mintimeout 20000
-          npm config set fetch-retry-maxtimeout 120000
-          npm config set fetch-retries 5
-          npm config set fetch-timeout 300000
+      - name: 'Setup pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: 'Get pnpm store directory'
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        id: pnpm-cache
+
+      - name: 'Setup pnpm cache'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: 'Install dependencies'
-        run: |-
-          npm ci --prefer-offline --no-audit --progress=false
+        run: pnpm install --no-frozen-lockfile
 
       - name: 'Build project'
-        run: |-
-          npm run build
+        run: pnpm run build
 
       - name: 'Run E2E tests'
         env:
           OPENAI_API_KEY: '${{ secrets.OPENAI_API_KEY }}'
           OPENAI_BASE_URL: '${{ secrets.OPENAI_BASE_URL }}'
           OPENAI_MODEL: '${{ secrets.OPENAI_MODEL }}'
-        run: 'npm run test:e2e'
+        run: pnpm run test:e2e
