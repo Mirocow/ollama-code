@@ -41,14 +41,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --ignore-scripts --no-frozen-lockfile
 
+      - name: Install docs-site dependencies
+        working-directory: ./docs-site
+        run: npm install
+
       - name: Build for GitHub Pages
-        run: |
-          cd docs-site
-          pnpm run build
-          touch out/.nojekyll
+        working-directory: ./docs-site
+        run: npm run build
         env:
           GITHUB_PAGES: true
           REPO_NAME: ollama-code
+
+      - name: Add .nojekyll
+        run: touch docs-site/out/.nojekyll
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
