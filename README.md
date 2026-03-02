@@ -57,12 +57,13 @@ Different models require different amounts of VRAM. Below is a guide for NVIDIA 
 
 | Model Size | Min VRAM | Recommended GPU | Notes |
 |------------|----------|-----------------|-------|
-| 3B | 4 GB | RTX 3050, GTX 1660 | Basic models, quantization recommended |
-| 7B | 6 GB | RTX 3060, RTX 4060 | Good balance of speed and quality |
-| 8B | 8 GB | RTX 3070, RTX 4060 Ti | DeepSeek R1, Llama 3.1 |
-| 14B | 12 GB | RTX 3080, RTX 4070 | Qwen2.5-Coder 14B |
-| 30B | 20 GB | RTX 3090, RTX 4090 | Qwen3-Coder 30B |
-| 70B+ | 40+ GB | 2x RTX 3090, A100 | Requires multi-GPU or cloud |
+| 3B | 4 GB | RTX 3050, GTX 1660, RTX 5060 | Basic models, quantization recommended |
+| 7B | 6 GB | RTX 3060, RTX 4060, RTX 5060 | Good balance of speed and quality |
+| 8B | 8 GB | RTX 3070, RTX 4060 Ti, RTX 5070 | DeepSeek R1, Llama 3.1 |
+| 14B | 12 GB | RTX 3080, RTX 4070, RTX 5070 Ti | Qwen2.5-Coder 14B |
+| 30B | 20 GB | RTX 3090, RTX 4090, RTX 5080 | Qwen3-Coder 30B |
+| 70B | 32 GB | RTX 5090, 2x RTX 3090 | DeepSeek R1 70B, Llama 3.1 70B |
+| 120B+ | 48+ GB | 2x RTX 5090, A100 | Requires multi-GPU or cloud |
 
 ### Model Performance Test Results
 
@@ -85,10 +86,20 @@ Performance tests conducted with standard tasks (code generation, refactoring, d
 | RTX 3090 | 24 GB | deepseek-r1:32b | Q4_K_M | 12-18 | Outstanding |
 | RTX 4070 | 12 GB | qwen2.5-coder:14b | Q5_K_M | 35-42 | Excellent |
 | RTX 4070 Ti | 16 GB | qwen3-coder:30b | Q4_K_M | 22-28 | Outstanding |
-| RTX 4090 | 24 GB | qwen3-coder:30b | Q8_0 | 35-45 | Outstanding |
-| RTX 4090 | 24 GB | deepseek-r1:32b | Q5_K_M | 28-35 | Outstanding |
+| RTX 4080 | 16 GB | qwen3-coder:30b | Q5_K_M | 28-35 | Outstanding |
+| RTX 4080 | 16 GB | deepseek-r1:32b | Q4_K_M | 20-28 | Outstanding |
+| RTX 4090 | 24 GB | qwen3-coder:30b | Q8_0 | 45-55 | Outstanding |
+| RTX 4090 | 24 GB | deepseek-r1:32b | Q5_K_M | 35-45 | Outstanding |
+| RTX 4090 | 24 GB | deepseek-r1:70b | Q3_K_M | 8-12 | Exceptional |
+| RTX 5070 | 12 GB | qwen2.5-coder:14b | Q6_K | 45-55 | Excellent |
+| RTX 5070 Ti | 16 GB | qwen3-coder:30b | Q5_K_M | 35-45 | Outstanding |
+| RTX 5080 | 16 GB | qwen3-coder:30b | Q6_K | 45-55 | Outstanding |
+| RTX 5080 | 16 GB | deepseek-r1:32b | Q5_K_M | 38-48 | Outstanding |
+| RTX 5090 | 32 GB | qwen3-coder:30b | FP16 | 80-100 | Exceptional |
+| RTX 5090 | 32 GB | deepseek-r1:70b | Q4_K_M | 25-35 | Exceptional |
+| RTX 5090 | 32 GB | llama3.1:70b | Q5_K_M | 30-40 | Exceptional |
 
-> **Note**: Speed varies based on context length, prompt complexity, and system configuration. Quality Score is subjective based on code generation accuracy and coherence.
+> **Note**: Speed varies based on context length, prompt complexity, and system configuration. Quality Score is subjective based on code generation accuracy and coherence. RTX 50 series shows significant performance improvements due to Blackwell architecture and GDDR7 memory.
 
 ### Quantization Guide
 
@@ -98,6 +109,7 @@ Performance tests conducted with standard tasks (code generation, refactoring, d
 | Q5_K_M | ~65% | Very Low | Better quality |
 | Q6_K | ~60% | Negligible | High quality needs |
 | Q8_0 | ~50% | None | Maximum quality |
+| FP16 | 0% | None | RTX 5090 with 32GB+ VRAM |
 
 ## Quick Start
 

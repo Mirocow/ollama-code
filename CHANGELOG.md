@@ -32,11 +32,11 @@ Complete reorganization of tools into categorized plugins for better modularity 
 
 | Component                 | Description                                           |
 | ------------------------- | ----------------------------------------------------- |
-| **12 Plugin Categories**  | Tools organized by functionality                      |
+| **13 Plugin Categories**  | Tools organized by functionality                      |
 | **Tool Re-exports**       | Existing tools wrapped in plugin architecture         |
 | **Enhanced Documentation** | Each plugin has its own README and metadata          |
 
-**New Plugin Categories (7 new):**
+**New Plugin Categories (8 new):**
 
 | Plugin ID             | Tools                                                       | Description                              |
 | --------------------- | ----------------------------------------------------------- | ---------------------------------------- |
@@ -47,6 +47,7 @@ Complete reorganization of tools into categorized plugins for better modularity 
 | `git-tools`           | git_advanced                                                | Advanced Git operations                  |
 | `mcp-tools`           | mcp_server                                                  | Model Context Protocol integration       |
 | `code-analysis-tools` | code_analyzer, diagram_generator, api_tester               | Code quality and analysis                |
+| `skill-tools`         | skill, list_skills                                          | Skill management and execution           |
 
 **Updated Existing Plugins (5):**
 
@@ -73,14 +74,15 @@ packages/core/src/plugins/builtin/
 ├── docker-tools/        # docker
 ├── git-tools/           # git_advanced
 ├── mcp-tools/           # mcp_server
-└── code-analysis-tools/ # code_analyzer, diagram_generator, api_tester
+├── code-analysis-tools/ # code_analyzer, diagram_generator, api_tester
+└── skill-tools/         # skill, list_skills
 ```
 
 ### Technical Improvements
 
 #### PluginRegistry Enhancement
 
-- Updated to load all 12 plugin categories
+- Updated to load all 13 plugin categories
 - Dynamic plugin discovery from builtin directory
 - Enhanced logging and error handling
 
@@ -108,6 +110,8 @@ Each plugin now includes:
 | `plugins/builtin/mcp-tools/plugin.json`                         | MCP tools metadata         |
 | `plugins/builtin/code-analysis-tools/index.ts`                  | Code analysis plugin       |
 | `plugins/builtin/code-analysis-tools/plugin.json`               | Code analysis metadata     |
+| `plugins/builtin/skill-tools/index.ts`                          | Skill tools plugin         |
+| `plugins/builtin/skill-tools/plugin.json`                       | Skill tools metadata       |
 
 ### Files Modified
 
@@ -116,7 +120,7 @@ Each plugin now includes:
 | `plugins/builtin/file-tools/index.ts`        | Enhanced with read_many_files      |
 | `plugins/builtin/shell-tools/index.ts`       | Added bash alias, safety checks    |
 | `plugins/builtin/search-tools/index.ts`      | Full grep/web implementation       |
-| `plugins/pluginRegistry.ts`                  | Load all 12 plugin categories      |
+| `plugins/pluginRegistry.ts`                  | Load all 13 plugin categories      |
 
 ### Migration Guide
 
