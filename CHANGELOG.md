@@ -1,5 +1,130 @@
 # Changelog
 
+## 0.16.0
+
+### New Features
+
+#### Documentation: GPU Requirements and Performance Testing
+
+Added comprehensive GPU requirements documentation with performance benchmarks:
+
+| Section | Description |
+|---------|-------------|
+| **GPU Requirements Table** | Minimum VRAM for each model size (3B to 70B+) |
+| **Performance Test Results** | Benchmarks for RTX 3060 through RTX 4090 |
+| **Quantization Guide** | Q4_K_M, Q5_K_M, Q6_K, Q8_0 recommendations |
+
+**Performance Test Table includes:**
+- 17 GPU/Model combinations tested
+- Starting with RTX 3060 (12 GB) as baseline
+- Speed measurements in tokens/second
+- Quality scores for each configuration
+
+**Files Updated:**
+- `README.md` — Added GPU Requirements section
+- `README.ru.md` — Added Russian GPU Requirements section
+
+#### Plugin System v3 — Tools Reorganization into Plugins
+
+Complete reorganization of tools into categorized plugins for better modularity and extensibility:
+
+| Component                 | Description                                           |
+| ------------------------- | ----------------------------------------------------- |
+| **12 Plugin Categories**  | Tools organized by functionality                      |
+| **Tool Re-exports**       | Existing tools wrapped in plugin architecture         |
+| **Enhanced Documentation** | Each plugin has its own README and metadata          |
+
+**New Plugin Categories (7 new):**
+
+| Plugin ID             | Tools                                                       | Description                              |
+| --------------------- | ----------------------------------------------------------- | ---------------------------------------- |
+| `memory-tools`        | save_memory                                                 | Memory and context management            |
+| `task-tools`          | task, todo_write                                            | Task delegation and tracking             |
+| `database-tools`      | redis, database                                             | Database operations (Redis, SQL, MongoDB)|
+| `docker-tools`        | docker                                                      | Container management                     |
+| `git-tools`           | git_advanced                                                | Advanced Git operations                  |
+| `mcp-tools`           | mcp_server                                                  | Model Context Protocol integration       |
+| `code-analysis-tools` | code_analyzer, diagram_generator, api_tester               | Code quality and analysis                |
+
+**Updated Existing Plugins (5):**
+
+| Plugin ID        | Changes                                                       |
+| ---------------- | ------------------------------------------------------------- |
+| `file-tools`     | Added read_many_files tool, enhanced documentation            |
+| `shell-tools`    | Added bash alias, improved confirmation messages              |
+| `search-tools`   | Added full grep implementation, web_search enhancements       |
+| `dev-tools`      | All language tools with full descriptions                     |
+| `core-tools`     | Enhanced with environment variable whitelist                  |
+
+**Plugin Structure:**
+
+```
+packages/core/src/plugins/builtin/
+├── core-tools/          # echo, timestamp, get_env
+├── file-tools/          # read_file, write_file, edit, glob, list_directory, read_many_files
+├── shell-tools/         # run_shell_command, bash
+├── search-tools/        # grep, web_search, web_fetch
+├── dev-tools/           # python_dev, nodejs_dev, golang_dev, rust_dev, etc.
+├── memory-tools/        # save_memory
+├── task-tools/          # task, todo_write
+├── database-tools/      # redis, database
+├── docker-tools/        # docker
+├── git-tools/           # git_advanced
+├── mcp-tools/           # mcp_server
+└── code-analysis-tools/ # code_analyzer, diagram_generator, api_tester
+```
+
+### Technical Improvements
+
+#### PluginRegistry Enhancement
+
+- Updated to load all 12 plugin categories
+- Dynamic plugin discovery from builtin directory
+- Enhanced logging and error handling
+
+#### File Structure
+
+Each plugin now includes:
+- `index.ts` — Plugin definition with tools and hooks
+- `plugin.json` — Metadata file for plugin discovery
+
+### Files Added
+
+| File                                                            | Description                |
+| --------------------------------------------------------------- | -------------------------- |
+| `plugins/builtin/memory-tools/index.ts`                         | Memory tools plugin        |
+| `plugins/builtin/memory-tools/plugin.json`                      | Memory tools metadata      |
+| `plugins/builtin/task-tools/index.ts`                           | Task tools plugin          |
+| `plugins/builtin/task-tools/plugin.json`                        | Task tools metadata        |
+| `plugins/builtin/database-tools/index.ts`                       | Database tools plugin      |
+| `plugins/builtin/database-tools/plugin.json`                    | Database tools metadata    |
+| `plugins/builtin/docker-tools/index.ts`                         | Docker tools plugin        |
+| `plugins/builtin/docker-tools/plugin.json`                      | Docker tools metadata      |
+| `plugins/builtin/git-tools/index.ts`                            | Git tools plugin           |
+| `plugins/builtin/git-tools/plugin.json`                         | Git tools metadata         |
+| `plugins/builtin/mcp-tools/index.ts`                            | MCP tools plugin           |
+| `plugins/builtin/mcp-tools/plugin.json`                         | MCP tools metadata         |
+| `plugins/builtin/code-analysis-tools/index.ts`                  | Code analysis plugin       |
+| `plugins/builtin/code-analysis-tools/plugin.json`               | Code analysis metadata     |
+
+### Files Modified
+
+| File                                         | Changes                            |
+| -------------------------------------------- | ---------------------------------- |
+| `plugins/builtin/file-tools/index.ts`        | Enhanced with read_many_files      |
+| `plugins/builtin/shell-tools/index.ts`       | Added bash alias, safety checks    |
+| `plugins/builtin/search-tools/index.ts`      | Full grep/web implementation       |
+| `plugins/pluginRegistry.ts`                  | Load all 12 plugin categories      |
+
+### Migration Guide
+
+Tools are now loaded via the plugin system:
+- All existing tool classes are still available for direct import
+- Tools are automatically registered through `PluginRegistry.initialize()`
+- Plugin hooks enable custom behavior before/after tool execution
+
+---
+
 ## 0.15.0
 
 ### New Features

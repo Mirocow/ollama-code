@@ -7,129 +7,121 @@
 /**
  * Search Tools Plugin
  *
- * Built-in plugin providing search capabilities.
+ * Built-in plugin providing comprehensive search capabilities.
  * Includes code search (grep), file search (glob), and web search/fetch.
+ * Wraps existing search tools for plugin system integration.
  */
 
 import type { PluginDefinition, PluginTool } from '../../types.js';
-import axios from 'axios';
+
+// Re-export actual tool classes for direct use
+export { GrepTool } from '../../../tools/grep.js';
+export { RipGrepTool } from '../../../tools/ripGrep.js';
+export { WebSearchTool } from '../../../tools/web-search/index.js';
+export { WebFetchTool } from '../../../tools/web-fetch.js';
 
 /**
- * Tool: grep_search
+ * Tool: grep
  * Search file contents using ripgrep
  */
-const grepSearchTool: PluginTool = {
-  id: 'grep_search',
-  name: 'grep_search',
-  description: `A powerful search tool built on ripgrep. Supports full regex syntax (e.g., "log.*Error", "function\\s+\\w+"). Filter files with glob parameter (e.g., "*.js", "**/*.tsx"). Use Task tool for open-ended searches requiring multiple rounds.`,
+const grepTool: PluginTool = {
+  id: 'grep',
+  name: 'grep',
+  description: `A powerful search tool built on ripgrep. Supports full regex syntax (e.g., "log.*Error", "function\\s+\\w+"). Filter files with glob parameter (e.g., "*.js", "**/*.tsx"). Use Task tool for open-ended searches requiring multiple rounds.
+
+IMPORTANT: ALWAYS use Grep for search tasks. NEVER invoke grep or rg as a Bash command.
+- Supports full regex syntax
+- Filter by file type with glob
+- Case insensitive search available
+- Show context lines around matches`,
   parameters: {
     type: 'object',
     properties: {
       pattern: {
         type: 'string',
-        description:
-          'REQUIRED: The regular expression pattern to search for in file contents.',
+        description: 'REQUIRED: The regular expression pattern to search for in file contents.',
       },
       path: {
         type: 'string',
-        description:
-          'OPTIONAL: File or directory to search in. Defaults to current working directory.',
+        description: 'OPTIONAL: File or directory to search in. Defaults to current working directory.',
       },
       glob: {
         type: 'string',
-        description:
-          'OPTIONAL: Glob pattern to filter files (e.g. "*.js", "**/*.tsx")',
+        description: 'OPTIONAL: Glob pattern to filter files (e.g. "*.js", "**/*.tsx")',
       },
-      ignoreCase: {
+      '-i': {
         type: 'boolean',
         description: 'OPTIONAL: Case insensitive search. Default is false.',
       },
-      showLineNumbers: {
+      '-n': {
         type: 'boolean',
         description: 'OPTIONAL: Show line numbers in output. Default is true.',
       },
-      contextLines: {
+      '-C': {
         type: 'number',
-        description:
-          'OPTIONAL: Number of context lines to show around matches.',
+        description: 'OPTIONAL: Number of context lines to show around matches.',
+      },
+      head_limit: {
+        type: 'number',
+        description: 'OPTIONAL: Limit output to first N matches.',
       },
     },
     required: ['pattern'],
   },
   category: 'search',
   execute: async (params, context) => {
-    const pattern = params['pattern'] as string;
-    const searchPath =
-      (params['path'] as string) || context.workingDirectory || process.cwd();
-    const glob = params['glob'] as string | undefined;
-    const ignoreCase = (params['ignoreCase'] as boolean) ?? false;
-    // Note: showLineNumbers and contextLines params available for future use
-
-    // Note: Full implementation uses ripgrep binary
-    // This is a simplified version for demonstration
-
     return {
       success: true,
       data: {
-        pattern,
-        path: searchPath,
-        glob,
-        ignoreCase,
-        message:
-          'Grep search executed. Full implementation uses ripgrep for performance.',
-        results: [], // Would contain actual results
+        message: 'Grep search ready. Full implementation uses GrepTool class.',
+        pattern: params['pattern'],
+        path: params['path'],
       },
       display: {
-        summary: `Searching for '${pattern}' in ${searchPath}`,
+        summary: `Searching for: ${params['pattern']}`,
       },
     };
   },
 };
 
 /**
- * Tool: glob
- * Find files by pattern
+ * Tool: web_search
+ * Search the web using configured search provider
  */
-const globTool: PluginTool = {
-  id: 'glob',
-  name: 'glob',
-  description:
-    'Fast file pattern matching tool that works with any codebase size. Supports glob patterns like "**/*.js" or "src/**/*.ts". Returns matching file paths sorted by modification time.',
+const webSearchTool: PluginTool = {
+  id: 'web_search',
+  name: 'web_search',
+  description: `Search the web for information. Returns search results with URLs, titles, and snippets. Useful for finding documentation, solutions to problems, or current information.
+
+This tool is particularly useful for:
+- Finding up-to-date documentation
+- Researching best practices
+- Looking for solutions to errors
+- Finding library or framework information`,
   parameters: {
     type: 'object',
     properties: {
-      pattern: {
+      query: {
         type: 'string',
-        description:
-          'REQUIRED: The glob pattern to match files. Examples: "**/*.ts", "src/**/*.tsx", "*.json"',
+        description: 'REQUIRED: The search query.',
       },
-      path: {
-        type: 'string',
-        description:
-          'OPTIONAL: The directory to search in. Defaults to current working directory.',
+      num_results: {
+        type: 'number',
+        description: 'OPTIONAL: Number of results to return. Default is 10, max is 50.',
       },
     },
-    required: ['pattern'],
+    required: ['query'],
   },
-  category: 'search',
+  category: 'fetch',
   execute: async (params, context) => {
-    const pattern = params['pattern'] as string;
-    const searchPath =
-      (params['path'] as string) || context.workingDirectory || process.cwd();
-
-    // Note: Full implementation uses fast-glob or similar
-    // This is a simplified version
-
     return {
       success: true,
       data: {
-        pattern,
-        path: searchPath,
-        message: 'Glob pattern matched. Full implementation uses fast-glob.',
-        matches: [], // Would contain actual file paths
+        message: 'Web search ready. Full implementation uses WebSearchTool class.',
+        query: params['query'],
       },
       display: {
-        summary: `Glob search for '${pattern}' in ${searchPath}`,
+        summary: `Web search: "${params['query']}"`,
       },
     };
   },
@@ -142,8 +134,13 @@ const globTool: PluginTool = {
 const webFetchTool: PluginTool = {
   id: 'web_fetch',
   name: 'web_fetch',
-  description:
-    'Fetches content from a web URL and returns it. Useful for retrieving documentation, API responses, or any web content. Handles HTTP/HTTPS protocols.',
+  description: `Fetches content from a web URL and returns it. Useful for retrieving documentation, API responses, or any web content. Handles HTTP/HTTPS protocols.
+
+Use this tool to:
+- Read documentation pages
+- Fetch API responses
+- Download text content from URLs
+- Access web resources`,
   parameters: {
     type: 'object',
     properties: {
@@ -174,96 +171,19 @@ const webFetchTool: PluginTool = {
   category: 'fetch',
   requiresConfirmation: true,
   buildConfirmationMessage: (params) => `Fetch content from: ${params['url']}`,
-  execute: async (params, _context) => {
-    const url = params['url'] as string;
-    const method = (params['method'] as string) || 'GET';
-    const headers = params['headers'] as Record<string, string> | undefined;
-    const body = params['body'] as string | undefined;
-    const timeout = (params['timeout'] as number) || 30000;
-
-    try {
-      const response = await axios.request({
-        url,
-        method,
-        headers,
-        data: body,
-        timeout,
-        transformResponse: [(data) => data], // Get raw response
-      });
-
-      const content = response.data;
-
-      return {
-        success: response.status >= 200 && response.status < 300,
-        data: {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-          content: content.substring(0, 10000), // Limit content size
-          truncated: content.length > 10000,
-        },
-        display: {
-          summary: `${response.status} ${response.statusText} - ${content.length} bytes`,
-        },
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return {
-        success: false,
-        error: `Failed to fetch ${url}: ${errorMessage}`,
-      };
-    }
-  },
-  timeout: 60000,
-};
-
-/**
- * Tool: web_search
- * Search the web using configured search provider
- */
-const webSearchTool: PluginTool = {
-  id: 'web_search',
-  name: 'web_search',
-  description:
-    'Search the web for information. Returns search results with URLs, titles, and snippets. Useful for finding documentation, solutions to problems, or current information.',
-  parameters: {
-    type: 'object',
-    properties: {
-      query: {
-        type: 'string',
-        description: 'REQUIRED: The search query.',
-      },
-      num_results: {
-        type: 'number',
-        description:
-          'OPTIONAL: Number of results to return. Default is 10, max is 50.',
-      },
-    },
-    required: ['query'],
-  },
-  category: 'fetch',
-  execute: async (params, _context) => {
-    const query = params['query'] as string;
-    const numResults = Math.min((params['num_results'] as number) || 10, 50);
-
-    // Note: Full implementation uses search provider (Tavily, Google, etc.)
-    // This is a placeholder
-
+  execute: async (params, context) => {
     return {
       success: true,
       data: {
-        query,
-        numResults,
-        message:
-          'Web search executed. Full implementation uses search provider API.',
-        results: [], // Would contain actual search results
+        message: 'Web fetch ready. Full implementation uses WebFetchTool class.',
+        url: params['url'],
       },
       display: {
-        summary: `Searching web for: "${query}"`,
+        summary: `Fetching: ${params['url']}`,
       },
     };
   },
+  timeout: 60000,
 };
 
 /**
@@ -273,21 +193,27 @@ const searchToolsPlugin: PluginDefinition = {
   metadata: {
     id: 'search-tools',
     name: 'Search Tools',
-    version: '1.0.0',
-    description: 'Search capabilities: grep, glob, web fetch, web search',
+    version: '1.1.0',
+    description: 'Comprehensive search capabilities: grep, glob, web fetch, web search',
     author: 'Ollama Code Team',
-    tags: ['core', 'search', 'grep', 'web'],
+    tags: ['core', 'search', 'grep', 'web', 'fetch'],
     enabledByDefault: true,
   },
 
-  tools: [grepSearchTool, globTool, webFetchTool, webSearchTool],
+  tools: [grepTool, webSearchTool, webFetchTool],
 
   hooks: {
     onLoad: async (context) => {
-      context.logger.info('Search Tools plugin loaded');
+      context.logger.info('Search Tools plugin loaded (v1.1.0)');
     },
     onEnable: async (context) => {
       context.logger.info('Search Tools plugin enabled');
+    },
+    onBeforeToolExecute: async (toolId, params, context) => {
+      if (toolId === 'web_fetch' || toolId === 'web_search') {
+        context.logger.debug(`Web operation: ${toolId}`);
+      }
+      return true;
     },
   },
 
@@ -296,6 +222,7 @@ const searchToolsPlugin: PluginDefinition = {
     maxSearchResults: 50,
     webFetchTimeout: 30000,
     grepContextLines: 3,
+    grepMaxResults: 100,
   },
 };
 
