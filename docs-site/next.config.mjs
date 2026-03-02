@@ -5,6 +5,7 @@ const repoName = process.env.REPO_NAME || 'ollama-code';
 
 const withNextra = nextra({
   defaultShowCopyCode: true,
+  contentDirBase: 'content',
 });
 
 /** @type {import('next').NextConfig} */
