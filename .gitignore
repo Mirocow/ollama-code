@@ -69,6 +69,9 @@ docs-site/.next
 # content is a symlink to ../docs
 docs-site/content
 
+# web-app build
+packages/web-app/.next
+
 # python cache
 __pycache__/
 

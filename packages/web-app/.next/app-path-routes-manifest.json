@@ -1,0 +1,9 @@
+{
+  "/api/chat/route": "/api/chat",
+  "/api/fs/route": "/api/fs",
+  "/api/generate/route": "/api/generate",
+  "/api/models/route": "/api/models",
+  "/api/ollama/[...path]/route": "/api/ollama/[...path]",
+  "/_not-found/page": "/_not-found",
+  "/page": "/"
+}

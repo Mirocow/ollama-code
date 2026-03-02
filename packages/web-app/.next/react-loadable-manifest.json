@@ -1,0 +1,29 @@
+{
+  "app/page.tsx -> @/components/chat/ChatInterface": {
+    "id": 3279,
+    "files": [
+      "static/chunks/84.307b94e8c9a356e6.js",
+      "static/chunks/279.471854cfcb15abc8.js"
+    ]
+  },
+  "app/page.tsx -> @/components/explorer/FileExplorer": {
+    "id": 568,
+    "files": [
+      "static/chunks/568.109a1faf2f62dd7c.js"
+    ]
+  },
+  "app/page.tsx -> @/components/terminal/TerminalEmulator": {
+    "id": 9125,
+    "files": [
+      "static/css/6ef2fa08dd043252.css",
+      "static/chunks/df4ed4d4.134d71c791c11471.js",
+      "static/chunks/125.3a87b1e8cbbf644f.js"
+    ]
+  },
+  "components/explorer/FileExplorer.tsx -> @monaco-editor/react": {
+    "id": 1625,
+    "files": [
+      "static/chunks/625.46c423c264da3753.js"
+    ]
+  }
+}

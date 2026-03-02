@@ -1,0 +1,9 @@
+{
+  "/api/chat/route": "app/api/chat/route.js",
+  "/api/fs/route": "app/api/fs/route.js",
+  "/api/generate/route": "app/api/generate/route.js",
+  "/api/models/route": "app/api/models/route.js",
+  "/api/ollama/[...path]/route": "app/api/ollama/[...path]/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js"
+}
