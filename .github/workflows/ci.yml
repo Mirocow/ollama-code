@@ -61,7 +61,7 @@ jobs:
           version: 9
 
       - name: 'Install dependencies'
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: pnpm install --ignore-scripts
 
       - name: 'Check lockfile'
         run: pnpm run check:lockfile
@@ -136,7 +136,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: 'Install dependencies'
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: pnpm install --ignore-scripts
 
       - name: 'Build project'
         run: pnpm run build
