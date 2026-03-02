@@ -2,6 +2,8 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Plugin Registry - Created with GLM-5 from Z.AI
  */
 
 /**
@@ -183,6 +185,14 @@ export class PluginRegistry {
       debugLogger.debug('Code analysis tools plugin not available');
     }
     
+    // Skill tools - skill management and execution
+    try {
+      const skillTools = await import('./builtin/skill-tools/index.js');
+      plugins.push(skillTools.default);
+    } catch {
+      debugLogger.debug('Skill tools plugin not available');
+    }
+    
     debugLogger.info(`Loaded ${plugins.length} builtin plugins`);
     return plugins;
   }
@@ -303,6 +313,7 @@ export class PluginRegistry {
       'git-tools',
       'mcp-tools',
       'code-analysis-tools',
+      'skill-tools',
     ];
   }
 }

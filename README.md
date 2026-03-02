@@ -780,6 +780,10 @@ npm run test:integration:sandbox:none
 
 Apache License 2.0
 
+---
+
+*Documentation created with GLM-5 from Z.AI*
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines.
