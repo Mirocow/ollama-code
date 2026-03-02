@@ -4,7 +4,7 @@ export default {
   memory: {
     display: 'hidden',
   },
-  'qwen-ignore': 'Ignoring Files',
+  'ollama-ignore': 'Ignoring Files',
   'trusted-folders': 'Trusted Folders',
   themes: 'Themes',
 };

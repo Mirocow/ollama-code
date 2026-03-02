@@ -1,0 +1,152 @@
+# 🦙 Ollama Code
+
+**Open Source AI Coding Assistant** — work with local AI models privately and securely.
+
+<div style={{ display: 'flex', gap: '1rem', margin: '2rem 0' }}>
+  <a href="https://github.com/mirocow/ollama-code" style={{ padding: '0.75rem 1.5rem', background: '#0070f3', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600' }}>
+    GitHub →
+  </a>
+  <a href="./users/quickstart" style={{ padding: '0.75rem 1.5rem', background: '#1a1a1a', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600' }}>
+    Quick Start →
+  </a>
+</div>
+
+---
+
+## English
+
+### ✨ Features
+
+- **🔒 Local Models** — Work with Ollama models locally without sending data to the cloud. Complete privacy and control.
+- **💻 CLI Interface** — Powerful terminal interface built with Ink (React) for comfortable work directly from the command line.
+- **🌐 Web UI** — Modern web interface on Next.js with Monaco Editor and built-in terminal.
+- **🔌 Plugin System** — Extend functionality with plugins. Dynamic loading and sandbox security.
+- **🛡️ Security Sandbox** — Plugin isolation with trust levels. Control access to files, network, and commands.
+- **⚡ Context Caching** — KV-cache reuse for faster repeated requests. Save tokens and time.
+- **↩️ Undo/Redo** — Command Pattern for undoing and redoing operations. Safe code editing.
+- **📡 MCP Support** — Integration with Model Context Protocol for extended capabilities.
+
+### 📊 Comparison
+
+| Feature | Ollama Code | Claude Code | Aider | Cursor |
+|---------|-------------|-------------|-------|--------|
+| Local models | ✅ | ❌ | ✅ | ❌ |
+| Open Source | ✅ | ❌ | ✅ | ❌ |
+| CLI interface | ✅ | ✅ | ✅ | ❌ |
+| Web UI | ✅ | ✅ | ❌ | ✅ |
+| Plugin System | ✅ | ✅ | ✅ | ✅ |
+| MCP Support | ✅ | ✅ | ❌ | ❌ |
+| Context Caching | ✅ | ✅ | ❌ | ✅ |
+
+### 🚀 Quick Start
+
+```bash
+# Install via npm
+npm install -g @ollama-code/ollama-code
+
+# Or via pnpm
+pnpm install -g @ollama-code/ollama-code
+
+# Run
+ollama-code
+```
+
+### 📚 Documentation
+
+- **[User Guide](./users/overview)** — Installation, configuration, usage
+- **[Developer Guide](./developers/architecture)** — Architecture, contributing, tools
+
+### 🛠️ 22+ Built-in Tools
+
+**File System:** `read_file` `write_file` `edit` `glob` `list_directory`
+
+**Development:** `python_dev` `nodejs_dev` `golang_dev` `rust_dev` `java_dev`
+
+**Search:** `grep_search` `web_search` `web_fetch`
+
+**Shell:** `run_shell_command` `bash`
+
+**AI:** `task` `skill` `todo_write`
+
+---
+
+## Русский
+
+### ✨ Возможности
+
+- **🔒 Локальные модели** — Работайте с Ollama моделями локально без отправки данных в облако. Полная приватность и контроль.
+- **💻 CLI интерфейс** — Мощный терминальный интерфейс на Ink (React) для комфортной работы прямо из командной строки.
+- **🌐 Web UI** — Современный веб-интерфейс на Next.js с Monaco Editor и встроенным терминалом.
+- **🔌 Plugin System** — Расширяйте функциональность с помощью плагинов. Динамическая загрузка и sandbox безопасность.
+- **🛡️ Security Sandbox** — Изоляция плагинов с уровнями доверия. Контроль доступа к файлам, сети и командам.
+- **⚡ Context Caching** — KV-cache reuse для ускорения повторных запросов. Экономия токенов и времени.
+- **↩️ Undo/Redo** — Command Pattern для отмены и повтора операций. Безопасное редактирование кода.
+- **📡 MCP Support** — Интеграция с Model Context Protocol для расширенных возможностей.
+
+### 📊 Сравнение
+
+| Функция | Ollama Code | Claude Code | Aider | Cursor |
+|---------|-------------|-------------|-------|--------|
+| Локальные модели | ✅ | ❌ | ✅ | ❌ |
+| Open Source | ✅ | ❌ | ✅ | ❌ |
+| CLI интерфейс | ✅ | ✅ | ✅ | ❌ |
+| Web UI | ✅ | ✅ | ❌ | ✅ |
+| Plugin System | ✅ | ✅ | ✅ | ✅ |
+| MCP Support | ✅ | ✅ | ❌ | ❌ |
+| Context Caching | ✅ | ✅ | ❌ | ✅ |
+
+### 🚀 Быстрый старт
+
+```bash
+# Установка через npm
+npm install -g @ollama-code/ollama-code
+
+# Или через pnpm
+pnpm install -g @ollama-code/ollama-code
+
+# Запуск
+ollama-code
+```
+
+### 📚 Документация
+
+- **[Руководство пользователя](./users/overview)** — Установка, настройка, использование
+- **[Руководство разработчика](./developers/architecture)** — Архитектура, контрибуция, инструменты
+
+### 🛠️ 22+ встроенных инструментов
+
+**Файловая система:** `read_file` `write_file` `edit` `glob` `list_directory`
+
+**Разработка:** `python_dev` `nodejs_dev` `golang_dev` `rust_dev` `java_dev`
+
+**Поиск:** `grep_search` `web_search` `web_fetch`
+
+**Shell:** `run_shell_command` `bash`
+
+**AI:** `task` `skill` `todo_write`
+
+---
+
+## 🏗️ Architecture / Архитектура
+
+```
+ollama-code/
+├── packages/cli/      # CLI (Ink/React Terminal UI)
+├── packages/core/     # Business Logic, Tools, Ollama API
+├── packages/webui/    # React Components, Storybook
+└── packages/sdk/      # TypeScript SDK, MCP Server
+```
+
+## ⚙️ Tech Stack / Технологии
+
+TypeScript 5.x • React 19 • Next.js 15 • Ink • Zustand • Tailwind CSS • Vitest • esbuild • Ollama
+
+---
+
+<div style={{ textAlign: 'center', padding: '2rem 0' }}>
+
+**Apache 2.0 License** © 2025 Ollama Code Team
+
+[GitHub](https://github.com/mirocow/ollama-code) • [Issues](https://github.com/mirocow/ollama-code/issues) • [Discussions](https://github.com/mirocow/ollama-code/discussions)
+
+</div>

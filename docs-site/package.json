@@ -1,16 +1,17 @@
 {
   "name": "docs-site",
   "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
-  "author": "",
+  "description": "Ollama Code documentation and landing page",
+  "license": "Apache-2.0",
+  "author": "Ollama Code Team",
   "type": "module",
   "main": "index.js",
   "scripts": {
     "link": "ln -s ../docs content",
-    "clean": "rm -rf .next",
+    "clean": "rm -rf .next out",
     "dev": "npm run clean && next --turbopack",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm run clean && next build",
+    "build:github": "GITHUB_PAGES=true REPO_NAME=ollama-code npm run build && touch out/.nojekyll"
   },
   "dependencies": {
     "next": "^16.0.8",
