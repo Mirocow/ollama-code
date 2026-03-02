@@ -1,0 +1,57 @@
+# Quick Start
+
+Get up and running with Ollama Code in minutes.
+
+## Prerequisites
+
+1. **Install Ollama** from [ollama.ai](https://ollama.ai)
+2. **Pull a model**:
+   ```bash
+   ollama pull qwen2.5-coder:7b
+   ```
+3. **Install Node.js 18+**
+
+## Installation
+
+```bash
+# Using npm
+npm install -g @ollama-code/ollama-code
+
+# Using pnpm
+pnpm install -g @ollama-code/ollama-code
+```
+
+## Run
+
+```bash
+ollama-code
+```
+
+## Basic Usage
+
+Start chatting with the AI:
+
+```
+You: Read the main.ts file and explain it
+
+AI: I'll read the file...
+[Shows file contents and explains]
+
+You: Add error handling to the main function
+
+AI: I'll add error handling...
+[Edits the file]
+```
+
+## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `ollama-code` | Start interactive session |
+| `ollama-code --model <name>` | Use specific model |
+| `ollama-code --help` | Show help |
+
+## Next Steps
+
+- [Features](./features) - Explore all features
+- [Configuration](./configuration) - Customize settings
