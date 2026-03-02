@@ -1153,3 +1153,93 @@ Created comprehensive documentation for Plugin Security Sandbox.
 6. **Error Handling** - SandboxViolationError handling
 7. **Best Practices** - Security recommendations
 8. **Architecture Diagram** - Visual flow of sandbox execution
+
+---
+
+## Session: Documentation Update (v0.15.0) - 2025-03-01
+
+### Summary
+
+Updated all project documentation to reflect current v0.15.0 status with Web UI 95% complete.
+
+### Documentation Updates
+
+#### CHANGELOG.md
+
+- Updated version from 0.13.0 to 0.15.0
+- Added Web UI section with complete feature list
+- Added session commits table (8 commits)
+- Added v0.14.0 section for Plugin System v2
+- Added v0.13.0 section for HTTP Client Migration
+- Added remaining tasks section (5%)
+
+#### ROADMAP.md
+
+- Updated session commits table
+- Updated document version to 5.2.0
+- Verified all status markers are current
+
+### Current Project Status
+
+| Component           | Status  | Completion |
+| ------------------- | ------- | ---------- |
+| Web UI              | v0.15.0 | 95%        |
+| TSDoc Documentation | v0.15.0 | 80%        |
+| Plugin System v2    | v0.14.0 | 100%       |
+| HTTP Client (axios) | v0.13.0 | 100%       |
+| Context Caching     | v0.10.9 | 100%       |
+
+### Key Features Documented
+
+1. **Web UI (v0.15.0)**
+   - ChatInterface with streaming
+   - FileExplorer with Monaco editor
+   - TerminalEmulator with xterm.js
+   - API routes for Ollama proxy
+   - Terminal WebSocket server with PTY
+
+2. **TSDoc API Documentation**
+   - packages/core/src/index.ts
+   - packages/sdk-typescript/src/index.ts
+   - @packageDocumentation with module overview
+
+3. **Plugin System v2**
+   - PluginLoader for dynamic discovery
+   - PluginManager with lifecycle hooks
+   - PluginSandbox for security
+   - PluginMarketplace (NPM-based)
+   - 5 builtin plugins
+
+### Files Modified
+
+| File           | Changes                                                    |
+| -------------- | ---------------------------------------------------------- |
+| `CHANGELOG.md` | Version 0.15.0, session commits, v0.14.0, v0.13.0 sections |
+| `ROADMAP.md`   | Session commits table, document version 5.2.0              |
+
+### Session Commits
+
+| Commit     | Description                                       |
+| ---------- | ------------------------------------------------- |
+| `4b189ab5` | docs: update ROADMAP - Web UI 95% complete        |
+| `32409019` | feat(web-app): Terminal WebSocket server with PTY |
+| `b2f64aaf` | docs: update ROADMAP with TSDoc progress          |
+| `4e078a35` | docs(sdk): add TSDoc package documentation        |
+| `bf311f21` | docs: update ROADMAP with Web UI progress         |
+| `76163a8b` | feat(web-app): API routes, FileExplorer, Terminal |
+| `afe080c6` | docs: update ROADMAP with actual status           |
+| `db4088db` | fix: TypeScript configuration and web-app fixes   |
+
+### Remaining Tasks
+
+- CLI backend integration for Web UI (context sharing)
+- TSDoc for packages/cli (20% remaining)
+- Virtual scrolling (P2)
+- Structured logging (P2)
+
+### Next Steps
+
+1. Complete Web UI integration with CLI backend
+2. Finish TSDoc for packages/cli
+3. Performance benchmarks for v1.0.0
+4. Security audit for v1.0.0

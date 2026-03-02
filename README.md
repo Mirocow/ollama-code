@@ -96,35 +96,41 @@ npm run dev:server
 
 **Web UI Features:**
 
-| Tab | Features |
-|-----|----------|
-| **Chat** | Streaming responses, model selection, session management |
-| **Files** | File browser, Monaco editor, syntax highlighting |
-| **Terminal** | Full PTY terminal with xterm.js |
+| Tab          | Features                                                 |
+| ------------ | -------------------------------------------------------- |
+| **Chat**     | Streaming responses, model selection, session management |
+| **Files**    | File browser, Monaco editor, syntax highlighting         |
+| **Terminal** | Full PTY terminal with xterm.js                          |
 
 **API Endpoints:**
 
-| Endpoint | Description |
-|----------|-------------|
-| `/api/models` | List available Ollama models |
-| `/api/chat` | Chat with streaming |
-| `/api/generate` | Generate with streaming |
-| `/api/fs` | Filesystem operations |
-| `/terminal` | WebSocket terminal |
+| Endpoint        | Description                  |
+| --------------- | ---------------------------- |
+| `/api/models`   | List available Ollama models |
+| `/api/chat`     | Chat with streaming          |
+| `/api/generate` | Generate with streaming      |
+| `/api/fs`       | Filesystem operations        |
+| `/terminal`     | WebSocket terminal           |
 
 ---
 
-## What's New in v0.13.0
+## What's New in v0.15.0
 
-### Web UI — Complete Next.js Interface
+### Web UI — Complete Next.js Interface (95%)
 
 Full-featured web application with three main components:
 
-| Component | Technology | Features |
-|-----------|------------|----------|
-| **ChatInterface** | React + Zustand | Streaming, model selection, session persistence |
-| **FileExplorer** | Monaco Editor | Syntax highlighting, multi-language support, auto-save |
-| **TerminalEmulator** | xterm.js + node-pty | Full PTY support, resize, 256 colors |
+| Component            | Technology          | Features                                               |
+| -------------------- | ------------------- | ------------------------------------------------------ |
+| **ChatInterface**    | React + Zustand     | Streaming, model selection, session persistence        |
+| **FileExplorer**     | Monaco Editor       | Syntax highlighting, multi-language support, auto-save |
+| **TerminalEmulator** | xterm.js + node-pty | Full PTY support, resize, 256 colors                   |
+
+**Terminal WebSocket Server:**
+
+- Full PTY support via WebSocket
+- Session management with IP limits
+- Timeout cleanup for inactive sessions
 
 ### TSDoc API Documentation
 
@@ -153,6 +159,67 @@ const myTool = tool({
 - **TypeScript Configuration**: Fixed monorepo project references
 - **HTTP Client**: Completed fetch → axios migration
 - **Terminal Server**: WebSocket-based PTY with session management
+- **Documentation**: TSDoc for core and SDK packages
+
+---
+
+## What's New in v0.14.0
+
+### Plugin System v2 — Complete Implementation
+
+| Component             | Description                                        |
+| --------------------- | -------------------------------------------------- |
+| **PluginLoader**      | Discovery from builtin, user, project, npm sources |
+| **PluginManager**     | Lifecycle management with enable/disable hooks     |
+| **PluginSandbox**     | Filesystem, network, command restrictions          |
+| **PluginMarketplace** | NPM-based search, install, update, uninstall       |
+
+**Builtin Plugins (5):**
+
+- `core-tools` — echo, timestamp, get_env
+- `dev-tools` — python_dev, nodejs_dev, golang_dev, rust_dev, typescript_dev
+- `file-tools` — read_file, write_file, edit_file
+- `search-tools` — grep, glob, web_fetch
+- `shell-tools` — run_shell_command
+
+### Prompt System v2 — Model-Size-Optimized Templates
+
+| Model Size | Template | Prompt Size  |
+| ---------- | -------- | ------------ |
+| <= 10B     | 8b       | ~500 tokens  |
+| <= 30B     | 14b      | ~800 tokens  |
+| <= 60B     | 32b      | ~1200 tokens |
+| > 60B      | 70b      | ~1500 tokens |
+
+---
+
+## What's New in v0.13.0
+
+### HTTP Client Migration (fetch → axios)
+
+Completed migration to axios for all HTTP operations:
+
+| File                                                | Changes                          |
+| --------------------------------------------------- | -------------------------------- |
+| `packages/core/src/utils/httpClient.ts`             | Axios instance with interceptors |
+| `packages/core/src/core/ollamaNativeClient.ts`      | Streaming with axios             |
+| `packages/core/src/tools/web-search/providers/*.ts` | Provider migration               |
+
+**Features:**
+
+- Request/Response logging
+- Retry with exponential backoff
+- Timeout handling
+- Auth header injection
+
+### TypeScript Configuration
+
+Fixed monorepo TypeScript configuration:
+
+- Added project references for all packages
+- Added `composite: true` for referenced packages
+- Fixed ESLint configuration for web-app
+- Separated server code tsconfig (`tsconfig.server.json`)
 
 ---
 
@@ -519,18 +586,18 @@ ollama-code/
 
 ### Plugin System
 
-| Document                                            | Description                        |
-| --------------------------------------------------- | ---------------------------------- |
-| [PLUGIN_SYSTEM.md](./docs/PLUGIN_SYSTEM.md)         | Plugin architecture and API        |
-| [PLUGIN_MARKETPLACE.md](./docs/PLUGIN_MARKETPLACE.md) | Plugin Marketplace usage guide   |
-| [PLUGIN_SANDBOX.md](./docs/PLUGIN_SANDBOX.md)       | Plugin security and sandboxing     |
+| Document                                              | Description                    |
+| ----------------------------------------------------- | ------------------------------ |
+| [PLUGIN_SYSTEM.md](./docs/PLUGIN_SYSTEM.md)           | Plugin architecture and API    |
+| [PLUGIN_MARKETPLACE.md](./docs/PLUGIN_MARKETPLACE.md) | Plugin Marketplace usage guide |
+| [PLUGIN_SANDBOX.md](./docs/PLUGIN_SANDBOX.md)         | Plugin security and sandboxing |
 
 ### Prompt System
 
-| Document                                            | Description                        |
-| --------------------------------------------------- | ---------------------------------- |
-| [PROMPT_SYSTEM_V2.md](./docs/PROMPT_SYSTEM_V2.md)   | Model-size-optimized prompts (NEW) |
-| [PROMPT_SYSTEM.md](./docs/PROMPT_SYSTEM.md)         | Legacy prompt system docs          |
+| Document                                          | Description                        |
+| ------------------------------------------------- | ---------------------------------- |
+| [PROMPT_SYSTEM_V2.md](./docs/PROMPT_SYSTEM_V2.md) | Model-size-optimized prompts (NEW) |
+| [PROMPT_SYSTEM.md](./docs/PROMPT_SYSTEM.md)       | Legacy prompt system docs          |
 
 ## Commands
 
