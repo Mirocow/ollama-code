@@ -10,14 +10,17 @@
  * Shell Tools Plugin
  *
  * Built-in plugin providing shell command execution capabilities.
- * Includes safety features like command explanation and confirmation.
- * Wraps the existing ShellTool for plugin system integration.
+ * Integrates the ShellTool class with the plugin system.
  */
 
 import type { PluginDefinition, PluginTool } from '../../types.js';
+import type { AnyDeclarativeTool } from '../../types.js';
 
-// Re-export actual tool class for direct use
-export { ShellTool, ShellToolInvocation } from '../../../tools/shell.js';
+// Re-export actual tool class for direct use (from shell/ folder)
+export { ShellTool, ShellToolInvocation } from './shell/index.js';
+
+// Import for toolClasses
+import { ShellTool } from './shell/index.js';
 
 /**
  * Tool: run_shell_command
@@ -85,7 +88,7 @@ IMPORTANT: This tool is for terminal operations like git, npm, docker, etc. DO N
   execute: async (params, context) => {
     const command = params['command'] as string;
     
-    // Note: Full implementation uses ShellTool class
+    // Note: Full implementation uses ShellTool class via toolClasses
     return {
       success: true,
       data: {
@@ -101,57 +104,27 @@ IMPORTANT: This tool is for terminal operations like git, npm, docker, etc. DO N
 };
 
 /**
- * Tool: bash
- * Alias for run_shell_command with simpler interface
- */
-const bashTool: PluginTool = {
-  id: 'bash',
-  name: 'bash',
-  description: 'Execute a bash command. Simpler interface for quick commands.',
-  parameters: {
-    type: 'object',
-    properties: {
-      command: {
-        type: 'string',
-        description: 'The bash command to execute.',
-      },
-    },
-    required: ['command'],
-  },
-  category: 'execute',
-  requiresConfirmation: true,
-  buildConfirmationMessage: (params) => {
-    return `Execute: \`${params['command']}\``;
-  },
-  execute: async (params, context) => {
-    // Delegate to run_shell_command
-    return runShellCommandTool.execute!(
-      { command: params['command'] },
-      context
-    );
-  },
-  timeout: 120000,
-};
-
-/**
  * Shell Tools Plugin Definition
  */
 const shellToolsPlugin: PluginDefinition = {
   metadata: {
     id: 'shell-tools',
     name: 'Shell Tools',
-    version: '1.1.0',
-    description: 'Shell command execution with safety features',
+    version: '1.2.0',
+    description: 'Shell command execution with safety features. Integrates ShellTool class.',
     author: 'Ollama Code Team',
     tags: ['core', 'shell', 'execute', 'terminal'],
     enabledByDefault: true,
   },
   
-  tools: [runShellCommandTool, bashTool],
+  tools: [runShellCommandTool],
+  
+  // Real tool classes for full integration
+  toolClasses: [ShellTool] as unknown[],
   
   hooks: {
     onLoad: async (context) => {
-      context.logger.info('Shell Tools plugin loaded (v1.1.0)');
+      context.logger.info('Shell Tools plugin loaded (v1.2.0) - ShellTool integrated');
     },
     onEnable: async (context) => {
       context.logger.info('Shell Tools plugin enabled');
@@ -176,7 +149,6 @@ const shellToolsPlugin: PluginDefinition = {
       for (const pattern of dangerousPatterns) {
         if (command.includes(pattern)) {
           context.logger.warn(`Potentially dangerous command detected: ${pattern}`);
-          // Still allow execution, but warn
           break;
         }
       }
@@ -185,7 +157,7 @@ const shellToolsPlugin: PluginDefinition = {
     },
     onAfterToolExecute: async (toolId, params, result, context) => {
       if (!result.success) {
-        context.logger.warn(`Shell command failed: ${result.error}`);
+        context.logger.warn(`Shell command failed`);
       }
     },
   },

@@ -222,12 +222,13 @@ export function isSubpath(parentPath: string, childPath: string): boolean {
 }
 
 /**
- * Resolves a path with tilde (~) expansion and relative path resolution.
- * Handles tilde expansion for home directory and resolves relative paths
- * against the provided base directory or current working directory.
+ * Resolves a path with tilde (~) expansion, {{root}} template resolution,
+ * and relative path resolution.
+ * Handles tilde expansion for home directory, {{root}} template substitution,
+ * and resolves relative paths against the provided base directory or current working directory.
  *
  * @param baseDir The base directory to resolve relative paths against (defaults to current working directory)
- * @param relativePath The path to resolve (can be relative, absolute, or tilde-prefixed)
+ * @param relativePath The path to resolve (can be relative, absolute, tilde-prefixed, or contain {{root}})
  * @returns The resolved absolute path
  */
 export function resolvePath(
@@ -235,6 +236,11 @@ export function resolvePath(
   relativePath: string,
 ): string {
   const homeDir = os.homedir();
+
+  // Handle {{root}} template variable - replace with baseDir
+  if (relativePath.includes('{{root}}')) {
+    relativePath = relativePath.replace(/\{\{root\}\}/g, baseDir);
+  }
 
   if (relativePath === '~') {
     return homeDir;

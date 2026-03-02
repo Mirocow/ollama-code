@@ -15,13 +15,21 @@
 
 import type { PluginDefinition, PluginTool } from '../../types.js';
 
-// Re-export actual tool classes for direct use
-export { ReadFileTool } from '../../../tools/read-file.js';
-export { WriteFileTool } from '../../../tools/write-file.js';
-export { EditTool } from '../../../tools/edit.js';
-export { LSTool } from '../../../tools/ls.js';
-export { GlobTool } from '../../../tools/glob.js';
-export { ReadManyFilesTool } from '../../../tools/read-many-files.js';
+// Re-export actual tool classes for direct use (now from local tool folders)
+export { ReadFileTool } from './read-file/index.js';
+export { WriteFileTool } from './write-file/index.js';
+export { EditTool } from './edit/index.js';
+export { LSTool } from './ls/index.js';
+export { GlobTool } from './glob/index.js';
+export { ReadManyFilesTool } from './read-many-files/index.js';
+
+// Import for toolClasses
+import { ReadFileTool } from './read-file/index.js';
+import { WriteFileTool } from './write-file/index.js';
+import { EditTool } from './edit/index.js';
+import { LSTool } from './ls/index.js';
+import { GlobTool } from './glob/index.js';
+import { ReadManyFilesTool } from './read-many-files/index.js';
 
 /**
  * Tool: read_file
@@ -285,6 +293,16 @@ const fileToolsPlugin: PluginDefinition = {
     globTool,
     readManyFilesTool,
   ],
+
+  // Real tool classes for full integration
+  toolClasses: [
+    ReadFileTool,
+    WriteFileTool,
+    EditTool,
+    LSTool,
+    GlobTool,
+    ReadManyFilesTool,
+  ] as unknown[],
 
   hooks: {
     onLoad: async (context) => {

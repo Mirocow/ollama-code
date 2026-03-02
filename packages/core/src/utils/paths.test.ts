@@ -414,6 +414,39 @@ describe('resolvePath', () => {
     const result = resolvePath('/base/dir/subdir', '..');
     expect(result).toBe(path.resolve('/base/dir/subdir', '..'));
   });
+
+  describe('{{root}} template resolution', () => {
+    it('replaces {{root}} with baseDir', () => {
+      const result = resolvePath('/home/user/project', '{{root}}/src');
+      expect(result).toBe('/home/user/project/src');
+    });
+
+    it('replaces {{root}} at the beginning of path', () => {
+      const result = resolvePath('/workspace', '{{root}}/packages/core/src');
+      expect(result).toBe('/workspace/packages/core/src');
+    });
+
+    it('handles {{root}} as the entire path', () => {
+      const result = resolvePath('/home/user/project', '{{root}}');
+      expect(result).toBe('/home/user/project');
+    });
+
+    it('replaces multiple {{root}} occurrences', () => {
+      const result = resolvePath('/base', '{{root}}/src/{{root}}/test');
+      expect(result).toBe('/base/src/base/test');
+    });
+
+    it('handles {{root}} with cwd when baseDir is undefined', () => {
+      const cwd = process.cwd();
+      const result = resolvePath(undefined, '{{root}}/src');
+      expect(result).toBe(path.join(cwd, 'src'));
+    });
+
+    it('handles {{root}} with subdirectories', () => {
+      const result = resolvePath('/project/root', '{{root}}/deeply/nested/path/file.ts');
+      expect(result).toBe('/project/root/deeply/nested/path/file.ts');
+    });
+  });
 });
 
 describe('validatePath', () => {

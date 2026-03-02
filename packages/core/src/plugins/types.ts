@@ -248,8 +248,13 @@ export interface PluginDefinition {
   metadata: PluginMetadata;
   /** Plugin hooks */
   hooks?: PluginHooks;
-  /** Tools provided by this plugin */
+  /** Tools provided by this plugin (declarative) */
   tools?: PluginTool[];
+  /** Real tool classes (BaseDeclarativeTool instances) 
+   * These are used when full tool implementation is needed
+   * Created with GLM-5 from Z.AI
+   */
+  toolClasses?: unknown[];
   /** Commands provided by this plugin */
   commands?: PluginCommand[];
   /** Default configuration */

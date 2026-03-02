@@ -16,11 +16,15 @@
 
 import type { PluginDefinition, PluginTool } from '../../types.js';
 
-// Re-export actual tool classes for direct use
-export { GrepTool } from '../../../tools/grep.js';
-export { RipGrepTool } from '../../../tools/ripGrep.js';
-export { WebSearchTool } from '../../../tools/web-search/index.js';
-export { WebFetchTool } from '../../../tools/web-fetch.js';
+// Re-export actual tool classes for direct use (now from local tool folders)
+export { GrepTool } from './grep/index.js';
+export { RipGrepTool } from './ripGrep/index.js';
+export { WebFetchTool } from './web-fetch/index.js';
+
+// Import for toolClasses
+import { GrepTool } from './grep/index.js';
+import { RipGrepTool } from './ripGrep/index.js';
+import { WebFetchTool } from './web-fetch/index.js';
 
 /**
  * Tool: grep
@@ -203,6 +207,9 @@ const searchToolsPlugin: PluginDefinition = {
   },
 
   tools: [grepTool, webSearchTool, webFetchTool],
+
+  // Real tool classes for full integration
+  toolClasses: [GrepTool, RipGrepTool, WebFetchTool] as unknown[],
 
   hooks: {
     onLoad: async (context) => {
