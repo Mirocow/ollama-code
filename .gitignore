@@ -66,8 +66,8 @@ patch_output.log
 
 # docs build
 docs-site/.next
-# content is a symlink to ../docs
-docs-site/content
+docs-site/out
+docs-site/node_modules
 
 # web-app build
 packages/web-app/.next
