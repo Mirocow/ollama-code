@@ -10,6 +10,7 @@
  * with the actual tool class names.
  */
 export const ToolNames = {
+  STORAGE: 'model_storage',
   EDIT: 'edit',
   WRITE_FILE: 'write_file',
   READ_FILE: 'read_file',
@@ -51,6 +52,7 @@ export type ToolName = (typeof ToolNames)[keyof typeof ToolNames];
  * with the actual tool display names.
  */
 export const ToolDisplayNames = {
+  STORAGE: 'ModelStorage',
   EDIT: 'Edit',
   WRITE_FILE: 'WriteFile',
   READ_FILE: 'ReadFile',
@@ -106,6 +108,17 @@ export const ToolDisplayNamesMigration = {
  * For example: 'run' instead of 'run_shell_command'
  */
 export const ToolAliases: Record<string, ToolName> = {
+  // ═══════════════════════════════════════════════════════════════════════
+  // Storage tool aliases (model_storage)
+  // ═══════════════════════════════════════════════════════════════════════
+  storage: ToolNames.STORAGE,
+  model_storage: ToolNames.STORAGE,
+  store: ToolNames.STORAGE,
+  kv: ToolNames.STORAGE,
+  cache: ToolNames.STORAGE,
+  roadmap: ToolNames.STORAGE,
+  persist: ToolNames.STORAGE,
+
   // ═══════════════════════════════════════════════════════════════════════
   // Shell tool aliases (run_shell_command)
   // ═══════════════════════════════════════════════════════════════════════

@@ -47,7 +47,11 @@
 
 ### Память и контекст
 - 💾 save_memory: только для пользовательских предпочтений
-- Не используй для проектных фактов (читай файлы)
+- 🗄️ model_storage: для хранения roadmap, контекста задачи, базы знаний модели
+  - namespace: roadmap, session, knowledge, context, learning, metrics
+  - operations: set, get, delete, list, append, merge, clear
+  - scope: global (общий) или project (текущий проект)
+- Не используй save_memory для проектных фактов (читай файлы)
 - Спроси "Сохранить это?" если unsure
 
 ### Продвинутые функции
@@ -87,6 +91,7 @@
 | run_shell_command | Shell команды | run, shell, exec, cmd | timeout: 2-10 мин, background: & |
 | todo_write | Управление задачами | todo, todos | статусы: pending/in_progress/completed |
 | save_memory | Долгосрочная память | memory, save | global/project scope |
+| model_storage | Хранилище данных модели | storage, roadmap, kv | roadmap, knowledge, context |
 | task | Субагенты | agent, subagent | специализированные агенты |
 | skill | Навыки | - | pdf, excel, diagrams |
 

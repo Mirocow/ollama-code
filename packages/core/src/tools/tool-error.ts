@@ -53,6 +53,9 @@ export enum ToolErrorType {
   // Memory-specific Errors
   MEMORY_TOOL_EXECUTION_ERROR = 'memory_tool_execution_error',
 
+  // Storage-specific Errors
+  STORAGE_EXECUTION_ERROR = 'storage_execution_error',
+
   // Shell errors
   SHELL_EXECUTE_ERROR = 'shell_execute_error',
 

@@ -24,6 +24,7 @@
 
 ## [OPTIONAL] — Опционально
 - 💾 save_memory: для пользовательских предпочтений (не проектных фактов)
+- 🗄️ model_storage: для хранения roadmap, контекста задачи, базы знаний модели
 - 📋 todo_write: для задач >3 шагов, отмечай прогресс in_progress → completed
 - 🤖 task: для делегирования поиска/анализа субагентам (экономия контекста)
 - 🔧 skill: для специализированных навыков (pdf, excel, etc.)
@@ -46,6 +47,7 @@
 | rust_dev | Rust: cargo build, test, clippy | cargo | dev |
 | todo_write | Управление задачами | todo | manage |
 | save_memory | Сохранить факты в память | memory | manage |
+| model_storage | Хранилище данных модели (roadmap, knowledge) | storage, roadmap | manage |
 | task | Запустить субагента | agent | agent |
 | skill | Выполнить навык | - | skill |
 
