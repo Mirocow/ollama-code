@@ -12,6 +12,7 @@
  */
 
 import type { PluginDefinition } from '../../types.js';
+import type { Config } from '../../config/config.js';
 import { SSHTool } from './ssh.js';
 import { SSHAddHostTool, SSHListHostsTool, SSHRemoveHostTool } from './ssh-hosts.js';
 
@@ -29,8 +30,13 @@ const sshToolsPlugin: PluginDefinition = {
     enabledByDefault: true,
   },
 
-  // Export tool classes for direct registration with ToolRegistry
-  toolClasses: [SSHTool, SSHAddHostTool, SSHListHostsTool, SSHRemoveHostTool],
+  // Use toolFactories for tools that need Config
+  toolFactories: [
+    (config: Config) => new SSHTool(config),
+  ],
+
+  // Tool classes that don't need config
+  toolClasses: [SSHAddHostTool, SSHListHostsTool, SSHRemoveHostTool],
 
   hooks: {
     onLoad: async (context) => {
