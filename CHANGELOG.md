@@ -1,5 +1,77 @@
 # Changelog
 
+## 0.17.2
+
+_Model Storage Tool — Persistent AI Memory_
+
+### New Features
+
+#### Model Storage Tool (`model_storage`)
+
+Universal key-value storage for AI models to persist data between sessions:
+
+| Operation   | Description                              | Example                                         |
+| ----------- | ---------------------------------------- | ----------------------------------------------- |
+| `set`       | Store a value                            | `{ "operation": "set", "namespace": "roadmap", "key": "v1.0", "value": {...} }` |
+| `get`       | Retrieve a value                         | `{ "operation": "get", "namespace": "roadmap", "key": "v1.0" }` |
+| `delete`    | Remove a key                             | `{ "operation": "delete", "namespace": "roadmap", "key": "v1.0" }` |
+| `list`      | List all keys in namespace               | `{ "operation": "list", "namespace": "roadmap" }` |
+| `append`    | Append item to array                     | `{ "operation": "append", "namespace": "roadmap", "key": "tasks", "value": "task1" }` |
+| `merge`     | Merge object with existing               | `{ "operation": "merge", "namespace": "knowledge", "key": "preferences", "value": {"theme": "dark"} }` |
+| `clear`     | Clear all data in namespace              | `{ "operation": "clear", "namespace": "session" }` |
+
+#### Predefined Namespaces
+
+| Namespace  | Purpose                              | Default Mode | Scope     |
+| ---------- | ------------------------------------ | ------------ | --------- |
+| `roadmap`  | Project roadmap, milestones, plans   | persistent   | global    |
+| `session`  | Temporary session data               | session      | —         |
+| `knowledge`| Learned facts, patterns, preferences | persistent   | global    |
+| `context`  | Current task context and state       | session      | —         |
+| `learning` | Tool aliases, corrections            | persistent   | global    |
+| `metrics`  | Statistics, performance data         | persistent   | global    |
+
+#### Storage Scopes
+
+| Scope      | Path                                  | Description                        |
+| ---------- | ------------------------------------- | ---------------------------------- |
+| `global`   | `~/.ollama-code/storage/`             | Shared across all projects         |
+| `project`  | `<project>/.ollama-code/storage/`     | Project-specific data              |
+
+#### Tool Aliases for Storage
+
+| Alias                  | Tool            |
+| ---------------------- | --------------- |
+| `storage`, `store`     | `model_storage` |
+| `kv`, `cache`          | `model_storage` |
+| `roadmap`, `persist`   | `model_storage` |
+
+### Files Added
+
+| File                                                        | Description                      |
+| ----------------------------------------------------------- | -------------------------------- |
+| `packages/core/src/plugins/builtin/storage-tools/index.ts`  | Storage tool implementation      |
+| `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 31 unit tests for storage tool |
+| `packages/core/src/prompts/templates/storage-instructions.md` | Storage usage guide            |
+
+### Files Modified
+
+| File                                                   | Changes                                    |
+| ------------------------------------------------------ | ------------------------------------------ |
+| `packages/core/src/tools/tool-names.ts`                | Added STORAGE name and aliases             |
+| `packages/core/src/tools/tool-error.ts`                | Added STORAGE_EXECUTION_ERROR              |
+| `packages/core/src/plugins/pluginRegistry.ts`          | Added storage-tools plugin                 |
+| `packages/core/src/prompts/templates/system-*.md`      | Added model_storage to tools table         |
+| `packages/core/src/prompts/templates/system-70b.md`    | Added detailed storage workflow guide      |
+
+### Commits
+
+```
+5d19b2b2 docs(storage): add detailed storage usage instructions in system prompt
+```
+
+---
+
 ## 0.17.1
 
 _SSH Profile Management Tools_

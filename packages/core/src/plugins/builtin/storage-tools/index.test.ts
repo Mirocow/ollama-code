@@ -39,9 +39,12 @@ describe('StorageTool', () => {
     it('should have valid JSON schema', () => {
       const schema = storageTool['schema'];
       expect(schema).toBeDefined();
-      expect(schema.type).toBe('object');
-      expect(schema.properties.operation).toBeDefined();
-      expect(schema.properties.namespace).toBeDefined();
+      expect(schema.name).toBe('model_storage');
+      expect(schema.parametersJsonSchema).toBeDefined();
+      const paramsSchema = schema.parametersJsonSchema as Record<string, unknown>;
+      expect(paramsSchema.type).toBe('object');
+      expect(paramsSchema.properties?.operation).toBeDefined();
+      expect(paramsSchema.properties?.namespace).toBeDefined();
     });
 
     it('should validate required parameters', () => {
@@ -310,10 +313,11 @@ describe('StorageTool', () => {
       });
 
       it('should create new array if key does not exist', async () => {
+        const uniqueKey = `new_array_key_${Date.now()}`;
         const appendInvocation = storageTool.build({
           operation: 'append',
           namespace: 'test',
-          key: 'new_array_key',
+          key: uniqueKey,
           value: 'first_item',
           scope: 'global',
         });
@@ -322,7 +326,7 @@ describe('StorageTool', () => {
         const getInvocation = storageTool.build({
           operation: 'get',
           namespace: 'test',
-          key: 'new_array_key',
+          key: uniqueKey,
           scope: 'global',
         });
         const result = await getInvocation.execute(new AbortController().signal);

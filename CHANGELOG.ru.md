@@ -1,5 +1,77 @@
 # Журнал изменений
 
+## 0.17.2
+
+_Инструмент Model Storage — Персистентная память AI_
+
+### Новые возможности
+
+#### Инструмент Model Storage (`model_storage`)
+
+Универсальное key-value хранилище для AI-моделей с сохранением данных между сессиями:
+
+| Операция   | Описание                              | Пример                                           |
+| ---------- | ------------------------------------- | ------------------------------------------------ |
+| `set`      | Сохранить значение                    | `{ "operation": "set", "namespace": "roadmap", "key": "v1.0", "value": {...} }` |
+| `get`      | Получить значение                     | `{ "operation": "get", "namespace": "roadmap", "key": "v1.0" }` |
+| `delete`   | Удалить ключ                          | `{ "operation": "delete", "namespace": "roadmap", "key": "v1.0" }` |
+| `list`     | Список всех ключей в namespace        | `{ "operation": "list", "namespace": "roadmap" }` |
+| `append`   | Добавить элемент в массив             | `{ "operation": "append", "namespace": "roadmap", "key": "tasks", "value": "task1" }` |
+| `merge`    | Слить объект с существующим           | `{ "operation": "merge", "namespace": "knowledge", "key": "preferences", "value": {"theme": "dark"} }` |
+| `clear`    | Очистить все данные в namespace       | `{ "operation": "clear", "namespace": "session" }` |
+
+#### Предопределённые namespaces
+
+| Namespace  | Назначение                           | Режим по умолчанию | Область   |
+| ---------- | ------------------------------------ | ------------------ | --------- |
+| `roadmap`  | Дорожная карта, планы, milestones    | persistent         | global    |
+| `session`  | Временные данные сессии              | session            | —         |
+| `knowledge`| Изученные факты, паттерны, настройки | persistent         | global    |
+| `context`  | Контекст текущей задачи              | session            | —         |
+| `learning` | Алиасы инструментов, исправления     | persistent         | global    |
+| `metrics`  | Статистика, данные производительности| persistent         | global    |
+
+#### Области хранения (Scopes)
+
+| Scope      | Путь                                 | Описание                          |
+| ---------- | ------------------------------------ | --------------------------------- |
+| `global`   | `~/.ollama-code/storage/`            | Общие для всех проектов           |
+| `project`  | `<project>/.ollama-code/storage/`    | Данные конкретного проекта        |
+
+#### Алиасы инструментов для Storage
+
+| Алиас                  | Инструмент      |
+| ---------------------- | --------------- |
+| `storage`, `store`     | `model_storage` |
+| `kv`, `cache`          | `model_storage` |
+| `roadmap`, `persist`   | `model_storage` |
+
+### Добавленные файлы
+
+| Файл                                                       | Описание                         |
+| ---------------------------------------------------------- | -------------------------------- |
+| `packages/core/src/plugins/builtin/storage-tools/index.ts` | Реализация storage инструмента   |
+| `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 31 unit-тест для storage     |
+| `packages/core/src/prompts/templates/storage-instructions.md` | Руководство по использованию  |
+
+### Изменённые файлы
+
+| Файл                                                   | Изменения                                  |
+| ------------------------------------------------------ | ------------------------------------------ |
+| `packages/core/src/tools/tool-names.ts`                | Добавлено имя STORAGE и алиасы             |
+| `packages/core/src/tools/tool-error.ts`                | Добавлен STORAGE_EXECUTION_ERROR           |
+| `packages/core/src/plugins/pluginRegistry.ts`          | Добавлен storage-tools плагин              |
+| `packages/core/src/prompts/templates/system-*.md`      | Добавлен model_storage в таблицу инструментов |
+| `packages/core/src/prompts/templates/system-70b.md`    | Добавлено детальное руководство по storage |
+
+### Коммиты
+
+```
+5d19b2b2 docs(storage): add detailed storage usage instructions in system prompt
+```
+
+---
+
 ## 0.17.1
 
 _Инструменты управления SSH профилями_
