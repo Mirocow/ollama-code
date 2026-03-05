@@ -2,76 +2,62 @@
 
 ## 0.17.4
 
-_Improved Tool Selection Training — Shell vs SSH & English Prompts_
+_Simplified English Prompts with SSH User Context_
 
 ### Improvements
 
-#### Better Model Training for Tool Selection
+#### Simplified Prompt Templates
 
-Added explicit instructions for choosing between Shell and SSH tools to prevent common model mistakes:
+All prompt templates have been simplified and are now in English:
 
-| Problem | Solution |
-| ------- | -------- |
-| Model uses `shell` for remote SSH connections | Added **Shell vs SSH Selection** section to all prompts |
-| Model asks for "your_username" | Added `**Current Username**` to Environment info |
-| Model confuses tool name formats | Added explicit examples of correct SSH usage |
+| Template      | Lines Before | Lines After | Focus                    |
+| ------------- | ------------ | ----------- | ------------------------ |
+| system-8b.md  | 106          | 68          | Minimal, essential rules |
+| system-14b.md | 142          | 103         | Standard detail          |
+| system-32b.md | 334          | 145         | Core instructions        |
+| system-70b.md | 471          | 210         | Complete but concise     |
 
-#### Prompt Templates Now in English
+#### SSH User Parameter Instruction
 
-All prompt templates are now written in English for better model understanding:
+All templates now include explicit instruction:
 
-| Template | Status |
-| -------- | ------ |
-| system-8b.md | English ✅ |
-| system-14b.md | English ✅ |
-| system-32b.md | English ✅ |
-| system-70b.md | English ✅ |
-
-**Note:** Language-specific responses are handled by the rule: "ALWAYS respond in the user's language"
-
-#### Environment Info Now Includes Current Username
-
-The Environment section now shows:
 ```
-- **Current Username**: <username>
+**SSH user parameter:** Use current username from Environment section.
+Don't ask "your_username" - use the known value.
 ```
 
-This allows the model to use the correct username for SSH connections without asking "your_username".
+This tells the model to use the current username from Environment (Current Username or Home Directory field) for SSH connections.
 
-#### Prompt Template Updates
+#### Shell vs SSH Selection
 
-All prompt templates now include:
+Clear selection table in all templates:
 
-1. **SSH tool in tools table:**
-   - `ssh_connect` — REMOTE SSH connections
-   - `run_shell_command` — LOCAL shell commands
+| Situation          | Tool              |
+| ------------------ | ----------------- |
+| Local command      | run_shell_command |
+| Remote server (IP) | ssh_connect       |
 
-2. **Shell vs SSH Selection section:**
-   | Situation | Tool |
-   |-----------|------|
-   | Command on local machine | `run_shell_command` |
-   | Remote server (IP address) | `ssh_connect` |
-   | User says "remote", "SSH", "server" | `ssh_connect` |
+**RULE:** IP ≠ localhost → ssh_connect
 
-3. **Examples of SSH usage:**
-   ```
-   user: Connect to 192.168.1.131 and show root directory
-   model: Connecting to remote server via SSH:
-   ssh_connect host="192.168.1.131" user=alex command="ls /"
-   ```
+#### Key Changes
+
+1. **Removed redundant sections** — Model Storage details moved to 70b only
+2. **Unified examples** — SSH examples in all templates
+3. **Clear SSH user instruction** — Don't ask "your_username"
+4. **English only** — All prompts in English, responses match user language
 
 ### Files Modified
 
-| File | Changes |
-| ---- | ------- |
+| File                                              | Changes                                    |
+| ------------------------------------------------- | ------------------------------------------ |
 | `packages/core/src/prompts/templates/system-*.md` | English rewrite, SSH tool, selection rules |
-| `packages/core/src/core/promptsV2.ts` | Added Current Username to Environment info |
-| `packages/core/src/core/prompts.ts` | Added Current Username to Environment info |
-| `packages/core/src/core/prompts/full.ts` | Added SSH tool and selection table |
-| `packages/core/src/core/prompts/standard.ts` | Added SSH tool and selection table |
-| `packages/core/src/core/prompts/extended.ts` | Added SSH tool and selection table |
-| `packages/core/src/core/prompts/maximum.ts` | Added SSH tool documentation |
-| `packages/core/src/core/prompts/compact.ts` | Added SSH tool and selection rules |
+| `packages/core/src/core/promptsV2.ts`             | Added Current Username to Environment info |
+| `packages/core/src/core/prompts.ts`               | Added Current Username to Environment info |
+| `packages/core/src/core/prompts/full.ts`          | Added SSH tool and selection table         |
+| `packages/core/src/core/prompts/standard.ts`      | Added SSH tool and selection table         |
+| `packages/core/src/core/prompts/extended.ts`      | Added SSH tool and selection table         |
+| `packages/core/src/core/prompts/maximum.ts`       | Added SSH tool documentation               |
+| `packages/core/src/core/prompts/compact.ts`       | Added SSH tool and selection rules         |
 
 ---
 
@@ -85,17 +71,17 @@ _Storage Tool Improvements — TTL, Metadata, Batch Operations, CLI Commands_
 
 New `/storage` command for manual storage management:
 
-| Command | Description |
-| ------- | ----------- |
-| `/storage list [namespace]` | List all namespaces or keys in a namespace |
-| `/storage get <namespace> <key>` | Get a value from storage |
-| `/storage set <namespace> <key> <value>` | Set a value in storage |
-| `/storage delete <namespace> <key>` | Delete a key from storage |
-| `/storage clear <namespace>` | Clear all keys in namespace |
-| `/storage stats [namespace]` | Get storage statistics |
-| `/storage export <file.json>` | Export storage to file |
-| `/storage import <file.json>` | Import storage from file |
-| `/storage info` | Show project and storage information |
+| Command                                  | Description                                |
+| ---------------------------------------- | ------------------------------------------ |
+| `/storage list [namespace]`              | List all namespaces or keys in a namespace |
+| `/storage get <namespace> <key>`         | Get a value from storage                   |
+| `/storage set <namespace> <key> <value>` | Set a value in storage                     |
+| `/storage delete <namespace> <key>`      | Delete a key from storage                  |
+| `/storage clear <namespace>`             | Clear all keys in namespace                |
+| `/storage stats [namespace]`             | Get storage statistics                     |
+| `/storage export <file.json>`            | Export storage to file                     |
+| `/storage import <file.json>`            | Import storage from file                   |
+| `/storage info`                          | Show project and storage information       |
 
 **Examples:**
 
@@ -133,24 +119,24 @@ Auto-expire entries after specified time:
 }
 ```
 
-| Field       | Type   | Description                        |
-| ----------- | ------ | ---------------------------------- |
-| `ttl`       | number | Time-to-live in seconds            |
+| Field       | Type   | Description                         |
+| ----------- | ------ | ----------------------------------- |
+| `ttl`       | number | Time-to-live in seconds             |
 | `expiresAt` | string | Auto-calculated expiration ISO date |
 
 #### Metadata Support
 
 Every entry now includes automatic metadata:
 
-| Field       | Description                    |
-| ----------- | ------------------------------ |
-| `createdAt` | ISO timestamp of creation      |
-| `updatedAt` | ISO timestamp of last update   |
-| `version`   | Incremented on each update     |
-| `ttl`       | TTL in seconds (if set)        |
-| `expiresAt` | Expiration date (if TTL set)   |
-| `tags`      | Array of custom tags           |
-| `source`    | Source of data (session/user)  |
+| Field       | Description                   |
+| ----------- | ----------------------------- |
+| `createdAt` | ISO timestamp of creation     |
+| `updatedAt` | ISO timestamp of last update  |
+| `version`   | Incremented on each update    |
+| `ttl`       | TTL in seconds (if set)       |
+| `expiresAt` | Expiration date (if TTL set)  |
+| `tags`      | Array of custom tags          |
+| `source`    | Source of data (session/user) |
 
 #### New Operations
 
@@ -206,13 +192,13 @@ const info = await getProjectInfo();
 
 ### Files Modified
 
-| File                                        | Changes                              |
-| ------------------------------------------- | ------------------------------------ |
-| `packages/core/src/plugins/builtin/storage-tools/index.ts` | Complete rewrite with new features |
-| `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 44 tests (13 new)           |
-| `packages/core/src/index.ts` | Export storage-tools from core package |
-| `packages/cli/src/ui/commands/storageCommand.ts` | New CLI command for storage management |
-| `packages/cli/src/services/BuiltinCommandLoader.ts` | Register storage command |
+| File                                                            | Changes                                |
+| --------------------------------------------------------------- | -------------------------------------- |
+| `packages/core/src/plugins/builtin/storage-tools/index.ts`      | Complete rewrite with new features     |
+| `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 44 tests (13 new)                      |
+| `packages/core/src/index.ts`                                    | Export storage-tools from core package |
+| `packages/cli/src/ui/commands/storageCommand.ts`                | New CLI command for storage management |
+| `packages/cli/src/services/BuiltinCommandLoader.ts`             | Register storage command               |
 
 ### Commits
 
@@ -232,59 +218,59 @@ _Model Storage Tool — Persistent AI Memory_
 
 Universal key-value storage for AI models to persist data between sessions:
 
-| Operation   | Description                              | Example                                         |
-| ----------- | ---------------------------------------- | ----------------------------------------------- |
-| `set`       | Store a value                            | `{ "operation": "set", "namespace": "roadmap", "key": "v1.0", "value": {...} }` |
-| `get`       | Retrieve a value                         | `{ "operation": "get", "namespace": "roadmap", "key": "v1.0" }` |
-| `delete`    | Remove a key                             | `{ "operation": "delete", "namespace": "roadmap", "key": "v1.0" }` |
-| `list`      | List all keys in namespace               | `{ "operation": "list", "namespace": "roadmap" }` |
-| `append`    | Append item to array                     | `{ "operation": "append", "namespace": "roadmap", "key": "tasks", "value": "task1" }` |
-| `merge`     | Merge object with existing               | `{ "operation": "merge", "namespace": "knowledge", "key": "preferences", "value": {"theme": "dark"} }` |
-| `clear`     | Clear all data in namespace              | `{ "operation": "clear", "namespace": "session" }` |
+| Operation | Description                 | Example                                                                                                |
+| --------- | --------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `set`     | Store a value               | `{ "operation": "set", "namespace": "roadmap", "key": "v1.0", "value": {...} }`                        |
+| `get`     | Retrieve a value            | `{ "operation": "get", "namespace": "roadmap", "key": "v1.0" }`                                        |
+| `delete`  | Remove a key                | `{ "operation": "delete", "namespace": "roadmap", "key": "v1.0" }`                                     |
+| `list`    | List all keys in namespace  | `{ "operation": "list", "namespace": "roadmap" }`                                                      |
+| `append`  | Append item to array        | `{ "operation": "append", "namespace": "roadmap", "key": "tasks", "value": "task1" }`                  |
+| `merge`   | Merge object with existing  | `{ "operation": "merge", "namespace": "knowledge", "key": "preferences", "value": {"theme": "dark"} }` |
+| `clear`   | Clear all data in namespace | `{ "operation": "clear", "namespace": "session" }`                                                     |
 
 #### Predefined Namespaces
 
-| Namespace  | Purpose                              | Default Mode | Scope     |
-| ---------- | ------------------------------------ | ------------ | --------- |
-| `roadmap`  | Project roadmap, milestones, plans   | persistent   | global    |
-| `session`  | Temporary session data               | session      | —         |
-| `knowledge`| Learned facts, patterns, preferences | persistent   | global    |
-| `context`  | Current task context and state       | session      | —         |
-| `learning` | Tool aliases, corrections            | persistent   | global    |
-| `metrics`  | Statistics, performance data         | persistent   | global    |
+| Namespace   | Purpose                              | Default Mode | Scope  |
+| ----------- | ------------------------------------ | ------------ | ------ |
+| `roadmap`   | Project roadmap, milestones, plans   | persistent   | global |
+| `session`   | Temporary session data               | session      | —      |
+| `knowledge` | Learned facts, patterns, preferences | persistent   | global |
+| `context`   | Current task context and state       | session      | —      |
+| `learning`  | Tool aliases, corrections            | persistent   | global |
+| `metrics`   | Statistics, performance data         | persistent   | global |
 
 #### Storage Scopes
 
-| Scope      | Path                                  | Description                        |
-| ---------- | ------------------------------------- | ---------------------------------- |
-| `global`   | `~/.ollama-code/storage/`             | Shared across all projects         |
-| `project`  | `<project>/.ollama-code/storage/`     | Project-specific data              |
+| Scope     | Path                              | Description                |
+| --------- | --------------------------------- | -------------------------- |
+| `global`  | `~/.ollama-code/storage/`         | Shared across all projects |
+| `project` | `<project>/.ollama-code/storage/` | Project-specific data      |
 
 #### Tool Aliases for Storage
 
-| Alias                  | Tool            |
-| ---------------------- | --------------- |
-| `storage`, `store`     | `model_storage` |
-| `kv`, `cache`          | `model_storage` |
-| `roadmap`, `persist`   | `model_storage` |
+| Alias                | Tool            |
+| -------------------- | --------------- |
+| `storage`, `store`   | `model_storage` |
+| `kv`, `cache`        | `model_storage` |
+| `roadmap`, `persist` | `model_storage` |
 
 ### Files Added
 
-| File                                                        | Description                      |
-| ----------------------------------------------------------- | -------------------------------- |
-| `packages/core/src/plugins/builtin/storage-tools/index.ts`  | Storage tool implementation      |
+| File                                                            | Description                    |
+| --------------------------------------------------------------- | ------------------------------ |
+| `packages/core/src/plugins/builtin/storage-tools/index.ts`      | Storage tool implementation    |
 | `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 31 unit tests for storage tool |
-| `packages/core/src/prompts/templates/storage-instructions.md` | Storage usage guide            |
+| `packages/core/src/prompts/templates/storage-instructions.md`   | Storage usage guide            |
 
 ### Files Modified
 
-| File                                                   | Changes                                    |
-| ------------------------------------------------------ | ------------------------------------------ |
-| `packages/core/src/tools/tool-names.ts`                | Added STORAGE name and aliases             |
-| `packages/core/src/tools/tool-error.ts`                | Added STORAGE_EXECUTION_ERROR              |
-| `packages/core/src/plugins/pluginRegistry.ts`          | Added storage-tools plugin                 |
-| `packages/core/src/prompts/templates/system-*.md`      | Added model_storage to tools table         |
-| `packages/core/src/prompts/templates/system-70b.md`    | Added detailed storage workflow guide      |
+| File                                                | Changes                               |
+| --------------------------------------------------- | ------------------------------------- |
+| `packages/core/src/tools/tool-names.ts`             | Added STORAGE name and aliases        |
+| `packages/core/src/tools/tool-error.ts`             | Added STORAGE_EXECUTION_ERROR         |
+| `packages/core/src/plugins/pluginRegistry.ts`       | Added storage-tools plugin            |
+| `packages/core/src/prompts/templates/system-*.md`   | Added model_storage to tools table    |
+| `packages/core/src/prompts/templates/system-70b.md` | Added detailed storage workflow guide |
 
 ### Commits
 

@@ -2,76 +2,49 @@
 
 ## 0.17.4
 
-_Улучшенное обучение выбору инструментов — Shell vs SSH и английские промпты_
+_Упрощённые английские промпты с контекстом SSH пользователя_
 
 ### Улучшения
 
-#### Лучшее обучение модели выбору инструментов
+#### Упрощённые шаблоны промптов
 
-Добавлены явные инструкции для выбора между Shell и SSH инструментами для предотвращения частых ошибок модели:
+Все шаблоны промптов упрощены и переведены на английский:
 
-| Проблема | Решение |
-| -------- | ------- |
-| Модель использует `shell` для удалённых SSH подключений | Добавлена секция **Выбор Shell vs SSH** во все промпты |
-| Модель спрашивает "your_username" | Добавлено `**Current Username**` в Environment info |
-| Модель путает форматы имён инструментов | Добавлены явные примеры правильного использования SSH |
+| Шаблон        | Строк до | Строк после | Фокус                           |
+| ------------- | -------- | ----------- | ------------------------------- |
+| system-8b.md  | 106      | 68          | Минимум, основные правила       |
+| system-14b.md | 142      | 103         | Стандартный уровень детализации |
+| system-32b.md | 334      | 145         | Основные инструкции             |
+| system-70b.md | 471      | 210         | Полный но лаконичный            |
 
-#### Шаблоны промптов теперь на английском
+#### Инструкция по параметру SSH user
 
-Все шаблоны промптов теперь написаны на английском языке для лучшего понимания моделью:
+Все шаблоны теперь содержат явную инструкцию:
 
-| Шаблон | Статус |
-| ------ | ------ |
-| system-8b.md | Английский ✅ |
-| system-14b.md | Английский ✅ |
-| system-32b.md | Английский ✅ |
-| system-70b.md | Английский ✅ |
-
-**Примечание:** Язык ответов определяется правилом: "ALWAYS respond in the user's language"
-
-#### Environment Info теперь включает текущее имя пользователя
-
-Секция Environment теперь показывает:
 ```
-- **Current Username**: <username>
+**SSH user parameter:** Use current username from Environment section.
+Don't ask "your_username" - use the known value.
 ```
 
-Это позволяет модели использовать правильное имя пользователя для SSH подключений без вопроса "your_username".
+Это указывает модели использовать текущее имя пользователя из Environment (поле Current Username или Home Directory) для SSH подключений.
 
-#### Обновления шаблонов промптов
+#### Выбор Shell vs SSH
 
-Все шаблоны промптов теперь включают:
+Чёткая таблица выбора во всех шаблонах:
 
-1. **SSH инструмент в таблице инструментов:**
-   - `ssh_connect` — УДАЛЁННЫЕ SSH подключения
-   - `run_shell_command` — ЛОКАЛЬНЫЕ shell команды
+| Ситуация              | Инструмент        |
+| --------------------- | ----------------- |
+| Локальная команда     | run_shell_command |
+| Удалённый сервер (IP) | ssh_connect       |
 
-2. **Секция выбора Shell vs SSH:**
-   | Ситуация | Инструмент |
-   | -------- | ---------- |
-   | Команда на локальной машине | `run_shell_command` |
-   | Удалённый сервер (IP-адрес) | `ssh_connect` |
-   | Пользователь говорит "remote", "SSH", "server" | `ssh_connect` |
+**ПРАВИЛО:** IP ≠ localhost → ssh_connect
 
-3. **Примеры использования SSH:**
-   ```
-   user: Connect to 192.168.1.131 and show root directory
-   model: Connecting to remote server via SSH:
-   ssh_connect host="192.168.1.131" user=alex command="ls /"
-   ```
+#### Ключевые изменения
 
-### Изменённые файлы
-
-| Файл | Изменения |
-| ---- | --------- |
-| `packages/core/src/prompts/templates/system-*.md` | Английский, SSH инструмент, правила выбора |
-| `packages/core/src/core/promptsV2.ts` | Добавлен Current Username в Environment info |
-| `packages/core/src/core/prompts.ts` | Добавлен Current Username в Environment info |
-| `packages/core/src/core/prompts/full.ts` | Добавлен SSH инструмент и таблица выбора |
-| `packages/core/src/core/prompts/standard.ts` | Добавлен SSH инструмент и таблица выбора |
-| `packages/core/src/core/prompts/extended.ts` | Добавлен SSH инструмент и таблица выбора |
-| `packages/core/src/core/prompts/maximum.ts` | Добавлена документация SSH инструмента |
-| `packages/core/src/core/prompts/compact.ts` | Добавлен SSH инструмент и правила выбора |
+1. **Удалены избыточные секции** — Детали Model Storage только в 70b
+2. **Унифицированы примеры** — Примеры SSH во всех шаблонах
+3. **Чёткая инструкция по SSH user** — Не спрашивать "your_username"
+4. **Только английский** — Все промпты на английском, ответы на языке пользователя
 
 ---
 
@@ -85,17 +58,17 @@ _Улучшения Storage Tool — TTL, Метаданные, Batch опера
 
 Новая команда `/storage` для ручного управления хранилищем:
 
-| Команда | Описание |
-| ------- | -------- |
-| `/storage list [namespace]` | Список всех namespace или ключей в namespace |
-| `/storage get <namespace> <key>` | Получить значение из хранилища |
-| `/storage set <namespace> <key> <value>` | Установить значение в хранилище |
-| `/storage delete <namespace> <key>` | Удалить ключ из хранилища |
-| `/storage clear <namespace>` | Очистить все ключи в namespace |
-| `/storage stats [namespace]` | Получить статистику хранилища |
-| `/storage export <file.json>` | Экспортировать хранилище в файл |
-| `/storage import <file.json>` | Импортировать хранилище из файла |
-| `/storage info` | Показать информацию о проекте и хранилище |
+| Команда                                  | Описание                                     |
+| ---------------------------------------- | -------------------------------------------- |
+| `/storage list [namespace]`              | Список всех namespace или ключей в namespace |
+| `/storage get <namespace> <key>`         | Получить значение из хранилища               |
+| `/storage set <namespace> <key> <value>` | Установить значение в хранилище              |
+| `/storage delete <namespace> <key>`      | Удалить ключ из хранилища                    |
+| `/storage clear <namespace>`             | Очистить все ключи в namespace               |
+| `/storage stats [namespace]`             | Получить статистику хранилища                |
+| `/storage export <file.json>`            | Экспортировать хранилище в файл              |
+| `/storage import <file.json>`            | Импортировать хранилище из файла             |
+| `/storage info`                          | Показать информацию о проекте и хранилище    |
 
 **Примеры:**
 
@@ -133,32 +106,32 @@ _Улучшения Storage Tool — TTL, Метаданные, Batch опера
 }
 ```
 
-| Поле        | Тип    | Описание                      |
-| ----------- | ------ | ----------------------------- |
-| `ttl`       | number | Время жизни в секундах        |
+| Поле        | Тип    | Описание                                     |
+| ----------- | ------ | -------------------------------------------- |
+| `ttl`       | number | Время жизни в секундах                       |
 | `expiresAt` | string | Автоматически вычисляемая ISO дата истечения |
 
 #### Поддержка метаданных
 
 Каждая запись теперь включает автоматические метаданные:
 
-| Поле        | Описание                        |
-| ----------- | ------------------------------- |
-| `createdAt` | ISO метка времени создания      |
-| `updatedAt` | ISO метка последнего обновления |
-| `version`   | Увеличивается при каждом обновлении |
-| `ttl`       | TTL в секундах (если установлен) |
+| Поле        | Описание                             |
+| ----------- | ------------------------------------ |
+| `createdAt` | ISO метка времени создания           |
+| `updatedAt` | ISO метка последнего обновления      |
+| `version`   | Увеличивается при каждом обновлении  |
+| `ttl`       | TTL в секундах (если установлен)     |
 | `expiresAt` | Дата истечения (если установлен TTL) |
-| `tags`      | Массив пользовательских тегов   |
-| `source`    | Источник данных (session/user)  |
+| `tags`      | Массив пользовательских тегов        |
+| `source`    | Источник данных (session/user)       |
 
 #### Новые операции
 
-| Операция | Описание                                    |
-| -------- | ------------------------------------------- |
-| `exists` | Проверить существование ключа               |
+| Операция | Описание                                             |
+| -------- | ---------------------------------------------------- |
+| `exists` | Проверить существование ключа                        |
 | `stats`  | Получить статистику хранилища (ключи, размер и т.д.) |
-| `batch`  | Выполнить несколько операций атомарно       |
+| `batch`  | Выполнить несколько операций атомарно                |
 
 #### Batch операции
 
@@ -184,10 +157,10 @@ _Улучшения Storage Tool — TTL, Метаданные, Batch опера
 
 #### Новые параметры
 
-| Параметр        | Описание                           |
-| --------------- | ---------------------------------- |
-| `ttl`           | Время жизни в секундах             |
-| `tags`          | Массив строк для категоризации     |
+| Параметр          | Описание                                   |
+| ----------------- | ------------------------------------------ |
+| `ttl`             | Время жизни в секундах                     |
+| `tags`            | Массив строк для категоризации             |
 | `includeMetadata` | Включить метаданные в результатах get/list |
 
 ### API информации о проекте
@@ -206,13 +179,13 @@ const info = await getProjectInfo();
 
 ### Изменённые файлы
 
-| Файл                                        | Изменения                           |
-| ------------------------------------------- | ----------------------------------- |
-| `packages/core/src/plugins/builtin/storage-tools/index.ts` | Полная переработка с новыми функциями |
-| `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 44 теста (13 новых)         |
-| `packages/core/src/index.ts` | Экспорт storage-tools из core пакета |
-| `packages/cli/src/ui/commands/storageCommand.ts` | Новая CLI команда для управления хранилищем |
-| `packages/cli/src/services/BuiltinCommandLoader.ts` | Регистрация storage команды |
+| Файл                                                            | Изменения                                   |
+| --------------------------------------------------------------- | ------------------------------------------- |
+| `packages/core/src/plugins/builtin/storage-tools/index.ts`      | Полная переработка с новыми функциями       |
+| `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 44 теста (13 новых)                         |
+| `packages/core/src/index.ts`                                    | Экспорт storage-tools из core пакета        |
+| `packages/cli/src/ui/commands/storageCommand.ts`                | Новая CLI команда для управления хранилищем |
+| `packages/cli/src/services/BuiltinCommandLoader.ts`             | Регистрация storage команды                 |
 
 ### Коммиты
 
@@ -232,59 +205,59 @@ _Инструмент Model Storage — Персистентная память 
 
 Универсальное key-value хранилище для AI-моделей с сохранением данных между сессиями:
 
-| Операция   | Описание                              | Пример                                           |
-| ---------- | ------------------------------------- | ------------------------------------------------ |
-| `set`      | Сохранить значение                    | `{ "operation": "set", "namespace": "roadmap", "key": "v1.0", "value": {...} }` |
-| `get`      | Получить значение                     | `{ "operation": "get", "namespace": "roadmap", "key": "v1.0" }` |
-| `delete`   | Удалить ключ                          | `{ "operation": "delete", "namespace": "roadmap", "key": "v1.0" }` |
-| `list`     | Список всех ключей в namespace        | `{ "operation": "list", "namespace": "roadmap" }` |
-| `append`   | Добавить элемент в массив             | `{ "operation": "append", "namespace": "roadmap", "key": "tasks", "value": "task1" }` |
-| `merge`    | Слить объект с существующим           | `{ "operation": "merge", "namespace": "knowledge", "key": "preferences", "value": {"theme": "dark"} }` |
-| `clear`    | Очистить все данные в namespace       | `{ "operation": "clear", "namespace": "session" }` |
+| Операция | Описание                        | Пример                                                                                                 |
+| -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `set`    | Сохранить значение              | `{ "operation": "set", "namespace": "roadmap", "key": "v1.0", "value": {...} }`                        |
+| `get`    | Получить значение               | `{ "operation": "get", "namespace": "roadmap", "key": "v1.0" }`                                        |
+| `delete` | Удалить ключ                    | `{ "operation": "delete", "namespace": "roadmap", "key": "v1.0" }`                                     |
+| `list`   | Список всех ключей в namespace  | `{ "operation": "list", "namespace": "roadmap" }`                                                      |
+| `append` | Добавить элемент в массив       | `{ "operation": "append", "namespace": "roadmap", "key": "tasks", "value": "task1" }`                  |
+| `merge`  | Слить объект с существующим     | `{ "operation": "merge", "namespace": "knowledge", "key": "preferences", "value": {"theme": "dark"} }` |
+| `clear`  | Очистить все данные в namespace | `{ "operation": "clear", "namespace": "session" }`                                                     |
 
 #### Предопределённые namespaces
 
-| Namespace  | Назначение                           | Режим по умолчанию | Область   |
-| ---------- | ------------------------------------ | ------------------ | --------- |
-| `roadmap`  | Дорожная карта, планы, milestones    | persistent         | global    |
-| `session`  | Временные данные сессии              | session            | —         |
-| `knowledge`| Изученные факты, паттерны, настройки | persistent         | global    |
-| `context`  | Контекст текущей задачи              | session            | —         |
-| `learning` | Алиасы инструментов, исправления     | persistent         | global    |
-| `metrics`  | Статистика, данные производительности| persistent         | global    |
+| Namespace   | Назначение                            | Режим по умолчанию | Область |
+| ----------- | ------------------------------------- | ------------------ | ------- |
+| `roadmap`   | Дорожная карта, планы, milestones     | persistent         | global  |
+| `session`   | Временные данные сессии               | session            | —       |
+| `knowledge` | Изученные факты, паттерны, настройки  | persistent         | global  |
+| `context`   | Контекст текущей задачи               | session            | —       |
+| `learning`  | Алиасы инструментов, исправления      | persistent         | global  |
+| `metrics`   | Статистика, данные производительности | persistent         | global  |
 
 #### Области хранения (Scopes)
 
-| Scope      | Путь                                 | Описание                          |
-| ---------- | ------------------------------------ | --------------------------------- |
-| `global`   | `~/.ollama-code/storage/`            | Общие для всех проектов           |
-| `project`  | `<project>/.ollama-code/storage/`    | Данные конкретного проекта        |
+| Scope     | Путь                              | Описание                   |
+| --------- | --------------------------------- | -------------------------- |
+| `global`  | `~/.ollama-code/storage/`         | Общие для всех проектов    |
+| `project` | `<project>/.ollama-code/storage/` | Данные конкретного проекта |
 
 #### Алиасы инструментов для Storage
 
-| Алиас                  | Инструмент      |
-| ---------------------- | --------------- |
-| `storage`, `store`     | `model_storage` |
-| `kv`, `cache`          | `model_storage` |
-| `roadmap`, `persist`   | `model_storage` |
+| Алиас                | Инструмент      |
+| -------------------- | --------------- |
+| `storage`, `store`   | `model_storage` |
+| `kv`, `cache`        | `model_storage` |
+| `roadmap`, `persist` | `model_storage` |
 
 ### Добавленные файлы
 
-| Файл                                                       | Описание                         |
-| ---------------------------------------------------------- | -------------------------------- |
-| `packages/core/src/plugins/builtin/storage-tools/index.ts` | Реализация storage инструмента   |
-| `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 31 unit-тест для storage     |
-| `packages/core/src/prompts/templates/storage-instructions.md` | Руководство по использованию  |
+| Файл                                                            | Описание                       |
+| --------------------------------------------------------------- | ------------------------------ |
+| `packages/core/src/plugins/builtin/storage-tools/index.ts`      | Реализация storage инструмента |
+| `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 31 unit-тест для storage       |
+| `packages/core/src/prompts/templates/storage-instructions.md`   | Руководство по использованию   |
 
 ### Изменённые файлы
 
-| Файл                                                   | Изменения                                  |
-| ------------------------------------------------------ | ------------------------------------------ |
-| `packages/core/src/tools/tool-names.ts`                | Добавлено имя STORAGE и алиасы             |
-| `packages/core/src/tools/tool-error.ts`                | Добавлен STORAGE_EXECUTION_ERROR           |
-| `packages/core/src/plugins/pluginRegistry.ts`          | Добавлен storage-tools плагин              |
-| `packages/core/src/prompts/templates/system-*.md`      | Добавлен model_storage в таблицу инструментов |
-| `packages/core/src/prompts/templates/system-70b.md`    | Добавлено детальное руководство по storage |
+| Файл                                                | Изменения                                     |
+| --------------------------------------------------- | --------------------------------------------- |
+| `packages/core/src/tools/tool-names.ts`             | Добавлено имя STORAGE и алиасы                |
+| `packages/core/src/tools/tool-error.ts`             | Добавлен STORAGE_EXECUTION_ERROR              |
+| `packages/core/src/plugins/pluginRegistry.ts`       | Добавлен storage-tools плагин                 |
+| `packages/core/src/prompts/templates/system-*.md`   | Добавлен model_storage в таблицу инструментов |
+| `packages/core/src/prompts/templates/system-70b.md` | Добавлено детальное руководство по storage    |
 
 ### Коммиты
 
