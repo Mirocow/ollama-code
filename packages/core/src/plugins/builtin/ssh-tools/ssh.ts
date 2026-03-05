@@ -28,8 +28,84 @@ import { ShellExecutionService } from '../../../services/shellExecutionService.j
 import type { ShellExecutionConfig } from '../../../services/shellExecutionService.js';
 import type { AnsiOutput } from '../../../utils/terminalSerializer.js';
 import { createDebugLogger } from '../../../utils/debugLogger.js';
+import * as os from 'node:os';
 
 const debugLogger = createDebugLogger('SSH');
+
+// ============================================================================
+// Keyboard Layout Detection
+// ============================================================================
+
+/**
+ * Common Russian letters typed on English keyboard layout
+ * Maps "кракозябры" back to Russian
+ */
+const RU_TO_EN_MAP: Record<string, string> = {
+  'jn': 'от', 'vjtuj': 'моего', 'gjkmpjdfntkz': 'пользователя',
+  'rf': 'ка', 'ds': 'вы', 'pltcm': 'здесь', 'ghbdtn': 'привет',
+  'rfr': 'как', 'ltkj': 'дело', 'gj': 'по', 'vj': 'ми',
+  'yt': 'не', 'yj': 'но', 'jq': 'ий', 'a': 'а', 'b': 'и',
+  'd': 'в', 'k': 'л', 'r': 'к', 't': 'е', 'n': 'т',
+  'y': 'н', 'j': 'о', 'g': 'п', 'h': 'р', 'c': 'с',
+  'm': 'ь', 'q': 'й', 'w': 'ц', 'e': 'у', 'z': 'я',
+  'x': 'ч', 'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з',
+  's': 'ы', '[': 'х', ']': 'ъ',
+};
+
+/**
+ * Detects if text appears to be Russian typed on English keyboard
+ * Returns decoded Russian text if detected, null otherwise
+ */
+function detectWrongKeyboardLayout(text: string): { isWrongLayout: boolean; decoded: string; original: string } {
+  if (!text || text.length === 0) {
+    return { isWrongLayout: false, decoded: text, original: text };
+  }
+
+  // Check if text contains only Latin letters (typical of wrong layout)
+  const onlyLatin = /^[a-zA-Z\s\d\.,!?@#$%^&*()\-_=+\[\]{};:'"<>\/\\]+$/.test(text);
+  
+  if (!onlyLatin) {
+    return { isWrongLayout: false, decoded: text, original: text };
+  }
+
+  // Try to decode using the map
+  let decoded = text.toLowerCase();
+  let hasMatches = false;
+  
+  // Sort by length descending to match longer patterns first
+  const sortedKeys = Object.keys(RU_TO_EN_MAP).sort((a, b) => b.length - a.length);
+  
+  for (const en of sortedKeys) {
+    if (decoded.includes(en)) {
+      decoded = decoded.replace(new RegExp(en, 'g'), RU_TO_EN_MAP[en]!);
+      hasMatches = true;
+    }
+  }
+
+  // Check for patterns typical of Russian typed on English keyboard
+  const suspiciousPatterns = /[jksdfghmnbvcxz]{3,}/i;
+  const isSuspicious = suspiciousPatterns.test(text) || hasMatches;
+
+  return {
+    isWrongLayout: isSuspicious,
+    decoded: isSuspicious ? decoded : text,
+    original: text,
+  };
+}
+
+/**
+ * Get current system username
+ */
+function getCurrentUsername(): string {
+  return os.userInfo().username;
+}
+
+/**
+ * Get current system hostname
+ */
+function getCurrentHostname(): string {
+  return os.hostname();
+}
 
 export interface SSHToolParams {
   /** Name of saved SSH profile (optional - use instead of host/user) */
@@ -299,9 +375,16 @@ export class SSHToolInvocation extends BaseToolInvocation<
 }
 
 function getSSHToolDescription(): string {
+  const currentUser = getCurrentUsername();
+  const currentHost = getCurrentHostname();
+  
   return `Connects to a remote machine via SSH and executes commands.
 
 This tool provides secure SSH connectivity to remote servers for remote command execution, system administration, and file operations.
+
+**Current System Info:**
+- Your local username: "${currentUser}"
+- Your local hostname: "${currentHost}"
 
 **Usage Modes:**
 
@@ -311,10 +394,13 @@ This tool provides secure SSH connectivity to remote servers for remote command 
 2. **Direct connection:**
    \`{ "host": "192.168.1.100", "user": "admin", "command": "ls -la" }\`
 
+3. **Connect as current user:**
+   \`{ "host": "192.168.1.100", "user": "${currentUser}", "command": "whoami" }\`
+
 **Parameters:**
 - \`profile\` - Name of a saved SSH profile (use ssh_add_host to create profiles)
 - \`host\` - Hostname or IP address (required if no profile)
-- \`user\` - Username for SSH (required if no profile)
+- \`user\` - Username for SSH (required if no profile). Default suggestion: "${currentUser}"
 - \`command\` - Command to execute on the remote server
 - \`port\` - SSH port number (default: 22)
 - \`identity_file\` - Path to SSH private key file (recommended)
@@ -336,6 +422,9 @@ This tool provides secure SSH connectivity to remote servers for remote command 
 
 3. Interactive shell (no command):
    \`{ "profile": "dev-server" }\`
+
+4. Quick connect to known server as current user:
+   \`{ "host": "192.168.1.131", "user": "${currentUser}", "command": "ls /" }\`
 `;
 }
 
@@ -400,6 +489,37 @@ export class SSHTool extends BaseDeclarativeTool<
   }
 
   protected override validateToolParamValues(params: SSHToolParams): string | null {
+    const warnings: string[] = [];
+    const currentUser = getCurrentUsername();
+    
+    // Check for wrong keyboard layout in user and password
+    if (params.user) {
+      const userCheck = detectWrongKeyboardLayout(params.user);
+      if (userCheck.isWrongLayout) {
+        warnings.push(`⚠️ Username "${params.user}" appears to be typed with wrong keyboard layout. Did you mean "${userCheck.decoded}"?`);
+      }
+    }
+    
+    if (params.password) {
+      const passCheck = detectWrongKeyboardLayout(params.password);
+      if (passCheck.isWrongLayout) {
+        warnings.push(`⚠️ Password appears to be typed with wrong keyboard layout. Decoded: "${passCheck.decoded}". Consider re-typing with correct layout.`);
+      }
+      
+      // Warn about suspiciously short passwords
+      if (params.password.length < 4) {
+        warnings.push(`⚠️ Password is very short (${params.password.length} chars). Are you sure this is correct?`);
+      }
+    }
+    
+    // Check host parameter
+    if (params.host) {
+      const hostCheck = detectWrongKeyboardLayout(params.host);
+      if (hostCheck.isWrongLayout) {
+        warnings.push(`⚠️ Host "${params.host}" appears to be typed with wrong keyboard layout. Did you mean "${hostCheck.decoded}"?`);
+      }
+    }
+    
     // Either profile OR (host + user) must be specified
     if (params.profile) {
       // Profile specified - validate it exists
@@ -413,7 +533,8 @@ export class SSHTool extends BaseDeclarativeTool<
         return 'Host is required when not using a profile. Alternatively, specify a profile name.';
       }
       if (!params.user?.trim()) {
-        return 'User is required when not using a profile. Alternatively, specify a profile name.';
+        // Suggest current username
+        return `User is required when not using a profile. Tip: Your current username is "${currentUser}". Use it or specify another user.`;
       }
     }
 
@@ -436,6 +557,13 @@ export class SSHTool extends BaseDeclarativeTool<
         return 'Timeout cannot exceed 600000ms (10 minutes).';
       }
     }
+    
+    // Return warnings if any (they don't block execution but inform the model)
+    if (warnings.length > 0) {
+      // Log warnings for debugging
+      debugLogger.warn('SSH parameter warnings:', warnings.join('; '));
+    }
+    
     return null;
   }
 

@@ -120,10 +120,12 @@ export const ToolAliases: Record<string, ToolName> = {
   persist: ToolNames.STORAGE,
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Shell tool aliases (run_shell_command)
+  // Shell tool aliases (run_shell_command) - including common model hallucinations
   // ═══════════════════════════════════════════════════════════════════════
   run: ToolNames.SHELL,
   shell: ToolNames.SHELL,
+  Shell: ToolNames.SHELL,
+  SHELL: ToolNames.SHELL,
   exec: ToolNames.SHELL,
   cmd: ToolNames.SHELL,
   shell_dev: ToolNames.SHELL,
@@ -134,33 +136,46 @@ export const ToolAliases: Record<string, ToolName> = {
   bash_dev: ToolNames.SHELL,
   zsh_dev: ToolNames.SHELL,
   cli: ToolNames.SHELL,
+  'run-shell': ToolNames.SHELL,
+  run_shell: ToolNames.SHELL,
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Edit tool aliases
+  // Edit tool aliases (including common model hallucinations)
   // ═══════════════════════════════════════════════════════════════════════
   edit: ToolNames.EDIT,
+  Edit: ToolNames.EDIT,
+  'edit-file': ToolNames.EDIT,
+  edit_file: ToolNames.EDIT,
   replace: ToolNames.EDIT,
   modify: ToolNames.EDIT,
   patch: ToolNames.EDIT,
   sed: ToolNames.EDIT,
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Write file aliases
+  // Write file aliases (including common model hallucinations)
   // ═══════════════════════════════════════════════════════════════════════
   write: ToolNames.WRITE_FILE,
   create: ToolNames.WRITE_FILE,
   write_file: ToolNames.WRITE_FILE,
+  'write-file': ToolNames.WRITE_FILE,
   save_file: ToolNames.WRITE_FILE,
   new_file: ToolNames.WRITE_FILE,
+  WriteFile: ToolNames.WRITE_FILE,
+  'Write-File': ToolNames.WRITE_FILE,
+  writeFile: ToolNames.WRITE_FILE,
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Read file aliases
+  // Read file aliases (including common model hallucinations)
   // ═══════════════════════════════════════════════════════════════════════
   read: ToolNames.READ_FILE,
   read_file: ToolNames.READ_FILE,
+  'read-file': ToolNames.READ_FILE,
   cat_file: ToolNames.READ_FILE,
   open: ToolNames.READ_FILE,
   view: ToolNames.READ_FILE,
+  ReadFile: ToolNames.READ_FILE,
+  'Read-File': ToolNames.READ_FILE,
+  readFile: ToolNames.READ_FILE,
 
   // ═══════════════════════════════════════════════════════════════════════
   // Read many files aliases
@@ -172,9 +187,11 @@ export const ToolAliases: Record<string, ToolName> = {
   read_files: ToolNames.READ_MANY_FILES,
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Grep aliases
+  // Grep aliases (including common model hallucinations)
   // ═══════════════════════════════════════════════════════════════════════
   grep: ToolNames.GREP,
+  Grep: ToolNames.GREP,
+  GREP: ToolNames.GREP,
   search: ToolNames.GREP,
   find: ToolNames.GREP,
   grep_search: ToolNames.GREP,
@@ -192,7 +209,7 @@ export const ToolAliases: Record<string, ToolName> = {
   pattern: ToolNames.GLOB,
 
   // ═══════════════════════════════════════════════════════════════════════
-  // List directory aliases
+  // List directory aliases (including common model hallucinations)
   // ═══════════════════════════════════════════════════════════════════════
   ls: ToolNames.LS,
   list: ToolNames.LS,
@@ -200,6 +217,11 @@ export const ToolAliases: Record<string, ToolName> = {
   list_directory: ToolNames.LS,
   list_dir: ToolNames.LS,
   list_files: ToolNames.LS,
+  ListFiles: ToolNames.LS,
+  'list-files': ToolNames.LS,
+  'List-Files': ToolNames.LS,
+  ListDirectory: ToolNames.LS,
+  'list-directory': ToolNames.LS,
 
   // ═══════════════════════════════════════════════════════════════════════
   // Todo aliases
@@ -210,12 +232,18 @@ export const ToolAliases: Record<string, ToolName> = {
   task_list: ToolNames.TODO_WRITE,
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Memory aliases
+  // Memory aliases (including common model hallucinations)
   // ═══════════════════════════════════════════════════════════════════════
   memory: ToolNames.MEMORY,
+  Memory: ToolNames.MEMORY,
   save: ToolNames.MEMORY,
   save_memory: ToolNames.MEMORY,
+  'save-memory': ToolNames.MEMORY,
+  SaveMemory: ToolNames.MEMORY,
+  'Save-Memory': ToolNames.MEMORY,
   remember: ToolNames.MEMORY,
+  memoryTool: ToolNames.MEMORY,
+  MemoryTool: ToolNames.MEMORY,
 
   // ═══════════════════════════════════════════════════════════════════════
   // Web search aliases
@@ -227,9 +255,12 @@ export const ToolAliases: Record<string, ToolName> = {
   google: ToolNames.WEB_SEARCH,
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Web fetch aliases
+  // Web fetch aliases (including common model hallucinations)
   // ═══════════════════════════════════════════════════════════════════════
   webfetch: ToolNames.WEB_FETCH,
+  WebFetch: ToolNames.WEB_FETCH,
+  'web-fetch': ToolNames.WEB_FETCH,
+  'Web-Fetch': ToolNames.WEB_FETCH,
   fetch: ToolNames.WEB_FETCH,
   url: ToolNames.WEB_FETCH,
   web_fetch: ToolNames.WEB_FETCH,

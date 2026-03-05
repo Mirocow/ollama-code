@@ -1,10 +1,123 @@
 # Changelog
 
+## 0.17.4
+
+_Improved Tool Selection Training — Shell vs SSH & English Prompts_
+
+### Improvements
+
+#### Better Model Training for Tool Selection
+
+Added explicit instructions for choosing between Shell and SSH tools to prevent common model mistakes:
+
+| Problem | Solution |
+| ------- | -------- |
+| Model uses `shell` for remote SSH connections | Added **Shell vs SSH Selection** section to all prompts |
+| Model asks for "your_username" | Added `**Current Username**` to Environment info |
+| Model confuses tool name formats | Added explicit examples of correct SSH usage |
+
+#### Prompt Templates Now in English
+
+All prompt templates are now written in English for better model understanding:
+
+| Template | Status |
+| -------- | ------ |
+| system-8b.md | English ✅ |
+| system-14b.md | English ✅ |
+| system-32b.md | English ✅ |
+| system-70b.md | English ✅ |
+
+**Note:** Language-specific responses are handled by the rule: "ALWAYS respond in the user's language"
+
+#### Environment Info Now Includes Current Username
+
+The Environment section now shows:
+```
+- **Current Username**: <username>
+```
+
+This allows the model to use the correct username for SSH connections without asking "your_username".
+
+#### Prompt Template Updates
+
+All prompt templates now include:
+
+1. **SSH tool in tools table:**
+   - `ssh_connect` — REMOTE SSH connections
+   - `run_shell_command` — LOCAL shell commands
+
+2. **Shell vs SSH Selection section:**
+   | Situation | Tool |
+   |-----------|------|
+   | Command on local machine | `run_shell_command` |
+   | Remote server (IP address) | `ssh_connect` |
+   | User says "remote", "SSH", "server" | `ssh_connect` |
+
+3. **Examples of SSH usage:**
+   ```
+   user: Connect to 192.168.1.131 and show root directory
+   model: Connecting to remote server via SSH:
+   ssh_connect host="192.168.1.131" user=alex command="ls /"
+   ```
+
+### Files Modified
+
+| File | Changes |
+| ---- | ------- |
+| `packages/core/src/prompts/templates/system-*.md` | English rewrite, SSH tool, selection rules |
+| `packages/core/src/core/promptsV2.ts` | Added Current Username to Environment info |
+| `packages/core/src/core/prompts.ts` | Added Current Username to Environment info |
+| `packages/core/src/core/prompts/full.ts` | Added SSH tool and selection table |
+| `packages/core/src/core/prompts/standard.ts` | Added SSH tool and selection table |
+| `packages/core/src/core/prompts/extended.ts` | Added SSH tool and selection table |
+| `packages/core/src/core/prompts/maximum.ts` | Added SSH tool documentation |
+| `packages/core/src/core/prompts/compact.ts` | Added SSH tool and selection rules |
+
+---
+
 ## 0.17.3
 
-_Storage Tool Improvements — TTL, Metadata, Batch Operations_
+_Storage Tool Improvements — TTL, Metadata, Batch Operations, CLI Commands_
 
 ### New Features
+
+#### CLI Commands for Storage Management
+
+New `/storage` command for manual storage management:
+
+| Command | Description |
+| ------- | ----------- |
+| `/storage list [namespace]` | List all namespaces or keys in a namespace |
+| `/storage get <namespace> <key>` | Get a value from storage |
+| `/storage set <namespace> <key> <value>` | Set a value in storage |
+| `/storage delete <namespace> <key>` | Delete a key from storage |
+| `/storage clear <namespace>` | Clear all keys in namespace |
+| `/storage stats [namespace]` | Get storage statistics |
+| `/storage export <file.json>` | Export storage to file |
+| `/storage import <file.json>` | Import storage from file |
+| `/storage info` | Show project and storage information |
+
+**Examples:**
+
+```bash
+# List all namespaces
+/storage list
+
+# List keys in a namespace with metadata
+/storage list roadmap --global
+
+# Get a value
+/storage get roadmap v1.0
+
+# Set a value with TTL and tags
+/storage set session temp "data" --ttl=3600 --tags=temp,cache
+
+# Export storage to file
+/storage export backup.json roadmap
+
+# Import storage from file
+/storage import backup.json --project
+```
 
 #### TTL (Time-To-Live) for Data
 
@@ -97,6 +210,9 @@ const info = await getProjectInfo();
 | ------------------------------------------- | ------------------------------------ |
 | `packages/core/src/plugins/builtin/storage-tools/index.ts` | Complete rewrite with new features |
 | `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 44 tests (13 new)           |
+| `packages/core/src/index.ts` | Export storage-tools from core package |
+| `packages/cli/src/ui/commands/storageCommand.ts` | New CLI command for storage management |
+| `packages/cli/src/services/BuiltinCommandLoader.ts` | Register storage command |
 
 ### Commits
 

@@ -110,10 +110,20 @@ CLI agent for development: analysis, editing, refactoring, testing, debugging, d
 ## Execution and Development
 | Tool | Purpose | Note |
 |------|---------|------|
-| ${ToolNames.SHELL} | Shell commands | Explain modifying ones |
+| ${ToolNames.SHELL} | **LOCAL** shell commands | Explain modifying ones |
+| ${ToolNames.SSH} | **REMOTE** SSH connections | Use for IP/hostname ≠ localhost |
 | python_dev | Python tasks | pytest, pip, venv |
 | nodejs_dev | Node.js tasks | npm, jest, webpack |
 | golang_dev | Go tasks | go test, go mod |
+
+## Shell vs SSH Selection
+| Situation | Tool |
+|-----------|------|
+| Command on local machine | ${ToolNames.SHELL} |
+| Connection to remote server (IP/hostname) | ${ToolNames.SSH} |
+| User says "remote server", "via SSH" | ${ToolNames.SSH} |
+
+**RULE:** IP address ≠ localhost → use ssh_connect
 
 ${hasTools ? `## Organization and Memory
 | Tool | Purpose | Important |

@@ -88,6 +88,7 @@ function getEnvironmentInfo(): string {
   const platform = process.platform;
   const cwd = process.cwd();
   const homeDir = os.homedir();
+  const currentUsername = os.userInfo().username;
 
   envLines.push('## Environment');
   envLines.push('');
@@ -108,6 +109,7 @@ function getEnvironmentInfo(): string {
   envLines.push(`- **Platform**: ${platform}`);
   envLines.push(`- **Current Working Directory**: ${cwd}`);
   envLines.push(`- **Home Directory**: ${homeDir}`);
+  envLines.push(`- **Current Username**: ${currentUsername}`);
   envLines.push('');
   envLines.push('### Debug Settings');
   envLines.push(`- **DEBUG Mode**: ${debugMode}`);

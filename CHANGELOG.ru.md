@@ -1,10 +1,123 @@
 # Журнал изменений
 
+## 0.17.4
+
+_Улучшенное обучение выбору инструментов — Shell vs SSH и английские промпты_
+
+### Улучшения
+
+#### Лучшее обучение модели выбору инструментов
+
+Добавлены явные инструкции для выбора между Shell и SSH инструментами для предотвращения частых ошибок модели:
+
+| Проблема | Решение |
+| -------- | ------- |
+| Модель использует `shell` для удалённых SSH подключений | Добавлена секция **Выбор Shell vs SSH** во все промпты |
+| Модель спрашивает "your_username" | Добавлено `**Current Username**` в Environment info |
+| Модель путает форматы имён инструментов | Добавлены явные примеры правильного использования SSH |
+
+#### Шаблоны промптов теперь на английском
+
+Все шаблоны промптов теперь написаны на английском языке для лучшего понимания моделью:
+
+| Шаблон | Статус |
+| ------ | ------ |
+| system-8b.md | Английский ✅ |
+| system-14b.md | Английский ✅ |
+| system-32b.md | Английский ✅ |
+| system-70b.md | Английский ✅ |
+
+**Примечание:** Язык ответов определяется правилом: "ALWAYS respond in the user's language"
+
+#### Environment Info теперь включает текущее имя пользователя
+
+Секция Environment теперь показывает:
+```
+- **Current Username**: <username>
+```
+
+Это позволяет модели использовать правильное имя пользователя для SSH подключений без вопроса "your_username".
+
+#### Обновления шаблонов промптов
+
+Все шаблоны промптов теперь включают:
+
+1. **SSH инструмент в таблице инструментов:**
+   - `ssh_connect` — УДАЛЁННЫЕ SSH подключения
+   - `run_shell_command` — ЛОКАЛЬНЫЕ shell команды
+
+2. **Секция выбора Shell vs SSH:**
+   | Ситуация | Инструмент |
+   | -------- | ---------- |
+   | Команда на локальной машине | `run_shell_command` |
+   | Удалённый сервер (IP-адрес) | `ssh_connect` |
+   | Пользователь говорит "remote", "SSH", "server" | `ssh_connect` |
+
+3. **Примеры использования SSH:**
+   ```
+   user: Connect to 192.168.1.131 and show root directory
+   model: Connecting to remote server via SSH:
+   ssh_connect host="192.168.1.131" user=alex command="ls /"
+   ```
+
+### Изменённые файлы
+
+| Файл | Изменения |
+| ---- | --------- |
+| `packages/core/src/prompts/templates/system-*.md` | Английский, SSH инструмент, правила выбора |
+| `packages/core/src/core/promptsV2.ts` | Добавлен Current Username в Environment info |
+| `packages/core/src/core/prompts.ts` | Добавлен Current Username в Environment info |
+| `packages/core/src/core/prompts/full.ts` | Добавлен SSH инструмент и таблица выбора |
+| `packages/core/src/core/prompts/standard.ts` | Добавлен SSH инструмент и таблица выбора |
+| `packages/core/src/core/prompts/extended.ts` | Добавлен SSH инструмент и таблица выбора |
+| `packages/core/src/core/prompts/maximum.ts` | Добавлена документация SSH инструмента |
+| `packages/core/src/core/prompts/compact.ts` | Добавлен SSH инструмент и правила выбора |
+
+---
+
 ## 0.17.3
 
-_Улучшения Storage Tool — TTL, Метаданные, Batch операции_
+_Улучшения Storage Tool — TTL, Метаданные, Batch операции, CLI команды_
 
 ### Новые возможности
+
+#### CLI команды для управления хранилищем
+
+Новая команда `/storage` для ручного управления хранилищем:
+
+| Команда | Описание |
+| ------- | -------- |
+| `/storage list [namespace]` | Список всех namespace или ключей в namespace |
+| `/storage get <namespace> <key>` | Получить значение из хранилища |
+| `/storage set <namespace> <key> <value>` | Установить значение в хранилище |
+| `/storage delete <namespace> <key>` | Удалить ключ из хранилища |
+| `/storage clear <namespace>` | Очистить все ключи в namespace |
+| `/storage stats [namespace]` | Получить статистику хранилища |
+| `/storage export <file.json>` | Экспортировать хранилище в файл |
+| `/storage import <file.json>` | Импортировать хранилище из файла |
+| `/storage info` | Показать информацию о проекте и хранилище |
+
+**Примеры:**
+
+```bash
+# Список всех namespace
+/storage list
+
+# Список ключей в namespace с метаданными
+/storage list roadmap --global
+
+# Получить значение
+/storage get roadmap v1.0
+
+# Установить значение с TTL и тегами
+/storage set session temp "data" --ttl=3600 --tags=temp,cache
+
+# Экспортировать хранилище в файл
+/storage export backup.json roadmap
+
+# Импортировать хранилище из файла
+/storage import backup.json --project
+```
 
 #### TTL (Time-To-Live) для данных
 
@@ -97,6 +210,9 @@ const info = await getProjectInfo();
 | ------------------------------------------- | ----------------------------------- |
 | `packages/core/src/plugins/builtin/storage-tools/index.ts` | Полная переработка с новыми функциями |
 | `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 44 теста (13 новых)         |
+| `packages/core/src/index.ts` | Экспорт storage-tools из core пакета |
+| `packages/cli/src/ui/commands/storageCommand.ts` | Новая CLI команда для управления хранилищем |
+| `packages/cli/src/services/BuiltinCommandLoader.ts` | Регистрация storage команды |
 
 ### Коммиты
 

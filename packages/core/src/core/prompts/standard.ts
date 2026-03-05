@@ -81,10 +81,18 @@ CLI agent for development: analysis, editing, commands, testing, refactoring.
 ## Execution
 | Tool | Purpose |
 |------|---------|
-| ${ToolNames.SHELL} | Execute shell commands |
+| ${ToolNames.SHELL} | **LOCAL** shell commands |
+| ${ToolNames.SSH} | **REMOTE** SSH connections |
 | python_dev | Python development |
 | nodejs_dev | Node.js development |
 | golang_dev | Go development |
+
+## Shell vs SSH
+| Situation | Tool |
+|-----------|------|
+| Command on local machine | ${ToolNames.SHELL} |
+| Remote server (IP address) | ${ToolNames.SSH} |
+| User says "SSH", "remote" | ${ToolNames.SSH} |
 
 ${hasTools ? `## Organization
 | Tool | Purpose |

@@ -45,11 +45,16 @@ CLI agent for development: read, edit, commands, tests.
 - read_file - read file (absolute path)
 - write_file - create/overwrite file
 - edit - edit existing file
-- ${ToolNames.SHELL} - execute commands (explain modifying ones)
+- ${ToolNames.SHELL} - **LOCAL** commands (explain modifying ones)
+- ${ToolNames.SSH} - **REMOTE** SSH (for IP ≠ localhost)
 - grep_search - search in files
 - glob - find files by pattern
 - list_directory - directory contents
 ${hasTools ? `- ${ToolNames.TODO_WRITE} - plan tasks` : ''}
+
+## Shell vs SSH
+- Local command → ${ToolNames.SHELL}
+- Remote server (IP address) → ${ToolNames.SSH}
 
 # Workflow
 1. Plan -> 2. Implement -> 3. Verify -> 4. Report (if asked)

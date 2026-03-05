@@ -262,6 +262,23 @@ ${ToolNames.SHELL} command="npm install" timeout=120000
 
 **Safety Rule**: Explain modifying commands before execution.
 
+### ${ToolNames.SSH}
+\`\`\`typescript
+// Connect to remote server
+${ToolNames.SSH} host="192.168.1.100" user="alex" command="ls /"
+
+// With SSH key
+${ToolNames.SSH} host="server.com" user="deploy" identity_file="~/.ssh/deploy_key" command="docker ps"
+
+// Using saved profile
+${ToolNames.SSH} profile="production" command="systemctl status nginx"
+\`\`\`
+
+**When to Use:**
+- IP address ≠ localhost → ssh_connect
+- User mentions "remote", "server", "SSH" → ssh_connect
+- **NOT** for local commands!
+
 ### Language-Specific Tools
 
 | Tool | Commands | Files |
