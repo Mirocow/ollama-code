@@ -32,7 +32,7 @@ const sshToolsPlugin: PluginDefinition = {
 
   // Use toolFactories for tools that need Config
   toolFactories: [
-    (config: Config) => new SSHTool(config),
+    ((config: unknown) => new SSHTool(config as Config)) as (config: unknown) => unknown,
   ],
 
   // Tool classes that don't need config
