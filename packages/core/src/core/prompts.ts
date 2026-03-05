@@ -15,10 +15,11 @@ import type { GenerateContentConfig } from '../types/content.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 import { getToolLearningManager } from '../learning/tool-learning.js';
 import { supportsTools } from '../model-definitions/index.js';
-import { 
-  getCoreSystemPromptV2, 
-  shouldUseTemplates as shouldUseTemplatesInternal 
-} from './promptsV2.js';
+import {
+  getSystemPromptTemplate,
+  fillTemplatePlaceholders,
+  type TemplatePlaceholders,
+} from '../prompts/index.js';
 
 const debugLogger = createDebugLogger('PROMPTS');
 
@@ -194,6 +195,91 @@ function getEnvironmentInfo(): string {
   return envLines.join('\n');
 }
 
+/**
+ * Gets sandbox info for the prompt
+ */
+function getSandboxInfo(): string {
+  const isSandboxExec = process.env['SANDBOX'] === 'sandbox-exec';
+  const isGenericSandbox = !!process.env['SANDBOX'];
+
+  if (isSandboxExec) {
+    return `# macOS Seatbelt
+You are running under macos seatbelt with limited access to files outside the project directory or system temp directory, and with limited access to host system resources such as ports. If you encounter failures that could be due to MacOS Seatbelt (e.g. if a command fails with 'Operation not permitted' or similar error), as you report the error to the user, also explain why you think it could be due to MacOS Seatbelt, and how the user may need to adjust their Seatbelt profile.`;
+  } else if (isGenericSandbox) {
+    return `# Sandbox
+You are running in a sandbox container with limited access to files outside the project directory or system temp directory, and with limited access to host system resources such as ports. If you encounter failures that could be due to sandboxing (e.g. if a command fails with 'Operation not permitted' or similar error), when you report the error to the user, also explain why you think it could be due to sandboxing, and how the user may need to adjust their sandbox configuration.`;
+  }
+
+  return `# Outside of Sandbox
+You are running outside of a sandbox container, directly on the user's system. For critical commands that are particularly likely to modify the user's system outside of the project directory or system temp directory, as you explain the command to the user (per the Explain Critical Commands rule above), also remind the user to consider enabling sandboxing.`;
+}
+
+/**
+ * Gets git info for the prompt
+ */
+function getGitInfo(): string {
+  if (isGitRepository(process.cwd())) {
+    return `# Git Repository
+- The current working (project) directory is being managed by a git repository.
+- When asked to commit changes or prepare a commit, always start by gathering information using shell commands:
+  - \`git status\` to ensure that all relevant files are tracked and staged, using \`git add ...\` as needed.
+  - \`git diff HEAD\` to review all changes (including unstaged changes) to tracked files in work tree since last commit.
+  - \`git log -n 3\` to review recent commit messages and match their style.
+- Combine shell commands whenever possible: \`git status && git diff HEAD && git log -n 3\`.
+- Always propose a draft commit message. Never just ask the user to give you the full commit message.
+- Prefer commit messages that are clear, concise, and focused more on "why" and less on "what".
+- Never push changes to a remote repository without being asked explicitly by the user.`;
+  }
+  return '';
+}
+
+/**
+ * Check if templates should be used
+ */
+function shouldUseTemplates(): boolean {
+  const envValue = process.env['OLLAMA_CODE_USE_TEMPLATES'];
+
+  // Default to true if not set
+  if (envValue === undefined || envValue === '') {
+    return true;
+  }
+
+  // Check for false values
+  return !['0', 'false', 'no', 'off'].includes(envValue.toLowerCase());
+}
+
+/**
+ * Get template-based system prompt
+ */
+function getCoreSystemPromptFromTemplate(
+  userMemory?: string,
+  model?: string,
+): string {
+  // Get the appropriate template based on model size
+  const template = getSystemPromptTemplate(model);
+
+  // Build placeholders
+  const placeholders: Partial<TemplatePlaceholders> = {
+    ENVIRONMENT_INFO: getEnvironmentInfo(),
+    TOOL_LEARNING: getToolLearningContext(),
+    TOOL_CALL_FORMAT: getToolCallFormatInstructions(model),
+    SANDBOX_INFO: getSandboxInfo(),
+    GIT_INFO: getGitInfo(),
+    ROOT: process.cwd(),
+  };
+
+  // Fill template
+  const prompt = fillTemplatePlaceholders(template, placeholders);
+
+  // Append user memory
+  const memorySuffix =
+    userMemory && userMemory.trim().length > 0
+      ? `\n\n---\n\n${userMemory.trim()}`
+      : '';
+
+  return `${prompt}${memorySuffix}`;
+}
+
 export function resolvePathFromEnv(envVar?: string): {
   isSwitch: boolean;
   value: string | null;
@@ -292,11 +378,11 @@ export function getCoreSystemPrompt(
 ): string {
   // Check if we should use the new template-based system
   // Default to templates unless OLLAMA_CODE_USE_TEMPLATES=false
-  const useTemplates = shouldUseTemplatesInternal();
+  const useTemplates = shouldUseTemplates();
   
   if (useTemplates) {
-    // Use new template-based prompt
-    return getCoreSystemPromptV2(userMemory, model);
+    // Use template-based prompt
+    return getCoreSystemPromptFromTemplate(userMemory, model);
   }
   
   // Legacy prompt (original implementation below)
