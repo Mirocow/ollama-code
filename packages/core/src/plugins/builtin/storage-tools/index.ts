@@ -572,10 +572,6 @@ function deleteSessionEntry(namespace: string, key: string): boolean {
   return getSessionData(namespace).delete(key);
 }
 
-function listSessionKeys(namespace: string): string[] {
-  return Array.from(getSessionData(namespace).keys());
-}
-
 function clearSessionNamespace(namespace: string): void {
   const key = getSessionNamespaceKey(namespace);
   sessionStorage.delete(key);
@@ -652,7 +648,7 @@ export async function cleanupExpiredEntries(): Promise<{ session: number; persis
   let sessionCleaned = 0;
   
   // Очистка в session storage
-  for (const [nsKey, nsData] of sessionStorage.entries()) {
+  for (const [, nsData] of sessionStorage.entries()) {
     for (const [key, entry] of nsData.entries()) {
       if (isExpired(entry)) {
         nsData.delete(key);
