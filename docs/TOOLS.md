@@ -34,6 +34,7 @@ Complete reference documentation for all available tools in Ollama Code.
   - [task](#task)
 - [Memory & Knowledge](#memory--knowledge)
   - [save_memory](#save_memory)
+  - [model_storage](#model_storage)
   - [skill](#skill)
 - [Other Tools](#other-tools)
   - [lsp](#lsp)
@@ -57,6 +58,7 @@ Ollama Code supports short aliases for common tools. You can use these instead o
 | `ls`, `list`, `dir`                  | `list_directory`    |
 | `todo`, `todos`                      | `todo_write`        |
 | `memory`, `save`                     | `save_memory`       |
+| `storage`, `store`, `kv`, `roadmap`  | `model_storage`     |
 | `agent`, `subagent`                  | `task`              |
 | `websearch`, `web`                   | `web_search`        |
 | `webfetch`, `fetch`, `url`           | `web_fetch`         |
@@ -1003,6 +1005,85 @@ Saves information to long-term memory for use in future sessions.
   "scope": "global"
 }
 ```
+
+---
+
+### model_storage
+
+Universal key-value storage for AI model to persist structured data between sessions.
+
+**Parameters:**
+
+| Name        | Type   | Required | Description                                              |
+| ----------- | ------ | -------- | -------------------------------------------------------- |
+| `operation` | string | Yes      | Operation to perform (see below)                         |
+| `namespace` | string | Yes      | Storage namespace (roadmap, session, knowledge, etc.)    |
+| `key`       | string | No*      | Key to store/retrieve (required for most operations)     |
+| `value`     | any    | No*      | Value to store (any JSON-serializable type)              |
+| `scope`     | string | No       | `global` (all projects) or `project` (current project)   |
+
+*Required for `set`, `get`, `delete`, `append`, `merge` operations.
+
+**Operations:**
+
+| Operation | Description                          |
+| --------- | ------------------------------------ |
+| `set`     | Store a value (overwrites existing)   |
+| `get`     | Retrieve a value by key               |
+| `delete`  | Remove a key                          |
+| `list`    | List all keys in namespace            |
+| `append`  | Add item to array                     |
+| `merge`   | Merge object with existing data       |
+| `clear`   | Clear all data in namespace           |
+
+**Namespaces:**
+
+| Namespace  | Purpose                              | Persistence     |
+| ---------- | ------------------------------------ | --------------- |
+| `roadmap`  | Project roadmap, milestones, plans   | Persistent      |
+| `session`  | Temporary session data               | Session-scoped  |
+| `knowledge`| Learned facts, patterns, preferences | Persistent      |
+| `context`  | Current task context and state       | Task-scoped     |
+| `learning` | Tool aliases, corrections            | Persistent      |
+| `metrics`  | Statistics, performance data         | Persistent      |
+
+**Examples:**
+
+```json
+// Save roadmap milestone
+{
+  "operation": "set",
+  "namespace": "roadmap",
+  "key": "v1.0",
+  "value": {"features": ["auth", "api"], "status": "planning"}
+}
+
+// Get all roadmap items
+{
+  "operation": "list",
+  "namespace": "roadmap"
+}
+
+// Append to backlog
+{
+  "operation": "append",
+  "namespace": "roadmap",
+  "key": "backlog",
+  "value": "Add dark mode"
+}
+
+// Save learned pattern
+{
+  "operation": "merge",
+  "namespace": "knowledge",
+  "key": "project_patterns",
+  "value": {"test_framework": "vitest"}
+}
+```
+
+**Storage Location:**
+- Global: `~/.ollama-code/storage/`
+- Project: `<project>/.ollama-code/storage/`
 
 ---
 
