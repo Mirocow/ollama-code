@@ -264,11 +264,11 @@ ${ToolNames.SHELL} command="npm install" timeout=120000
 
 ### ${ToolNames.SSH}
 \`\`\`typescript
-// Connect to remote server
-${ToolNames.SSH} host="192.168.1.100" user="alex" command="ls /"
+// Connect to remote server - use Current Username from Environment
+${ToolNames.SSH} host="192.168.1.100" user="<from Current Username>" command="ls /"
 
 // With SSH key
-${ToolNames.SSH} host="server.com" user="deploy" identity_file="~/.ssh/deploy_key" command="docker ps"
+${ToolNames.SSH} host="server.com" user="<from Current Username>" identity_file="~/.ssh/id_rsa" command="docker ps"
 
 // Using saved profile
 ${ToolNames.SSH} profile="production" command="systemctl status nginx"
@@ -278,6 +278,8 @@ ${ToolNames.SSH} profile="production" command="systemctl status nginx"
 - IP address ≠ localhost → ssh_connect
 - User mentions "remote", "server", "SSH" → ssh_connect
 - **NOT** for local commands!
+
+**SSH user parameter:** Use \`Current Username\` from Environment section. Don't ask "your_username".
 
 ### Language-Specific Tools
 
