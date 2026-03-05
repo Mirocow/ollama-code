@@ -1,5 +1,111 @@
 # Changelog
 
+## 0.17.3
+
+_Storage Tool Improvements — TTL, Metadata, Batch Operations_
+
+### New Features
+
+#### TTL (Time-To-Live) for Data
+
+Auto-expire entries after specified time:
+
+```json
+{
+  "operation": "set",
+  "namespace": "session",
+  "key": "temp_data",
+  "value": "temporary",
+  "ttl": 3600
+}
+```
+
+| Field       | Type   | Description                        |
+| ----------- | ------ | ---------------------------------- |
+| `ttl`       | number | Time-to-live in seconds            |
+| `expiresAt` | string | Auto-calculated expiration ISO date |
+
+#### Metadata Support
+
+Every entry now includes automatic metadata:
+
+| Field       | Description                    |
+| ----------- | ------------------------------ |
+| `createdAt` | ISO timestamp of creation      |
+| `updatedAt` | ISO timestamp of last update   |
+| `version`   | Incremented on each update     |
+| `ttl`       | TTL in seconds (if set)        |
+| `expiresAt` | Expiration date (if TTL set)   |
+| `tags`      | Array of custom tags           |
+| `source`    | Source of data (session/user)  |
+
+#### New Operations
+
+| Operation | Description                              |
+| --------- | ---------------------------------------- |
+| `exists`  | Check if key exists                      |
+| `stats`   | Get storage statistics (keys, size, etc) |
+| `batch`   | Execute multiple operations atomically   |
+
+#### Batch Operations
+
+Execute multiple operations in one call:
+
+```json
+{
+  "operation": "batch",
+  "namespace": "roadmap",
+  "actions": [
+    { "operation": "set", "key": "a", "value": 1 },
+    { "operation": "set", "key": "b", "value": 2 },
+    { "operation": "delete", "key": "old" }
+  ]
+}
+```
+
+#### Auto-detection of Project Root
+
+The `scope: 'project'` now correctly identifies project root by searching for:
+
+- `.git`, `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, etc.
+
+#### New Parameters
+
+| Parameter        | Description                          |
+| ---------------- | ------------------------------------ |
+| `ttl`            | Time-to-live in seconds              |
+| `tags`           | Array of strings for categorization  |
+| `includeMetadata | Include metadata in get/list results |
+
+### Project Information API
+
+```typescript
+import { getProjectInfo, clearProjectRootCache } from '@ollama-code/core';
+
+const info = await getProjectInfo();
+// {
+//   id: 'abc123def456',  // Unique project ID
+//   name: 'my-project',
+//   root: '/path/to/project',
+//   type: 'node' | 'python' | 'go' | 'rust' | 'java' | 'php' | 'unknown'
+// }
+```
+
+### Files Modified
+
+| File                                        | Changes                              |
+| ------------------------------------------- | ------------------------------------ |
+| `packages/core/src/plugins/builtin/storage-tools/index.ts` | Complete rewrite with new features |
+| `packages/core/src/plugins/builtin/storage-tools/index.test.ts` | 44 tests (13 new)           |
+
+### Commits
+
+```
+98803179 release: v0.17.2 - Model Storage Tool
+```
+
+---
+
 ## 0.17.2
 
 _Model Storage Tool — Persistent AI Memory_

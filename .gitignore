@@ -84,3 +84,6 @@ integration-tests/terminal-capture/scenarios/screenshots/
 *storybook.log
 storybook-static
 
+
+# Ollama Code local storage
+.ollama-code/

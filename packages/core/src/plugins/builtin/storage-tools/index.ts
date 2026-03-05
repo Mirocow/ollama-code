@@ -15,6 +15,12 @@
  * Режимы хранения:
  * - persistent: данные сохраняются в файлы между сессиями
  * - session: данные хранятся только в памяти текущей сессии
+ * 
+ * Улучшения v0.17.3:
+ * - Автоопределение корня проекта
+ * - TTL (Time-To-Live) для данных
+ * - Метаданные (createdAt, updatedAt, version, tags)
+ * - Batch операции
  */
 
 import type { ToolResult } from '../../../tools/tools.js';
@@ -26,6 +32,7 @@ import {
 import type { FunctionDeclaration } from '../../../types/content.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import * as os from 'node:os';
 import { Storage } from '../../../config/storage.js';
 import { ToolDisplayNames, ToolNames } from '../../../tools/tool-names.js';
 import { ToolErrorType } from '../../../tools/tool-error.js';
@@ -38,6 +45,7 @@ const debugLogger = createDebugLogger('STORAGE_TOOL');
 // ============================================================================
 
 export const STORAGE_DIR = 'storage';
+const PROJECT_ROOT_CACHE_TTL = 60000; // 1 minute cache for project root
 
 // Предопределённые namespace'ы для разных типов данных
 export const StorageNamespaces = {
@@ -52,13 +60,150 @@ export const StorageNamespaces = {
 // Namespace'ы с сессионным хранением по умолчанию
 const SESSION_NAMESPACES = new Set(['session', 'context']);
 
+// Маркеры для определения корня проекта
+const PROJECT_MARKERS = [
+  '.git',
+  'package.json',
+  'pyproject.toml',
+  'Cargo.toml',
+  'go.mod',
+  'pom.xml',
+  'build.gradle',
+  'settings.gradle',
+  'composer.json',
+  '.ollama-code',
+];
+
 export type StorageNamespace = typeof StorageNamespaces[keyof typeof StorageNamespaces];
 
-// In-memory хранилище для сессионных данных
-const sessionStorage: Map<string, Map<string, unknown>> = new Map();
+// Интерфейс метаданных записи
+export interface StorageMetadata {
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+  ttl?: number;        // TTL в секундах
+  expiresAt?: string;  // ISO дата истечения
+  tags?: string[];
+  source?: string;     // Источник данных (session, user, system)
+}
+
+// Интерфейс записи с метаданными
+export interface StorageEntry {
+  value: unknown;
+  metadata: StorageMetadata;
+}
+
+// Интерфейс информации о проекте
+export interface ProjectInfo {
+  id: string;
+  name: string;
+  root: string;
+  type: 'node' | 'python' | 'go' | 'rust' | 'java' | 'php' | 'unknown';
+}
+
+// In-memory хранилище для сессионных данных (с метаданными)
+const sessionStorage: Map<string, Map<string, StorageEntry>> = new Map();
 
 // ID текущей сессии
 let currentSessionId: string | null = null;
+
+// Кэш корня проекта
+let cachedProjectRoot: string | null = null;
+let projectRootCacheTime: number = 0;
+
+// ============================================================================
+// Утилиты для определения проекта
+// ============================================================================
+
+/**
+ * Найти корень проекта по маркерам
+ */
+async function findProjectRoot(startDir: string = process.cwd()): Promise<string> {
+  // Проверяем кэш
+  const now = Date.now();
+  if (cachedProjectRoot && (now - projectRootCacheTime) < PROJECT_ROOT_CACHE_TTL) {
+    return cachedProjectRoot;
+  }
+
+  let currentDir = startDir;
+  const root = os.homedir();
+
+  while (currentDir !== root && currentDir !== '/') {
+    for (const marker of PROJECT_MARKERS) {
+      const markerPath = path.join(currentDir, marker);
+      try {
+        await fs.access(markerPath);
+        cachedProjectRoot = currentDir;
+        projectRootCacheTime = now;
+        debugLogger.info(`[StorageTool] Project root found: ${currentDir} (marker: ${marker})`);
+        return currentDir;
+      } catch {
+        // Marker not found, continue searching
+      }
+    }
+    currentDir = path.dirname(currentDir);
+  }
+
+  // Если не нашли маркеры, используем cwd
+  cachedProjectRoot = startDir;
+  projectRootCacheTime = now;
+  debugLogger.info(`[StorageTool] No project markers found, using cwd: ${startDir}`);
+  return startDir;
+}
+
+/**
+ * Определить тип проекта
+ */
+async function detectProjectType(projectRoot: string): Promise<ProjectInfo['type']> {
+  const typeMarkers: Array<{ file: string; type: ProjectInfo['type'] }> = [
+    { file: 'package.json', type: 'node' },
+    { file: 'pyproject.toml', type: 'python' },
+    { file: 'requirements.txt', type: 'python' },
+    { file: 'setup.py', type: 'python' },
+    { file: 'go.mod', type: 'go' },
+    { file: 'Cargo.toml', type: 'rust' },
+    { file: 'pom.xml', type: 'java' },
+    { file: 'build.gradle', type: 'java' },
+    { file: 'composer.json', type: 'php' },
+  ];
+
+  for (const { file, type } of typeMarkers) {
+    try {
+      await fs.access(path.join(projectRoot, file));
+      return type;
+    } catch {
+      // Continue checking
+    }
+  }
+  return 'unknown';
+}
+
+/**
+ * Получить информацию о проекте
+ */
+export async function getProjectInfo(): Promise<ProjectInfo> {
+  const root = await findProjectRoot();
+  const type = await detectProjectType(root);
+  const name = path.basename(root);
+  
+  // Генерируем ID на основе пути (хеш)
+  const id = Buffer.from(root).toString('base64').replace(/[+/=]/g, '').substring(0, 16);
+
+  return { id, name, root, type };
+}
+
+/**
+ * Очистить кэш корня проекта
+ */
+export function clearProjectRootCache(): void {
+  cachedProjectRoot = null;
+  projectRootCacheTime = 0;
+  debugLogger.info('[StorageTool] Project root cache cleared');
+}
+
+// ============================================================================
+// Управление сессией
+// ============================================================================
 
 /**
  * Установить ID текущей сессии (вызывается при старте сессии)
@@ -90,7 +235,95 @@ function isSessionNamespace(namespace: string): boolean {
   return SESSION_NAMESPACES.has(namespace.toLowerCase());
 }
 
-// JSON Schema для инструмента
+// ============================================================================
+// Метаданные
+// ============================================================================
+
+/**
+ * Создать метаданные для новой записи
+ */
+function createMetadata(ttl?: number, tags?: string[]): StorageMetadata {
+  const now = new Date().toISOString();
+  const metadata: StorageMetadata = {
+    createdAt: now,
+    updatedAt: now,
+    version: 1,
+    source: currentSessionId ? 'session' : 'user',
+  };
+
+  if (ttl && ttl > 0) {
+    metadata.ttl = ttl;
+    const expiresAt = new Date(Date.now() + ttl * 1000);
+    metadata.expiresAt = expiresAt.toISOString();
+  }
+
+  if (tags && tags.length > 0) {
+    metadata.tags = tags;
+  }
+
+  return metadata;
+}
+
+/**
+ * Обновить метаданные при изменении
+ */
+function updateMetadata(existing: StorageMetadata, ttl?: number, tags?: string[]): StorageMetadata {
+  const updated: StorageMetadata = {
+    ...existing,
+    updatedAt: new Date().toISOString(),
+    version: existing.version + 1,
+  };
+
+  if (ttl !== undefined) {
+    if (ttl > 0) {
+      updated.ttl = ttl;
+      updated.expiresAt = new Date(Date.now() + ttl * 1000).toISOString();
+    } else {
+      delete updated.ttl;
+      delete updated.expiresAt;
+    }
+  }
+
+  if (tags !== undefined) {
+    updated.tags = tags.length > 0 ? tags : undefined;
+  }
+
+  return updated;
+}
+
+/**
+ * Проверить, истёк ли TTL записи
+ */
+function isExpired(entry: StorageEntry): boolean {
+  if (!entry?.metadata?.expiresAt) {
+    return false;
+  }
+  try {
+    return new Date(entry.metadata.expiresAt) < new Date();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Конвертировать старый формат данных (без метаданных) в новый
+ */
+function ensureStorageEntry(value: unknown): StorageEntry {
+  if (value && typeof value === 'object' && 'value' in value && 'metadata' in value) {
+    // Already in new format
+    return value as StorageEntry;
+  }
+  // Old format - wrap with metadata
+  return {
+    value,
+    metadata: createMetadata(),
+  };
+}
+
+// ============================================================================
+// JSON Schema
+// ============================================================================
+
 const storageToolSchemaData: FunctionDeclaration = {
   name: 'model_storage',
   description: `Universal storage for AI model to persist structured data.
@@ -104,8 +337,8 @@ NAMESPACES (predefined):
 - session: Temporary session data (session-scoped)
 - knowledge: Model's learned facts and patterns (persistent)
 - context: Current task context and state (session-scoped)
-- learning: Tool aliases and corrections (persistent)
-- metrics: Statistics and performance data (persistent)
+- learning: Tool aliases, corrections (persistent)
+- metrics: Statistics, performance data (persistent)
 
 OPERATIONS:
 - set: Store a value (overwrites existing)
@@ -114,13 +347,22 @@ OPERATIONS:
 - list: List all keys in namespace
 - append: Add item to array
 - merge: Merge object with existing data
-- clear: Clear all data in namespace`,
+- clear: Clear all data in namespace
+- exists: Check if key exists
+- stats: Get storage statistics
+- batch: Execute multiple operations atomically
+
+FEATURES:
+- TTL (Time-To-Live): Auto-expire data after specified seconds
+- Tags: Categorize entries for filtering
+- Metadata: Track createdAt, updatedAt, version
+- Batch: Execute multiple operations in one call`,
   parametersJsonSchema: {
     type: 'object',
     properties: {
       operation: {
         type: 'string',
-        enum: ['set', 'get', 'delete', 'list', 'append', 'merge', 'clear'],
+        enum: ['set', 'get', 'delete', 'list', 'append', 'merge', 'clear', 'exists', 'stats', 'batch'],
         description: 'Operation to perform on storage',
       },
       namespace: {
@@ -136,12 +378,40 @@ OPERATIONS:
       },
       persistent: {
         type: 'boolean',
-        description: 'Storage mode: true = save to disk (default for roadmap/knowledge), false = memory only (default for session/context). Auto-detected based on namespace if not specified.',
+        description: 'Storage mode: true = save to disk, false = memory only. Auto-detected based on namespace if not specified.',
       },
       scope: {
         type: 'string',
         enum: ['global', 'project'],
-        description: 'Storage scope: global (shared across projects) or project (current project only). Default: global. Only applies to persistent storage.',
+        description: 'Storage scope: global (shared across projects) or project (current project only). Default: global.',
+      },
+      ttl: {
+        type: 'number',
+        description: 'Time-To-Live in seconds. Entry will auto-expire after this time.',
+      },
+      tags: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Tags for categorizing the entry',
+      },
+      includeMetadata: {
+        type: 'boolean',
+        description: 'Include metadata in get/list results (default: false)',
+      },
+      actions: {
+        type: 'array',
+        description: 'Array of actions for batch operation',
+        items: {
+          type: 'object',
+          properties: {
+            operation: { type: 'string' },
+            namespace: { type: 'string' },
+            key: { type: 'string' },
+            value: {},
+            ttl: { type: 'number' },
+            tags: { type: 'array', items: { type: 'string' } },
+          },
+        },
       },
     },
     required: ['operation', 'namespace'],
@@ -151,7 +421,7 @@ OPERATIONS:
 const storageToolDescription = `
 # Model Storage Tool
 
-Universal key-value storage for AI model with two persistence modes.
+Universal key-value storage for AI model with persistence, TTL, and metadata support.
 
 ## Persistence Modes
 
@@ -178,25 +448,53 @@ Universal key-value storage for AI model with two persistence modes.
 { "operation": "set", "namespace": "roadmap", "key": "v1.0", "value": {"features": ["auth"]} }
 \`\`\`
 
+### set with TTL (expires in 1 hour)
+\`\`\`json
+{ "operation": "set", "namespace": "session", "key": "temp", "value": "data", "ttl": 3600 }
+\`\`\`
+
+### set with tags
+\`\`\`json
+{ "operation": "set", "namespace": "knowledge", "key": "pattern", "value": "...", "tags": ["important", "auth"] }
+\`\`\`
+
 ### get - Retrieve a value
 \`\`\`json
 { "operation": "get", "namespace": "roadmap", "key": "v1.0" }
 \`\`\`
 
-### Session storage (cleared on exit)
+### get with metadata
 \`\`\`json
-{ "operation": "set", "namespace": "session", "key": "temp", "value": "temporary data" }
+{ "operation": "get", "namespace": "roadmap", "key": "v1.0", "includeMetadata": true }
 \`\`\`
 
-### Force persistent storage
+### exists - Check if key exists
 \`\`\`json
-{ "operation": "set", "namespace": "custom", "key": "data", "value": "...", "persistent": true }
+{ "operation": "exists", "namespace": "roadmap", "key": "v1.0" }
+\`\`\`
+
+### stats - Get storage statistics
+\`\`\`json
+{ "operation": "stats", "namespace": "roadmap" }
+\`\`\`
+
+### batch - Multiple operations
+\`\`\`json
+{
+  "operation": "batch",
+  "namespace": "roadmap",
+  "actions": [
+    { "operation": "set", "key": "a", "value": 1 },
+    { "operation": "set", "key": "b", "value": 2 },
+    { "operation": "delete", "key": "c" }
+  ]
+}
 \`\`\`
 
 ## Scope (persistent storage only)
 
 - **global**: \`~/.ollama-code/storage/\` (shared across all projects)
-- **project**: \`<project>/.ollama-code/storage/\` (project-specific)
+- **project**: \`<project>/.ollama-code/storage/\` (auto-detected project root)
 `;
 
 // ============================================================================
@@ -204,43 +502,56 @@ Universal key-value storage for AI model with two persistence modes.
 // ============================================================================
 
 interface StorageParams {
-  operation: 'set' | 'get' | 'delete' | 'list' | 'append' | 'merge' | 'clear';
+  operation: 'set' | 'get' | 'delete' | 'list' | 'append' | 'merge' | 'clear' | 'exists' | 'stats' | 'batch';
   namespace: string;
   key?: string;
   value?: unknown;
-  persistent?: boolean;  // true = files, false = memory, undefined = auto-detect
+  persistent?: boolean;
   scope?: 'global' | 'project';
+  ttl?: number;
+  tags?: string[];
+  includeMetadata?: boolean;
+  actions?: Array<{
+    operation: string;
+    namespace?: string;
+    key?: string;
+    value?: unknown;
+    ttl?: number;
+    tags?: string[];
+  }>;
 }
 
 // ============================================================================
 // Утилиты для работы с файлами
 // ============================================================================
 
-function getStorageDir(scope: 'global' | 'project' = 'global'): string {
+async function getStorageDir(scope: 'global' | 'project' = 'global'): Promise<string> {
   if (scope === 'global') {
     return path.join(Storage.getGlobalOllamaDir(), STORAGE_DIR);
   }
-  return path.join(process.cwd(), '.ollama-code', STORAGE_DIR);
+  const projectRoot = await findProjectRoot();
+  return path.join(projectRoot, '.ollama-code', STORAGE_DIR);
 }
 
-function getNamespaceFilePath(namespace: string, scope: 'global' | 'project' = 'global'): string {
-  return path.join(getStorageDir(scope), `${namespace}.json`);
+async function getNamespaceFilePath(namespace: string, scope: 'global' | 'project' = 'global'): Promise<string> {
+  return path.join(await getStorageDir(scope), `${namespace}.json`);
 }
 
-async function ensureStorageDir(scope: 'global' | 'project'): Promise<void> {
-  const dir = getStorageDir(scope);
+async function ensureStorageDir(scope: 'global' | 'project'): Promise<string> {
+  const dir = await getStorageDir(scope);
   await fs.mkdir(dir, { recursive: true });
+  return dir;
 }
 
 // ============================================================================
-// Session Storage (in-memory)
+// Session Storage (in-memory with metadata)
 // ============================================================================
 
 function getSessionNamespaceKey(namespace: string): string {
   return currentSessionId ? `${currentSessionId}:${namespace}` : namespace;
 }
 
-function getSessionData(namespace: string): Map<string, unknown> {
+function getSessionData(namespace: string): Map<string, StorageEntry> {
   const key = getSessionNamespaceKey(namespace);
   if (!sessionStorage.has(key)) {
     sessionStorage.set(key, new Map());
@@ -248,16 +559,16 @@ function getSessionData(namespace: string): Map<string, unknown> {
   return sessionStorage.get(key)!;
 }
 
-function setSessionData(namespace: string, key: string, value: unknown): void {
+function setSessionEntry(namespace: string, key: string, entry: StorageEntry): void {
   const nsData = getSessionData(namespace);
-  nsData.set(key, value);
+  nsData.set(key, entry);
 }
 
-function getSessionValue(namespace: string, key: string): unknown | undefined {
+function getSessionEntry(namespace: string, key: string): StorageEntry | undefined {
   return getSessionData(namespace).get(key);
 }
 
-function deleteSessionValue(namespace: string, key: string): boolean {
+function deleteSessionEntry(namespace: string, key: string): boolean {
   return getSessionData(namespace).delete(key);
 }
 
@@ -270,15 +581,46 @@ function clearSessionNamespace(namespace: string): void {
   sessionStorage.delete(key);
 }
 
+function getSessionEntries(namespace: string): Map<string, StorageEntry> {
+  return getSessionData(namespace);
+}
+
 // ============================================================================
-// Persistent Storage (files)
+// Persistent Storage (files with metadata)
 // ============================================================================
 
-async function readNamespaceData(namespace: string, scope: 'global' | 'project'): Promise<Record<string, unknown>> {
-  const filePath = getNamespaceFilePath(namespace, scope);
+async function readNamespaceData(namespace: string, scope: 'global' | 'project'): Promise<Record<string, StorageEntry>> {
+  const filePath = await getNamespaceFilePath(namespace, scope);
   try {
     const content = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(content);
+    const data = JSON.parse(content);
+    
+    // Проверяем и удаляем истёкшие записи, конвертируем старый формат
+    const validData: Record<string, StorageEntry> = {};
+    let hasChanges = false;
+    
+    for (const [key, rawEntry] of Object.entries(data)) {
+      // Конвертируем старый формат в новый
+      const storageEntry = ensureStorageEntry(rawEntry);
+      
+      if (!isExpired(storageEntry)) {
+        validData[key] = storageEntry;
+        // Если запись была сконвертирована из старого формата
+        if (storageEntry !== rawEntry) {
+          hasChanges = true;
+        }
+      } else {
+        hasChanges = true;
+        debugLogger.info(`[StorageTool] Expired entry removed: ${key}`);
+      }
+    }
+    
+    // Если были изменения (конвертация или удаление истёкших), перезаписываем файл
+    if (hasChanges) {
+      await writeNamespaceData(namespace, validData, scope);
+    }
+    
+    return validData;
   } catch (err) {
     const error = err as Error & { code?: string };
     if (error.code === 'ENOENT') {
@@ -288,27 +630,47 @@ async function readNamespaceData(namespace: string, scope: 'global' | 'project')
   }
 }
 
-async function writeNamespaceData(namespace: string, data: Record<string, unknown>, scope: 'global' | 'project'): Promise<void> {
+async function writeNamespaceData(namespace: string, data: Record<string, StorageEntry>, scope: 'global' | 'project'): Promise<void> {
   await ensureStorageDir(scope);
-  const filePath = getNamespaceFilePath(namespace, scope);
+  const filePath = await getNamespaceFilePath(namespace, scope);
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 // ============================================================================
-// Универсальные операции (автоопределение режима)
+// Универсальные операции
 // ============================================================================
 
 function shouldUseSessionStorage(params: StorageParams): boolean {
-  // Если persistent явно указан, используем его
   if (params.persistent !== undefined) {
     return !params.persistent;
   }
-  // Иначе определяем по namespace
   return isSessionNamespace(params.namespace);
 }
 
+// Очистка истёкших TTL записей (вызывается периодически)
+export async function cleanupExpiredEntries(): Promise<{ session: number; persistent: number }> {
+  let sessionCleaned = 0;
+  
+  // Очистка в session storage
+  for (const [nsKey, nsData] of sessionStorage.entries()) {
+    for (const [key, entry] of nsData.entries()) {
+      if (isExpired(entry)) {
+        nsData.delete(key);
+        sessionCleaned++;
+      }
+    }
+  }
+
+  // Для persistent storage очистка происходит при чтении
+  return { session: sessionCleaned, persistent: 0 };
+}
+
+// ============================================================================
+// Операции
+// ============================================================================
+
 async function performSet(params: StorageParams): Promise<ToolResult> {
-  const { namespace, key, value, scope = 'global' } = params;
+  const { namespace, key, value, scope = 'global', ttl, tags } = params;
   
   if (!key) {
     return {
@@ -320,27 +682,38 @@ async function performSet(params: StorageParams): Promise<ToolResult> {
   const useSession = shouldUseSessionStorage(params);
   
   if (useSession) {
-    // Session storage (in-memory)
-    setSessionData(namespace, key, value);
+    const existing = getSessionEntry(namespace, key);
+    const metadata = existing 
+      ? updateMetadata(existing.metadata, ttl, tags)
+      : createMetadata(ttl, tags);
+    
+    setSessionEntry(namespace, key, { value, metadata });
+    
+    const ttlInfo = ttl ? ` (TTL: ${ttl}s)` : '';
     return {
-      llmContent: `Stored ${key} in ${namespace} (session, cleared on exit)`,
+      llmContent: `Stored ${key} in ${namespace} (session${ttlInfo})`,
       returnDisplay: `Stored (session): ${key}`,
     };
   } else {
-    // Persistent storage (files)
     const data = await readNamespaceData(namespace, scope);
-    data[key] = value;
+    const existing = data[key];
+    const metadata = existing 
+      ? updateMetadata(existing.metadata, ttl, tags)
+      : createMetadata(ttl, tags);
+    
+    data[key] = { value, metadata };
     await writeNamespaceData(namespace, data, scope);
     
+    const ttlInfo = ttl ? ` (TTL: ${ttl}s)` : '';
     return {
-      llmContent: `Stored ${key} in ${namespace} (persistent, ${scope})`,
+      llmContent: `Stored ${key} in ${namespace} (persistent/${scope}${ttlInfo})`,
       returnDisplay: `Stored (persistent): ${key}`,
     };
   }
 }
 
 async function performGet(params: StorageParams): Promise<ToolResult> {
-  const { namespace, key, scope = 'global' } = params;
+  const { namespace, key, scope = 'global', includeMetadata = false } = params;
   
   if (!key) {
     return {
@@ -351,16 +724,16 @@ async function performGet(params: StorageParams): Promise<ToolResult> {
   
   const useSession = shouldUseSessionStorage(params);
   
-  let value: unknown;
+  let entry: StorageEntry | undefined;
   
   if (useSession) {
-    value = getSessionValue(namespace, key);
+    entry = getSessionEntry(namespace, key);
   } else {
     const data = await readNamespaceData(namespace, scope);
-    value = data[key];
+    entry = data[key];
   }
   
-  if (value === undefined) {
+  if (!entry || isExpired(entry)) {
     const mode = useSession ? 'session' : `persistent/${scope}`;
     return {
       llmContent: `Key "${key}" not found in ${namespace} (${mode})`,
@@ -368,8 +741,15 @@ async function performGet(params: StorageParams): Promise<ToolResult> {
     };
   }
   
+  if (includeMetadata) {
+    return {
+      llmContent: JSON.stringify({ value: entry.value, metadata: entry.metadata }, null, 2),
+      returnDisplay: `Retrieved with metadata: ${key}`,
+    };
+  }
+  
   return {
-    llmContent: JSON.stringify(value, null, 2),
+    llmContent: JSON.stringify(entry.value, null, 2),
     returnDisplay: `Retrieved: ${key}`,
   };
 }
@@ -387,7 +767,7 @@ async function performDelete(params: StorageParams): Promise<ToolResult> {
   const useSession = shouldUseSessionStorage(params);
   
   if (useSession) {
-    const deleted = deleteSessionValue(namespace, key);
+    const deleted = deleteSessionEntry(namespace, key);
     if (!deleted) {
       return {
         llmContent: `Key "${key}" not found in ${namespace} (session)`,
@@ -401,7 +781,7 @@ async function performDelete(params: StorageParams): Promise<ToolResult> {
   } else {
     const data = await readNamespaceData(namespace, scope);
     
-    if (data[key] === undefined) {
+    if (!data[key]) {
       return {
         llmContent: `Key "${key}" not found in ${namespace} (${scope})`,
         returnDisplay: `Key not found: ${key}`,
@@ -419,29 +799,48 @@ async function performDelete(params: StorageParams): Promise<ToolResult> {
 }
 
 async function performList(params: StorageParams): Promise<ToolResult> {
-  const { namespace, scope = 'global' } = params;
+  const { namespace, scope = 'global', includeMetadata = false } = params;
   
   const useSession = shouldUseSessionStorage(params);
   
-  let keys: string[];
+  let entries: Array<{ key: string; entry: StorageEntry }>;
   let mode: string;
   
   if (useSession) {
-    keys = listSessionKeys(namespace);
+    const nsData = getSessionEntries(namespace);
+    entries = Array.from(nsData.entries()).map(([key, entry]) => ({ key, entry }));
     mode = 'session';
   } else {
     const data = await readNamespaceData(namespace, scope);
-    keys = Object.keys(data);
+    entries = Object.entries(data).map(([key, entry]) => ({ key, entry }));
     mode = `persistent/${scope}`;
   }
   
-  if (keys.length === 0) {
+  // Фильтруем истёкшие
+  entries = entries.filter(({ entry }) => !isExpired(entry));
+  
+  if (entries.length === 0) {
     return {
       llmContent: `Namespace "${namespace}" (${mode}) is empty`,
       returnDisplay: `Empty namespace: ${namespace}`,
     };
   }
   
+  if (includeMetadata) {
+    const details = entries.map(({ key, entry }) => {
+      const meta = entry.metadata;
+      const ttlInfo = meta.ttl ? ` [TTL: ${meta.ttl}s]` : '';
+      const tagsInfo = meta.tags ? ` [tags: ${meta.tags.join(', ')}]` : '';
+      return `- ${key}${ttlInfo}${tagsInfo} (v${meta.version})`;
+    }).join('\n');
+    
+    return {
+      llmContent: `Keys in ${namespace} (${mode}):\n${details}`,
+      returnDisplay: `${entries.length} keys`,
+    };
+  }
+  
+  const keys = entries.map(({ key }) => key);
   return {
     llmContent: `Keys in ${namespace} (${mode}):\n${keys.map(k => `- ${k}`).join('\n')}`,
     returnDisplay: `${keys.length} keys: ${keys.slice(0, 10).join(', ')}${keys.length > 10 ? '...' : ''}`,
@@ -449,7 +848,7 @@ async function performList(params: StorageParams): Promise<ToolResult> {
 }
 
 async function performAppend(params: StorageParams): Promise<ToolResult> {
-  const { namespace, key, value, scope = 'global' } = params;
+  const { namespace, key, value, scope = 'global', ttl, tags } = params;
   
   if (!key) {
     return {
@@ -460,33 +859,36 @@ async function performAppend(params: StorageParams): Promise<ToolResult> {
   
   const useSession = shouldUseSessionStorage(params);
   
-  let existing: unknown;
+  let entry: StorageEntry | undefined;
   
   if (useSession) {
-    existing = getSessionValue(namespace, key);
+    entry = getSessionEntry(namespace, key);
   } else {
     const data = await readNamespaceData(namespace, scope);
-    existing = data[key];
+    entry = data[key];
   }
   
   let newArray: unknown[];
+  let metadata: StorageMetadata;
   
-  if (existing === undefined) {
+  if (!entry || isExpired(entry)) {
     newArray = [value];
-  } else if (Array.isArray(existing)) {
-    newArray = [...existing, value];
+    metadata = createMetadata(ttl, tags);
+  } else if (Array.isArray(entry.value)) {
+    newArray = [...entry.value, value];
+    metadata = updateMetadata(entry.metadata, ttl, tags);
   } else {
     return {
-      llmContent: `Error: Cannot append to non-array value at ${key}. Current type: ${typeof existing}`,
+      llmContent: `Error: Cannot append to non-array value at ${key}. Current type: ${typeof entry.value}`,
       returnDisplay: 'Error: value is not an array',
     };
   }
   
   if (useSession) {
-    setSessionData(namespace, key, newArray);
+    setSessionEntry(namespace, key, { value: newArray, metadata });
   } else {
     const data = await readNamespaceData(namespace, scope);
-    data[key] = newArray;
+    data[key] = { value: newArray, metadata };
     await writeNamespaceData(namespace, data, scope);
   }
   
@@ -498,7 +900,7 @@ async function performAppend(params: StorageParams): Promise<ToolResult> {
 }
 
 async function performMerge(params: StorageParams): Promise<ToolResult> {
-  const { namespace, key, value, scope = 'global' } = params;
+  const { namespace, key, value, scope = 'global', ttl, tags } = params;
   
   if (!key) {
     return {
@@ -516,33 +918,36 @@ async function performMerge(params: StorageParams): Promise<ToolResult> {
   
   const useSession = shouldUseSessionStorage(params);
   
-  let existing: unknown;
+  let entry: StorageEntry | undefined;
   
   if (useSession) {
-    existing = getSessionValue(namespace, key);
+    entry = getSessionEntry(namespace, key);
   } else {
     const data = await readNamespaceData(namespace, scope);
-    existing = data[key];
+    entry = data[key];
   }
   
   let newObject: Record<string, unknown>;
+  let metadata: StorageMetadata;
   
-  if (existing === undefined) {
+  if (!entry || isExpired(entry)) {
     newObject = value as Record<string, unknown>;
-  } else if (typeof existing === 'object' && existing !== null && !Array.isArray(existing)) {
-    newObject = { ...existing, ...value };
+    metadata = createMetadata(ttl, tags);
+  } else if (typeof entry.value === 'object' && entry.value !== null && !Array.isArray(entry.value)) {
+    newObject = { ...entry.value, ...value };
+    metadata = updateMetadata(entry.metadata, ttl, tags);
   } else {
     return {
-      llmContent: `Error: Cannot merge into non-object value at ${key}. Current type: ${typeof existing}`,
+      llmContent: `Error: Cannot merge into non-object value at ${key}. Current type: ${typeof entry.value}`,
       returnDisplay: 'Error: value is not an object',
     };
   }
   
   if (useSession) {
-    setSessionData(namespace, key, newObject);
+    setSessionEntry(namespace, key, { value: newObject, metadata });
   } else {
     const data = await readNamespaceData(namespace, scope);
-    data[key] = newObject;
+    data[key] = { value: newObject, metadata };
     await writeNamespaceData(namespace, data, scope);
   }
   
@@ -573,6 +978,170 @@ async function performClear(params: StorageParams): Promise<ToolResult> {
   }
 }
 
+async function performExists(params: StorageParams): Promise<ToolResult> {
+  const { namespace, key, scope = 'global' } = params;
+  
+  if (!key) {
+    return {
+      llmContent: 'Error: "key" parameter is required for exists operation',
+      returnDisplay: 'Error: key is required',
+    };
+  }
+  
+  const useSession = shouldUseSessionStorage(params);
+  
+  let entry: StorageEntry | undefined;
+  
+  if (useSession) {
+    entry = getSessionEntry(namespace, key);
+  } else {
+    const data = await readNamespaceData(namespace, scope);
+    entry = data[key];
+  }
+  
+  const exists = entry && !isExpired(entry);
+  const mode = useSession ? 'session' : `persistent/${scope}`;
+  
+  return {
+    llmContent: `Key "${key}" ${exists ? 'exists' : 'does not exist'} in ${namespace} (${mode})`,
+    returnDisplay: exists ? `Exists: ${key}` : `Not found: ${key}`,
+  };
+}
+
+async function performStats(params: StorageParams): Promise<ToolResult> {
+  const { namespace, scope = 'global' } = params;
+  
+  const useSession = shouldUseSessionStorage(params);
+  const mode = useSession ? 'session' : `persistent/${scope}`;
+  
+  let totalKeys = 0;
+  let totalSize = 0;
+  let expiredKeys = 0;
+  let tags: Set<string> = new Set();
+  let oldestEntry: { key: string; date: string } | null = null;
+  let newestEntry: { key: string; date: string } | null = null;
+  
+  if (useSession) {
+    const nsData = getSessionEntries(namespace);
+    for (const [key, entry] of nsData.entries()) {
+      if (isExpired(entry)) {
+        expiredKeys++;
+        continue;
+      }
+      totalKeys++;
+      totalSize += JSON.stringify(entry.value).length;
+      if (entry.metadata.tags) {
+        entry.metadata.tags.forEach(t => tags.add(t));
+      }
+      if (!oldestEntry || entry.metadata.createdAt < oldestEntry.date) {
+        oldestEntry = { key, date: entry.metadata.createdAt };
+      }
+      if (!newestEntry || entry.metadata.createdAt > newestEntry.date) {
+        newestEntry = { key, date: entry.metadata.createdAt };
+      }
+    }
+  } else {
+    const data = await readNamespaceData(namespace, scope);
+    for (const [key, entry] of Object.entries(data)) {
+      if (isExpired(entry)) {
+        expiredKeys++;
+        continue;
+      }
+      totalKeys++;
+      totalSize += JSON.stringify(entry.value).length;
+      if (entry.metadata.tags) {
+        entry.metadata.tags.forEach(t => tags.add(t));
+      }
+      if (!oldestEntry || entry.metadata.createdAt < oldestEntry.date) {
+        oldestEntry = { key, date: entry.metadata.createdAt };
+      }
+      if (!newestEntry || entry.metadata.createdAt > newestEntry.date) {
+        newestEntry = { key, date: entry.metadata.createdAt };
+      }
+    }
+  }
+  
+  const stats = {
+    namespace,
+    mode,
+    keys: {
+      total: totalKeys,
+      expired: expiredKeys,
+    },
+    size: {
+      bytes: totalSize,
+      formatted: totalSize < 1024 ? `${totalSize} B` : `${(totalSize / 1024).toFixed(2)} KB`,
+    },
+    tags: Array.from(tags),
+    oldest: oldestEntry,
+    newest: newestEntry,
+  };
+  
+  return {
+    llmContent: JSON.stringify(stats, null, 2),
+    returnDisplay: `Stats: ${totalKeys} keys, ${stats.size.formatted}`,
+  };
+}
+
+async function performBatch(params: StorageParams): Promise<ToolResult> {
+  const { actions, scope = 'global' } = params;
+  
+  if (!actions || actions.length === 0) {
+    return {
+      llmContent: 'Error: "actions" parameter is required for batch operation',
+      returnDisplay: 'Error: actions required',
+    };
+  }
+  
+  const results: Array<{ operation: string; key?: string; success: boolean; message: string }> = [];
+  
+  for (const action of actions) {
+    const actionParams: StorageParams = {
+      operation: action.operation as StorageParams['operation'],
+      namespace: action.namespace || params.namespace,
+      key: action.key,
+      value: action.value,
+      scope,
+      ttl: action.ttl,
+      tags: action.tags,
+    };
+    
+    try {
+      switch (action.operation) {
+        case 'set':
+          await performSet(actionParams);
+          results.push({ operation: 'set', key: action.key, success: true, message: 'Stored' });
+          break;
+        case 'delete':
+          await performDelete(actionParams);
+          results.push({ operation: 'delete', key: action.key, success: true, message: 'Deleted' });
+          break;
+        case 'append':
+          await performAppend(actionParams);
+          results.push({ operation: 'append', key: action.key, success: true, message: 'Appended' });
+          break;
+        case 'merge':
+          await performMerge(actionParams);
+          results.push({ operation: 'merge', key: action.key, success: true, message: 'Merged' });
+          break;
+        default:
+          results.push({ operation: action.operation, key: action.key, success: false, message: 'Unknown operation' });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      results.push({ operation: action.operation, key: action.key, success: false, message: errorMessage });
+    }
+  }
+  
+  const successCount = results.filter(r => r.success).length;
+  const failCount = results.filter(r => !r.success).length;
+  
+  return {
+    llmContent: `Batch completed: ${successCount} succeeded, ${failCount} failed\n${JSON.stringify(results, null, 2)}`,
+    returnDisplay: `Batch: ${successCount}/${results.length} succeeded`,
+  };
+}
+
 // ============================================================================
 // Invocation Class
 // ============================================================================
@@ -588,7 +1157,6 @@ class StorageToolInvocation extends BaseToolInvocation<StorageParams, ToolResult
   override async shouldConfirmExecute(
     _abortSignal: AbortSignal,
   ): Promise<false> {
-    // Storage operations don't require confirmation
     return false;
   }
 
@@ -611,6 +1179,12 @@ class StorageToolInvocation extends BaseToolInvocation<StorageParams, ToolResult
           return await performMerge(this.params);
         case 'clear':
           return await performClear(this.params);
+        case 'exists':
+          return await performExists(this.params);
+        case 'stats':
+          return await performStats(this.params);
+        case 'batch':
+          return await performBatch(this.params);
         default:
           return {
             llmContent: `Error: Unknown operation "${operation}"`,
@@ -657,19 +1231,24 @@ export class StorageTool extends BaseDeclarativeTool<StorageParams, ToolResult> 
       return 'Parameter "namespace" is required and must be non-empty.';
     }
 
-    const validOperations = ['set', 'get', 'delete', 'list', 'append', 'merge', 'clear'];
+    const validOperations = ['set', 'get', 'delete', 'list', 'append', 'merge', 'clear', 'exists', 'stats', 'batch'];
     if (!validOperations.includes(operation)) {
       return `Invalid operation "${operation}". Valid operations: ${validOperations.join(', ')}`;
     }
 
     // Key is required for most operations
-    if (['set', 'get', 'delete', 'append', 'merge'].includes(operation) && !params.key) {
+    if (['set', 'get', 'delete', 'append', 'merge', 'exists'].includes(operation) && !params.key) {
       return `Parameter "key" is required for ${operation} operation.`;
     }
 
     // Value is required for set/append/merge
     if (['set', 'append', 'merge'].includes(operation) && params.value === undefined) {
       return `Parameter "value" is required for ${operation} operation.`;
+    }
+
+    // Actions is required for batch
+    if (operation === 'batch' && (!params.actions || params.actions.length === 0)) {
+      return 'Parameter "actions" is required for batch operation.';
     }
 
     return null;
@@ -689,8 +1268,8 @@ export function createStorageToolsPlugin() {
     metadata: {
       id: 'storage-tools',
       name: 'Storage Tools',
-      version: '1.0.0',
-      description: 'Universal storage for AI model to persist data between sessions',
+      version: '1.1.0',
+      description: 'Universal storage for AI model with TTL, metadata, and batch operations',
       enabledByDefault: true,
     },
     toolFactories: [
