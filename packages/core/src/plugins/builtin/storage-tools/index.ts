@@ -7,10 +7,14 @@
 /**
  * Model Storage Tool - универсальное хранилище для AI-модели.
  * Позволяет модели сохранять и извлекать структурированные данные:
- * - roadmap: планы развития и задачи
- * - session: временная память текущей сессии
- * - knowledge: база знаний модели
- * - context: контекст текущей задачи
+ * - roadmap: планы развития и задачи (постоянное)
+ * - session: временная память текущей сессии (очищается при выходе)
+ * - knowledge: база знаний модели (постоянное)
+ * - context: контекст текущей задачи (сессионное)
+ * 
+ * Режимы хранения:
+ * - persistent: данные сохраняются в файлы между сессиями
+ * - session: данные хранятся только в памяти текущей сессии
  */
 
 import type { ToolResult } from '../../../tools/tools.js';
@@ -37,28 +41,71 @@ export const STORAGE_DIR = 'storage';
 
 // Предопределённые namespace'ы для разных типов данных
 export const StorageNamespaces = {
-  ROADMAP: 'roadmap',       // Дорожная карта проекта
-  SESSION: 'session',       // Временная память сессии
-  KNOWLEDGE: 'knowledge',   // База знаний модели
-  CONTEXT: 'context',       // Контекст текущей задачи
-  LEARNING: 'learning',     // Обучение модели (алиасы, корректировки)
-  METRICS: 'metrics',       // Метрики и статистика
+  ROADMAP: 'roadmap',       // Дорожная карта проекта (persistent)
+  SESSION: 'session',       // Временная память сессии (session)
+  KNOWLEDGE: 'knowledge',   // База знаний модели (persistent)
+  CONTEXT: 'context',       // Контекст текущей задачи (session)
+  LEARNING: 'learning',     // Обучение модели (persistent)
+  METRICS: 'metrics',       // Метрики и статистика (persistent)
 } as const;
 
+// Namespace'ы с сессионным хранением по умолчанию
+const SESSION_NAMESPACES = new Set(['session', 'context']);
+
 export type StorageNamespace = typeof StorageNamespaces[keyof typeof StorageNamespaces];
+
+// In-memory хранилище для сессионных данных
+const sessionStorage: Map<string, Map<string, unknown>> = new Map();
+
+// ID текущей сессии
+let currentSessionId: string | null = null;
+
+/**
+ * Установить ID текущей сессии (вызывается при старте сессии)
+ */
+export function setSessionId(sessionId: string): void {
+  currentSessionId = sessionId;
+  debugLogger.info(`[StorageTool] Session ID set: ${sessionId}`);
+}
+
+/**
+ * Получить ID текущей сессии
+ */
+export function getSessionId(): string | null {
+  return currentSessionId;
+}
+
+/**
+ * Очистить все сессионные данные (вызывается при завершении сессии)
+ */
+export function clearSessionStorage(): void {
+  sessionStorage.clear();
+  debugLogger.info('[StorageTool] Session storage cleared');
+}
+
+/**
+ * Проверить, является ли namespace сессионным
+ */
+function isSessionNamespace(namespace: string): boolean {
+  return SESSION_NAMESPACES.has(namespace.toLowerCase());
+}
 
 // JSON Schema для инструмента
 const storageToolSchemaData: FunctionDeclaration = {
   name: 'model_storage',
-  description: `Universal storage for AI model to persist structured data between sessions.
+  description: `Universal storage for AI model to persist structured data.
 
-NAMESPACES (use as 'namespace' parameter):
-- roadmap: Project roadmap, milestones, future plans
-- session: Temporary session data (cleared between sessions)
-- knowledge: Model's learned facts and patterns
-- context: Current task context and state
-- learning: Tool aliases and corrections learned by model
-- metrics: Statistics and performance data
+PERSISTENCE MODES:
+- persistent: Data saved to files, survives between sessions (default for roadmap, knowledge, learning, metrics)
+- session: Data kept in memory only, cleared when session ends (default for session, context)
+
+NAMESPACES (predefined):
+- roadmap: Project roadmap, milestones, future plans (persistent)
+- session: Temporary session data (session-scoped)
+- knowledge: Model's learned facts and patterns (persistent)
+- context: Current task context and state (session-scoped)
+- learning: Tool aliases and corrections (persistent)
+- metrics: Statistics and performance data (persistent)
 
 OPERATIONS:
 - set: Store a value (overwrites existing)
@@ -87,10 +134,14 @@ OPERATIONS:
       value: {
         description: 'Value to store (any JSON-serializable type: string, number, object, array, boolean)',
       },
+      persistent: {
+        type: 'boolean',
+        description: 'Storage mode: true = save to disk (default for roadmap/knowledge), false = memory only (default for session/context). Auto-detected based on namespace if not specified.',
+      },
       scope: {
         type: 'string',
         enum: ['global', 'project'],
-        description: 'Storage scope: global (shared across projects) or project (current project only). Default: global',
+        description: 'Storage scope: global (shared across projects) or project (current project only). Default: global. Only applies to persistent storage.',
       },
     },
     required: ['operation', 'namespace'],
@@ -100,26 +151,31 @@ OPERATIONS:
 const storageToolDescription = `
 # Model Storage Tool
 
-Universal key-value storage for AI model to persist structured data between sessions.
+Universal key-value storage for AI model with two persistence modes.
 
-## Namespaces
+## Persistence Modes
 
-Predefined namespaces for organizing data:
+| Mode       | Storage     | Lifecycle            | Use For                    |
+|------------|-------------|----------------------|----------------------------|
+| persistent | Files       | Survives restarts    | roadmap, knowledge, learning|
+| session    | Memory      | Cleared on exit      | temporary data, context    |
 
-| Namespace  | Purpose                              | Persistence     |
-|------------|--------------------------------------|-----------------|
-| roadmap    | Project roadmap, milestones, plans   | Persistent      |
-| session    | Temporary session data               | Cleared on exit |
-| knowledge  | Learned facts, patterns, preferences | Persistent      |
-| context    | Current task context and state       | Per-task        |
-| learning   | Tool aliases, corrections            | Persistent      |
-| metrics    | Statistics, performance data         | Persistent      |
+## Namespaces (Predefined)
+
+| Namespace  | Purpose                              | Default Mode |
+|------------|--------------------------------------|--------------|
+| roadmap    | Project roadmap, milestones, plans   | persistent   |
+| session    | Temporary session data               | session      |
+| knowledge  | Learned facts, patterns, preferences | persistent   |
+| context    | Current task context and state       | session      |
+| learning   | Tool aliases, corrections            | persistent   |
+| metrics    | Statistics, performance data         | persistent   |
 
 ## Operations
 
 ### set - Store a value
 \`\`\`json
-{ "operation": "set", "namespace": "roadmap", "key": "v1.0", "value": {"features": ["auth", "api"], "status": "planning"} }
+{ "operation": "set", "namespace": "roadmap", "key": "v1.0", "value": {"features": ["auth"]} }
 \`\`\`
 
 ### get - Retrieve a value
@@ -127,52 +183,20 @@ Predefined namespaces for organizing data:
 { "operation": "get", "namespace": "roadmap", "key": "v1.0" }
 \`\`\`
 
-### delete - Remove a key
+### Session storage (cleared on exit)
 \`\`\`json
-{ "operation": "delete", "namespace": "session", "key": "temp_data" }
+{ "operation": "set", "namespace": "session", "key": "temp", "value": "temporary data" }
 \`\`\`
 
-### list - List all keys in namespace
+### Force persistent storage
 \`\`\`json
-{ "operation": "list", "namespace": "roadmap" }
+{ "operation": "set", "namespace": "custom", "key": "data", "value": "...", "persistent": true }
 \`\`\`
 
-### append - Add item to array
-\`\`\`json
-{ "operation": "append", "namespace": "roadmap", "key": "backlog", "value": "Add dark mode" }
-\`\`\`
+## Scope (persistent storage only)
 
-### merge - Merge object with existing data
-\`\`\`json
-{ "operation": "merge", "namespace": "knowledge", "key": "user_prefs", "value": {"theme": "dark"} }
-\`\`\`
-
-### clear - Clear all data in namespace
-\`\`\`json
-{ "operation": "clear", "namespace": "session" }
-\`\`\`
-
-## Scope
-
-- **global**: Stored in \`~/.ollama-code/storage/\` (shared across all projects)
-- **project**: Stored in \`<project>/.ollama-code/storage/\` (project-specific)
-
-## Examples
-
-### Save roadmap milestone:
-\`\`\`
-model_storage operation=set namespace=roadmap key="v0.18.0" value='{"features":["git-ui"],"status":"planning","due":"2025-03"}'
-\`\`\`
-
-### Get all roadmap items:
-\`\`\`
-model_storage operation=list namespace=roadmap
-\`\`\`
-
-### Remember user preference:
-\`\`\`
-model_storage operation=merge namespace=knowledge key="user_prefs" value='{"editor":"vscode"}'
-\`\`\`
+- **global**: \`~/.ollama-code/storage/\` (shared across all projects)
+- **project**: \`<project>/.ollama-code/storage/\` (project-specific)
 `;
 
 // ============================================================================
@@ -184,6 +208,7 @@ interface StorageParams {
   namespace: string;
   key?: string;
   value?: unknown;
+  persistent?: boolean;  // true = files, false = memory, undefined = auto-detect
   scope?: 'global' | 'project';
 }
 
@@ -207,6 +232,48 @@ async function ensureStorageDir(scope: 'global' | 'project'): Promise<void> {
   await fs.mkdir(dir, { recursive: true });
 }
 
+// ============================================================================
+// Session Storage (in-memory)
+// ============================================================================
+
+function getSessionNamespaceKey(namespace: string): string {
+  return currentSessionId ? `${currentSessionId}:${namespace}` : namespace;
+}
+
+function getSessionData(namespace: string): Map<string, unknown> {
+  const key = getSessionNamespaceKey(namespace);
+  if (!sessionStorage.has(key)) {
+    sessionStorage.set(key, new Map());
+  }
+  return sessionStorage.get(key)!;
+}
+
+function setSessionData(namespace: string, key: string, value: unknown): void {
+  const nsData = getSessionData(namespace);
+  nsData.set(key, value);
+}
+
+function getSessionValue(namespace: string, key: string): unknown | undefined {
+  return getSessionData(namespace).get(key);
+}
+
+function deleteSessionValue(namespace: string, key: string): boolean {
+  return getSessionData(namespace).delete(key);
+}
+
+function listSessionKeys(namespace: string): string[] {
+  return Array.from(getSessionData(namespace).keys());
+}
+
+function clearSessionNamespace(namespace: string): void {
+  const key = getSessionNamespaceKey(namespace);
+  sessionStorage.delete(key);
+}
+
+// ============================================================================
+// Persistent Storage (files)
+// ============================================================================
+
 async function readNamespaceData(namespace: string, scope: 'global' | 'project'): Promise<Record<string, unknown>> {
   const filePath = getNamespaceFilePath(namespace, scope);
   try {
@@ -228,8 +295,17 @@ async function writeNamespaceData(namespace: string, data: Record<string, unknow
 }
 
 // ============================================================================
-// Операции хранилища
+// Универсальные операции (автоопределение режима)
 // ============================================================================
+
+function shouldUseSessionStorage(params: StorageParams): boolean {
+  // Если persistent явно указан, используем его
+  if (params.persistent !== undefined) {
+    return !params.persistent;
+  }
+  // Иначе определяем по namespace
+  return isSessionNamespace(params.namespace);
+}
 
 async function performSet(params: StorageParams): Promise<ToolResult> {
   const { namespace, key, value, scope = 'global' } = params;
@@ -241,14 +317,26 @@ async function performSet(params: StorageParams): Promise<ToolResult> {
     };
   }
   
-  const data = await readNamespaceData(namespace, scope);
-  data[key] = value;
-  await writeNamespaceData(namespace, data, scope);
+  const useSession = shouldUseSessionStorage(params);
   
-  return {
-    llmContent: `Stored ${key} in ${namespace} (${scope})`,
-    returnDisplay: `Stored: ${key} = ${JSON.stringify(value).slice(0, 100)}...`,
-  };
+  if (useSession) {
+    // Session storage (in-memory)
+    setSessionData(namespace, key, value);
+    return {
+      llmContent: `Stored ${key} in ${namespace} (session, cleared on exit)`,
+      returnDisplay: `Stored (session): ${key}`,
+    };
+  } else {
+    // Persistent storage (files)
+    const data = await readNamespaceData(namespace, scope);
+    data[key] = value;
+    await writeNamespaceData(namespace, data, scope);
+    
+    return {
+      llmContent: `Stored ${key} in ${namespace} (persistent, ${scope})`,
+      returnDisplay: `Stored (persistent): ${key}`,
+    };
+  }
 }
 
 async function performGet(params: StorageParams): Promise<ToolResult> {
@@ -261,12 +349,21 @@ async function performGet(params: StorageParams): Promise<ToolResult> {
     };
   }
   
-  const data = await readNamespaceData(namespace, scope);
-  const value = data[key];
+  const useSession = shouldUseSessionStorage(params);
+  
+  let value: unknown;
+  
+  if (useSession) {
+    value = getSessionValue(namespace, key);
+  } else {
+    const data = await readNamespaceData(namespace, scope);
+    value = data[key];
+  }
   
   if (value === undefined) {
+    const mode = useSession ? 'session' : `persistent/${scope}`;
     return {
-      llmContent: `Key "${key}" not found in ${namespace} (${scope})`,
+      llmContent: `Key "${key}" not found in ${namespace} (${mode})`,
       returnDisplay: `Key not found: ${key}`,
     };
   }
@@ -287,39 +384,66 @@ async function performDelete(params: StorageParams): Promise<ToolResult> {
     };
   }
   
-  const data = await readNamespaceData(namespace, scope);
+  const useSession = shouldUseSessionStorage(params);
   
-  if (data[key] === undefined) {
+  if (useSession) {
+    const deleted = deleteSessionValue(namespace, key);
+    if (!deleted) {
+      return {
+        llmContent: `Key "${key}" not found in ${namespace} (session)`,
+        returnDisplay: `Key not found: ${key}`,
+      };
+    }
     return {
-      llmContent: `Key "${key}" not found in ${namespace} (${scope})`,
-      returnDisplay: `Key not found: ${key}`,
+      llmContent: `Deleted ${key} from ${namespace} (session)`,
+      returnDisplay: `Deleted: ${key}`,
+    };
+  } else {
+    const data = await readNamespaceData(namespace, scope);
+    
+    if (data[key] === undefined) {
+      return {
+        llmContent: `Key "${key}" not found in ${namespace} (${scope})`,
+        returnDisplay: `Key not found: ${key}`,
+      };
+    }
+    
+    delete data[key];
+    await writeNamespaceData(namespace, data, scope);
+    
+    return {
+      llmContent: `Deleted ${key} from ${namespace} (${scope})`,
+      returnDisplay: `Deleted: ${key}`,
     };
   }
-  
-  delete data[key];
-  await writeNamespaceData(namespace, data, scope);
-  
-  return {
-    llmContent: `Deleted ${key} from ${namespace} (${scope})`,
-    returnDisplay: `Deleted: ${key}`,
-  };
 }
 
 async function performList(params: StorageParams): Promise<ToolResult> {
   const { namespace, scope = 'global' } = params;
   
-  const data = await readNamespaceData(namespace, scope);
-  const keys = Object.keys(data);
+  const useSession = shouldUseSessionStorage(params);
+  
+  let keys: string[];
+  let mode: string;
+  
+  if (useSession) {
+    keys = listSessionKeys(namespace);
+    mode = 'session';
+  } else {
+    const data = await readNamespaceData(namespace, scope);
+    keys = Object.keys(data);
+    mode = `persistent/${scope}`;
+  }
   
   if (keys.length === 0) {
     return {
-      llmContent: `Namespace "${namespace}" (${scope}) is empty`,
+      llmContent: `Namespace "${namespace}" (${mode}) is empty`,
       returnDisplay: `Empty namespace: ${namespace}`,
     };
   }
   
   return {
-    llmContent: `Keys in ${namespace} (${scope}):\n${keys.map(k => `- ${k}`).join('\n')}`,
+    llmContent: `Keys in ${namespace} (${mode}):\n${keys.map(k => `- ${k}`).join('\n')}`,
     returnDisplay: `${keys.length} keys: ${keys.slice(0, 10).join(', ')}${keys.length > 10 ? '...' : ''}`,
   };
 }
@@ -334,14 +458,23 @@ async function performAppend(params: StorageParams): Promise<ToolResult> {
     };
   }
   
-  const data = await readNamespaceData(namespace, scope);
-  const existing = data[key];
+  const useSession = shouldUseSessionStorage(params);
+  
+  let existing: unknown;
+  
+  if (useSession) {
+    existing = getSessionValue(namespace, key);
+  } else {
+    const data = await readNamespaceData(namespace, scope);
+    existing = data[key];
+  }
+  
+  let newArray: unknown[];
   
   if (existing === undefined) {
-    data[key] = [value];
+    newArray = [value];
   } else if (Array.isArray(existing)) {
-    existing.push(value);
-    data[key] = existing;
+    newArray = [...existing, value];
   } else {
     return {
       llmContent: `Error: Cannot append to non-array value at ${key}. Current type: ${typeof existing}`,
@@ -349,12 +482,18 @@ async function performAppend(params: StorageParams): Promise<ToolResult> {
     };
   }
   
-  await writeNamespaceData(namespace, data, scope);
+  if (useSession) {
+    setSessionData(namespace, key, newArray);
+  } else {
+    const data = await readNamespaceData(namespace, scope);
+    data[key] = newArray;
+    await writeNamespaceData(namespace, data, scope);
+  }
   
-  const arr = data[key] as unknown[];
+  const mode = useSession ? 'session' : `persistent/${scope}`;
   return {
-    llmContent: `Appended to ${key} in ${namespace} (${scope}). Array now has ${arr.length} items.`,
-    returnDisplay: `Appended to: ${key} (${arr.length} items)`,
+    llmContent: `Appended to ${key} in ${namespace} (${mode}). Array now has ${newArray.length} items.`,
+    returnDisplay: `Appended to: ${key} (${newArray.length} items)`,
   };
 }
 
@@ -375,13 +514,23 @@ async function performMerge(params: StorageParams): Promise<ToolResult> {
     };
   }
   
-  const data = await readNamespaceData(namespace, scope);
-  const existing = data[key];
+  const useSession = shouldUseSessionStorage(params);
+  
+  let existing: unknown;
+  
+  if (useSession) {
+    existing = getSessionValue(namespace, key);
+  } else {
+    const data = await readNamespaceData(namespace, scope);
+    existing = data[key];
+  }
+  
+  let newObject: Record<string, unknown>;
   
   if (existing === undefined) {
-    data[key] = value;
+    newObject = value as Record<string, unknown>;
   } else if (typeof existing === 'object' && existing !== null && !Array.isArray(existing)) {
-    data[key] = { ...existing, ...value };
+    newObject = { ...existing, ...value };
   } else {
     return {
       llmContent: `Error: Cannot merge into non-object value at ${key}. Current type: ${typeof existing}`,
@@ -389,10 +538,17 @@ async function performMerge(params: StorageParams): Promise<ToolResult> {
     };
   }
   
-  await writeNamespaceData(namespace, data, scope);
+  if (useSession) {
+    setSessionData(namespace, key, newObject);
+  } else {
+    const data = await readNamespaceData(namespace, scope);
+    data[key] = newObject;
+    await writeNamespaceData(namespace, data, scope);
+  }
   
+  const mode = useSession ? 'session' : `persistent/${scope}`;
   return {
-    llmContent: `Merged into ${key} in ${namespace} (${scope})`,
+    llmContent: `Merged into ${key} in ${namespace} (${mode})`,
     returnDisplay: `Merged into: ${key}`,
   };
 }
@@ -400,12 +556,21 @@ async function performMerge(params: StorageParams): Promise<ToolResult> {
 async function performClear(params: StorageParams): Promise<ToolResult> {
   const { namespace, scope = 'global' } = params;
   
-  await writeNamespaceData(namespace, {}, scope);
+  const useSession = shouldUseSessionStorage(params);
   
-  return {
-    llmContent: `Cleared all data in ${namespace} (${scope})`,
-    returnDisplay: `Cleared: ${namespace}`,
-  };
+  if (useSession) {
+    clearSessionNamespace(namespace);
+    return {
+      llmContent: `Cleared all data in ${namespace} (session)`,
+      returnDisplay: `Cleared (session): ${namespace}`,
+    };
+  } else {
+    await writeNamespaceData(namespace, {}, scope);
+    return {
+      llmContent: `Cleared all data in ${namespace} (${scope})`,
+      returnDisplay: `Cleared: ${namespace}`,
+    };
+  }
 }
 
 // ============================================================================
@@ -415,7 +580,9 @@ async function performClear(params: StorageParams): Promise<ToolResult> {
 class StorageToolInvocation extends BaseToolInvocation<StorageParams, ToolResult> {
   getDescription(): string {
     const { operation, namespace, key, scope = 'global' } = this.params;
-    return `storage ${operation} ${namespace}${key ? `/${key}` : ''} (${scope})`;
+    const useSession = shouldUseSessionStorage(this.params);
+    const mode = useSession ? 'session' : `persistent/${scope}`;
+    return `storage ${operation} ${namespace}${key ? `/${key}` : ''} (${mode})`;
   }
 
   override async shouldConfirmExecute(
