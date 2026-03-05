@@ -112,7 +112,7 @@ user: Connect to 192.168.1.131 and show root
 model: Connecting to remote server via SSH:
 <function=ssh_connect>
 <parameter=host>192.168.1.131</parameter>
-<parameter=user>alex</parameter>
+<parameter=user><from Current Username in Environment></parameter>
 <parameter=command>ls /</parameter>
 </function>
 </example>
@@ -122,7 +122,7 @@ user: On server 10.0.0.5 check docker status
 model: Connecting via SSH:
 <function=ssh_connect>
 <parameter=host>10.0.0.5</parameter>
-<parameter=user>alex</parameter>
+<parameter=user><from Current Username in Environment></parameter>
 <parameter=command>docker ps && docker info</parameter>
 </function>
 </example>

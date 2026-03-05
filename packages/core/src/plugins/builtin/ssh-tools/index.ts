@@ -12,7 +12,7 @@
  */
 
 import type { PluginDefinition } from '../../types.js';
-import type { Config } from '../../config/config.js';
+import type { Config } from '../../../config/config.js';
 import { SSHTool } from './ssh.js';
 import { SSHAddHostTool, SSHListHostsTool, SSHRemoveHostTool } from './ssh-hosts.js';
 
