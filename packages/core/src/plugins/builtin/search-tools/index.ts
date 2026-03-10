@@ -6,7 +6,7 @@
 
 /**
  * Search Tools Plugin
- * 
+ *
  * Built-in plugin providing search operations.
  */
 
@@ -29,69 +29,153 @@ const searchToolsPlugin: PluginDefinition = {
     tags: ['core', 'builtin', 'search', 'grep', 'web'],
     enabledByDefault: true,
   },
-  
-  // Unified tools array - tool classes that don't need Config
-  tools: [
-    GrepTool,
-    RipGrepTool,
-    WebFetchTool,
-    webSearch.WebSearchTool,
-  ],
-  
+
+  // Unified tools array - tool classes (some need Config, some don't)
+  // The plugin registry will try to instantiate without config first,
+  // then with config if the tool requires it
+  tools: [GrepTool, RipGrepTool, WebFetchTool, webSearch.WebSearchTool],
+
   // Tool aliases - short names that resolve to canonical tool names
   // Includes common model hallucinations and variations
   aliases: [
     // ═══════════════════════════════════════════════════════════════════
     // grep_search aliases
     // ═══════════════════════════════════════════════════════════════════
-    { alias: 'grep', canonicalName: 'grep_search', description: 'Search for text patterns' },
-    { alias: 'Grep', canonicalName: 'grep_search', description: 'Search for text patterns' },
-    { alias: 'GREP', canonicalName: 'grep_search', description: 'Search for text patterns' },
-    { alias: 'search', canonicalName: 'grep_search', description: 'Search in files' },
-    { alias: 'find', canonicalName: 'grep_search', description: 'Find text in files' },
-    { alias: 'grep_search', canonicalName: 'grep_search', description: 'Search with grep' },
-    { alias: 'search_content', canonicalName: 'grep_search', description: 'Search file contents' },
-    { alias: 'search_text', canonicalName: 'grep_search', description: 'Search text in files' },
-    { alias: 'rg', canonicalName: 'grep_search', description: 'Ripgrep search' },
+    {
+      alias: 'grep',
+      canonicalName: 'grep_search',
+      description: 'Search for text patterns',
+    },
+    {
+      alias: 'Grep',
+      canonicalName: 'grep_search',
+      description: 'Search for text patterns',
+    },
+    {
+      alias: 'GREP',
+      canonicalName: 'grep_search',
+      description: 'Search for text patterns',
+    },
+    {
+      alias: 'search',
+      canonicalName: 'grep_search',
+      description: 'Search in files',
+    },
+    {
+      alias: 'find',
+      canonicalName: 'grep_search',
+      description: 'Find text in files',
+    },
+    {
+      alias: 'grep_search',
+      canonicalName: 'grep_search',
+      description: 'Search with grep',
+    },
+    {
+      alias: 'search_content',
+      canonicalName: 'grep_search',
+      description: 'Search file contents',
+    },
+    {
+      alias: 'search_text',
+      canonicalName: 'grep_search',
+      description: 'Search text in files',
+    },
+    {
+      alias: 'rg',
+      canonicalName: 'grep_search',
+      description: 'Ripgrep search',
+    },
     // ═══════════════════════════════════════════════════════════════════
     // web_search aliases
     // ═══════════════════════════════════════════════════════════════════
-    { alias: 'websearch', canonicalName: 'web_search', description: 'Search the web' },
+    {
+      alias: 'websearch',
+      canonicalName: 'web_search',
+      description: 'Search the web',
+    },
     { alias: 'web', canonicalName: 'web_search', description: 'Web search' },
-    { alias: 'web_search', canonicalName: 'web_search', description: 'Search the web' },
-    { alias: 'search_web', canonicalName: 'web_search', description: 'Search the internet' },
-    { alias: 'google', canonicalName: 'web_search', description: 'Google search' },
+    {
+      alias: 'web_search',
+      canonicalName: 'web_search',
+      description: 'Search the web',
+    },
+    {
+      alias: 'search_web',
+      canonicalName: 'web_search',
+      description: 'Search the internet',
+    },
+    {
+      alias: 'google',
+      canonicalName: 'web_search',
+      description: 'Google search',
+    },
     // ═══════════════════════════════════════════════════════════════════
     // web_fetch aliases (including common model hallucinations)
     // ═══════════════════════════════════════════════════════════════════
-    { alias: 'webfetch', canonicalName: 'web_fetch', description: 'Fetch URL content' },
-    { alias: 'WebFetch', canonicalName: 'web_fetch', description: 'Fetch URL content' },
-    { alias: 'web-fetch', canonicalName: 'web_fetch', description: 'Fetch URL content' },
-    { alias: 'Web-Fetch', canonicalName: 'web_fetch', description: 'Fetch URL content' },
-    { alias: 'fetch', canonicalName: 'web_fetch', description: 'Fetch web content' },
+    {
+      alias: 'webfetch',
+      canonicalName: 'web_fetch',
+      description: 'Fetch URL content',
+    },
+    {
+      alias: 'WebFetch',
+      canonicalName: 'web_fetch',
+      description: 'Fetch URL content',
+    },
+    {
+      alias: 'web-fetch',
+      canonicalName: 'web_fetch',
+      description: 'Fetch URL content',
+    },
+    {
+      alias: 'Web-Fetch',
+      canonicalName: 'web_fetch',
+      description: 'Fetch URL content',
+    },
+    {
+      alias: 'fetch',
+      canonicalName: 'web_fetch',
+      description: 'Fetch web content',
+    },
     { alias: 'url', canonicalName: 'web_fetch', description: 'Fetch URL' },
-    { alias: 'web_fetch', canonicalName: 'web_fetch', description: 'Fetch URL content' },
-    { alias: 'curl', canonicalName: 'web_fetch', description: 'Fetch web content' },
-    { alias: 'wget', canonicalName: 'web_fetch', description: 'Download web content' },
+    {
+      alias: 'web_fetch',
+      canonicalName: 'web_fetch',
+      description: 'Fetch URL content',
+    },
+    {
+      alias: 'curl',
+      canonicalName: 'web_fetch',
+      description: 'Fetch web content',
+    },
+    {
+      alias: 'wget',
+      canonicalName: 'web_fetch',
+      description: 'Download web content',
+    },
     { alias: 'http', canonicalName: 'web_fetch', description: 'HTTP request' },
   ],
-  
+
   // Context-aware prompts for model guidance
   prompts: [
     {
       priority: 1,
-      content: 'Search tools for finding content: grep_search searches file contents with regex, web_search searches the internet, web_fetch retrieves web page content. Use grep for code searches, web_search for current information, web_fetch for specific URLs.',
+      content:
+        'Search tools for finding content: grep_search searches file contents with regex, web_search searches the internet, web_fetch retrieves web page content. Use grep for code searches, web_search for current information, web_fetch for specific URLs.',
     },
     {
       priority: 2,
-      content: 'GREP: Supports regex patterns. Use -i for case-insensitive, -n for line numbers, -C for context. Searches recursively by default. For large codebases, use glob pattern to narrow search scope.',
+      content:
+        'GREP: Supports regex patterns. Use -i for case-insensitive, -n for line numbers, -C for context. Searches recursively by default. For large codebases, use glob pattern to narrow search scope.',
     },
     {
       priority: 3,
-      content: 'WEB_SEARCH: Use for current events, documentation, error messages, API references. Returns snippets with URLs. Follow up with web_fetch for full content if needed.',
+      content:
+        'WEB_SEARCH: Use for current events, documentation, error messages, API references. Returns snippets with URLs. Follow up with web_fetch for full content if needed.',
     },
   ],
-  
+
   // Plugin capabilities
   capabilities: {
     canReadFiles: true,
@@ -101,12 +185,12 @@ const searchToolsPlugin: PluginDefinition = {
     canUseStorage: true,
     canUsePrompts: true,
   },
-  
+
   hooks: {
     onLoad: async (context) => {
       context.logger.info('Search Tools plugin loaded');
     },
-    
+
     onEnable: async (context) => {
       context.logger.info('Search Tools plugin enabled');
     },

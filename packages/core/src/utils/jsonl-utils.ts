@@ -23,8 +23,8 @@
  * - write() - Overwrites entire file with array of objects
  *
  * Utility operations:
- * - countLines() - Counts non-empty lines
  * - exists() - Checks if file exists and is non-empty
+ * - countLines() - Counts non-empty lines
  */
 
 import fs from 'node:fs';
@@ -83,9 +83,17 @@ function writeAllSync(fd: number, data: string): void {
   let bytesWritten = 0;
 
   while (offset < buffer.length) {
-    bytesWritten = fs.writeSync(fd, buffer, offset, buffer.length - offset, null);
+    bytesWritten = fs.writeSync(
+      fd,
+      buffer,
+      offset,
+      buffer.length - offset,
+      null,
+    );
     if (bytesWritten === 0) {
-      throw new Error('writeAllSync: wrote 0 bytes, possible disk full or I/O error');
+      throw new Error(
+        'writeAllSync: wrote 0 bytes, possible disk full or I/O error',
+      );
     }
     offset += bytesWritten;
   }
@@ -370,6 +378,9 @@ export function writeLineSync(filePath: string, data: unknown): void {
  * Overwrites a JSONL file with an array of objects.
  * Each object will be written as a separate line.
  * Uses atomic write (write to temp, then rename) for crash protection.
+ *
+ * NOTE: This function does NOT use the spinlock to avoid blocking.
+ * Do not call concurrently with writeLine/writeLineSync on the same file.
  */
 export function write(filePath: string, data: unknown[]): void {
   ensureDir(filePath);
@@ -426,29 +437,5 @@ export function exists(filePath: string): boolean {
     return stats.isFile() && stats.size > 0;
   } catch {
     return false;
-  }
-}
-
-/**
- * Repairs a corrupted JSONL file by removing incomplete/corrupted lines.
- * Returns the number of valid records preserved.
- */
-export async function repair(filePath: string): Promise<number> {
-  try {
-    const records = await read(filePath);
-    if (records.length === 0) {
-      return 0;
-    }
-
-    // Rewrite the file with only valid records
-    write(filePath, records);
-
-    debugLogger.info(
-      `Repaired ${filePath}: preserved ${records.length} valid records`,
-    );
-    return records.length;
-  } catch (error) {
-    debugLogger.error(`Error repairing ${filePath}:`, error);
-    return 0;
   }
 }

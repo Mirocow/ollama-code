@@ -261,11 +261,13 @@ export class PluginRegistry {
           );
           registeredCount++;
         } else if (isToolClass(item)) {
-          // Tool class constructor - try to instantiate without config
+          // Tool class constructor - check if config is needed
           const className = (item as { name?: string })?.name || 'unknown';
           debugLogger.debug(
             `Detected tool class: ${className} from ${pluginId}`,
           );
+
+          // Try to instantiate without config first (for tools that don't need it)
           try {
             const toolInstance = new (item as new () => unknown)();
             const toolName =
@@ -278,31 +280,33 @@ export class PluginRegistry {
             debugLogger.info(`Registered tool class instance: ${toolName}`);
             registeredCount++;
           } catch (_e) {
-            // If instantiation fails without config, try with config if available
-            if (this.config) {
-              try {
-                const toolInstance = new (item as new (
-                  config: unknown,
-                ) => unknown)(this.config);
-                const toolName =
-                  (toolInstance as { name?: string })?.name || className;
-                this.toolRegistry.registerTool(
-                  toolInstance as Parameters<
-                    typeof this.toolRegistry.registerTool
-                  >[0],
-                );
-                debugLogger.info(
-                  `Registered tool class with config: ${toolName}`,
-                );
-                registeredCount++;
-              } catch (e2) {
-                debugLogger.error(
-                  `Failed to register tool class ${className}: ${e2}`,
-                );
-              }
-            } else {
-              debugLogger.warn(
-                `Cannot register tool class ${className}: no config available`,
+            // Tool needs config - check if config is available
+            if (!this.config) {
+              debugLogger.error(
+                `Cannot register tool class ${className}: requires Config but config is not available`,
+              );
+              continue; // Skip this tool, don't try to instantiate with undefined
+            }
+
+            // Try with config
+            try {
+              const toolInstance = new (item as new (
+                config: unknown,
+              ) => unknown)(this.config);
+              const toolName =
+                (toolInstance as { name?: string })?.name || className;
+              this.toolRegistry.registerTool(
+                toolInstance as Parameters<
+                  typeof this.toolRegistry.registerTool
+                >[0],
+              );
+              debugLogger.info(
+                `Registered tool class with config: ${toolName}`,
+              );
+              registeredCount++;
+            } catch (e2) {
+              debugLogger.error(
+                `Failed to register tool class ${className}: ${e2}`,
               );
             }
           }
