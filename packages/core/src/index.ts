@@ -723,6 +723,23 @@ export {
 } from './services/permissionService.js';
 
 // ============================================================================
+
+// Audit Logging
+// ============================================================================
+
+export {
+  auditLogService,
+  AuditLogService,
+  DEFAULT_AUDIT_LOG_CONFIG,
+  type AuditEvent,
+  type AuditCategory,
+  type AuditSeverity,
+  type AuditLogConfig,
+  type AuditLogStats,
+  type AuditLogQuery,
+} from './services/auditLogService.js';
+
+// ============================================================================
 // Structured Logging
 // ============================================================================
 
@@ -765,6 +782,20 @@ export {
   type EnhancedSessionRecord,
   type EnhancedDashboardStats,
 } from './services/enhancedDashboardService.js';
+
+// ============================================================================
+// Workspace Management
+// ============================================================================
+
+export {
+  WorkspaceService,
+  getWorkspaceService,
+  resetWorkspaceService,
+  type WorkspaceConfig,
+  type WorkspaceSession,
+  type WorkspaceStats,
+  type WorkspaceServiceConfig,
+} from './services/workspaceService.js';
 
 // ============================================================================
 // Memory Summary Service
