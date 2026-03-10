@@ -162,12 +162,12 @@ const searchToolsPlugin: PluginDefinition = {
     {
       priority: 1,
       content:
-        'Search tools for finding content: grep_search searches file contents with regex, web_search searches the internet, web_fetch retrieves web page content. Use grep for code searches, web_search for current information, web_fetch for specific URLs.',
+        'Search tools: grep_search searches FILE CONTENTS for text patterns - use when you need to find code/text INSIDE files. Use list_directory or glob to LIST or FIND files by name - NOT grep_search. grep_search with pattern ".*" is WRONG for listing files.',
     },
     {
       priority: 2,
       content:
-        'GREP: Supports regex patterns. Use -i for case-insensitive, -n for line numbers, -C for context. Searches recursively by default. For large codebases, use glob pattern to narrow search scope.',
+        'GREP_SEARCH: Searches inside files for regex patterns. Use for: finding function definitions, searching for imports, locating error messages, finding TODOs. Does NOT list files - use list_directory or glob for that. Supports -i for case-insensitive, -n for line numbers.',
     },
     {
       priority: 3,
