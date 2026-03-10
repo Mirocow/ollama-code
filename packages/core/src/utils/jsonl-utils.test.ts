@@ -248,6 +248,50 @@ describe('jsonl-utils', () => {
       expect(fileExists).toBe(true);
     });
 
+    it('should handle data with newlines and carriage returns', () => {
+      // This is critical for JSONL format - newlines in data should be escaped
+      const dataWithNewlines = {
+        id: 1,
+        text: 'Hello\nWorld\r\nThis is a test',
+        multiline: 'Line1\nLine2\nLine3',
+        code: 'function test() {\n  return "value";\n}',
+      };
+
+      writeLineSync(testFile, dataWithNewlines);
+
+      const content = fs.readFileSync(testFile, 'utf-8');
+      
+      // Should be exactly one line (newlines escaped in JSON)
+      const lines = content.trim().split('\n');
+      expect(lines).toHaveLength(1);
+
+      // Should parse back correctly
+      const parsed = JSON.parse(lines[0]);
+      expect(parsed.text).toBe('Hello\nWorld\r\nThis is a test');
+      expect(parsed.multiline).toBe('Line1\nLine2\nLine3');
+      expect(parsed.code).toBe('function test() {\n  return "value";\n}');
+    });
+
+    it('should handle multiple records with embedded newlines', () => {
+      for (let i = 0; i < 5; i++) {
+        writeLineSync(testFile, {
+          id: i,
+          content: `Line 1\nLine 2\nLine ${i}`,
+        });
+      }
+
+      const content = fs.readFileSync(testFile, 'utf-8');
+      const lines = content.trim().split('\n');
+
+      expect(lines).toHaveLength(5);
+
+      for (let i = 0; i < 5; i++) {
+        const parsed = JSON.parse(lines[i]);
+        expect(parsed.id).toBe(i);
+        expect(parsed.content).toBe(`Line 1\nLine 2\nLine ${i}`);
+      }
+    });
+
     it('should handle large records without truncation', () => {
       // Create a large record that would be > 64KB when serialized
       // This tests the writeAllSync function which handles partial writes
