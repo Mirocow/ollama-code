@@ -36,92 +36,113 @@ import { createDebugLogger } from './debugLogger.js';
 const debugLogger = createDebugLogger('JSONL');
 
 /**
- * A map of file paths to mutexes for preventing concurrent writes (async).
- * Used by async writeLine function.
+ * A map of file paths to lock status for ALL operations.
+ * CRITICAL: This is the SINGLE source of truth for file locking.
+ * Both sync and async operations must use this lock.
  */
-const asyncFileLocks = new Map<string, Mutex>();
+const fileLocks = new Map<string, { locked: boolean; queue: Array<() => void> }>();
 
 /**
- * A map of file paths to lock status for synchronous operations.
- * CRITICAL: This is shared between sync and async operations to prevent
- * interleaved writes. Both writeLine (async) and writeLineSync must check
- * this lock before writing.
+ * Gets or creates a lock for a specific file path.
+ * This lock is used by BOTH sync and async operations.
  */
-const syncFileLocks = new Map<string, { locked: boolean }>();
-
-/**
- * Gets or creates a mutex for a specific file path (for async operations).
- */
-function getAsyncFileLock(filePath: string): Mutex {
-  if (!asyncFileLocks.has(filePath)) {
-    asyncFileLocks.set(filePath, new Mutex());
+function getFileLock(filePath: string): { locked: boolean; queue: Array<() => void> } {
+  if (!fileLocks.has(filePath)) {
+    fileLocks.set(filePath, { locked: false, queue: [] });
   }
-  return asyncFileLocks.get(filePath)!;
-}
-
-/**
- * Gets or creates a sync lock for a specific file path.
- * This lock is SHARED between sync and async operations.
- */
-function getSyncFileLock(filePath: string): { locked: boolean } {
-  if (!syncFileLocks.has(filePath)) {
-    syncFileLocks.set(filePath, { locked: false });
-  }
-  return syncFileLocks.get(filePath)!;
+  return fileLocks.get(filePath)!;
 }
 
 /**
  * Executes a function with a sync lock.
- * This ensures writes are serialized even when called from different async contexts.
- * CRITICAL: This lock is shared with async operations via syncFileLocks.
+ * Uses a simple spin-lock with busy-wait (necessary for sync context).
  * 
- * The function uses a spin-wait with yield to allow other operations to complete
- * when called from async context. This ensures proper synchronization between
- * sync and async code paths.
+ * WARNING: This will block the thread if lock is held by another operation.
+ * The maxWaitMs parameter prevents infinite blocking.
  */
-function withSyncLock<T>(filePath: string, fn: () => T): T {
-  const lock = getSyncFileLock(filePath);
-
-  // Check if already locked (reentrant call)
-  const wasLocked = lock.locked;
+function withSyncLock<T>(filePath: string, fn: () => T, maxWaitMs: number = 5000): T {
+  const lock = getFileLock(filePath);
   
-  if (!wasLocked) {
-    lock.locked = true;
+  // Spin-wait until lock is available (busy-wait for sync context)
+  const startTime = Date.now();
+  while (lock.locked) {
+    if (Date.now() - startTime > maxWaitMs) {
+      throw new Error(`Lock timeout for ${filePath} after ${maxWaitMs}ms`);
+    }
+    // Busy-wait - necessary evil for sync context
+    // Note: this blocks the thread, but ensures serialization
   }
   
+  // Acquire lock
+  lock.locked = true;
   try {
     return fn();
   } finally {
-    // Only release if we acquired the lock
-    if (!wasLocked) {
-      lock.locked = false;
+    lock.locked = false;
+    // Process queued async operations
+    const next = lock.queue.shift();
+    if (next) {
+      // Schedule next operation via setImmediate
+      setImmediate(next);
     }
   }
 }
 
 /**
- * Waits for sync lock to be available, then executes the function.
+ * Waits for lock to be available, then executes the function.
  * Used by async code to coordinate with sync writeLineSync calls.
  * 
  * This creates a proper barrier: if sync code is holding the lock,
  * async code will wait (via setImmediate) until it's released.
  */
 async function waitForSyncLockAndExecute<T>(filePath: string, fn: () => T): Promise<T> {
-  const lock = getSyncFileLock(filePath);
+  const lock = getFileLock(filePath);
   
-  // Wait for lock to be available
-  while (lock.locked) {
-    // Yield to allow other operations (including sync writes) to complete
-    await new Promise(resolve => setImmediate(resolve));
+  // If lock is available, execute immediately
+  if (!lock.locked) {
+    lock.locked = true;
+    try {
+      return fn();
+    } finally {
+      lock.locked = false;
+      // Process queued operations
+      const next = lock.queue.shift();
+      if (next) {
+        setImmediate(next);
+      }
+    }
   }
   
-  // Now acquire the lock and execute
-  lock.locked = true;
-  try {
-    return fn();
-  } finally {
-    lock.locked = false;
-  }
+  // Lock is held - queue our operation and wait
+  return new Promise<T>((resolve, reject) => {
+    const executeWhenReady = () => {
+      if (!lock.locked) {
+        lock.locked = true;
+        try {
+          const result = fn();
+          resolve(result);
+        } catch (e) {
+          reject(e);
+        } finally {
+          lock.locked = false;
+          // Process next queued operation
+          const next = lock.queue.shift();
+          if (next) {
+            setImmediate(next);
+          }
+        }
+      } else {
+        // Still locked, re-queue
+        lock.queue.push(executeWhenReady);
+        setImmediate(executeWhenReady);
+      }
+    };
+    
+    // Add to queue
+    lock.queue.push(executeWhenReady);
+    // Try to execute soon
+    setImmediate(executeWhenReady);
+  });
 }
 
 /**
