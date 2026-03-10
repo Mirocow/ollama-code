@@ -157,6 +157,76 @@ describe('jsonl-utils', () => {
     });
   });
 
+  describe('mixed sync/async writes', () => {
+    it('should handle mixed concurrent sync and async writes', async () => {
+      // This tests that writeLine (async) and writeLineSync (sync) 
+      // properly coordinate through the shared syncFileLocks mechanism
+      
+      const promises: Promise<void>[] = [];
+      const syncWrites = 5;
+      const asyncWrites = 5;
+      
+      // Start async writes
+      for (let i = 0; i < asyncWrites; i++) {
+        promises.push(writeLine(testFile, { type: 'async', id: i }));
+      }
+      
+      // Immediately do sync writes (may interleave with async)
+      for (let i = 0; i < syncWrites; i++) {
+        writeLineSync(testFile, { type: 'sync', id: i });
+      }
+      
+      // Wait for async writes to complete
+      await Promise.all(promises);
+      
+      // Verify all writes completed without corruption
+      const content = fs.readFileSync(testFile, 'utf-8');
+      const lines = content.trim().split('\n');
+      
+      expect(lines).toHaveLength(syncWrites + asyncWrites);
+      
+      // Verify each line is valid JSON
+      let asyncCount = 0;
+      let syncCount = 0;
+      for (const line of lines) {
+        const parsed = JSON.parse(line);
+        if (parsed.type === 'async') asyncCount++;
+        else if (parsed.type === 'sync') syncCount++;
+      }
+      
+      expect(asyncCount).toBe(asyncWrites);
+      expect(syncCount).toBe(syncWrites);
+    });
+
+    it('should handle rapid fire mixed writes without data corruption', async () => {
+      const iterations = 20;
+      const promises: Promise<void>[] = [];
+      
+      for (let i = 0; i < iterations; i++) {
+        // Alternate between sync and async
+        if (i % 2 === 0) {
+          promises.push(writeLine(testFile, { iteration: i, method: 'async' }));
+        } else {
+          writeLineSync(testFile, { iteration: i, method: 'sync' });
+        }
+      }
+      
+      await Promise.all(promises);
+      
+      const content = fs.readFileSync(testFile, 'utf-8');
+      const lines = content.trim().split('\n');
+      
+      expect(lines).toHaveLength(iterations);
+      
+      // Verify no data corruption - each line should be valid JSON
+      for (const line of lines) {
+        const parsed = JSON.parse(line);
+        expect(parsed).toHaveProperty('iteration');
+        expect(parsed).toHaveProperty('method');
+      }
+    });
+  });
+
   describe('writeLineSync', () => {
     it('should append a line synchronously', () => {
       writeLineSync(testFile, { id: 1, name: 'first' });
