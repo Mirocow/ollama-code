@@ -666,3 +666,140 @@ export {
   type ModelFamilyDefinition,
   type ToolCallFormat,
 } from './model-definitions/index.js';
+// ============================================================================
+// Keyboard Shortcuts
+// ============================================================================
+
+export {
+  keyBindingsService,
+  KeyBindingsService,
+  AVAILABLE_COMMANDS,
+  CATEGORY_ORDER,
+  DEFAULT_BINDINGS,
+  type KeyBindingDefinition,
+  type UserKeyBindingsConfig,
+  type CommandInfo,
+} from './services/keyBindingsService.js';
+
+// ============================================================================
+// Notifications
+// ============================================================================
+
+export {
+  notificationService,
+  NotificationService,
+  DEFAULT_NOTIFICATION_CONFIG,
+  type NotificationType,
+  type NotificationOptions,
+  type NotificationConfig,
+} from './services/notificationService.js';
+
+// ============================================================================
+// Dashboard
+// ============================================================================
+
+export {
+  DashboardService,
+  getDashboardService,
+  resetDashboardService,
+  type DashboardSessionRecord,
+  type DashboardStats,
+} from './services/dashboardService.js';
+
+// ============================================================================
+// Permissions
+// ============================================================================
+
+export {
+  permissionService,
+  PermissionService,
+  DEFAULT_PERMISSION_CONFIG,
+  DEFAULT_PERMISSION_RULES,
+  type PermissionLevel,
+  type ToolCategory,
+  type PermissionRule,
+  type SessionAllowlistEntry,
+  type PermissionConfig,
+} from './services/permissionService.js';
+
+// ============================================================================
+// Audit Logging
+// ============================================================================
+
+export {
+  auditLogService,
+  AuditLogService,
+  DEFAULT_AUDIT_LOG_CONFIG,
+  type AuditEvent,
+  type AuditCategory,
+  type AuditSeverity,
+  type AuditLogConfig,
+  type AuditLogStats,
+  type AuditLogQuery,
+} from './services/auditLogService.js';
+
+// ============================================================================
+// Structured Logging
+// ============================================================================
+
+export {
+  StructuredLogger,
+  loggerRegistry,
+  createLogger,
+  DEFAULT_LOGGER_CONFIG,
+  type LogLevel,
+  type LogFormat,
+  type LogDestination,
+  type LogContext,
+  type LogEntry,
+  type LoggerConfig,
+} from './services/structuredLogger.js';
+
+// ============================================================================
+// Token Graph
+// ============================================================================
+
+export {
+  TokenGraphService,
+  tokenGraphService,
+  DEFAULT_TOKEN_GRAPH_CONFIG,
+  type TokenUsageRecord,
+  type TokenGraphConfig,
+} from './services/tokenGraphService.js';
+
+// ============================================================================
+// Enhanced Dashboard
+// ============================================================================
+
+export {
+  EnhancedDashboardService,
+  getEnhancedDashboardService,
+  resetEnhancedDashboardService,
+  type SpeedMetrics,
+  type FileOperationRecord,
+  type ToolExecutionRecord,
+  type EnhancedSessionRecord,
+  type EnhancedDashboardStats,
+} from './services/enhancedDashboardService.js';
+
+// ============================================================================
+// Memory Summary Service
+// ============================================================================
+
+export {
+  MemorySummaryService,
+  memorySummaryService,
+  DEFAULT_MEMORY_SUMMARY_CONFIG,
+  type MemorySummaryConfig,
+  type ActivityRecord,
+  type MemoryState,
+} from './services/memorySummaryService.js';
+
+// ============================================================================
+// Compression Report Service
+// ============================================================================
+
+export {
+  CompressionReportService,
+  type CompressionReport,
+} from './services/compressionReportService.js';
