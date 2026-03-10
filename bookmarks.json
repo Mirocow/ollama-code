@@ -1,0 +1,34 @@
+{
+  "version": "3.0.2",
+  "lastModified": "2026-03-08T12:46:53.529Z",
+  "folders": [],
+  "bookmarks": [
+    {
+      "id": "mmhph4g6m139zrb0ob",
+      "name": "const handleThoughtEvent = useCallback(",
+      "file": "packages/cli/src/ui/hooks/useOllamaStream.ts",
+      "line": 694,
+      "character": 27,
+      "lineContent": "const handleThoughtEvent = useCallback(",
+      "sortOrder": 0
+    },
+    {
+      "id": "mmhphwa60lfnwzljpxy",
+      "name": "thoughtBuffer = handleThoughtEvent(",
+      "file": "packages/cli/src/ui/hooks/useOllamaStream.ts",
+      "line": 1213,
+      "character": 20,
+      "lineContent": "thoughtBuffer = handleThoughtEvent(",
+      "sortOrder": 1
+    },
+    {
+      "id": "mmhqy89l64quheme6gs",
+      "name": "const textValue = ensureString(eventValue);",
+      "file": "packages/cli/src/ui/hooks/useOllamaStream.ts",
+      "line": 600,
+      "character": 49,
+      "lineContent": "const textValue = ensureString(eventValue);",
+      "sortOrder": 2
+    }
+  ]
+}

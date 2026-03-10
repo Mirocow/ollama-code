@@ -597,7 +597,8 @@ function getPHPToolDescription(): string {
 
 export class PHPTool extends BaseDeclarativeTool<PHPToolParams, ToolResult> {
   static Name: string = 'php_dev';
-  private allowlist: Set<string> = new Set();
+  // Static allowlist to persist across all instances
+  private static allowlist: Set<string> = new Set();
 
   constructor(private readonly config: Config) {
     super(
@@ -738,6 +739,6 @@ export class PHPTool extends BaseDeclarativeTool<PHPToolParams, ToolResult> {
   protected createInvocation(
     params: PHPToolParams,
   ): ToolInvocation<PHPToolParams, ToolResult> {
-    return new PHPToolInvocation(this.config, params, this.allowlist);
+    return new PHPToolInvocation(this.config, params, PHPTool.allowlist);
   }
 }

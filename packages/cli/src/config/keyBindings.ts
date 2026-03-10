@@ -60,6 +60,28 @@ export enum Command {
   // Suggestion expansion
   EXPAND_SUGGESTION = 'expandSuggestion',
   COLLAPSE_SUGGESTION = 'collapseSuggestion',
+
+  // === NEW SHORTCUTS ===
+
+  // Undo/Redo
+  UNDO = 'undo',
+  REDO = 'redo',
+
+  // Session management
+  SAVE_SESSION = 'saveSession',
+  SHOW_SESSIONS = 'showSessions',
+
+  // Model management
+  SWITCH_MODEL = 'switchModel',
+  RELOAD_MODEL = 'reloadModel',
+
+  // Help
+  SHOW_HELP = 'showHelp',
+  SHOW_SHORTCUTS = 'showShortcuts',
+
+  // Tools
+  SHOW_TOOLS = 'showTools',
+  SHOW_STATS = 'showStats',
 }
 
 /**
@@ -181,4 +203,31 @@ export const defaultKeyBindings: KeyBindingConfig = {
   // Suggestion expansion
   [Command.EXPAND_SUGGESTION]: [{ key: 'right' }],
   [Command.COLLAPSE_SUGGESTION]: [{ key: 'left' }],
+
+  // === NEW SHORTCUTS ===
+
+  // Undo/Redo
+  [Command.UNDO]: [
+    { key: 'z', ctrl: true, shift: false },
+  ],
+  [Command.REDO]: [
+    { key: 'y', ctrl: true },
+    { key: 'z', ctrl: true, shift: true },
+  ],
+
+  // Session management
+  [Command.SAVE_SESSION]: [{ key: 's', ctrl: true, shift: true }],
+  [Command.SHOW_SESSIONS]: [{ key: 'o', ctrl: true }],
+
+  // Model management
+  [Command.SWITCH_MODEL]: [{ key: 'm', ctrl: true }],
+  [Command.RELOAD_MODEL]: [{ key: 'r', ctrl: true, shift: true }],
+
+  // Help
+  [Command.SHOW_HELP]: [{ key: 'h', ctrl: true }],
+  [Command.SHOW_SHORTCUTS]: [{ key: 'question', shift: true }],
+
+  // Tools
+  [Command.SHOW_TOOLS]: [{ key: 'p', ctrl: true, shift: true }],
+  [Command.SHOW_STATS]: [{ key: 'i', ctrl: true }],
 };

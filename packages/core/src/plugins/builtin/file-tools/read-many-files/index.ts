@@ -6,7 +6,6 @@
 
 import type { ToolInvocation, ToolResult } from '../../../../tools/tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from '../../../../tools/tools.js';
-import { ToolNames, ToolDisplayNames } from '../../../../tools/tool-names.js';
 
 import type { PartUnion } from '../../../../types/content.js';
 import type { Config } from '../../../../config/config.js';
@@ -66,7 +65,7 @@ class ReadManyFilesToolInvocation extends BaseToolInvocation<
 
     const readFileTool = this.config
       .getToolRegistry()
-      .getTool(ToolNames.READ_FILE);
+      .getTool('read_file');
 
     if (!readFileTool) {
       return {
@@ -145,12 +144,12 @@ export class ReadManyFilesTool extends BaseDeclarativeTool<
   ReadManyFilesToolParams,
   ToolResult
 > {
-  static readonly Name: string = ToolNames.READ_MANY_FILES;
+  static readonly Name: string = 'read_many_files';
 
   constructor(private config: Config) {
     super(
       ReadManyFilesTool.Name,
-      ToolDisplayNames.READ_MANY_FILES,
+      'ReadManyFiles',
       `Reads and returns the content of multiple files at once. Use this tool when you need to read several files in a single operation. The tool concatenates the content of all files with clear separators indicating which content belongs to which file. Supports the same file types as the read_file tool: text files, images (PNG, JPG, GIF, WEBP, SVG, BMP), and PDF files.`,
       Kind.Read,
       {

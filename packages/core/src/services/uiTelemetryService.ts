@@ -6,6 +6,11 @@
 
 // UI Telemetry - local session statistics (no external telemetry)
 
+import { tokenGraphService } from './tokenGraphService.js';
+import { createDebugLogger } from '../utils/debugLogger.js';
+
+const debugLogger = createDebugLogger('TELEMETRY');
+
 export interface ToolCallStats {
   toolName: string;
   count: number;
@@ -60,6 +65,19 @@ export interface FileMetrics {
   totalLinesRemoved: number;
 }
 
+export interface StorageMetrics {
+  recordCount: number;
+  keys: string[];
+  totalSize: number; // Estimated size in bytes
+}
+
+export interface PluginMetrics {
+  loadedPlugins: number;
+  enabledPlugins: number;
+  toolCount: number;
+  skillCount: number;
+}
+
 export interface SessionMetrics {
   models: ModelMetrics;
   tools: {
@@ -76,6 +94,8 @@ export interface SessionMetrics {
     byName: Record<string, ToolCallStats>;
   };
   files: FileMetrics;
+  storage: StorageMetrics;
+  plugins: PluginMetrics;
   totalPromptTokens: number;
   totalCachedTokens: number;
   totalGeneratedTokens: number;
@@ -87,15 +107,105 @@ type MetricsListener = (event: {
   lastPromptTokenCount: number;
 }) => void;
 
+/**
+ * Serializable state for persistence across sessions.
+ * Contains all data needed to restore telemetry on resume.
+ */
+export interface TelemetrySerializableState {
+  metrics: SessionMetrics;
+  lastPromptTokenCount: number;
+  accumulatedPromptTokens: number;
+  gitOperations: Record<string, number>;
+  /** Token history for sparkline graph */
+  tokenHistory?: Array<{
+    timestamp: number;
+    promptTokens: number;
+    generatedTokens: number;
+    cachedTokens: number;
+    model: string;
+    messageIndex: number;
+  }>;
+}
+
 class UiTelemetryService {
   private metrics: SessionMetrics;
   private listeners: Set<MetricsListener> = new Set();
   private lastPromptTokenCount: number = 0;
   /** Accumulated prompt tokens for the current session (estimated when Ollama doesn't return them) */
   private accumulatedPromptTokens: number = 0;
+  /** Git operations counter */
+  private gitOperations: Map<string, number> = new Map();
 
   constructor() {
     this.metrics = this.createEmptyMetrics();
+  }
+
+  /**
+   * Export current state for persistence.
+   * Call this at the end of each assistant turn to save telemetry.
+   */
+  exportState(): TelemetrySerializableState {
+    return {
+      metrics: this.getMetrics(),
+      lastPromptTokenCount: this.lastPromptTokenCount,
+      accumulatedPromptTokens: this.accumulatedPromptTokens,
+      gitOperations: Object.fromEntries(this.gitOperations),
+      tokenHistory: tokenGraphService.getHistory(),
+    };
+  }
+
+  /**
+   * Import state from a previous session.
+   * Call this when resuming a session to restore telemetry.
+   */
+  importState(state: TelemetrySerializableState): void {
+    // Validate state before importing
+    if (!state || !state.metrics) {
+      debugLogger.warn('Invalid telemetry state received, using empty metrics');
+      this.metrics = this.createEmptyMetrics();
+      this.notifyListeners();
+      return;
+    }
+    
+    // Deep merge to ensure all nested objects exist
+    const emptyMetrics = this.createEmptyMetrics();
+    this.metrics = {
+      models: {
+        tokens: { ...emptyMetrics.models.tokens, ...state.metrics.models?.tokens },
+        api: { ...emptyMetrics.models.api, ...state.metrics.models?.api },
+        totalPromptTokens: state.metrics.models?.totalPromptTokens ?? 0,
+        totalGeneratedTokens: state.metrics.models?.totalGeneratedTokens ?? 0,
+        totalCachedTokens: state.metrics.models?.totalCachedTokens ?? 0,
+        totalApiTime: state.metrics.models?.totalApiTime ?? 0,
+        byModel: state.metrics.models?.byModel ?? {},
+      },
+      tools: {
+        ...emptyMetrics.tools,
+        ...state.metrics.tools,
+        totalDecisions: {
+          ...emptyMetrics.tools.totalDecisions,
+          ...state.metrics.tools?.totalDecisions,
+        },
+        byName: state.metrics.tools?.byName ?? {},
+      },
+      files: { ...emptyMetrics.files, ...state.metrics.files },
+      storage: { ...emptyMetrics.storage, ...state.metrics.storage },
+      plugins: { ...emptyMetrics.plugins, ...state.metrics.plugins },
+      totalPromptTokens: state.metrics.totalPromptTokens ?? 0,
+      totalCachedTokens: state.metrics.totalCachedTokens ?? 0,
+      totalGeneratedTokens: state.metrics.totalGeneratedTokens ?? 0,
+      totalApiTime: state.metrics.totalApiTime ?? 0,
+    };
+    this.lastPromptTokenCount = state.lastPromptTokenCount ?? 0;
+    this.accumulatedPromptTokens = state.accumulatedPromptTokens ?? 0;
+    this.gitOperations = new Map(Object.entries(state.gitOperations || {}));
+    
+    // Restore token history for sparkline
+    if (state.tokenHistory && state.tokenHistory.length > 0) {
+      tokenGraphService.importHistory(state.tokenHistory);
+    }
+    
+    this.notifyListeners();
   }
 
   private createEmptyMetrics(): SessionMetrics {
@@ -143,6 +253,17 @@ class UiTelemetryService {
         totalLinesAdded: 0,
         totalLinesRemoved: 0,
       },
+      storage: {
+        recordCount: 0,
+        keys: [],
+        totalSize: 0,
+      },
+      plugins: {
+        loadedPlugins: 0,
+        enabledPlugins: 0,
+        toolCount: 0,
+        skillCount: 0,
+      },
       totalPromptTokens: 0,
       totalCachedTokens: 0,
       totalGeneratedTokens: 0,
@@ -151,7 +272,8 @@ class UiTelemetryService {
   }
 
   getMetrics(): SessionMetrics {
-    return { ...this.metrics };
+    // Deep clone to ensure React detects changes in nested objects
+    return structuredClone(this.metrics);
   }
 
   getLastPromptTokenCount(): number {
@@ -278,6 +400,11 @@ class UiTelemetryService {
     this.metrics.models.totalCachedTokens += cachedTokens;
     this.metrics.models.totalGeneratedTokens += generatedTokens;
 
+    // Record in token graph service for sparkline visualization
+    if (promptTokens > 0 || generatedTokens > 0) {
+      tokenGraphService.recordUsage(promptTokens, generatedTokens, cachedTokens, model);
+    }
+
     this.notifyListeners();
   }
 
@@ -377,6 +504,63 @@ class UiTelemetryService {
     this.metrics.files[operation]++;
     if (linesAdded) this.metrics.files.totalLinesAdded += linesAdded;
     if (linesRemoved) this.metrics.files.totalLinesRemoved += linesRemoved;
+    this.notifyListeners();
+  }
+
+  // Storage operation tracking
+  updateStorageMetrics(metrics: Partial<StorageMetrics>): void {
+    this.metrics.storage = {
+      ...this.metrics.storage,
+      ...metrics,
+    };
+    this.notifyListeners();
+  }
+
+  recordStorageOperation(key: string, size?: number): void {
+    if (!this.metrics.storage.keys.includes(key)) {
+      this.metrics.storage.keys.push(key);
+      this.metrics.storage.recordCount++;
+    }
+    if (size) {
+      this.metrics.storage.totalSize += size;
+    }
+    this.notifyListeners();
+  }
+
+  // Git operation tracking (simple counter)
+  recordGitOperation(operation: string, success: boolean = true): void {
+    const count = this.gitOperations.get(operation) || 0;
+    this.gitOperations.set(operation, count + 1);
+    // Also track as tool call for unified metrics
+    this.recordToolCall(`git_${operation}`, 0, success);
+  }
+
+  getGitOperations(): Record<string, number> {
+    return Object.fromEntries(this.gitOperations);
+  }
+
+  // Plugin metrics tracking
+  updatePluginMetrics(metrics: Partial<PluginMetrics>): void {
+    this.metrics.plugins = {
+      ...this.metrics.plugins,
+      ...metrics,
+    };
+    this.notifyListeners();
+  }
+
+  setToolCount(count: number): void {
+    this.metrics.plugins.toolCount = count;
+    this.notifyListeners();
+  }
+
+  setSkillCount(count: number): void {
+    this.metrics.plugins.skillCount = count;
+    this.notifyListeners();
+  }
+
+  setPluginCounts(loadedPlugins: number, enabledPlugins: number): void {
+    this.metrics.plugins.loadedPlugins = loadedPlugins;
+    this.metrics.plugins.enabledPlugins = enabledPlugins;
     this.notifyListeners();
   }
 }

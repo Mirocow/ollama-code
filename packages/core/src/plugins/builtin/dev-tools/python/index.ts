@@ -487,7 +487,8 @@ export class PythonTool extends BaseDeclarativeTool<
   ToolResult
 > {
   static Name: string = 'python_dev';
-  private allowlist: Set<string> = new Set();
+  // Static allowlist to persist across all instances
+  private static allowlist: Set<string> = new Set();
 
   constructor(private readonly config: Config) {
     super(
@@ -627,6 +628,6 @@ export class PythonTool extends BaseDeclarativeTool<
   protected createInvocation(
     params: PythonToolParams,
   ): ToolInvocation<PythonToolParams, ToolResult> {
-    return new PythonToolInvocation(this.config, params, this.allowlist);
+    return new PythonToolInvocation(this.config, params, PythonTool.allowlist);
   }
 }

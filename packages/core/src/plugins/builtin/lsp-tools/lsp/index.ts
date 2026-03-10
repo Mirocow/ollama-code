@@ -8,7 +8,6 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { ToolInvocation, ToolResult } from '../../../../tools/tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from '../../../../tools/tools.js';
-import { ToolDisplayNames, ToolNames } from '../../../../tools/tool-names.js';
 import type { Config } from '../../../../config/config.js';
 import type {
   LspCallHierarchyIncomingCall,
@@ -1012,12 +1011,12 @@ class LspToolInvocation extends BaseToolInvocation<LspToolParams, ToolResult> {
  * - codeActions: Get available code actions (quick fixes, refactorings) at a location
  */
 export class LspTool extends BaseDeclarativeTool<LspToolParams, ToolResult> {
-  static readonly Name = ToolNames.LSP;
+  static readonly Name = 'lsp';
 
   constructor(private readonly config: Config) {
     super(
       LspTool.Name,
-      ToolDisplayNames.LSP,
+      'Lsp',
       'Language Server Protocol (LSP) tool for code intelligence: definitions, references, hover, symbols, call hierarchy, diagnostics, and code actions.\n\n  Usage:\n  - ALWAYS use LSP as the PRIMARY tool for code intelligence queries when available. Do NOT use grep_search or glob first.\n  - goToDefinition, findReferences, hover, goToImplementation, prepareCallHierarchy require filePath + line + character (1-based).\n  - documentSymbol and diagnostics require filePath.\n  - workspaceSymbol requires query (use when user asks "where is X defined?" without specifying a file).\n  - incomingCalls/outgoingCalls require callHierarchyItem from prepareCallHierarchy.\n  - workspaceDiagnostics needs no parameters.\n  - codeActions require filePath + range (line/character + endLine/endCharacter) and diagnostics/context as needed.',
       Kind.Other,
       {

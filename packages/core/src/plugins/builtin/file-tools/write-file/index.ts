@@ -27,14 +27,17 @@ import { ToolErrorType } from '../../../../tools/tool-error.js';
 import { FileEncoding } from '../../../../services/fileSystemService.js';
 import { makeRelative, shortenPath } from '../../../../utils/paths.js';
 import { getErrorMessage, isNodeError } from '../../../../utils/errors.js';
-import { DEFAULT_DIFF_OPTIONS, getDiffStat } from '../../../../tools/diffOptions.js';
-import { ToolNames, ToolDisplayNames } from '../../../../tools/tool-names.js';
+import {
+  DEFAULT_DIFF_OPTIONS,
+  getDiffStat,
+} from '../../../../tools/diffOptions.js';
 import type {
   ModifiableDeclarativeTool,
   ModifyContext,
 } from '../../../../tools/modifiable-tool.js';
 import { IdeClient } from '../../../../ide/ide-client.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
+import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
 
 const debugLogger = createDebugLogger('WRITE_FILE');
 
@@ -287,7 +290,12 @@ class WriteFileToolInvocation extends BaseToolInvocation<
         );
       }
 
-      // Telemetry logging removed
+      // Record file write telemetry with line counts
+      const newLines = fileContent.split('\n').length;
+      const oldLines = currentContentForDiff.split('\n').length;
+      const linesAdded = Math.max(0, newLines - oldLines);
+      const linesRemoved = Math.max(0, oldLines - newLines);
+      uiTelemetryService.recordFileOperation('write', linesAdded, linesRemoved);
 
       const displayResult: FileDiff = {
         fileDiff,
@@ -351,12 +359,12 @@ export class WriteFileTool
   extends BaseDeclarativeTool<WriteFileToolParams, ToolResult>
   implements ModifiableDeclarativeTool<WriteFileToolParams>
 {
-  static readonly Name: string = ToolNames.WRITE_FILE;
+  static readonly Name: string = 'write_file';
 
   constructor(private readonly config: Config) {
     super(
       WriteFileTool.Name,
-      ToolDisplayNames.WRITE_FILE,
+      'WriteFile',
       `Writes content to a specified file in the local filesystem.
 
       The user has the ability to modify \`content\`. If modified, this will be stated in the response.`,

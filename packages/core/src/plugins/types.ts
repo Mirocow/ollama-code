@@ -121,6 +121,7 @@ export interface PluginEventEmitter {
 
 /**
  * Plugin services - access to Ollama Code internals
+ * ALL plugins have access to these services by default
  */
 export interface PluginServices {
   /** Register a tool */
@@ -137,6 +138,66 @@ export interface PluginServices {
   getConfig: () => Record<string, unknown>;
   /** Set configuration */
   setConfig: (config: Record<string, unknown>) => void;
+  /**
+   * Get storage instance for persistent data
+   * Available to ALL plugins by default
+   */
+  getStorage: () => import('../config/storage.js').Storage;
+  /** Get storage item by key */
+  getStorageItem: (key: string) => unknown;
+  /** Set storage item */
+  setStorageItem: (key: string, value: unknown) => void;
+  /**
+   * Get environment variable value
+   * Available to ALL plugins by default
+   * @param name - Environment variable name
+   * @param defaultValue - Default value if not set
+   */
+  getEnv: (name: string, defaultValue?: string) => string | undefined;
+  /**
+   * Get all environment variables
+   * Returns a copy of process.env
+   */
+  getAllEnv: () => Record<string, string | undefined>;
+  /**
+   * Get prompt registry for accessing prompts
+   * Available to ALL plugins by default
+   */
+  getPromptRegistry: () => import('../prompts/prompt-registry.js').PromptRegistry;
+  /**
+   * Get session ID for the current conversation
+   */
+  getSessionId: () => string;
+  /**
+   * Get model ID being used
+   */
+  getModelId: () => string | undefined;
+}
+
+/**
+ * Tool alias definition - maps short names to canonical tool names
+ */
+export interface ToolAlias {
+  /** Short alias name (e.g., 'ssh', 'run', 'edit') */
+  alias: string;
+  /** Canonical tool name this alias resolves to */
+  canonicalName: string;
+  /** Optional description of what this alias does */
+  description?: string;
+}
+
+/**
+ * Tool prompt definition - provides context-aware prompts for the model
+ */
+export interface ToolPrompt {
+  /** Prompt content - can include placeholders like {{toolName}} */
+  content: string;
+  /** Minimum context window size required for this prompt */
+  minContextWindow?: number;
+  /** Maximum context window size for this prompt */
+  maxContextWindow?: number;
+  /** Priority when multiple prompts match (higher = preferred) */
+  priority?: number;
 }
 
 /**
@@ -165,10 +226,16 @@ export interface PluginTool {
   category?: string;
   /** Tool tags */
   tags?: string[];
+  /** Tool aliases - short names that resolve to this tool */
+  aliases?: string[];
+  /** Context-aware prompts for this tool */
+  prompts?: ToolPrompt[];
 }
 
 /**
  * Tool execution context
+ * Provides access to all shared resources for tool execution
+ * ALL tools have access to storage, env, prompts, and config by default
  */
 export interface ToolExecutionContext {
   /** Abort signal for cancellation */
@@ -179,6 +246,39 @@ export interface ToolExecutionContext {
   preferences?: Record<string, unknown>;
   /** Plugin context */
   plugin: PluginContext;
+  /**
+   * Config instance for tools that need it
+   * Available to ALL tools by default
+   */
+  config?: import('../config/config.js').Config;
+  /** 
+   * Storage instance for persisting data across sessions
+   * Available to ALL tools by default
+   */
+  storage: import('../config/storage.js').Storage;
+  /**
+   * Prompt registry for accessing and managing prompts
+   * Available to ALL tools by default
+   */
+  promptRegistry: import('../prompts/prompt-registry.js').PromptRegistry;
+  /**
+   * Session ID for the current conversation
+   */
+  sessionId: string;
+  /**
+   * Model ID being used
+   */
+  modelId?: string;
+  /**
+   * Environment variables access
+   * Available to ALL tools by default
+   */
+  env: {
+    /** Get environment variable value */
+    get: (name: string, defaultValue?: string) => string | undefined;
+    /** Get all environment variables */
+    getAll: () => Record<string, string | undefined>;
+  };
 }
 
 /**
@@ -241,28 +341,117 @@ export interface PluginHooks {
 }
 
 /**
+ * Unified tool item - can be one of these types:
+ * 1. PluginTool object (simple declarative tool)
+ * 2. Tool class constructor (for BaseDeclarativeTool)
+ * 3. Tool factory function (config) => tool (for tools needing Config)
+ * 4. Tool instance (already instantiated tool object)
+ * 
+ * This type is intentionally permissive to allow various tool registration patterns.
+ * The pluginRegistry handles runtime type detection and appropriate instantiation.
+ */
+export type UnifiedToolItem = 
+  | PluginTool 
+  | (new (...args: unknown[]) => unknown)  // Any class constructor
+  | ((...args: unknown[]) => unknown)      // Any function (factory or otherwise)
+  | object;  // Tool instances (already instantiated)
+
+/**
  * Plugin definition
+ * ALL plugins have access to storage, env, and prompts by default
  */
 export interface PluginDefinition {
   /** Plugin metadata */
   metadata: PluginMetadata;
   /** Plugin hooks */
   hooks?: PluginHooks;
-  /** Tools provided by this plugin (declarative) */
-  tools?: PluginTool[];
-  /** Real tool classes (BaseDeclarativeTool instances) 
-   * These are used when full tool implementation is needed
-   * Created with GLM-5 from Z.AI
+  /**
+   * Unified tools array - accepts PluginTool objects, tool class constructors, or factory functions.
+   * 
+   * Items can be:
+   * - PluginTool: Plain object with { id, name, description, parameters, execute }
+   * - Tool class: Constructor that can be instantiated with `new` (no config needed)
+   * - Factory function: (config) => tool instance (for tools needing Config)
+   * 
+   * This unifies all tool registration patterns into a single array.
    */
-  toolClasses?: unknown[];
-  /** Tool factories - functions that create tool instances with Config 
-   * Use this when tools require Config parameter in constructor
-   */
-  toolFactories?: Array<(config: unknown) => unknown>;
+  tools?: UnifiedToolItem[];
   /** Commands provided by this plugin */
   commands?: PluginCommand[];
   /** Default configuration */
   defaultConfig?: Record<string, unknown>;
+  /** Tool aliases - short names that map to canonical tool names */
+  aliases?: ToolAlias[];
+  /** Context-aware prompts for this plugin's tools */
+  prompts?: ToolPrompt[];
+  /** Plugin capabilities - declares what this plugin can do */
+  capabilities?: PluginCapabilities;
+  /** 
+   * Plugin category for organization
+   * Examples: 'core', 'dev-tools', 'file-tools', 'search', 'network'
+   */
+  category?: string;
+  /** 
+   * Whether this plugin can be disabled by user configuration
+   * Core plugins should set this to false
+   */
+  userDisableable?: boolean;
+  /**
+   * Whether this plugin is enabled
+   * Can be controlled via configuration file
+   */
+  enabled?: boolean;
+}
+
+/**
+ * Unified plugin definition - the standard interface for ALL plugins
+ * This interface ensures consistency across all plugin types
+ * 
+ * @example
+ * const myPlugin: UnifiedPluginDefinition = {
+ *   metadata: {
+ *     id: 'my-plugin',
+ *     name: 'My Plugin',
+ *     version: '1.0.0',
+ *   },
+ *   tools: [tool1, tool2], // All tools go here (PluginTool, class, or factory)
+ *   requiresStorage: true, // Enable storage for all tools
+ *   aliases: [
+ *     { alias: 'my', canonicalName: 'my_tool' }
+ *   ],
+ * };
+ */
+export interface UnifiedPluginDefinition extends PluginDefinition {
+  /** 
+   * Unified tools array - ALL tools must be registered here
+   * Accepts PluginTool objects, tool class constructors, or factory functions
+   * This replaces toolClasses and toolFactories for consistency
+   */
+  tools: UnifiedToolItem[];
+  /** Required: Storage access flag - all plugins can access storage */
+  requiresStorage?: boolean;
+  /** Plugin capabilities declaration */
+  capabilities?: PluginCapabilities;
+}
+
+/**
+ * Plugin capabilities declaration
+ */
+export interface PluginCapabilities {
+  /** Can read files */
+  canReadFiles?: boolean;
+  /** Can write files */
+  canWriteFiles?: boolean;
+  /** Can execute shell commands */
+  canExecuteCommands?: boolean;
+  /** Can access network */
+  canAccessNetwork?: boolean;
+  /** Can use storage */
+  canUseStorage?: boolean;
+  /** Can access prompts */
+  canUsePrompts?: boolean;
+  /** Can spawn subagents */
+  canSpawnAgents?: boolean;
 }
 
 /**
@@ -323,4 +512,145 @@ export interface PluginManifest {
   metadata: PluginMetadata;
   /** Whether the plugin is built-in */
   builtin?: boolean;
+}
+
+// ============================================================================
+// Plugin Health Monitoring
+// ============================================================================
+
+/**
+ * Plugin health status
+ */
+export type PluginHealthStatus = 'healthy' | 'degraded' | 'error' | 'unknown';
+
+/**
+ * Plugin health metrics for monitoring
+ */
+export interface PluginHealth {
+  /** Plugin ID */
+  pluginId: string;
+  /** Current health status */
+  status: PluginHealthStatus;
+  /** Last check timestamp */
+  lastChecked: Date;
+  /** Last error message if any */
+  lastError?: string;
+  /** Last error timestamp */
+  lastErrorAt?: Date;
+  /** Total number of tool calls */
+  toolCallsTotal: number;
+  /** Number of failed tool calls */
+  toolCallsFailed: number;
+  /** Number of successful tool calls */
+  toolCallsSuccessful: number;
+  /** Average execution time in milliseconds */
+  avgExecutionTimeMs: number;
+  /** Peak memory usage in bytes (if available) */
+  peakMemoryBytes?: number;
+  /** Uptime in milliseconds */
+  uptimeMs: number;
+  /** Custom health metrics from plugin */
+  customMetrics?: Record<string, number | string | boolean>;
+}
+
+/**
+ * Health check options
+ */
+export interface HealthCheckOptions {
+  /** Include memory metrics */
+  includeMemory?: boolean;
+  /** Include custom metrics from plugin */
+  includeCustomMetrics?: boolean;
+  /** Timeout for health check in milliseconds */
+  timeout?: number;
+}
+
+// ============================================================================
+// Dependency Validation
+// ============================================================================
+
+/**
+ * Dependency validation result
+ */
+export interface DependencyValidationResult {
+  /** Whether all dependencies are satisfied */
+  valid: boolean;
+  /** List of missing required dependencies */
+  missingRequired: Array<{
+    pluginId: string;
+    minVersion?: string;
+    maxVersion?: string;
+  }>;
+  /** List of missing optional dependencies */
+  missingOptional: Array<{
+    pluginId: string;
+    minVersion?: string;
+    maxVersion?: string;
+  }>;
+  /** List of version conflicts */
+  versionConflicts: Array<{
+    pluginId: string;
+    required: string;
+    actual: string;
+  }>;
+  /** List of circular dependencies detected */
+  circularDependencies: string[][];
+  /** Validation warnings */
+  warnings: string[];
+}
+
+/**
+ * Plugin load order info
+ */
+export interface PluginLoadOrder {
+  /** Plugin ID */
+  pluginId: string;
+  /** Load order index (lower = load first) */
+  order: number;
+  /** Dependencies that must be loaded before this plugin */
+  dependencies: string[];
+  /** Whether this plugin can be loaded */
+  canLoad: boolean;
+  /** Reason if cannot be loaded */
+  reason?: string;
+}
+
+// ============================================================================
+// Plugin Events
+// ============================================================================
+
+/**
+ * Plugin event types
+ */
+export type PluginEventType =
+  | 'plugin:registered'
+  | 'plugin:unregistered'
+  | 'plugin:loaded'
+  | 'plugin:unloaded'
+  | 'plugin:enabled'
+  | 'plugin:disabled'
+  | 'plugin:error'
+  | 'plugin:reloaded'
+  | 'plugin:health-changed'
+  | 'tool:registered'
+  | 'tool:unregistered'
+  | 'tool:executed'
+  | 'tool:failed';
+
+/**
+ * Plugin event payload
+ */
+export interface PluginEvent {
+  /** Event type */
+  type: PluginEventType;
+  /** Plugin ID */
+  pluginId?: string;
+  /** Tool ID */
+  toolId?: string;
+  /** Event timestamp */
+  timestamp: Date;
+  /** Event data */
+  data?: unknown;
+  /** Error if any */
+  error?: Error;
 }

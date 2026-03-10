@@ -55,7 +55,7 @@ import {
 } from './subagent-statistics.js';
 import type { SubagentHooks } from './subagent-hooks.js';
 
-import { TaskTool } from '../plugins/builtin/agent-tools/task/index.js';
+
 import { DEFAULT_OLLAMA_MODEL } from '../config/models.js';
 
 /**
@@ -297,7 +297,7 @@ export class SubAgentScope {
         toolsList.push(
           ...toolRegistry
             .getFunctionDeclarations()
-            .filter((t) => t.name !== TaskTool.Name),
+            .filter((t) => t.name !== 'task'),
         );
       } else {
         toolsList.push(
@@ -310,7 +310,7 @@ export class SubAgentScope {
       toolsList.push(
         ...toolRegistry
           .getFunctionDeclarations()
-          .filter((t) => t.name !== TaskTool.Name),
+          .filter((t) => t.name !== 'task'),
       );
     }
 

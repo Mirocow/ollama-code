@@ -210,6 +210,41 @@ export class ToolRegistry {
     this.tools.set(tool.name, tool);
   }
 
+  /**
+   * Unregisters a tool by name.
+   * @param toolName - The name of the tool to unregister.
+   * @returns true if the tool was found and removed, false otherwise.
+   */
+  unregisterTool(toolName: string): boolean {
+    if (this.tools.has(toolName)) {
+      this.tools.delete(toolName);
+      debugLogger.info(`Tool "${toolName}" unregistered`);
+      return true;
+    }
+    debugLogger.warn(`Tool "${toolName}" not found for unregistration`);
+    return false;
+  }
+
+  /**
+   * Unregisters all tools from a specific plugin.
+   * @param pluginId - The ID of the plugin whose tools should be removed.
+   * @returns The number of tools removed.
+   */
+  unregisterToolsByPlugin(pluginId: string): number {
+    let removed = 0;
+    for (const [name] of this.tools.entries()) {
+      // Tools registered by plugins have names prefixed with pluginId:
+      if (name.startsWith(`${pluginId}:`)) {
+        this.tools.delete(name);
+        removed++;
+      }
+    }
+    if (removed > 0) {
+      debugLogger.info(`Unregistered ${removed} tools from plugin "${pluginId}"`);
+    }
+    return removed;
+  }
+
   private removeDiscoveredTools(): void {
     for (const tool of this.tools.values()) {
       if (tool instanceof DiscoveredTool || tool instanceof DiscoveredMCPTool) {

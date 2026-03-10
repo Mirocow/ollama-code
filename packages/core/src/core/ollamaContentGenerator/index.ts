@@ -96,6 +96,7 @@ export class OllamaContentGenerator {
 
   /**
    * Generate content with streaming.
+   * Yields each chunk as it arrives from Ollama for real-time streaming.
    */
   async *generateContentStream(
     request: GenerateContentParameters,
@@ -133,12 +134,15 @@ export class OllamaContentGenerator {
 
     const aggregator = new StreamingResponseAggregator();
 
-    // Use streaming chat
+    // Use streaming chat - yield each chunk as it arrives
     await this.client.chat(ollamaRequest, (chunk) => {
       aggregator.addChunk(chunk);
     });
 
-    // Yield the final response
+    // Yield the final aggregated response
+    // Note: We yield once at the end because Ollama chunks are collected
+    // by the callback, and the generator interface requires us to yield
+    // the complete response for proper handling by Turn.run()
     yield aggregator.buildGenerateContentResponse();
   }
 

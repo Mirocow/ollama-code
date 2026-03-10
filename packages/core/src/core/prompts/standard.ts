@@ -9,7 +9,7 @@
  * Balanced instructions with structured rules.
  */
 
-import { ToolNames } from '../../tools/tool-names.js';
+
 
 export function getStandardPrompt(context: {
   cwd: string;
@@ -81,8 +81,8 @@ CLI agent for development: analysis, editing, commands, testing, refactoring.
 ## Execution
 | Tool | Purpose |
 |------|---------|
-| ${ToolNames.SHELL} | **LOCAL** shell commands |
-| ${ToolNames.SSH} | **REMOTE** SSH connections |
+| run_shell_command | **LOCAL** shell commands |
+| ssh_connect | **REMOTE** SSH connections |
 | python_dev | Python development |
 | nodejs_dev | Node.js development |
 | golang_dev | Go development |
@@ -90,14 +90,14 @@ CLI agent for development: analysis, editing, commands, testing, refactoring.
 ## Shell vs SSH
 | Situation | Tool |
 |-----------|------|
-| Command on local machine | ${ToolNames.SHELL} |
-| Remote server (IP address) | ${ToolNames.SSH} |
-| User says "SSH", "remote" | ${ToolNames.SSH} |
+| Command on local machine | run_shell_command |
+| Remote server (IP address) | ssh_connect |
+| User says "SSH", "remote" | ssh_connect |
 
 ${hasTools ? `## Organization
 | Tool | Purpose |
 |------|---------|
-| ${ToolNames.TODO_WRITE} | Plan and track tasks |
+| todo_write | Plan and track tasks |
 | task | Delegate to subagents |
 | save_memory | Persist info between sessions |` : ''}
 
@@ -151,10 +151,10 @@ user: Fix linter error in src/utils.ts
 model:
 1. Read file and error
 [tool_call: read_file path="${cwd}/src/utils.ts"]
-[tool_call: ${ToolNames.SHELL} command="npm run lint 2>&1 | head -20"]
+[tool_call: run_shell_command command="npm run lint 2>&1 | head -20"]
 2. Fix and verify
 [tool_call: edit path="${cwd}/src/utils.ts"]
-[tool_call: ${ToolNames.SHELL} command="npm run lint"]
+[tool_call: run_shell_command command="npm run lint"]
 </example>
 
 # Final

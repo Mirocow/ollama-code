@@ -737,7 +737,8 @@ export class NodeJsTool extends BaseDeclarativeTool<
   ToolResult
 > {
   static Name: string = 'nodejs_dev';
-  private allowlist: Set<string> = new Set();
+  // Static allowlist to persist across all instances
+  private static allowlist: Set<string> = new Set();
 
   constructor(private readonly config: Config) {
     super(
@@ -895,6 +896,6 @@ export class NodeJsTool extends BaseDeclarativeTool<
   protected createInvocation(
     params: NodeJsToolParams,
   ): ToolInvocation<NodeJsToolParams, ToolResult> {
-    return new NodeJsToolInvocation(this.config, params, this.allowlist);
+    return new NodeJsToolInvocation(this.config, params, NodeJsTool.allowlist);
   }
 }

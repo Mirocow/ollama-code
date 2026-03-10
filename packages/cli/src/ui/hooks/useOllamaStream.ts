@@ -5,6 +5,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { randomUUID } from 'node:crypto';
 import type {
   Config,
   EditorType,
@@ -64,6 +65,11 @@ import path from 'node:path';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import type { LoadedSettings } from '../../config/settings.js';
 import { t } from '../../i18n/index.js';
+import {
+  createStreamingContentAccumulator,
+  hasSignificantContent,
+  ensureString,
+} from './useStreamingContentAccumulator.js';
 
 const debugLogger = createDebugLogger('OLLAMA_STREAM');
 
@@ -127,10 +133,14 @@ export const useOllamaStream = (
   const [thought, setThought] = useState<ThoughtSummary | null>(null);
   const [pendingHistoryItem, pendingHistoryItemRef, setPendingHistoryItem] =
     useStateAndRef<HistoryItemWithoutId | null>(null);
+  // UUID for current assistant turn
+  const currentAssistantUuidRef = useRef<string>('');
   // Throttle tracking for pending history updates
   const lastPendingUpdateRef = useRef<number>(0);
   const pendingTextBufferRef = useRef<string>('');
-  const pendingUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [pendingRetryErrorItem, setPendingRetryErrorItem] =
     useState<HistoryItemWithoutId | null>(null);
   const [
@@ -145,6 +155,15 @@ export const useOllamaStream = (
   // Store prompt text for token estimation fallback
   const currentPromptTextRef = useRef<string>('');
   const textTokenizer = useMemo(() => new TextTokenizer(), []);
+
+  // Streaming content accumulator with event-driven architecture
+  // Provides real-time streaming of content through events and async iterators
+  // Integration with eventBus for system-wide notifications
+  const contentAccumulator = useMemo(
+    () =>
+      createStreamingContentAccumulator({ enableEventBus: true, debug: false }),
+    [],
+  );
   const {
     startNewPrompt,
     getPromptCount,
@@ -286,7 +305,7 @@ export const useOllamaStream = (
       if (force || timeSinceLastUpdate >= STREAM_UPDATE_THROTTLE_MS) {
         lastPendingUpdateRef.current = now;
         setPendingHistoryItem(item);
-        
+
         // Clear any pending timer
         if (pendingUpdateTimerRef.current) {
           clearTimeout(pendingUpdateTimerRef.current);
@@ -432,6 +451,7 @@ export const useOllamaStream = (
     ): Promise<{
       queryToSend: PartListUnion | null;
       shouldProceed: boolean;
+      userUuid?: string;
     }> => {
       if (turnCancelledRef.current) {
         return { queryToSend: null, shouldProceed: false };
@@ -441,6 +461,7 @@ export const useOllamaStream = (
       }
 
       let localQueryToSendToOllama: PartListUnion | null = null;
+      let userUuid: string | undefined;
 
       if (typeof query === 'string') {
         const trimmedQuery = query.trim();
@@ -495,10 +516,27 @@ export const useOllamaStream = (
 
         localQueryToSendToOllama = trimmedQuery;
 
+        // Generate UUID for user message
+        userUuid = randomUUID();
         addItem(
-          { type: MessageType.USER, text: trimmedQuery },
+          { type: MessageType.USER, text: trimmedQuery, uuid: userUuid },
           userMessageTimestamp,
         );
+
+        // Record user message for session persistence
+        // This allows the user message to be restored on --resume
+        try {
+          const chatRecordingService = config.getChatRecordingService();
+          if (chatRecordingService) {
+            chatRecordingService.recordUserMessage(trimmedQuery, userUuid);
+            debugLogger.info('Recorded user message to storage', {
+              textLength: trimmedQuery.length,
+              uuid: userUuid,
+            });
+          }
+        } catch (error) {
+          debugLogger.error('Error saving user message:', error);
+        }
 
         // Handle @-commands (which might involve tool calls)
         if (isAtCommand(trimmedQuery)) {
@@ -527,7 +565,11 @@ export const useOllamaStream = (
         );
         return { queryToSend: null, shouldProceed: false };
       }
-      return { queryToSend: localQueryToSendToOllama, shouldProceed: true };
+      return {
+        queryToSend: localQueryToSendToOllama,
+        shouldProceed: true,
+        userUuid,
+      };
     },
     [
       config,
@@ -553,7 +595,24 @@ export const useOllamaStream = (
         // Prevents additional output after a user initiated cancel.
         return '';
       }
-      let newOllamaMessageBuffer = currentOllamaMessageBuffer + eventValue;
+
+      // Convert eventValue to string safely using ensureString
+      // This is CRITICAL to prevent [Object] from appearing in output
+      const textValue = ensureString(eventValue);
+
+      // IMPORTANT: Always accumulate content for storage
+      // This happens BEFORE any UI-related logic
+      contentAccumulator.appendText(textValue);
+
+      // UI buffer handling - separate from storage accumulation
+      let newOllamaMessageBuffer = currentOllamaMessageBuffer + textValue;
+
+      // Skip UI processing if there's no actual content to display
+      // (storage accumulation already happened above)
+      if (!textValue || textValue.trim().length === 0) {
+        return currentOllamaMessageBuffer;
+      }
+
       if (
         pendingHistoryItemRef.current?.type !== 'ollama' &&
         pendingHistoryItemRef.current?.type !== 'ollama_content'
@@ -561,45 +620,73 @@ export const useOllamaStream = (
         if (pendingHistoryItemRef.current) {
           addItem(pendingHistoryItemRef.current, userMessageTimestamp);
         }
-        throttledSetPendingHistoryItem({ type: 'ollama', text: '' }, true);
-        newOllamaMessageBuffer = eventValue;
+        // Generate UUID for this assistant turn
+        const uuid = randomUUID();
+        currentAssistantUuidRef.current = uuid;
+        // Set UUID in accumulator for storage recording
+        contentAccumulator.setUuid(uuid);
+        // Don't create pending item with empty text - will be created below
+        // NOTE: We DO NOT reset the buffer here anymore
+        // The accumulator already has the content, UI buffer continues normally
       }
+
+      // Get the UUID for this turn (either existing or newly created)
+      const turnUuid = currentAssistantUuidRef.current;
+
       // Split large messages for better rendering performance. Ideally,
       // we should maximize the amount of output sent to <Static />.
       const splitPoint = findLastSafeSplitPoint(newOllamaMessageBuffer);
       if (splitPoint === newOllamaMessageBuffer.length) {
         // Update the existing message with accumulated content (throttled)
-        const currentType = pendingHistoryItemRef.current?.type as 'ollama' | 'ollama_content' | undefined;
+        const currentType = pendingHistoryItemRef.current?.type as
+          | 'ollama'
+          | 'ollama_content'
+          | undefined;
         throttledSetPendingHistoryItem({
           type: currentType ?? 'ollama',
           text: newOllamaMessageBuffer,
+          uuid: turnUuid,
         });
       } else {
-        // This indicates that we need to split up this Gemini Message.
-        // Splitting a message is primarily a performance consideration. There is a
-        // <Static> component at the root of App.tsx which takes care of rendering
-        // content statically or dynamically. Everything but the last message is
-        // treated as static in order to prevent re-rendering an entire message history
-        // multiple times per-second (as streaming occurs). Prior to this change you'd
-        // see heavy flickering of the terminal. This ensures that larger messages get
-        // broken up so that there are more "statically" rendered.
+        // Split message for better rendering performance.
+        // Don't add empty chunks - only add if there's actual content
         const beforeText = newOllamaMessageBuffer.substring(0, splitPoint);
         const afterText = newOllamaMessageBuffer.substring(splitPoint);
-        addItem(
-          {
-            type: pendingHistoryItemRef.current?.type as
-              | 'ollama'
-              | 'ollama_content',
-            text: beforeText,
-          },
-          userMessageTimestamp,
-        );
-        throttledSetPendingHistoryItem({ type: 'ollama_content', text: afterText }, true);
-        newOllamaMessageBuffer = afterText;
+
+        // Only add the "before" part if it has content
+        if (beforeText.trim().length > 0) {
+          addItem(
+            {
+              type: pendingHistoryItemRef.current?.type as
+                | 'ollama'
+                | 'ollama_content',
+              text: beforeText,
+              uuid: turnUuid,
+            },
+            userMessageTimestamp,
+          );
+        }
+
+        // Only create pending item for "after" part if it has content
+        if (afterText.trim().length > 0) {
+          throttledSetPendingHistoryItem(
+            { type: 'ollama_content', text: afterText, uuid: turnUuid },
+            true,
+          );
+          newOllamaMessageBuffer = afterText;
+        } else {
+          // No content left, clear buffer
+          newOllamaMessageBuffer = '';
+        }
       }
       return newOllamaMessageBuffer;
     },
-    [addItem, pendingHistoryItemRef, throttledSetPendingHistoryItem],
+    [
+      addItem,
+      pendingHistoryItemRef,
+      throttledSetPendingHistoryItem,
+      contentAccumulator,
+    ],
   );
 
   const mergeThought = useCallback(
@@ -627,11 +714,21 @@ export const useOllamaStream = (
       }
 
       // Extract the description text from the thought summary
-      const thoughtText = eventValue.description ?? '';
-      if (!thoughtText) {
+      // Use ensureString to handle any type safely
+      // This is CRITICAL to prevent [Object] from appearing in output
+      const thoughtText = ensureString(eventValue.description);
+
+      // Skip UI processing if there's no actual content to display
+      // (storage accumulation already happened above)
+      if (!thoughtText || thoughtText.trim().length === 0) {
         return currentThoughtBuffer;
       }
 
+      // IMPORTANT: Always accumulate thought content for storage
+      // This happens BEFORE any UI-related logic
+      contentAccumulator.appendThought(thoughtText);
+
+      // UI buffer handling - separate from storage accumulation
       let newThoughtBuffer = currentThoughtBuffer + thoughtText;
 
       const pendingType = pendingHistoryItemRef.current?.type;
@@ -645,7 +742,7 @@ export const useOllamaStream = (
         if (pendingHistoryItemRef.current) {
           addItem(pendingHistoryItemRef.current, userMessageTimestamp);
         }
-        throttledSetPendingHistoryItem({ type: 'ollama_thought', text: '' }, true);
+        // Don't create pending item with empty text - will be created below
       }
 
       // Split large thought messages for better rendering performance (same rationale
@@ -666,18 +763,31 @@ export const useOllamaStream = (
       } else {
         const beforeText = newThoughtBuffer.substring(0, splitPoint);
         const afterText = newThoughtBuffer.substring(splitPoint);
-        addItem(
-          {
-            type: nextPendingType,
-            text: beforeText,
-          },
-          userMessageTimestamp,
-        );
-        throttledSetPendingHistoryItem({
-          type: 'ollama_thought_content',
-          text: afterText,
-        }, true);
-        newThoughtBuffer = afterText;
+
+        // Only add before part if it has content
+        if (beforeText.trim().length > 0) {
+          addItem(
+            {
+              type: nextPendingType,
+              text: beforeText,
+            },
+            userMessageTimestamp,
+          );
+        }
+
+        // Only create pending item for after part if it has content
+        if (afterText.trim().length > 0) {
+          throttledSetPendingHistoryItem(
+            {
+              type: 'ollama_thought_content',
+              text: afterText,
+            },
+            true,
+          );
+          newThoughtBuffer = afterText;
+        } else {
+          newThoughtBuffer = '';
+        }
       }
 
       // Also update the thought state for the loading indicator
@@ -685,7 +795,13 @@ export const useOllamaStream = (
 
       return newThoughtBuffer;
     },
-    [addItem, pendingHistoryItemRef, throttledSetPendingHistoryItem, mergeThought],
+    [
+      addItem,
+      pendingHistoryItemRef,
+      throttledSetPendingHistoryItem,
+      mergeThought,
+      contentAccumulator,
+    ],
   );
 
   const handleUserCancelledEvent = useCallback(
@@ -693,6 +809,9 @@ export const useOllamaStream = (
       if (turnCancelledRef.current) {
         return;
       }
+
+      // Reset content accumulator on user cancel
+      contentAccumulator.reset('user_cancelled');
 
       if (pendingHistoryItemRef.current) {
         if (pendingHistoryItemRef.current.type === 'tool_group') {
@@ -728,11 +847,29 @@ export const useOllamaStream = (
       setPendingHistoryItem,
       setThought,
       clearRetryCountdown,
+      contentAccumulator,
     ],
   );
 
   const handleErrorEvent = useCallback(
-    (eventValue: OllamaErrorEventValue, userMessageTimestamp: number) => {
+    (eventValue: OllamaErrorEventValue, userMessageTimestamp: number, userUuid?: string) => {
+      // Reset content accumulator on error
+      contentAccumulator.reset('error');
+
+      // Record error to session for debugging
+      try {
+        const chatRecordingService = config.getChatRecordingService();
+        if (chatRecordingService) {
+          chatRecordingService.recordError({
+            message: eventValue.error.message,
+            status: eventValue.error.status,
+            requestUuid: userUuid,
+          });
+        }
+      } catch (error) {
+        debugLogger.error('Error saving error record:', error);
+      }
+
       if (pendingHistoryItemRef.current) {
         addItem(pendingHistoryItemRef.current, userMessageTimestamp);
         setPendingHistoryItem(null);
@@ -757,6 +894,7 @@ export const useOllamaStream = (
       config,
       setThought,
       clearRetryCountdown,
+      contentAccumulator,
     ],
   );
 
@@ -776,23 +914,39 @@ export const useOllamaStream = (
   );
 
   const handleFinishedEvent = useCallback(
-    (event: ServerOllamaFinishedEvent, userMessageTimestamp: number) => {
+    (
+      event: ServerOllamaFinishedEvent,
+      userMessageTimestamp: number,
+      assistantContent: string,
+      userUuid?: string,
+    ) => {
       const finishReason = event.value.reason;
+
+      // Get FULL content from accumulator (not from UI buffer)
+      const fullContent = contentAccumulator.getText();
+      const fullThought = contentAccumulator.getThought();
+      const uuid = contentAccumulator.getUuid();
+
+      // Debug log ALWAYS - even if finishReason is empty
+      debugLogger.info('Finished event received', {
+        finishReason: finishReason || '(empty)',
+        hasUsageMetadata: !!event.value.usageMetadata,
+        promptTokenCount: event.value.usageMetadata?.promptTokenCount,
+        candidatesTokenCount: event.value.usageMetadata?.candidatesTokenCount,
+        uiBufferLength: assistantContent.length,
+        accumulatorTextLength: fullContent.length,
+        accumulatorThoughtLength: fullThought.length,
+      });
+
       if (!finishReason) {
-        return;
+        debugLogger.warn(
+          'Finished event without finishReason - still recording assistant turn',
+        );
       }
 
       // Record token usage for context progress bar
       const usageMetadata = event.value.usageMetadata;
       const model = config.getModel();
-
-      // Debug log for token tracking
-      debugLogger.info('Finished event received', {
-        finishReason,
-        hasUsageMetadata: !!usageMetadata,
-        promptTokenCount: usageMetadata?.promptTokenCount,
-        candidatesTokenCount: usageMetadata?.candidatesTokenCount,
-      });
 
       // Use the new method with fallback support
       // When Ollama doesn't return prompt_eval_count, the telemetry service
@@ -860,7 +1014,9 @@ export const useOllamaStream = (
         [FinishReason.NO_IMAGE]: 'Response stopped due to no image.',
       };
 
-      const message = finishReasonMessages[finishReason];
+      const message = finishReason
+        ? finishReasonMessages[finishReason]
+        : undefined;
       if (message) {
         addItem(
           {
@@ -871,8 +1027,86 @@ export const useOllamaStream = (
         );
       }
       clearRetryCountdown();
+
+      // Record assistant turn to storage for session persistence
+      // This allows the assistant response to be restored on --resume
+      try {
+        const chatRecordingService = config.getChatRecordingService();
+
+        // Validate content before recording
+        const hasValidContent = hasSignificantContent(fullContent);
+        const hasValidThought = hasSignificantContent(fullThought);
+
+        debugLogger.info('ChatRecordingService validation', {
+          hasService: !!chatRecordingService,
+          hasValidContent,
+          hasValidThought,
+          fullContentLength: fullContent.length,
+          fullThoughtLength: fullThought.length,
+          uuid,
+        });
+
+        if (chatRecordingService && (hasValidContent || hasValidThought)) {
+          // Use full content from accumulator, not UI buffer
+          chatRecordingService.recordAssistantTurn({
+            model,
+            message: [{ text: fullContent }],
+            tokens: usageMetadata,
+            uuid,
+            requestUuid: userUuid,
+          });
+          debugLogger.info('Recorded assistant turn to storage', {
+            contentLength: fullContent.length,
+            thoughtLength: fullThought.length,
+            model,
+            uuid,
+            requestUuid: userUuid,
+          });
+        } else {
+          debugLogger.info('Skipping assistant turn recording', {
+            hasService: !!chatRecordingService,
+            hasValidContent,
+            hasValidThought,
+            reason:
+              !hasValidContent && !hasValidThought
+                ? 'No significant content (empty or whitespace only)'
+                : 'No recording service',
+          });
+        }
+      } catch (error) {
+        debugLogger.error('Error saving assistant turn:', error);
+      }
+
+      // IMPORTANT: Finish turn and reset accumulator after recording is complete
+      // This emits turn:finished event for any subscribers
+      const turnFinishedEvent = contentAccumulator.finishTurn();
+      if (turnFinishedEvent) {
+        debugLogger.info('Turn finished', {
+          turnUuid: turnFinishedEvent.turnUuid,
+          textLength: turnFinishedEvent.textLength,
+          thoughtLength: turnFinishedEvent.thoughtLength,
+          duration: turnFinishedEvent.duration,
+          hasSignificantContent: turnFinishedEvent.hasSignificantContent,
+        });
+      }
+      // Skip finishTurn in reset since we already called it above
+      contentAccumulator.reset('finished', true);
+
+      // Save telemetry state for session persistence
+      // This allows metrics to be restored on --resume
+      try {
+        const chatRecordingService = config.getChatRecordingService();
+        if (chatRecordingService) {
+          const telemetryState = uiTelemetryService.exportState();
+          chatRecordingService.recordUiTelemetryEvent({
+            telemetryState,
+          });
+        }
+      } catch (error) {
+        debugLogger.error('Error saving telemetry state:', error);
+      }
     },
-    [addItem, clearRetryCountdown, config, textTokenizer],
+    [addItem, clearRetryCountdown, config, textTokenizer, contentAccumulator],
   );
 
   const handleChatCompressionEvent = useCallback(
@@ -956,19 +1190,36 @@ export const useOllamaStream = (
     [config, addItem],
   );
 
-  const handleLoopDetectedEvent = useCallback(() => {
+  const handleLoopDetectedEvent = useCallback((userUuid?: string) => {
+    // Record loop detection to session for debugging
+    try {
+      const chatRecordingService = config.getChatRecordingService();
+      if (chatRecordingService) {
+        chatRecordingService.recordLoopDetected({
+          requestUuid: userUuid,
+        });
+      }
+    } catch (error) {
+      debugLogger.error('Error saving loop detection record:', error);
+    }
+
     // Show the confirmation dialog to choose whether to disable loop detection
     setLoopDetectionConfirmationRequest({
       onComplete: handleLoopDetectionConfirmation,
     });
-  }, [handleLoopDetectionConfirmation]);
+  }, [handleLoopDetectionConfirmation, config]);
 
   const processOllamaStreamEvents = useCallback(
     async (
       stream: AsyncIterable<GeminiEvent>,
       userMessageTimestamp: number,
       signal: AbortSignal,
+      userUuid?: string,
     ): Promise<StreamProcessingStatus> => {
+      // Initialize content accumulator for this turn
+      // This must happen BEFORE any events are processed
+      contentAccumulator.startTurn();
+
       let ollamaMessageBuffer = '';
       let thoughtBuffer = '';
       const toolCallRequests: ToolCallRequestInfo[] = [];
@@ -1001,7 +1252,7 @@ export const useOllamaStream = (
             handleUserCancelledEvent(userMessageTimestamp);
             break;
           case ServerOllamaEventType.Error:
-            handleErrorEvent(event.value, userMessageTimestamp);
+            handleErrorEvent(event.value, userMessageTimestamp, userUuid);
             break;
           case ServerOllamaEventType.ChatCompressed:
             handleChatCompressionEvent(event.value, userMessageTimestamp);
@@ -1020,6 +1271,8 @@ export const useOllamaStream = (
             handleFinishedEvent(
               event as ServerOllamaFinishedEvent,
               userMessageTimestamp,
+              ollamaMessageBuffer,
+              userUuid,
             );
             break;
           case ServerOllamaEventType.Citation:
@@ -1071,6 +1324,7 @@ export const useOllamaStream = (
       pendingHistoryItemRef,
       setPendingHistoryItem,
       pendingRetryCountdownItemRef,
+      contentAccumulator,
     ],
   );
 
@@ -1114,12 +1368,13 @@ export const useOllamaStream = (
       }
 
       return promptIdContext.run(prompt_id, async () => {
-        const { queryToSend, shouldProceed } = await prepareQueryForOllama(
-          query,
-          userMessageTimestamp,
-          abortSignal,
-          prompt_id!,
-        );
+        const { queryToSend, shouldProceed, userUuid } =
+          await prepareQueryForOllama(
+            query,
+            userMessageTimestamp,
+            abortSignal,
+            prompt_id!,
+          );
 
         if (!shouldProceed || queryToSend === null) {
           isSubmittingQueryRef.current = false;
@@ -1155,17 +1410,22 @@ export const useOllamaStream = (
         setInitError(null);
 
         try {
+          // Pass user UUID to recording service
+          const streamOptions = options
+            ? { ...options, userUuid }
+            : { isContinuation: false, userUuid };
           const stream = ollamaClient.sendMessageStream(
             finalQueryToSend,
             abortSignal,
             prompt_id!,
-            options,
+            streamOptions,
           );
 
           const processingStatus = await processOllamaStreamEvents(
             stream,
             userMessageTimestamp,
             abortSignal,
+            userUuid,
           );
 
           if (processingStatus === StreamProcessingStatus.UserCancelled) {
@@ -1279,9 +1539,10 @@ export const useOllamaStream = (
 
   const handleCompletedTools = useCallback(
     async (completedToolCallsFromScheduler: TrackedToolCall[]) => {
-      if (isResponding) {
-        return;
-      }
+      // Note: We don't check isResponding here because tool execution happens
+      // asynchronously after the stream completes. The tools may finish after
+      // setIsResponding(false) is called in the finally block.
+      // We rely on responseSubmittedToGemini flag to prevent duplicate submissions.
 
       const completedAndReadyToSubmitTools =
         completedToolCallsFromScheduler.filter(
@@ -1390,7 +1651,6 @@ export const useOllamaStream = (
       );
     },
     [
-      isResponding,
       submitQuery,
       markToolsAsSubmitted,
       ollamaClient,

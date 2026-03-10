@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Determine the project directory
 PROJECT_DIR=$(cd "$(dirname "$0")/.." && pwd)
-ALIAS_COMMAND="alias qwen='node "${PROJECT_DIR}/scripts/start.js"'"
+ALIAS_COMMAND="alias qwen='node "${PROJECT_DIR}/scripts/launch.js"'"
 
 # Detect shell and set config file path
 if [[ "${SHELL}" == *"/bash" ]]; then

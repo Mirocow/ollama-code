@@ -266,7 +266,7 @@ function convertToHistoryItems(
             payload.userText ||
             extractTextFromParts(record.message?.parts as Part[]);
           if (text) {
-            items.push({ type: 'user', text });
+            items.push({ type: 'user', text, uuid: record.uuid });
           }
 
           const toolDisplays = buildAtCommandDisplays(payload);
@@ -289,7 +289,7 @@ function convertToHistoryItems(
 
         const text = extractTextFromParts(record.message?.parts as Part[]);
         if (text) {
-          items.push({ type: 'user', text });
+          items.push({ type: 'user', text, uuid: record.uuid });
         }
         break;
       }
@@ -320,7 +320,7 @@ function convertToHistoryItems(
             });
             currentToolGroup = [];
           }
-          items.push({ type: 'ollama_thought', text: thoughtText });
+          items.push({ type: 'ollama_thought', text: thoughtText, uuid: record.uuid });
         }
 
         // If there's text content, add it as a gemini message
@@ -333,7 +333,7 @@ function convertToHistoryItems(
             });
             currentToolGroup = [];
           }
-          items.push({ type: 'ollama', text });
+          items.push({ type: 'ollama', text, uuid: record.uuid });
         }
 
         // Track function calls for pairing with results

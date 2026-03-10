@@ -5,7 +5,6 @@
  */
 
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from '../../../../tools/tools.js';
-import { ToolNames, ToolDisplayNames } from '../../../../tools/tool-names.js';
 import type { ToolResult, ToolResultDisplay } from '../../../../tools/tools.js';
 import type { Config } from '../../../../config/config.js';
 import type { SkillManager } from '../../../../skills/skill-manager.js';
@@ -26,7 +25,7 @@ export interface SkillParams {
  * for the model to choose from.
  */
 export class SkillTool extends BaseDeclarativeTool<SkillParams, ToolResult> {
-  static readonly Name: string = ToolNames.SKILL;
+  static readonly Name: string = 'skill';
 
   private skillManager: SkillManager;
   private availableSkills: SkillConfig[] = [];
@@ -48,7 +47,7 @@ export class SkillTool extends BaseDeclarativeTool<SkillParams, ToolResult> {
 
     super(
       SkillTool.Name,
-      ToolDisplayNames.SKILL,
+      'Skill',
       'Execute a skill within the main conversation. Loading available skills...', // Initial description
       Kind.Read,
       initialSchema,

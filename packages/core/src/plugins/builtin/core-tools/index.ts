@@ -163,6 +163,43 @@ const coreToolsPlugin: PluginDefinition = {
   
   tools: [echoTool, timestampTool, envTool],
   
+  // Tool aliases - short names that resolve to canonical tool names
+  aliases: [
+    // echo aliases
+    { alias: 'repeat', canonicalName: 'echo', description: 'Echo back the input message' },
+    { alias: 'say', canonicalName: 'echo', description: 'Echo back the input message' },
+    // timestamp aliases
+    { alias: 'time', canonicalName: 'timestamp', description: 'Get current timestamp' },
+    { alias: 'date', canonicalName: 'timestamp', description: 'Get current date/time' },
+    { alias: 'now', canonicalName: 'timestamp', description: 'Get current timestamp' },
+    // get_env aliases
+    { alias: 'env', canonicalName: 'get_env', description: 'Get environment variable value' },
+    { alias: 'getenv', canonicalName: 'get_env', description: 'Get environment variable value' },
+    { alias: 'environment', canonicalName: 'get_env', description: 'Get environment variable value' },
+  ],
+  
+  // Context-aware prompts for model guidance
+  prompts: [
+    {
+      priority: 1,
+      content: 'Core utility tools: echo for testing, timestamp for date/time, get_env for environment variables. These are simple tools for basic operations and testing.',
+    },
+    {
+      priority: 2,
+      content: 'GET_ENV: Read environment variables. Useful for checking PATH, HOME, configuration. Note: sensitive values (KEYS, PASSWORDS, TOKENS) are masked for security.',
+    },
+  ],
+  
+  // Plugin capabilities
+  capabilities: {
+    canReadFiles: false,
+    canWriteFiles: false,
+    canExecuteCommands: false,
+    canAccessNetwork: false,
+    canUseStorage: true,
+    canUsePrompts: true,
+  },
+  
   hooks: {
     onLoad: async (context: PluginContext) => {
       context.logger.info('Core Tools plugin loaded');

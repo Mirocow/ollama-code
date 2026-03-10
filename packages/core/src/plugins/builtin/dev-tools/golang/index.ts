@@ -709,7 +709,8 @@ export class GolangTool extends BaseDeclarativeTool<
   ToolResult
 > {
   static Name: string = 'golang_dev';
-  private allowlist: Set<string> = new Set();
+  // Static allowlist to persist across all instances
+  private static allowlist: Set<string> = new Set();
 
   constructor(private readonly config: Config) {
     super(
@@ -867,6 +868,6 @@ export class GolangTool extends BaseDeclarativeTool<
   protected createInvocation(
     params: GolangToolParams,
   ): ToolInvocation<GolangToolParams, ToolResult> {
-    return new GolangToolInvocation(this.config, params, this.allowlist);
+    return new GolangToolInvocation(this.config, params, GolangTool.allowlist);
   }
 }

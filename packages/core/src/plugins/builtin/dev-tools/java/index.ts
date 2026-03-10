@@ -731,7 +731,8 @@ The tool auto-detects the build tool based on project files.
 
 export class JavaTool extends BaseDeclarativeTool<JavaToolParams, ToolResult> {
   static Name: string = 'java_dev';
-  private allowlist: Set<string> = new Set();
+  // Static allowlist to persist across all instances
+  private static allowlist: Set<string> = new Set();
 
   constructor(private readonly config: Config) {
     super(
@@ -895,6 +896,6 @@ export class JavaTool extends BaseDeclarativeTool<JavaToolParams, ToolResult> {
   protected createInvocation(
     params: JavaToolParams,
   ): ToolInvocation<JavaToolParams, ToolResult> {
-    return new JavaToolInvocation(this.config, params, this.allowlist);
+    return new JavaToolInvocation(this.config, params, JavaTool.allowlist);
   }
 }

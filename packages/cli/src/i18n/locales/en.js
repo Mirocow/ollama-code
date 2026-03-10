@@ -25,6 +25,7 @@ export default {
   'Total': 'Total',
   'Token Budget': 'Token Budget',
   'remaining': 'remaining',
+  'left': 'left',
   'Reserved': 'Reserved',
   'tokens': 'tokens',
 

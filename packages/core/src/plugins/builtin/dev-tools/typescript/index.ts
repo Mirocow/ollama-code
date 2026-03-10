@@ -739,7 +739,8 @@ export class TypeScriptTool extends BaseDeclarativeTool<
   ToolResult
 > {
   static Name: string = 'typescript_dev';
-  private allowlist: Set<string> = new Set();
+  // Static allowlist to persist across all instances
+  private static allowlist: Set<string> = new Set();
 
   constructor(private readonly config: Config) {
     super(
@@ -904,6 +905,6 @@ export class TypeScriptTool extends BaseDeclarativeTool<
   protected createInvocation(
     params: TypeScriptToolParams,
   ): ToolInvocation<TypeScriptToolParams, ToolResult> {
-    return new TypeScriptToolInvocation(this.config, params, this.allowlist);
+    return new TypeScriptToolInvocation(this.config, params, TypeScriptTool.allowlist);
   }
 }

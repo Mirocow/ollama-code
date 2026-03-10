@@ -27,9 +27,51 @@ const memoryToolsPlugin: PluginDefinition = {
     enabledByDefault: true,
   },
   
-  toolClasses: [
+  // Unified tools array - tool classes that don't need Config
+  tools: [
     MemoryTool,
   ],
+  
+  // Tool aliases - short names that resolve to canonical tool names
+  // Includes common model hallucinations
+  aliases: [
+    { alias: 'memory', canonicalName: 'save_memory', description: 'Save to memory' },
+    { alias: 'Memory', canonicalName: 'save_memory', description: 'Save to memory' },
+    { alias: 'save', canonicalName: 'save_memory', description: 'Save memory/context' },
+    { alias: 'save_memory', canonicalName: 'save_memory', description: 'Save to memory' },
+    { alias: 'save-memory', canonicalName: 'save_memory', description: 'Save to memory' },
+    { alias: 'SaveMemory', canonicalName: 'save_memory', description: 'Save to memory' },
+    { alias: 'Save-Memory', canonicalName: 'save_memory', description: 'Save to memory' },
+    { alias: 'remember', canonicalName: 'save_memory', description: 'Remember information' },
+    { alias: 'memoryTool', canonicalName: 'save_memory', description: 'Memory tool' },
+    { alias: 'MemoryTool', canonicalName: 'save_memory', description: 'Memory tool' },
+  ],
+  
+  // Context-aware prompts for model guidance
+  prompts: [
+    {
+      priority: 1,
+      content: 'Memory tool (save_memory) for persistent context across sessions. Stores information in ~/.ollama-code/OLLAMA_MEMORY.md. Use to remember important facts, user preferences, project details.',
+    },
+    {
+      priority: 2,
+      content: 'MEMORY USAGE: Save project-specific information (architecture, patterns, conventions), user preferences, important decisions, learned patterns. Memory persists across all sessions.',
+    },
+    {
+      priority: 3,
+      content: 'Read memory at start of session to recall previous context. Update when learning new patterns or making important decisions. Keep entries concise and well-organized.',
+    },
+  ],
+  
+  // Plugin capabilities
+  capabilities: {
+    canReadFiles: true,
+    canWriteFiles: true,
+    canExecuteCommands: false,
+    canAccessNetwork: false,
+    canUseStorage: true,
+    canUsePrompts: true,
+  },
   
   hooks: {
     onLoad: async (context) => {

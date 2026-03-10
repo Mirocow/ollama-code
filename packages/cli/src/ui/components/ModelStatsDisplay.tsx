@@ -8,12 +8,6 @@ import type React from 'react';
 import { Box, Text } from 'ink';
 import { theme } from '../semantic-colors.js';
 import { formatDuration } from '../utils/formatters.js';
-import {
-  calculateAverageLatency,
-  calculateCacheHitRate,
-  calculateErrorRate,
-} from '../utils/computeStats.js';
-import type { ModelMetrics } from '../contexts/SessionContext.js';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import { t } from '../../i18n/index.js';
 
@@ -54,16 +48,48 @@ interface ModelStatsDisplayProps {
   width?: number;
 }
 
+/**
+ * ModelStatsDisplay shows per-model statistics.
+ * 
+ * The byModel data structure contains:
+ * - promptTokens: number
+ * - generatedTokens: number
+ * - cachedTokens: number
+ * - apiTime: number
+ * 
+ * Aggregate data (totalRequests, totalErrors) is in models.api.
+ */
 export const ModelStatsDisplay: React.FC<ModelStatsDisplayProps> = ({
   width,
 }) => {
   const { stats } = useSessionStats();
   const { models } = stats.metrics;
-  const activeModels = Object.entries(models).filter(
-    ([, metrics]) => metrics.api.totalRequests > 0,
+
+  // Handle undefined/null models or api (can happen during resume with old session data)
+  if (!models || !models.api) {
+    return (
+      <Box
+        borderStyle="round"
+        borderColor={theme.border.default}
+        paddingY={1}
+        paddingX={2}
+        width={width}
+      >
+        <Text color={theme.text.primary}>
+          {t('No API calls have been made in this session.')}
+        </Text>
+      </Box>
+    );
+  }
+
+  // Get per-model data from byModel
+  const byModel = models.byModel || {};
+  const activeModels = Object.entries(byModel).filter(
+    ([, m]) => m && (m.promptTokens > 0 || m.generatedTokens > 0),
   );
 
-  if (activeModels.length === 0) {
+  // If no per-model data, check if we have any API calls at all
+  if (activeModels.length === 0 && models.api.totalRequests === 0) {
     return (
       <Box
         borderStyle="round"
@@ -81,17 +107,19 @@ export const ModelStatsDisplay: React.FC<ModelStatsDisplayProps> = ({
 
   const modelNames = activeModels.map(([name]) => name);
 
+  // Helper to get values from byModel entries
+  // byModel entries have: promptTokens, generatedTokens, cachedTokens, apiTime
   const getModelValues = (
-    getter: (metrics: ModelMetrics) => string | React.ReactElement,
-  ) => activeModels.map(([, metrics]) => getter(metrics));
+    getter: (metrics: { promptTokens: number; generatedTokens: number; cachedTokens: number; apiTime: number }) => string | React.ReactElement,
+  ) => activeModels.map(([, m]) => getter(m));
 
-  const hasThoughts = activeModels.some(
-    ([, metrics]) => metrics.tokens.thoughts > 0,
-  );
-  const hasTool = activeModels.some(([, metrics]) => metrics.tokens.tool > 0);
-  const hasCached = activeModels.some(
-    ([, metrics]) => metrics.tokens.cached > 0,
-  );
+  const hasCached = activeModels.some(([, m]) => m.cachedTokens > 0);
+
+  // Calculate cache hit rate for a model
+  const getCacheHitRate = (m: { promptTokens: number; cachedTokens: number }) => {
+    if (m.promptTokens === 0) return 0;
+    return (m.cachedTokens / m.promptTokens) * 100;
+  };
 
   return (
     <Box
@@ -133,84 +161,78 @@ export const ModelStatsDisplay: React.FC<ModelStatsDisplayProps> = ({
         borderColor={theme.border.default}
       />
 
-      {/* API Section */}
-      <StatRow title={t('API')} values={[]} isSection />
+      {/* Aggregate API Stats Section */}
+      <StatRow title={t('API (aggregate)')} values={[]} isSection />
       <StatRow
         title={t('Requests')}
-        values={getModelValues((m) => m.api.totalRequests.toLocaleString())}
+        values={modelNames.map(() => models.api.totalRequests.toLocaleString())}
       />
       <StatRow
         title={t('Errors')}
-        values={getModelValues((m) => {
-          const errorRate = calculateErrorRate(m);
-          return (
-            <Text
-              color={
-                m.api.totalErrors > 0 ? theme.status.error : theme.text.primary
-              }
-            >
-              {m.api.totalErrors.toLocaleString()} ({errorRate.toFixed(1)}%)
-            </Text>
-          );
-        })}
+        values={modelNames.map(() => (
+          <Text
+            color={
+              models.api.totalErrors > 0 ? theme.status.error : theme.text.primary
+            }
+          >
+            {models.api.totalErrors.toLocaleString()}
+          </Text>
+        ))}
       />
       <StatRow
         title={t('Avg Latency')}
-        values={getModelValues((m) => {
-          const avgLatency = calculateAverageLatency(m);
+        values={modelNames.map(() => {
+          const avgLatency = models.api.totalRequests > 0
+            ? models.api.totalLatencyMs / models.api.totalRequests
+            : 0;
           return formatDuration(avgLatency);
         })}
       />
 
       <Box height={1} />
 
-      {/* Tokens Section */}
+      {/* Per-Model Token Stats Section */}
       <StatRow title={t('Tokens')} values={[]} isSection />
       <StatRow
         title={t('Total')}
         values={getModelValues((m) => (
           <Text color={theme.status.warning}>
-            {m.tokens.total.toLocaleString()}
+            {(m.promptTokens + m.generatedTokens).toLocaleString()}
           </Text>
         ))}
       />
       <StatRow
         title={t('Prompt')}
         isSubtle
-        values={getModelValues((m) => m.tokens.prompt.toLocaleString())}
+        values={getModelValues((m) => m.promptTokens.toLocaleString())}
       />
       {hasCached && (
         <StatRow
           title={t('Cached')}
           isSubtle
           values={getModelValues((m) => {
-            const cacheHitRate = calculateCacheHitRate(m);
+            const cacheHitRate = getCacheHitRate(m);
             return (
               <Text color={theme.status.success}>
-                {m.tokens.cached.toLocaleString()} ({cacheHitRate.toFixed(1)}%)
+                {m.cachedTokens.toLocaleString()} ({cacheHitRate.toFixed(1)}%)
               </Text>
             );
           })}
         />
       )}
-      {hasThoughts && (
-        <StatRow
-          title={t('Thoughts')}
-          isSubtle
-          values={getModelValues((m) => m.tokens.thoughts.toLocaleString())}
-        />
-      )}
-      {hasTool && (
-        <StatRow
-          title={t('Tool')}
-          isSubtle
-          values={getModelValues((m) => m.tokens.tool.toLocaleString())}
-        />
-      )}
       <StatRow
         title={t('Output')}
         isSubtle
-        values={getModelValues((m) => m.tokens.candidates.toLocaleString())}
+        values={getModelValues((m) => m.generatedTokens.toLocaleString())}
+      />
+
+      <Box height={1} />
+
+      {/* Per-Model Time Stats Section */}
+      <StatRow title={t('API Time')} values={[]} isSection />
+      <StatRow
+        title={t('Total')}
+        values={getModelValues((m) => formatDuration(m.apiTime))}
       />
     </Box>
   );

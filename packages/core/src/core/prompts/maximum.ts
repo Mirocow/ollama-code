@@ -9,7 +9,7 @@
  * Complete instructions with full documentation, all examples, and architectural guidance.
  */
 
-import { ToolNames } from '../../tools/tool-names.js';
+
 import type { LearningFeedback } from '../../learning/tool-learning.js';
 
 export function getMaximumPrompt(context: {
@@ -43,9 +43,9 @@ ${toolLearning.slice(0, 5).map((f, i) => `## Error ${i + 1}: ${f.explanation}
 ### Common Tool Name Mistakes to Avoid
 | Wrong Name | Correct Name | Purpose |
 |------------|--------------|---------|
-| git_dev | ${ToolNames.SHELL} | Git commands via shell |
-| shell_dev | ${ToolNames.SHELL} | Shell execution |
-| bash_dev | ${ToolNames.SHELL} | Bash commands |
+| git_dev | run_shell_command | Git commands via shell |
+| shell_dev | run_shell_command | Shell execution |
+| bash_dev | run_shell_command | Bash commands |
 | javascript_dev | nodejs_dev | Node.js development |
 | file_read | read_file | Read single file |
 | file_write | write_file | Write file |
@@ -155,7 +155,7 @@ CLI agent for development: analysis, editing, refactoring, testing, debugging, d
 ## [OPTIONAL] - Advanced features
 
 ### Memory System
-Use ${ToolNames.MEMORY} for:
+Use save_memory for:
 - User preferences (editor, testing framework)
 - Project conventions (branch naming, commit style)
 - Personal aliases and shortcuts
@@ -245,33 +245,33 @@ grep_search pattern="error" path="${cwd}" head_limit=20
 
 ## Development Tools
 
-### ${ToolNames.SHELL}
+### run_shell_command
 \`\`\`typescript
 // Basic command
-${ToolNames.SHELL} command="npm run build"
+run_shell_command command="npm run build"
 
 // Background process (servers, watchers)
-${ToolNames.SHELL} command="node server.js &"
+run_shell_command command="node server.js &"
 
 // Chained commands
-${ToolNames.SHELL} command="npm run lint && npm test"
+run_shell_command command="npm run lint && npm test"
 
 // With timeout
-${ToolNames.SHELL} command="npm install" timeout=120000
+run_shell_command command="npm install" timeout=120000
 \`\`\`
 
 **Safety Rule**: Explain modifying commands before execution.
 
-### ${ToolNames.SSH}
+### ssh_connect
 \`\`\`typescript
 // Connect to remote server - use Current Username from Environment
-${ToolNames.SSH} host="192.168.1.100" user="<from Current Username>" command="ls /"
+ssh_connect host="192.168.1.100" user="<from Current Username>" command="ls /"
 
 // With SSH key
-${ToolNames.SSH} host="server.com" user="<from Current Username>" identity_file="~/.ssh/id_rsa" command="docker ps"
+ssh_connect host="server.com" user="<from Current Username>" identity_file="~/.ssh/id_rsa" command="docker ps"
 
 // Using saved profile
-${ToolNames.SSH} profile="production" command="systemctl status nginx"
+ssh_connect profile="production" command="systemctl status nginx"
 \`\`\`
 
 **When to Use:**
@@ -291,9 +291,9 @@ ${ToolNames.SSH} profile="production" command="systemctl status nginx"
 
 ${hasTools ? `## Organization Tools
 
-### ${ToolNames.TODO_WRITE}
+### todo_write
 \`\`\`typescript
-${ToolNames.TODO_WRITE} todos=[
+todo_write todos=[
   {id: "1", content: "Read config files", status: "completed"},
   {id: "2", content: "Implement feature", status: "in_progress"},
   {id: "3", content: "Write tests", status: "pending"},
@@ -306,22 +306,22 @@ ${ToolNames.TODO_WRITE} todos=[
 - Mark \`completed\` immediately when done
 - Add new todos when scope expands
 
-### ${ToolNames.TASK}
+### task
 \`\`\`typescript
 // Complex search (saves context)
-${ToolNames.TASK} description="Find all API endpoints" prompt="Search for all Express.js route definitions in the codebase..."
+task description="Find all API endpoints" prompt="Search for all Express.js route definitions in the codebase..."
 
 // Specialized subagent
-${ToolNames.TASK} description="Code review" subagent_type="general-purpose" prompt="Review the authentication module..."
+task description="Code review" subagent_type="general-purpose" prompt="Review the authentication module..."
 \`\`\`
 
-### ${ToolNames.MEMORY}
+### save_memory
 \`\`\`typescript
 // Save user preference
-${ToolNames.MEMORY} action="save" key="preferred_test_runner" value="vitest"
+save_memory action="save" key="preferred_test_runner" value="vitest"
 
 // Retrieve preference
-${ToolNames.MEMORY} action="get" key="preferred_test_runner"
+save_memory action="get" key="preferred_test_runner"
 \`\`\`
 ` : ''}
 
@@ -543,11 +543,11 @@ Authentication uses JWT tokens. The service issues tokens on login, middleware v
 user: Fix all type errors in the api module
 model:
 1. Analyze errors
-[tool_call: ${ToolNames.SHELL} command="npx tsc --noEmit 2>&1"]
+[tool_call: run_shell_command command="npx tsc --noEmit 2>&1"]
 [tool_call: read_file path="${cwd}/src/api/index.ts"]
 
 2. Create fix plan
-[tool_call: ${ToolNames.TODO_WRITE} todos=[
+[tool_call: todo_write todos=[
   {id: "1", content: "Fix missing return type on getUser", status: "pending"},
   {id: "2", content: "Add proper typing for response object", status: "pending"},
   {id: "3", content: "Fix optional chaining on user.name", status: "pending"},
@@ -558,7 +558,7 @@ model:
 [tool_call: edit path="${cwd}/src/api/index.ts"]
 
 4. Verify
-[tool_call: ${ToolNames.SHELL} command="npx tsc --noEmit"]
+[tool_call: run_shell_command command="npx tsc --noEmit"]
 
 All type errors fixed.
 </example>
@@ -576,10 +576,10 @@ model:
 [tool_call: write_file path="${cwd}/src/services/__tests__/UserService.test.ts"]
 
 3. Run tests
-[tool_call: ${ToolNames.SHELL} command="npm test -- src/services/__tests__/UserService.test.ts"]
+[tool_call: run_shell_command command="npm test -- src/services/__tests__/UserService.test.ts"]
 
 4. Fix any issues and verify coverage
-[tool_call: ${ToolNames.SHELL} command="npm test -- --coverage src/services/__tests__/UserService.test.ts"]
+[tool_call: run_shell_command command="npm test -- --coverage src/services/__tests__/UserService.test.ts"]
 
 Tests written with 95% coverage.
 </example>
@@ -595,7 +595,7 @@ model:
 [tool_call: read_file path="${cwd}/src/payment/StripeProvider.ts"]
 
 2. Plan refactoring
-[tool_call: ${ToolNames.TODO_WRITE} todos=[
+[tool_call: todo_write todos=[
   {id: "1", content: "Define IPaymentProvider interface", status: "pending"},
   {id: "2", content: "Define PaymentDIContainer interface", status: "pending"},
   {id: "3", content: "Create DI container implementation", status: "pending"},

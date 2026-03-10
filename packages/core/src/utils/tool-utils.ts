@@ -7,11 +7,10 @@
 import type { AnyDeclarativeTool, AnyToolInvocation } from '../index.js';
 import { isTool } from '../index.js';
 import {
-  ToolNames,
-  ToolDisplayNames,
   ToolNamesMigration,
   ToolDisplayNamesMigration,
   ToolAliases,
+  DynamicAliases,
   type ToolName,
 } from '../tools/tool-names.js';
 
@@ -21,61 +20,50 @@ export type { ToolName };
 const normalizeIdentifier = (identifier: string): string =>
   identifier.trim().replace(/^_+/, '');
 
-const toolNameKeys = Object.keys(ToolNames) as Array<keyof typeof ToolNames>;
-
-const TOOL_ALIAS_MAP: Map<ToolName, Set<string>> = (() => {
-  const map = new Map<ToolName, Set<string>>();
-
-  const addAlias = (set: Set<string>, alias?: string) => {
-    if (!alias) {
-      return;
+/**
+ * Gets all known aliases for a tool name.
+ * This includes:
+ * - The canonical name itself
+ * - Legacy names from ToolNamesMigration
+ * - Legacy display names from ToolDisplayNamesMigration
+ * - Aliases from ToolAliases and DynamicAliases
+ */
+function getAliasesForToolName(toolName: string): Set<string> {
+  const aliases = new Set<string>();
+  
+  // Add the canonical name
+  aliases.add(normalizeIdentifier(toolName));
+  
+  // Add legacy names that map to this tool
+  for (const [legacyName, mappedName] of Object.entries(ToolNamesMigration)) {
+    if (mappedName === toolName) {
+      aliases.add(normalizeIdentifier(legacyName));
     }
-    set.add(normalizeIdentifier(alias));
-  };
-
-  for (const key of toolNameKeys) {
-    const canonicalName = ToolNames[key];
-    const displayName = ToolDisplayNames[key];
-    const aliases = new Set<string>();
-
-    addAlias(aliases, canonicalName);
-    addAlias(aliases, displayName);
-    addAlias(aliases, `${displayName}Tool`);
-
-    for (const [legacyName, mappedName] of Object.entries(ToolNamesMigration)) {
-      if (mappedName === canonicalName) {
-        addAlias(aliases, legacyName);
-      }
-    }
-
-    for (const [legacyDisplay, mappedDisplay] of Object.entries(
-      ToolDisplayNamesMigration,
-    )) {
-      if (mappedDisplay === displayName) {
-        addAlias(aliases, legacyDisplay);
-      }
-    }
-
-    // Add new short aliases from ToolAliases
-    for (const [aliasName, mappedName] of Object.entries(ToolAliases)) {
-      if (mappedName === canonicalName) {
-        addAlias(aliases, aliasName);
-      }
-    }
-
-    map.set(canonicalName, aliases);
   }
-
-  return map;
-})();
-
-const getAliasSetForTool = (toolName: ToolName): Set<string> => {
-  const aliases = TOOL_ALIAS_MAP.get(toolName);
-  if (!aliases) {
-    return new Set([normalizeIdentifier(toolName)]);
+  
+  // Add legacy display names that map to this tool
+  for (const legacyDisplay of Object.keys(ToolDisplayNamesMigration)) {
+    // Note: ToolDisplayNamesMigration maps display names, not tool names
+    // We include them as potential aliases
+    aliases.add(normalizeIdentifier(legacyDisplay));
   }
+  
+  // Add static aliases that map to this tool
+  for (const [aliasName, mappedName] of Object.entries(ToolAliases)) {
+    if (mappedName === toolName) {
+      aliases.add(normalizeIdentifier(aliasName));
+    }
+  }
+  
+  // Add dynamic aliases that map to this tool
+  for (const [aliasName, mappedName] of Object.entries(DynamicAliases)) {
+    if (mappedName === toolName) {
+      aliases.add(normalizeIdentifier(aliasName));
+    }
+  }
+  
   return aliases;
-};
+}
 
 const sanitizeExactIdentifier = (value: string): string =>
   normalizeIdentifier(value);
@@ -98,7 +86,7 @@ export function isToolEnabled(
   coreTools?: string[],
   excludeTools?: string[],
 ): boolean {
-  const aliasSet = getAliasSetForTool(toolName);
+  const aliasSet = getAliasesForToolName(toolName);
   const matchesIdentifier = (value: string): boolean =>
     aliasSet.has(sanitizeExactIdentifier(value));
   const matchesIdentifierWithArgs = (value: string): boolean =>

@@ -147,6 +147,8 @@ export interface CliArgs {
   excludeTools: string[] | undefined;
   authType: string | undefined;
   channel: string | undefined;
+  /** Working directory path (overrides process.cwd()) */
+  path: string | undefined;
 }
 
 function normalizeOutputFormat(
@@ -422,6 +424,11 @@ export async function parseArguments(): Promise<CliArgs> {
           type: 'string',
           choices: [AuthType.USE_OLLAMA],
           description: 'Authentication type (only Ollama is supported)',
+        })
+        .option('path', {
+          type: 'string',
+          description:
+            'Working directory path (overrides current directory). Example: --path /home/user/myproject',
         })
         .deprecateOption(
           'sandbox-image',

@@ -45,44 +45,13 @@ import {
 } from '../services/fileSystemService.js';
 import { GitService } from '../services/gitService.js';
 
-// Tools - imported for direct registration in createToolRegistry
-import { setOllamaMdFilename, MemoryTool } from '../plugins/builtin/memory-tools/save-memory/index.js';
+// Tools - loaded through plugin system
+import { setOllamaMdFilename } from '../plugins/builtin/memory-tools/save-memory/index.js';
 import { canUseRipgrep } from '../utils/ripgrepUtils.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
-import { WebSearchTool } from '../plugins/builtin/search-tools/web-search/index.js';
-import { WebFetchTool } from '../plugins/builtin/search-tools/web-fetch/index.js';
-import { LspTool } from '../plugins/builtin/lsp-tools/lsp/index.js';
 import type { LspClient } from '../lsp/types.js';
-import { RipGrepTool } from '../plugins/builtin/search-tools/ripGrep/index.js';
-import { GrepTool } from '../plugins/builtin/search-tools/grep/index.js';
-import { TaskTool } from '../plugins/builtin/agent-tools/task/index.js';
-import { SkillTool } from '../plugins/builtin/agent-tools/skill/index.js';
-import { LSTool } from '../plugins/builtin/file-tools/ls/index.js';
-import { ReadFileTool } from '../plugins/builtin/file-tools/read-file/index.js';
-import { ReadManyFilesTool } from '../plugins/builtin/file-tools/read-many-files/index.js';
-import { GlobTool } from '../plugins/builtin/file-tools/glob/index.js';
-import { EditTool } from '../plugins/builtin/file-tools/edit/index.js';
-import { WriteFileTool } from '../plugins/builtin/file-tools/write-file/index.js';
-import { ShellTool } from '../plugins/builtin/shell-tools/index.js';
-import { TodoWriteTool } from '../plugins/builtin/productivity-tools/todo-write/index.js';
-import { ExitPlanModeTool } from '../plugins/builtin/productivity-tools/exit-plan-mode/index.js';
-import { PythonTool } from '../plugins/builtin/dev-tools/python/index.js';
-import { NodeJsTool } from '../plugins/builtin/dev-tools/nodejs/index.js';
-import { GolangTool } from '../plugins/builtin/dev-tools/golang/index.js';
-import { PHPTool } from '../plugins/builtin/dev-tools/php/index.js';
-import { JavaTool } from '../plugins/builtin/dev-tools/java/index.js';
-import { CppTool } from '../plugins/builtin/dev-tools/cpp/index.js';
-import { RustTool } from '../plugins/builtin/dev-tools/rust/index.js';
-import { SwiftTool } from '../plugins/builtin/dev-tools/swift/index.js';
-import { TypeScriptTool } from '../plugins/builtin/dev-tools/typescript/index.js';
-import { ApiTesterTool } from '../plugins/builtin/api-tools/api-tester/index.js';
-import { GitAdvancedTool } from '../plugins/builtin/git-tools/git-advanced/index.js';
-import { DiagramGeneratorTool } from '../plugins/builtin/utility-tools/diagram-generator/index.js';
-import { DatabaseTool } from '../plugins/builtin/database-tools/database/index.js';
-import { RedisTool } from '../plugins/builtin/database-tools/redis/index.js';
-import { DockerTool } from '../plugins/builtin/database-tools/docker/index.js';
-import { CodeAnalyzerTool } from '../plugins/builtin/utility-tools/code-analyzer/index.js';
 import type { SendSdkMcpMessage } from '../plugins/builtin/mcp-tools/mcp-client/index.js';
+import { initializePluginRegistry, getPluginRegistry } from '../plugins/index.js';
 
 // Other modules
 import { ideContextStore } from '../ide/ideContext.js';
@@ -100,7 +69,6 @@ import {
 import { shouldAttemptBrowserLaunch } from '../utils/browser.js';
 import { FileExclusions } from '../utils/ignorePatterns.js';
 import { WorkspaceContext } from '../utils/workspaceContext.js';
-import { isToolEnabled, type ToolName } from '../utils/tool-utils.js';
 
 // Local config modules
 import type { FileFilteringOptions } from './constants.js';
@@ -186,6 +154,20 @@ export const APPROVAL_MODE_INFO: Record<ApprovalMode, ApprovalModeInfo> = {
 export interface AccessibilitySettings {
   enableLoadingPhrases?: boolean;
   screenReader?: boolean;
+}
+
+/**
+ * Memory summary settings for context preservation
+ */
+export interface MemorySummarySettings {
+  /** Maximum characters for the compressed summary */
+  maxSummaryLength?: number;
+  /** Maximum number of activities to track */
+  maxActivities?: number;
+  /** Enable automatic summarization */
+  autoSummarize?: boolean;
+  /** Interval (in activities) between auto-summarizations */
+  summarizeInterval?: number;
 }
 
 export interface ChatCompressionSettings {
@@ -301,6 +283,7 @@ export interface ConfigParameters {
   approvalMode?: ApprovalMode;
   contextFileName?: string | string[];
   accessibility?: AccessibilitySettings;
+  memorySummary?: MemorySummarySettings;
   gitCoAuthor?: boolean;
   usageStatisticsEnabled?: boolean;
   fileFiltering?: {
@@ -446,6 +429,7 @@ export class Config {
   private geminiMdFileCount: number;
   private approvalMode: ApprovalMode;
   private readonly accessibility: AccessibilitySettings;
+  private memorySummarySettings: MemorySummarySettings | undefined;
   private readonly gitCoAuthor: GitCoAuthorSettings;
   private readonly usageStatisticsEnabled: boolean;
   private ollamaClient!: OllamaClient;
@@ -551,6 +535,7 @@ export class Config {
     this.geminiMdFileCount = params.geminiMdFileCount ?? 0;
     this.approvalMode = params.approvalMode ?? ApprovalMode.DEFAULT;
     this.accessibility = params.accessibility ?? {};
+    this.memorySummarySettings = params.memorySummary;
     this.gitCoAuthor = {
       enabled: params.gitCoAuthor ?? true,
       name: 'Ollama-Code',
@@ -1050,6 +1035,13 @@ export class Config {
     return this.promptRegistry;
   }
 
+  /**
+   * Get the plugin registry for managing plugins.
+   */
+  getPluginRegistry(): import('../plugins/pluginRegistry.js').PluginRegistry {
+    return getPluginRegistry();
+  }
+
   getDebugMode(): boolean {
     return this.debugMode;
   }
@@ -1203,6 +1195,20 @@ export class Config {
 
   getAccessibility(): AccessibilitySettings {
     return this.accessibility;
+  }
+
+  /**
+   * Get memory summary settings
+   */
+  getMemorySummarySettings(): MemorySummarySettings {
+    return this.memorySummarySettings ?? {};
+  }
+
+  /**
+   * Set memory summary settings
+   */
+  setMemorySummarySettings(settings: MemorySummarySettings): void {
+    this.memorySummarySettings = settings;
   }
 
   getGitCoAuthor(): GitCoAuthorSettings {
@@ -1573,6 +1579,10 @@ export class Config {
     return this.skillManager;
   }
 
+  /**
+   * Create tool registry using the UNIFIED PLUGIN SYSTEM
+   * ALL tools are registered through plugins - NO legacy registration
+   */
   async createToolRegistry(
     sendSdkMcpMessage?: SendSdkMcpMessage,
   ): Promise<ToolRegistry> {
@@ -1582,43 +1592,10 @@ export class Config {
       sendSdkMcpMessage,
     );
 
-    const coreToolsConfig = this.getCoreTools();
-    const excludeToolsConfig = this.getExcludeTools();
-
-    // Helper to create & register core tools that are enabled
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const registerCoreTool = (ToolClass: any, ...args: unknown[]) => {
-      const toolName = ToolClass?.Name as ToolName | undefined;
-      const className = ToolClass?.name ?? 'UnknownTool';
-
-      if (!toolName) {
-        // Log warning and skip this tool instead of crashing
-        this.debugLogger.warn(
-          `Skipping tool registration: ${className} is missing static Name property. ` +
-            `Tools must define a static Name property to be registered.`,
-        );
-        return;
-      }
-
-      if (isToolEnabled(toolName, coreToolsConfig, excludeToolsConfig)) {
-        try {
-          registry.registerTool(new ToolClass(...args));
-        } catch (error) {
-          this.debugLogger.error(
-            `Failed to register tool ${className} (${toolName}):`,
-            error,
-          );
-          throw error; // Re-throw after logging context
-        }
-      }
-    };
-
-    registerCoreTool(TaskTool, this);
-    registerCoreTool(SkillTool, this);
-    registerCoreTool(LSTool, this);
-    registerCoreTool(ReadFileTool, this);
-    registerCoreTool(ReadManyFilesTool, this);
-
+    // Initialize plugin registry - this loads ALL tools through plugins
+    await initializePluginRegistry(registry, this.targetDir, this);
+    
+    // Check ripgrep availability and update search tools if needed
     if (this.getUseRipgrep()) {
       let useRipgrep = false;
       try {
@@ -1626,58 +1603,22 @@ export class Config {
       } catch {
         // If ripgrep check fails, fallback to GrepTool
       }
-      if (useRipgrep) {
-        registerCoreTool(RipGrepTool, this);
-      } else {
-        registerCoreTool(GrepTool, this);
-      }
-    } else {
-      registerCoreTool(GrepTool, this);
+      // Note: The plugin system will have already registered the appropriate grep tool
+      // This check is for logging purposes only
+      this.debugLogger.info(`Using ${useRipgrep ? 'RipGrep' : 'Grep'} for search`);
     }
 
-    registerCoreTool(GlobTool, this);
-    registerCoreTool(EditTool, this);
-    registerCoreTool(WriteFileTool, this);
-    registerCoreTool(ShellTool, this);
-    registerCoreTool(MemoryTool);
-    registerCoreTool(TodoWriteTool, this);
-    !this.sdkMode && registerCoreTool(ExitPlanModeTool, this);
-    registerCoreTool(WebFetchTool, this);
-    // Conditionally register web search tool if web search provider is configured
-    // buildWebSearchConfig ensures qwen-oauth users get dashscope provider, so
-    // if tool is registered, config must exist
-    if (this.getWebSearchConfig()) {
-      registerCoreTool(WebSearchTool, this);
-    }
-    if (this.isLspEnabled() && this.getLspClient()) {
-      // Register the unified LSP tool
-      registerCoreTool(LspTool, this);
-    }
-
-    // Register development tools for Python, Node.js, Golang, PHP, Java, C/C++, Rust, Swift, and TypeScript
-    registerCoreTool(PythonTool, this);
-    registerCoreTool(NodeJsTool, this);
-    registerCoreTool(GolangTool, this);
-    registerCoreTool(PHPTool, this);
-    registerCoreTool(JavaTool, this);
-    registerCoreTool(CppTool, this);
-    registerCoreTool(RustTool, this);
-    registerCoreTool(SwiftTool, this);
-    registerCoreTool(TypeScriptTool, this);
-
-    // Register additional builtin tools
-    registerCoreTool(ApiTesterTool, this);
-    registerCoreTool(GitAdvancedTool, this);
-    registerCoreTool(DiagramGeneratorTool, this);
-    registerCoreTool(DatabaseTool);
-    registerCoreTool(RedisTool);
-    registerCoreTool(DockerTool);
-    registerCoreTool(CodeAnalyzerTool);
-
+    // Discover MCP tools and other external tools
     await registry.discoverAllTools();
+
+    const pluginRegistry = getPluginRegistry();
     this.debugLogger.debug(
-      `ToolRegistry created: ${JSON.stringify(registry.getAllToolNames())} (${registry.getAllToolNames().length} tools)`,
+      `ToolRegistry created via Plugin System: ${JSON.stringify(registry.getAllToolNames())} (${registry.getAllToolNames().length} tools from ${pluginRegistry.getLoadedPlugins().length} plugins)`,
     );
+
+    // Update telemetry with plugin metrics (toolCount, skillCount, etc.)
+    pluginRegistry.getMetrics();
+
     return registry;
   }
 }

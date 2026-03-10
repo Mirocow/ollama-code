@@ -11,7 +11,6 @@ import { spawn } from 'node:child_process';
 import { globStream } from 'glob';
 import type { ToolInvocation, ToolResult } from '../../../../tools/tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from '../../../../tools/tools.js';
-import { ToolNames, ToolDisplayNames } from '../../../../tools/tool-names.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('GREP');
@@ -498,12 +497,12 @@ class GrepToolInvocation extends BaseToolInvocation<
  * Implementation of the Grep tool logic (moved from CLI)
  */
 export class GrepTool extends BaseDeclarativeTool<GrepToolParams, ToolResult> {
-  static readonly Name = ToolNames.GREP;
+  static readonly Name = 'grep_search';
 
   constructor(private readonly config: Config) {
     super(
       GrepTool.Name,
-      ToolDisplayNames.GREP,
+      'Grep',
       'A powerful search tool for finding patterns in files\n\n  Usage:\n  - ALWAYS use Grep for search tasks. NEVER invoke `grep` or `rg` as a Bash command. The Grep tool has been optimized for correct permissions and access.\n  - Supports full regex syntax (e.g., "log.*Error", "function\\s+\\w+")\n  - Filter files with glob parameter (e.g., "*.js", "**/*.tsx")\n  - Case-insensitive by default\n  - Use Task tool for open-ended searches requiring multiple rounds\n',
       Kind.Search,
       {

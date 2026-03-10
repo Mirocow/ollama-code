@@ -9,7 +9,7 @@ import path from 'node:path';
 import os, { EOL } from 'node:os';
 import crypto from 'node:crypto';
 import type { Config } from '../../../config/config.js';
-import { ToolNames, ToolDisplayNames } from '../../../tools/tool-names.js';
+
 import { ToolErrorType } from '../../../tools/tool-error.js';
 import type {
   ToolInvocation,
@@ -472,11 +472,11 @@ IMPORTANT: This tool is for terminal operations like git, npm, docker, etc. DO N
 - It is very helpful if you write a clear, concise description of what this command does in 5-10 words.
 
 - Avoid using run_shell_command with the \`find\`, \`grep\`, \`cat\`, \`head\`, \`tail\`, \`sed\`, \`awk\`, or \`echo\` commands, unless explicitly instructed or when these commands are truly necessary for the task. Instead, always prefer using the dedicated tools for these commands:
-  - File search: Use ${ToolNames.GLOB} (NOT find or ls)
-  - Content search: Use ${ToolNames.GREP} (NOT grep or rg)
-  - Read files: Use ${ToolNames.READ_FILE} (NOT cat/head/tail)
-  - Edit files: Use ${ToolNames.EDIT} (NOT sed/awk)
-  - Write files: Use ${ToolNames.WRITE_FILE} (NOT echo >/cat <<EOF)
+  - File search: Use glob (NOT find or ls)
+  - Content search: Use grep_search (NOT grep or rg)
+  - Read files: Use read_file (NOT cat/head/tail)
+  - Edit files: Use edit (NOT sed/awk)
+  - Write files: Use write_file (NOT echo >/cat <<EOF)
   - Communication: Output text directly (NOT echo/printf)
 - When issuing multiple commands:
   - If the commands are independent and can run in parallel, make multiple run_shell_command tool calls in a single message. For example, if you need to run "git status" and "git diff", send a single message with two run_shell_command tool calls in parallel.
@@ -529,13 +529,14 @@ export class ShellTool extends BaseDeclarativeTool<
   ShellToolParams,
   ToolResult
 > {
-  static Name: string = ToolNames.SHELL;
-  private allowlist: Set<string> = new Set();
+  static Name: string = 'run_shell_command';
+  // Static allowlist to persist across all instances
+  private static allowlist: Set<string> = new Set();
 
   constructor(private readonly config: Config) {
     super(
       ShellTool.Name,
-      ToolDisplayNames.SHELL,
+      'Shell',
       getShellToolDescription(),
       Kind.Execute,
       {
@@ -635,6 +636,6 @@ export class ShellTool extends BaseDeclarativeTool<
   protected createInvocation(
     params: ShellToolParams,
   ): ToolInvocation<ShellToolParams, ToolResult> {
-    return new ShellToolInvocation(this.config, params, this.allowlist);
+    return new ShellToolInvocation(this.config, params, ShellTool.allowlist);
   }
 }

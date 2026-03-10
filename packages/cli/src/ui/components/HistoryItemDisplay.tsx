@@ -22,6 +22,7 @@ import { SummaryMessage } from './messages/SummaryMessage.js';
 import { WarningMessage } from './messages/WarningMessage.js';
 import { RetryCountdownMessage } from './messages/RetryCountdownMessage.js';
 import { Box } from 'ink';
+//import { Text } from 'ink';
 import { AboutBox } from './AboutBox.js';
 import { StatsDisplay } from './StatsDisplay.js';
 import { ModelStatsDisplay } from './ModelStatsDisplay.js';
@@ -49,6 +50,19 @@ interface HistoryItemDisplayProps {
 }
 
 /**
+ * Displays a short UUID (first 8 chars) in a subtle way on the left
+ */
+/* const UuidBadge: React.FC<{ uuid?: string }> = ({ uuid }) => {
+  if (!uuid) return null;
+  const shortUuid = uuid.slice(0, 8);
+  return (
+    <Text color="gray" dimColor>
+      {'['}{shortUuid}{'] '}
+    </Text>
+  );
+}; */
+
+/**
  * HistoryItemDisplay component - renders individual history items
  * Memoized to prevent unnecessary re-renders when other items change
  */
@@ -65,7 +79,7 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
   availableTerminalHeightGemini,
 }) => {
   const itemForDisplay = useMemo(() => escapeAnsiCtrlCodes(item), [item]);
-  
+
   // Memoize computed dimensions
   const dimensions = useMemo(() => {
     const contentWidth = terminalWidth - 4;
@@ -88,34 +102,46 @@ const HistoryItemDisplayComponent: React.FC<HistoryItemDisplayProps> = ({
     >
       {/* Render standard message types */}
       {itemForDisplay.type === 'user' && (
-        <UserMessage text={itemForDisplay.text} />
+        <Box flexDirection="row">
+          {/* <UuidBadge uuid={itemForDisplay.uuid} /> */}
+          <UserMessage text={itemForDisplay.text} />
+        </Box>
       )}
       {itemForDisplay.type === 'user_shell' && (
         <UserShellMessage text={itemForDisplay.text} />
       )}
       {itemForDisplay.type === 'ollama' && (
-        <OllamaMessage
-          text={itemForDisplay.text}
-          isPending={isPending}
-          availableTerminalHeight={effectiveHeight}
-          contentWidth={dimensions.contentWidth}
-        />
+        <Box flexDirection="row">
+          {/* <UuidBadge uuid={itemForDisplay.uuid} /> */}
+          <OllamaMessage
+            text={itemForDisplay.text}
+            isPending={isPending}
+            availableTerminalHeight={effectiveHeight}
+            contentWidth={dimensions.contentWidth}
+          />
+        </Box>
       )}
       {itemForDisplay.type === 'ollama_content' && (
-        <OllamaMessageContent
-          text={itemForDisplay.text}
-          isPending={isPending}
-          availableTerminalHeight={effectiveHeight}
-          contentWidth={dimensions.contentWidth}
-        />
+        <Box flexDirection="row">
+          {/* <UuidBadge uuid={itemForDisplay.uuid} /> */}
+          <OllamaMessageContent
+            text={itemForDisplay.text}
+            isPending={isPending}
+            availableTerminalHeight={effectiveHeight}
+            contentWidth={dimensions.contentWidth}
+          />
+        </Box>
       )}
       {itemForDisplay.type === 'ollama_thought' && (
-        <OllamaThoughtMessage
-          text={itemForDisplay.text}
-          isPending={isPending}
-          availableTerminalHeight={effectiveHeight}
-          contentWidth={dimensions.contentWidth}
-        />
+        <Box flexDirection="row">
+          {/* <UuidBadge uuid={itemForDisplay.uuid} /> */}
+          <OllamaThoughtMessage
+            text={itemForDisplay.text}
+            isPending={isPending}
+            availableTerminalHeight={effectiveHeight}
+            contentWidth={dimensions.contentWidth}
+          />
+        </Box>
       )}
       {itemForDisplay.type === 'ollama_thought_content' && (
         <OllamaThoughtMessageContent

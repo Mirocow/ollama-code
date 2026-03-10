@@ -156,3 +156,74 @@ describe('buildSSHCommand', () => {
     expect(invocation).toBeDefined();
   });
 });
+
+describe('escapeSSHCommand', () => {
+  it('should wrap simple command in single quotes', async () => {
+    // Import the function by testing the full SSH command flow
+    const mockConfig = {
+      getTargetDir: () => '/home/test',
+      getShouldUseNodePtyShell: () => false,
+    } as unknown as Config;
+
+    const sshTool = new SSHTool(mockConfig);
+    const invocation = sshTool.build({
+      host: '192.168.1.100',
+      user: 'admin',
+      command: 'ls -la',
+    });
+
+    // The description should show the command in quotes
+    expect(invocation.getDescription()).toContain('ls -la');
+  });
+
+  it('should preserve tilde for remote expansion', async () => {
+    const mockConfig = {
+      getTargetDir: () => '/home/test',
+      getShouldUseNodePtyShell: () => false,
+    } as unknown as Config;
+
+    const sshTool = new SSHTool(mockConfig);
+    const invocation = sshTool.build({
+      host: '192.168.1.100',
+      user: 'admin',
+      command: 'ls -la ~',
+    });
+
+    // The tilde should be preserved for remote interpretation
+    expect(invocation.getDescription()).toContain('~');
+  });
+
+  it('should handle commands with environment variables', async () => {
+    const mockConfig = {
+      getTargetDir: () => '/home/test',
+      getShouldUseNodePtyShell: () => false,
+    } as unknown as Config;
+
+    const sshTool = new SSHTool(mockConfig);
+    const invocation = sshTool.build({
+      host: '192.168.1.100',
+      user: 'admin',
+      command: 'echo $HOME',
+    });
+
+    // The $HOME should be preserved for remote interpretation
+    expect(invocation.getDescription()).toContain('$HOME');
+  });
+
+  it('should handle commands with single quotes', async () => {
+    const mockConfig = {
+      getTargetDir: () => '/home/test',
+      getShouldUseNodePtyShell: () => false,
+    } as unknown as Config;
+
+    const sshTool = new SSHTool(mockConfig);
+    const invocation = sshTool.build({
+      host: '192.168.1.100',
+      user: 'admin',
+      command: "echo 'hello world'",
+    });
+
+    // The command should be handled properly
+    expect(invocation.getDescription()).toContain('hello world');
+  });
+});

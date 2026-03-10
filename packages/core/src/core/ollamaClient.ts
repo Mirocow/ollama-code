@@ -44,9 +44,7 @@ import {
   COMPRESSION_TOKEN_THRESHOLD,
 } from '../services/chatCompressionService.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
-
-// Tools
-import { TaskTool } from '../plugins/builtin/agent-tools/task/index.js';
+//import { uiTelemetryService } from '../services/uiTelemetryService.js';
 
 // Utilities
 import {
@@ -91,6 +89,12 @@ export class OllamaClient {
     // Check if we're resuming from a previous session
     const resumedSessionData = this.config.getResumedSessionData();
     if (resumedSessionData) {
+      // Restore telemetry state from previous session
+      //const telemetryState = getResumeTelemetryState(resumedSessionData.conversation);
+      //if (telemetryState?.telemetryState) {
+      //  uiTelemetryService.importState(telemetryState.telemetryState);
+      //}
+
       // Convert resumed session to API history format
       // Each ChatRecord's message field is already a Content object
       const resumedHistory = buildApiHistoryFromConversation(
@@ -404,7 +408,7 @@ export class OllamaClient {
     request: PartListUnion,
     signal: AbortSignal,
     prompt_id: string,
-    options?: { isContinuation: boolean },
+    options?: { isContinuation: boolean; userUuid?: string },
     turns: number = MAX_TURNS,
   ): AsyncGenerator<ServerOllamaStreamEvent, Turn> {
     if (!options?.isContinuation) {
@@ -412,7 +416,9 @@ export class OllamaClient {
       this.lastPromptId = prompt_id;
 
       // record user message for session management
-      this.config.getChatRecordingService()?.recordUserMessage(request);
+      this.config
+        .getChatRecordingService()
+        ?.recordUserMessage(request, options?.userUuid);
 
       // strip thoughts from history before sending the message
       this.stripThoughtsFromHistory();
@@ -480,7 +486,7 @@ export class OllamaClient {
       const systemReminders = [];
 
       // add subagent system reminder if there are subagents
-      const hasTaskTool = this.config.getToolRegistry().getTool(TaskTool.Name);
+      const hasTaskTool = this.config.getToolRegistry().getTool('task');
       const subagents = (await this.config.getSubagentManager().listSubagents())
         .filter((subagent) => subagent.level !== 'builtin')
         .map((subagent) => subagent.name);
@@ -612,16 +618,19 @@ export class OllamaClient {
       this.hasFailedCompressionAttempt,
     );
 
+    // Record compression attempt to storage (always, for history tracking)
+    const chatRecordingService = this.config.getChatRecordingService();
+    if (chatRecordingService) {
+      chatRecordingService.recordChatCompression({
+        info,
+        compressedHistory: newHistory,
+      });
+    }
+
     // Handle compression result
     if (info.compressionStatus === CompressionStatus.COMPRESSED) {
       // Success: update chat with new compressed history
       if (newHistory) {
-        const chatRecordingService = this.config.getChatRecordingService();
-        chatRecordingService?.recordChatCompression({
-          info,
-          compressedHistory: newHistory,
-        });
-
         this.chat = await this.startChat(newHistory);
         this.forceFullIdeContext = true;
       }

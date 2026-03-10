@@ -14,7 +14,6 @@ import {
 import type { FunctionDeclaration } from '../../../../types/content.js';
 import type { Config } from '../../../../config/config.js';
 import { ApprovalMode } from '../../../../config/config.js';
-import { ToolDisplayNames, ToolNames } from '../../../../tools/tool-names.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('EXIT_PLAN_MODE');
@@ -156,12 +155,12 @@ export class ExitPlanModeTool extends BaseDeclarativeTool<
   ExitPlanModeParams,
   ToolResult
 > {
-  static readonly Name: string = ToolNames.EXIT_PLAN_MODE;
+  static readonly Name: string = 'exit_plan_mode';
 
   constructor(private readonly config: Config) {
     super(
       ExitPlanModeTool.Name,
-      ToolDisplayNames.EXIT_PLAN_MODE,
+      'ExitPlanMode',
       exitPlanModeToolDescription,
       Kind.Think,
       exitPlanModeToolSchemaData.parametersJsonSchema as Record<

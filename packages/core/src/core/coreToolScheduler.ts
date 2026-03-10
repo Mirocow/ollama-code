@@ -30,13 +30,14 @@ import {
   InputFormat,
   SkillTool,
 } from '../index.js';
+import { uiTelemetryService } from '../services/uiTelemetryService.js';
 import type {
   FunctionResponse,
   FunctionResponsePart,
   Part,
   PartListUnion,
 } from '../types/content.js';
-import { ToolNames } from '../tools/tool-names.js';
+
 import { getToolLearningManager } from '../learning/tool-learning.js';
 import { getResponseTextFromParts } from '../utils/generateContentResponseUtilities.js';
 import type { ModifyContext } from '../tools/modifiable-tool.js';
@@ -632,11 +633,11 @@ export class CoreToolScheduler {
     // Check if the unknown tool name matches an available skill name.
     // This handles the case where the model tries to invoke a skill as a tool
     // (e.g., Tool: "pdf" instead of Tool: "Skill" with skill: "pdf")
-    const skillTool = this.toolRegistry.getTool(ToolNames.SKILL);
+    const skillTool = this.toolRegistry.getTool('skill');
     if (skillTool instanceof SkillTool) {
       const availableSkillNames = skillTool.getAvailableSkillNames();
       if (availableSkillNames.includes(unknownToolName)) {
-        return `"${unknownToolName}" is a skill name, not a tool name. To use this skill, invoke the "${ToolNames.SKILL}" tool with parameter: skill: "${unknownToolName}"`;
+        return `"${unknownToolName}" is a skill name, not a tool name. To use this skill, invoke the "skill" tool with parameter: skill: "${unknownToolName}"`;
       }
     }
 
@@ -644,18 +645,71 @@ export class CoreToolScheduler {
     const toolLearning = getToolLearningManager();
     const bestMatch = toolLearning.findBestMatch(unknownToolName);
 
-    // Record this error for learning
-    if (bestMatch && bestMatch.confidence > 0.5) {
-      toolLearning.recordToolError(
-        unknownToolName,
-        bestMatch.name,
-        bestMatch.confidence,
-        {
-          modelId: this.config.getModel(),
-        },
+    // Special case: The tool name is valid (canonical name) but tool is NOT registered
+    // This avoids the circular "ssh_connect not found, did you mean ssh_connect?" error
+    if (bestMatch && bestMatch.confidence === 1 && !bestMatch.isRegistered) {
+      // The tool name is correct, but the tool isn't registered/enabled
+      const registeredTools = this.toolRegistry.getAllToolNames();
+      const isExactMatchInRegistry = registeredTools.some(
+        (name) => name.toLowerCase() === unknownToolName.toLowerCase()
       );
 
-      // Generate learning-enhanced error message
+      if (!isExactMatchInRegistry) {
+        // Tool is a valid name but not registered - need to enable the plugin
+        return `Tool "${unknownToolName}" is a valid tool name but is not currently registered.
+
+This tool may need to be enabled in the plugin configuration. Check that the corresponding plugin is installed and enabled.
+
+Available tools with similar functionality: ${this.getToolSuggestion(unknownToolName, 3) || 'none found'}`;
+      }
+    }
+
+    // Record this error for learning
+    if (bestMatch && bestMatch.confidence > 0.5) {
+      // Only record if it's actually a different tool name (avoid circular records)
+      if (bestMatch.name.toLowerCase() !== unknownToolName.toLowerCase()) {
+        toolLearning.recordToolError(
+          unknownToolName,
+          bestMatch.name,
+          bestMatch.confidence,
+          {
+            modelId: this.config.getModel(),
+          },
+        );
+      }
+
+      // Avoid circular suggestion when the tool name matches exactly
+      // This means the tool is valid but not registered
+      if (bestMatch.name.toLowerCase() === unknownToolName.toLowerCase()) {
+        // Get registered tool names for suggestions
+        const registeredTools = this.toolRegistry.getAllToolNames();
+        const similarTools = registeredTools
+          .filter(name => {
+            const lowerName = name.toLowerCase();
+            const lowerUnknown = unknownToolName.toLowerCase();
+            // Find tools with similar names
+            return lowerName.includes(lowerUnknown) ||
+                   lowerUnknown.includes(lowerName) ||
+                   lowerName.split('_').some(part => lowerUnknown.includes(part)) ||
+                   lowerUnknown.split('_').some(part => lowerName.includes(part));
+          })
+          .slice(0, 3);
+
+        const suggestionText = similarTools.length > 0
+          ? `\n\nSimilar registered tools: ${similarTools.join(', ')}`
+          : '';
+
+        return `Tool "${unknownToolName}" is a valid tool name but is not currently registered.
+
+This usually means:
+1. The plugin providing this tool is not loaded
+2. The plugin is disabled in configuration
+3. There was an error during plugin initialization${suggestionText}
+
+Check the startup logs for plugin errors or verify the plugin configuration.`;
+      }
+
+      // Generate learning-enhanced error message for different tool names
       const feedback = toolLearning.generateLearningFeedback();
       const latestFeedback = feedback.find(
         (f) => f.incorrectTool === unknownToolName,
@@ -777,7 +831,7 @@ LEARNING TIP: Use the exact tool name "${bestMatch.name}" in future calls.`;
         (reqInfo): ToolCall => {
           // Check if the tool is excluded due to permissions/environment restrictions
           // This check should happen before registry lookup to provide a clear permission error
-          const excludeTools = this.config.getExcludeTools?.() ?? undefined;
+          const excludeTools = this.config?.getExcludeTools?.() ?? [];
           if (excludeTools && excludeTools.length > 0) {
             const normalizedToolName = reqInfo.name.toLowerCase().trim();
             const excludedMatch = excludeTools.find(
@@ -1312,6 +1366,27 @@ LEARNING TIP: Use the exact tool name "${bestMatch.name}" in future calls.`;
    * enriched metadata (for UI recovery).
    */
   private recordToolResults(completedCalls: CompletedToolCall[]): void {
+    // Record telemetry for each completed tool call
+    for (const call of completedCalls) {
+      const durationMs = call.durationMs ?? 0;
+      const success = call.status === 'success';
+      const toolName = call.request.name;
+
+      // Determine decision outcome
+      let decision: 'accept' | 'reject' | 'modify' | 'auto_accept' | undefined;
+      if (call.outcome === ToolConfirmationOutcome.ProceedOnce) {
+        decision = 'accept';
+      } else if (call.outcome === ToolConfirmationOutcome.ProceedAlways) {
+        decision = 'auto_accept';
+      } else if (call.outcome === ToolConfirmationOutcome.ModifyWithEditor) {
+        decision = 'modify';
+      } else if (call.outcome === ToolConfirmationOutcome.Cancel) {
+        decision = 'reject';
+      }
+
+      uiTelemetryService.recordToolCall(toolName, durationMs, success, decision);
+    }
+
     if (!this.chatRecordingService) return;
 
     // Collect all response parts from completed calls

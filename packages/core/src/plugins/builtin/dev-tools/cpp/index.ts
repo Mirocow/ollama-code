@@ -636,7 +636,8 @@ function getCppToolDescription(): string {
 
 export class CppTool extends BaseDeclarativeTool<CppToolParams, ToolResult> {
   static Name: string = 'cpp_dev';
-  private allowlist: Set<string> = new Set();
+  // Static allowlist to persist across all instances
+  private static allowlist: Set<string> = new Set();
 
   constructor(private readonly config: Config) {
     super(
@@ -800,6 +801,6 @@ export class CppTool extends BaseDeclarativeTool<CppToolParams, ToolResult> {
   protected createInvocation(
     params: CppToolParams,
   ): ToolInvocation<CppToolParams, ToolResult> {
-    return new CppToolInvocation(this.config, params, this.allowlist);
+    return new CppToolInvocation(this.config, params, CppTool.allowlist);
   }
 }

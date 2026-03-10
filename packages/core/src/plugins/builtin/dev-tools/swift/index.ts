@@ -602,7 +602,8 @@ export class SwiftTool extends BaseDeclarativeTool<
   ToolResult
 > {
   static Name: string = 'swift_dev';
-  private allowlist: Set<string> = new Set();
+  // Static allowlist to persist across all instances
+  private static allowlist: Set<string> = new Set();
 
   constructor(private readonly config: Config) {
     super(
@@ -740,6 +741,6 @@ export class SwiftTool extends BaseDeclarativeTool<
   protected createInvocation(
     params: SwiftToolParams,
   ): ToolInvocation<SwiftToolParams, ToolResult> {
-    return new SwiftToolInvocation(this.config, params, this.allowlist);
+    return new SwiftToolInvocation(this.config, params, SwiftTool.allowlist);
   }
 }

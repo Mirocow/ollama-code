@@ -22,6 +22,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 
+const nodeArgs = [];
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8'));
@@ -29,7 +30,6 @@ const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8'));
 // Parse command line arguments
 const args = process.argv.slice(2);
 const hasDebugFlag = args.includes('--debug') || args.includes('-d');
-const hasInspectFlag = args.includes('--inspect') || args.includes('-i');
 
 // Remove debug/inspect flags from args if present
 const filteredArgs = args.filter(
@@ -42,30 +42,6 @@ execSync('node ./scripts/check-build-status.js', {
   stdio: 'inherit',
   cwd: root,
 });
-
-const nodeArgs = [];
-let sandboxCommand = undefined;
-try {
-  sandboxCommand = execSync('node scripts/sandbox_command.js', {
-    cwd: root,
-  })
-    .toString()
-    .trim();
-} catch {
-  // ignore
-}
-
-// Only add --inspect-brk if explicitly requested with --inspect flag or INSPECT env
-// DEBUG env alone just enables logging, not the inspector
-const shouldInspect = hasInspectFlag || process.env.INSPECT === '1';
-if (shouldInspect && !sandboxCommand) {
-  if (process.env.SANDBOX) {
-    const port = process.env.DEBUG_PORT || '9229';
-    nodeArgs.push(`--inspect-brk=0.0.0.0:${port}`);
-  } else {
-    nodeArgs.push('--inspect-brk');
-  }
-}
 
 nodeArgs.push(join(root, 'packages', 'cli'));
 nodeArgs.push(...filteredArgs);

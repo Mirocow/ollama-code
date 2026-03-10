@@ -18,7 +18,11 @@
  * - Preview generation for quick visualization
  */
 
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from '../../../../tools/tools.js';
+import {
+  BaseDeclarativeTool,
+  BaseToolInvocation,
+  Kind,
+} from '../../../../tools/tools.js';
 import type { ToolResult, ToolResultDisplay } from '../../../../tools/tools.js';
 import type { Config } from '../../../../config/config.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
@@ -471,11 +475,11 @@ function generateRenderInstructions(
 
   if (format === 'text') {
     instructions.push('ASCII text representation generated above.');
-    instructions.push(
-      'This is a simplified view of the diagram structure.',
-    );
+    instructions.push('This is a simplified view of the diagram structure.');
   } else {
-    instructions.push(`\n### Rendering Your ${diagramType.toUpperCase()} Diagram\n`);
+    instructions.push(
+      `\n### Rendering Your ${diagramType.toUpperCase()} Diagram\n`,
+    );
     instructions.push(`\n**Option 1: Direct URL**`);
     instructions.push(`Open this URL in your browser:`);
     instructions.push(`\`\`\`\n${renderUrl}\n\`\`\`\n`);
@@ -487,15 +491,15 @@ function generateRenderInstructions(
       );
     } else {
       const defaultFilename =
-        diagramType === 'mermaid'
-          ? `diagram.${format}`
-          : `diagram.${format}`;
+        diagramType === 'mermaid' ? `diagram.${format}` : `diagram.${format}`;
       instructions.push(
         `\`\`\`bash\ncurl -o "${defaultFilename}" "${renderUrl}"\n\`\`\`\n`,
       );
     }
 
-    instructions.push(`**Option 3: Using ${diagramType === 'mermaid' ? 'Mermaid CLI' : 'PlantUML'}**`);
+    instructions.push(
+      `**Option 3: Using ${diagramType === 'mermaid' ? 'Mermaid CLI' : 'PlantUML'}**`,
+    );
     if (diagramType === 'mermaid') {
       instructions.push(
         `\`\`\`bash\n# Install Mermaid CLI\nnpm install -g @mermaid-js/mermaid-cli\n\n# Generate diagram\nmmdc -i diagram.mmd -o output.${format}\n\`\`\`\n`,
@@ -532,10 +536,7 @@ class DiagramGeneratorInvocation extends BaseToolInvocation<
   DiagramGeneratorParams,
   DiagramGeneratorResult
 > {
-  constructor(
-    _config: Config,
-    params: DiagramGeneratorParams,
-  ) {
+  constructor(_config: Config, params: DiagramGeneratorParams) {
     super(params);
   }
 
@@ -881,7 +882,11 @@ Usage:
 
     // Validate format if provided
     if (params.format) {
-      if (params.format !== 'svg' && params.format !== 'png' && params.format !== 'text') {
+      if (
+        params.format !== 'svg' &&
+        params.format !== 'png' &&
+        params.format !== 'text'
+      ) {
         return 'The "format" parameter must be "svg", "png", or "text".';
       }
     }

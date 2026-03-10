@@ -1,6 +1,6 @@
 {
   "name": "@ollama-code/ollama-code-core",
-  "version": "0.17.1",
+  "version": "0.17.9",
   "description": "Ollama Code Core",
   "repository": {
     "type": "git",
@@ -67,10 +67,12 @@
     "@lydell/node-pty-darwin-x64": "1.1.0",
     "@lydell/node-pty-linux-x64": "1.1.0",
     "@lydell/node-pty-win32-arm64": "1.1.0",
-    "@lydell/node-pty-win32-x64": "1.1.0"
+    "@lydell/node-pty-win32-x64": "1.1.0",
+    "better-sqlite3": "11.7.0"
   },
   "devDependencies": {
     "@ollama-code/ollama-code-test-utils": "workspace:*",
+    "@types/better-sqlite3": "7.6.12",
     "@types/diff": "7.0.2",
     "@types/dotenv": "6.1.1",
     "@types/fast-levenshtein": "0.0.4",

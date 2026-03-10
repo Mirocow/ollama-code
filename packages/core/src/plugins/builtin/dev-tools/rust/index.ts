@@ -766,7 +766,8 @@ function getRustToolDescription(): string {
 
 export class RustTool extends BaseDeclarativeTool<RustToolParams, ToolResult> {
   static Name: string = 'rust_dev';
-  private allowlist: Set<string> = new Set();
+  // Static allowlist to persist across all instances
+  private static allowlist: Set<string> = new Set();
 
   constructor(private readonly config: Config) {
     super(
@@ -944,6 +945,6 @@ export class RustTool extends BaseDeclarativeTool<RustToolParams, ToolResult> {
   protected createInvocation(
     params: RustToolParams,
   ): ToolInvocation<RustToolParams, ToolResult> {
-    return new RustToolInvocation(this.config, params, this.allowlist);
+    return new RustToolInvocation(this.config, params, RustTool.allowlist);
   }
 }

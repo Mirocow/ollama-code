@@ -6,7 +6,6 @@
 
 import type { Config } from '../../../config/config.js';
 import { Storage } from '../../../config/storage.js';
-import { ToolNames, ToolDisplayNames } from '../../../tools/tool-names.js';
 import { ToolErrorType } from '../../../tools/tool-error.js';
 import type {
   ToolInvocation,
@@ -185,6 +184,18 @@ function resolveSSHParams(params: SSHToolParams): ResolvedSSHParams {
 }
 
 /**
+ * Escapes a command for safe passing to SSH.
+ * Wraps in single quotes and escapes any existing single quotes.
+ * This prevents local shell expansion of ~, $, etc.
+ */
+function escapeSSHCommand(command: string): string {
+  // Escape single quotes by ending the quote, adding escaped quote, and starting new quote
+  // 'command'with'quotes' becomes: 'command'\''with'\''quotes'
+  const escaped = command.replace(/'/g, "'\\''");
+  return `'${escaped}'`;
+}
+
+/**
  * Builds an SSH command string from the parameters.
  */
 function buildSSHCommand(params: ResolvedSSHParams): string {
@@ -204,6 +215,9 @@ function buildSSHCommand(params: ResolvedSSHParams): string {
   parts.push('-o', 'StrictHostKeyChecking=accept-new');
   parts.push('-o', 'ConnectTimeout=30');
 
+  // Allocate PTY for better output formatting (colors, columns, etc.)
+  parts.push('-t');
+
   // Add timeout for command execution
   if (params.timeout) {
     parts.push('-o', `ServerAliveInterval=${Math.floor(params.timeout / 1000)}`);
@@ -212,9 +226,13 @@ function buildSSHCommand(params: ResolvedSSHParams): string {
   // Add user@host
   parts.push(`${params.user}@${params.host}`);
 
-  // Add command if specified
+  // Add command if specified - wrap in single quotes to prevent local shell expansion
+  // This ensures ~ and $ are interpreted on the REMOTE server, not locally
   if (params.command) {
-    parts.push('--', params.command);
+    // Set COLUMNS environment variable for better output formatting
+    // This ensures commands like 'ls' display in columns instead of one per line
+    const commandWithColumns = `COLUMNS=120 ${params.command}`;
+    parts.push(escapeSSHCommand(commandWithColumns));
   }
 
   return parts.join(' ');
@@ -259,7 +277,12 @@ export class SSHToolInvocation extends BaseToolInvocation<
   override async shouldConfirmExecute(
     _abortSignal: AbortSignal,
   ): Promise<ToolCallConfirmationDetails | false> {
-    // Always require confirmation for SSH connections for security
+    // Check if SSH was already approved with "ProceedAlways"
+    if (this.allowlist.has('ssh')) {
+      return false; // No confirmation needed - already approved
+    }
+
+    // Require confirmation for SSH connections for security
     const confirmationDetails: ToolExecuteConfirmationDetails = {
       type: 'exec',
       title: 'Confirm SSH Connection',
@@ -432,13 +455,14 @@ export class SSHTool extends BaseDeclarativeTool<
   SSHToolParams,
   ToolResult
 > {
-  static Name: string = ToolNames.SSH;
-  private allowlist: Set<string> = new Set();
+  static Name: string = 'ssh_connect';
+  // Static allowlist to persist across all instances
+  private static allowlist: Set<string> = new Set();
 
   constructor(private readonly config: Config) {
     super(
       SSHTool.Name,
-      ToolDisplayNames.SSH,
+      'SSH',
       getSSHToolDescription(),
       Kind.Execute,
       {
@@ -570,6 +594,6 @@ export class SSHTool extends BaseDeclarativeTool<
   protected createInvocation(
     params: SSHToolParams,
   ): ToolInvocation<SSHToolParams, ToolResult> {
-    return new SSHToolInvocation(this.config, params, this.allowlist);
+    return new SSHToolInvocation(this.config, params, SSHTool.allowlist);
   }
 }

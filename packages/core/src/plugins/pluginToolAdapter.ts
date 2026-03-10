@@ -10,6 +10,8 @@
  * Bridges the plugin system with the tool registry,
  * allowing plugins to register tools that integrate seamlessly
  * with the existing tool system.
+ * 
+ * ALL tools have access to storage, env, and prompts by default.
  */
 
 import type { PluginTool, ToolExecutionContext, ToolExecutionResult } from './types.js';
@@ -23,8 +25,48 @@ import type {
 import { BaseDeclarativeTool, BaseToolInvocation } from '../tools/tools.js';
 import { ToolErrorType } from '../tools/tool-error.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
+import type { Storage } from '../config/storage.js';
+import type { PromptRegistry } from '../prompts/prompt-registry.js';
 
 const debugLogger = createDebugLogger('PLUGIN_TOOL_ADAPTER');
+
+/**
+ * Context provider for plugin tools
+ * Provides access to storage, env, prompts, and other services
+ */
+export interface PluginToolContextProvider {
+  /** Get storage instance */
+  getStorage(): Storage;
+  /** Get prompt registry */
+  getPromptRegistry(): PromptRegistry;
+  /** Get session ID */
+  getSessionId(): string;
+  /** Get model ID */
+  getModelId(): string | undefined;
+  /** Get environment variable */
+  getEnv(name: string, defaultValue?: string): string | undefined;
+  /** Get all environment variables */
+  getAllEnv(): Record<string, string | undefined>;
+}
+
+/**
+ * Global context provider - set during initialization
+ */
+let globalContextProvider: PluginToolContextProvider | null = null;
+
+/**
+ * Set the global context provider for all plugin tools
+ */
+export function setPluginToolContextProvider(provider: PluginToolContextProvider): void {
+  globalContextProvider = provider;
+}
+
+/**
+ * Get the global context provider
+ */
+export function getPluginToolContextProvider(): PluginToolContextProvider | null {
+  return globalContextProvider;
+}
 
 /**
  * Adapter that wraps a PluginTool to work with the DeclarativeTool system
@@ -35,8 +77,9 @@ export class PluginToolAdapter extends BaseDeclarativeTool<
 > {
   private pluginTool: PluginTool;
   private pluginId: string;
+  private contextProvider?: PluginToolContextProvider;
   
-  constructor(pluginTool: PluginTool, pluginId: string) {
+  constructor(pluginTool: PluginTool, pluginId: string, contextProvider?: PluginToolContextProvider) {
     super(
       pluginTool.name,
       pluginTool.name,
@@ -48,6 +91,7 @@ export class PluginToolAdapter extends BaseDeclarativeTool<
     );
     this.pluginTool = pluginTool;
     this.pluginId = pluginId;
+    this.contextProvider = contextProvider;
   }
   
   protected createInvocation(
@@ -56,7 +100,8 @@ export class PluginToolAdapter extends BaseDeclarativeTool<
     return new PluginToolInvocation(
       this.pluginTool,
       this.pluginId,
-      params
+      params,
+      this.contextProvider || globalContextProvider
     );
   }
   
@@ -84,15 +129,18 @@ class PluginToolInvocation extends BaseToolInvocation<
 > {
   private pluginTool: PluginTool;
   private pluginId: string;
+  private contextProvider: PluginToolContextProvider | null;
   
   constructor(
     pluginTool: PluginTool,
     pluginId: string,
-    params: Record<string, unknown>
+    params: Record<string, unknown>,
+    contextProvider: PluginToolContextProvider | null | undefined
   ) {
     super(params);
     this.pluginTool = pluginTool;
     this.pluginId = pluginId;
+    this.contextProvider = contextProvider || null;
   }
   
   getDescription(): string {
@@ -107,38 +155,8 @@ class PluginToolInvocation extends BaseToolInvocation<
     _updateOutput?: (output: ToolResultDisplay) => void
   ): Promise<ToolResult> {
     try {
-      // Create execution context
-      const context: ToolExecutionContext = {
-        signal,
-        plugin: {
-          config: {},
-          metadata: {
-            id: this.pluginId,
-            name: this.pluginId,
-            version: '1.0.0',
-          },
-          logger: {
-            debug: (...args) => debugLogger.debug(`[${this.pluginId}]`, ...args),
-            info: (...args) => debugLogger.info(`[${this.pluginId}]`, ...args),
-            warn: (...args) => debugLogger.warn(`[${this.pluginId}]`, ...args),
-            error: (...args) => debugLogger.error(`[${this.pluginId}]`, ...args),
-          },
-          events: {
-            emit: () => {},
-            on: () => () => {},
-            once: () => {},
-          },
-          services: {
-            registerTool: () => {},
-            unregisterTool: () => {},
-            getTools: () => [],
-            showNotification: () => {},
-            executeCommand: async () => undefined,
-            getConfig: () => ({}),
-            setConfig: () => {},
-          },
-        },
-      };
+      // Create execution context with ALL services available
+      const context = this.createExecutionContext(signal);
       
       // Execute with timeout if specified
       const timeout = this.pluginTool.timeout;
@@ -178,6 +196,128 @@ class PluginToolInvocation extends BaseToolInvocation<
         },
       };
     }
+  }
+  
+  /**
+   * Create execution context with ALL services available
+   */
+  private createExecutionContext(signal: AbortSignal): ToolExecutionContext {
+    const provider = this.contextProvider;
+    
+    // Create env access object
+    const envAccess = {
+      get: (name: string, defaultValue?: string) => {
+        return provider?.getEnv(name, defaultValue) ?? process.env[name] ?? defaultValue;
+      },
+      getAll: () => {
+        return provider?.getAllEnv() ?? { ...process.env } as Record<string, string | undefined>;
+      }
+    };
+    
+    // If we have a context provider, use it
+    if (provider) {
+      return {
+        signal,
+        plugin: {
+          config: {},
+          metadata: {
+            id: this.pluginId,
+            name: this.pluginId,
+            version: '1.0.0',
+          },
+          logger: {
+            debug: (...args) => debugLogger.debug(`[${this.pluginId}]`, ...args),
+            info: (...args) => debugLogger.info(`[${this.pluginId}]`, ...args),
+            warn: (...args) => debugLogger.warn(`[${this.pluginId}]`, ...args),
+            error: (...args) => debugLogger.error(`[${this.pluginId}]`, ...args),
+          },
+          events: {
+            emit: () => {},
+            on: () => () => {},
+            once: () => {},
+          },
+          services: {
+            registerTool: () => {},
+            unregisterTool: () => {},
+            getTools: () => [],
+            showNotification: () => {},
+            executeCommand: async () => undefined,
+            getConfig: () => ({}),
+            setConfig: () => {},
+            getStorage: () => provider.getStorage(),
+            getStorageItem: () => undefined,
+            setStorageItem: () => {},
+            getEnv: envAccess.get,
+            getAllEnv: envAccess.getAll,
+            getPromptRegistry: () => provider.getPromptRegistry(),
+            getSessionId: () => provider.getSessionId(),
+            getModelId: () => provider.getModelId(),
+          },
+        },
+        // Storage - available to ALL tools by default
+        storage: provider.getStorage(),
+        // Prompt registry - available to ALL tools by default
+        promptRegistry: provider.getPromptRegistry(),
+        // Session ID - available to ALL tools by default
+        sessionId: provider.getSessionId(),
+        // Model ID
+        modelId: provider.getModelId(),
+        // Environment variables - available to ALL tools by default
+        env: envAccess,
+      };
+    }
+    
+    // Fallback context when no provider is available (should not happen in normal operation)
+    debugLogger.warn(`No context provider available for plugin tool ${this.pluginId}`);
+    
+    return {
+      signal,
+      plugin: {
+        config: {},
+        metadata: {
+          id: this.pluginId,
+          name: this.pluginId,
+          version: '1.0.0',
+        },
+        logger: {
+          debug: (...args) => debugLogger.debug(`[${this.pluginId}]`, ...args),
+          info: (...args) => debugLogger.info(`[${this.pluginId}]`, ...args),
+          warn: (...args) => debugLogger.warn(`[${this.pluginId}]`, ...args),
+          error: (...args) => debugLogger.error(`[${this.pluginId}]`, ...args),
+        },
+        events: {
+          emit: () => {},
+          on: () => () => {},
+          once: () => {},
+        },
+        services: {
+          registerTool: () => {},
+          unregisterTool: () => {},
+          getTools: () => [],
+          showNotification: () => {},
+          executeCommand: async () => undefined,
+          getConfig: () => ({}),
+          setConfig: () => {},
+          getStorage: () => {
+            throw new Error('Storage not available - no context provider set.');
+          },
+          getStorageItem: () => undefined,
+          setStorageItem: () => {},
+          getEnv: envAccess.get,
+          getAllEnv: envAccess.getAll,
+          getPromptRegistry: () => {
+            throw new Error('PromptRegistry not available - no context provider set.');
+          },
+          getSessionId: () => '',
+          getModelId: () => undefined,
+        },
+      },
+      // These will throw when accessed if no provider
+      storage: null as unknown as Storage,
+      promptRegistry: null as unknown as PromptRegistry,
+      sessionId: '',
+      env: envAccess,
+    };
   }
   
   private async executeWithTimeout(
@@ -232,10 +372,11 @@ function mapToolCategory(category?: string): Kind {
 export function registerPluginTools(
   tools: PluginTool[],
   pluginId: string,
-  registerFn: (tool: AnyDeclarativeTool) => void
+  registerFn: (tool: AnyDeclarativeTool) => void,
+  contextProvider?: PluginToolContextProvider
 ): void {
   for (const tool of tools) {
-    const adapter = new PluginToolAdapter(tool, pluginId);
+    const adapter = new PluginToolAdapter(tool, pluginId, contextProvider);
     registerFn(adapter);
     debugLogger.info(`Registered plugin tool: ${tool.name} (from ${pluginId})`);
   }
@@ -259,7 +400,8 @@ export function unregisterPluginTools(
  */
 export function pluginToolToDeclarative(
   pluginTool: PluginTool,
-  pluginId: string
+  pluginId: string,
+  contextProvider?: PluginToolContextProvider
 ): AnyDeclarativeTool {
-  return new PluginToolAdapter(pluginTool, pluginId);
+  return new PluginToolAdapter(pluginTool, pluginId, contextProvider);
 }

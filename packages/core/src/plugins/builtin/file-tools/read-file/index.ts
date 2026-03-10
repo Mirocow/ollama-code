@@ -6,9 +6,16 @@
 
 import path from 'node:path';
 import { makeRelative, shortenPath } from '../../../../utils/paths.js';
-import type { ToolInvocation, ToolLocation, ToolResult } from '../../../../tools/tools.js';
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from '../../../../tools/tools.js';
-import { ToolNames, ToolDisplayNames } from '../../../../tools/tool-names.js';
+import type {
+  ToolInvocation,
+  ToolLocation,
+  ToolResult,
+} from '../../../../tools/tools.js';
+import {
+  BaseDeclarativeTool,
+  BaseToolInvocation,
+  Kind,
+} from '../../../../tools/tools.js';
 
 import type { PartUnion } from '../../../../types/content.js';
 import { processSingleFileContent } from '../../../../utils/fileUtils.js';
@@ -16,6 +23,7 @@ import type { Config } from '../../../../config/config.js';
 
 import { isSubpath } from '../../../../utils/paths.js';
 import { Storage } from '../../../../config/storage.js';
+import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
 
 /**
  * Parameters for the ReadFile tool
@@ -79,6 +87,9 @@ class ReadFileToolInvocation extends BaseToolInvocation<
       this.params.limit,
     );
 
+    // Record file read telemetry
+    uiTelemetryService.recordFileOperation('read');
+
     if (result.error) {
       return {
         llmContent: result.llmContent,
@@ -113,12 +124,12 @@ export class ReadFileTool extends BaseDeclarativeTool<
   ReadFileToolParams,
   ToolResult
 > {
-  static readonly Name: string = ToolNames.READ_FILE;
+  static readonly Name: string = 'read_file';
 
   constructor(private config: Config) {
     super(
       ReadFileTool.Name,
-      ToolDisplayNames.READ_FILE,
+      'ReadFile',
       `Reads and returns the content of a specified file. If the file is large, the content will be truncated. The tool's response will clearly indicate if truncation has occurred and will provide details on how to read more of the file using the 'offset' and 'limit' parameters. Handles text, images (PNG, JPG, GIF, WEBP, SVG, BMP), and PDF files. For text files, it can read specific line ranges.`,
       Kind.Read,
       {

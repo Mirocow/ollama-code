@@ -12,6 +12,7 @@ import { type ChatCompressionInfo, CompressionStatus } from '../core/turn.js';
 import { DEFAULT_TOKEN_LIMIT } from '../core/tokenLimits.js';
 import { getCompressionPrompt } from '../core/prompts.js';
 import { getResponseText } from '../utils/partUtils.js';
+import { RequestTokenizer } from '../utils/request-tokenizer/requestTokenizer.js';
 
 
 /**
@@ -75,6 +76,8 @@ export function findCompressSplitPoint(
 }
 
 export class ChatCompressionService {
+  private tokenizer = new RequestTokenizer();
+
   async compress(
     chat: OllamaChat,
     promptId: string,
@@ -104,7 +107,11 @@ export class ChatCompressionService {
       };
     }
 
-    const originalTokenCount = 0; // Telemetry removed
+    // Calculate original token count using RequestTokenizer
+    const tokenResult = await this.tokenizer.calculateTokens({
+      contents: curatedHistory,
+    });
+    const originalTokenCount = tokenResult.totalTokens;
 
     // Don't compress if not forced and we are under the limit.
     if (!force) {
@@ -185,24 +192,16 @@ export class ChatCompressionService {
     let canCalculateNewTokenCount = false;
 
     if (!isSummaryEmpty) {
+      // Only add the summary, no fake response to save tokens
       extraHistory = [
         {
           role: 'user',
-          parts: [{ text: summary }],
-        },
-        {
-          role: 'model',
-          parts: [{ text: 'Got it. Thanks for the additional context!' }],
+          parts: [{ text: `[Context Summary]\n${summary}` }],
         },
         ...historyToKeep,
       ];
 
-      // Best-effort token math using *only* model-reported token counts.
-      //
-      // Note: compressionInputTokenCount includes the compression prompt and
-      // the extra "reason in your scratchpad" instruction(approx. 1000 tokens), and
-      // compressionOutputTokenCount may include non-persisted tokens (thoughts).
-      // We accept these inaccuracies to avoid local token estimation.
+      // Calculate new token count based on actual compression
       if (
         typeof compressionInputTokenCount === 'number' &&
         compressionInputTokenCount > 0 &&
@@ -210,22 +209,32 @@ export class ChatCompressionService {
         compressionOutputTokenCount > 0
       ) {
         canCalculateNewTokenCount = true;
-        newTokenCount = Math.max(
-          0,
-          originalTokenCount -
-            (compressionInputTokenCount - 1000) +
-            compressionOutputTokenCount,
-        );
+        
+        // Calculate tokens: summary + kept portion
+        // summaryTokens = tokens in the generated summary
+        const summaryTokens = compressionOutputTokenCount;
+        
+        // Estimate kept portion tokens (30% of original)
+        const keptPortionTokens = Math.floor(originalTokenCount * COMPRESSION_PRESERVE_THRESHOLD);
+        
+        newTokenCount = summaryTokens + keptPortionTokens;
       }
     }
 
     // Telemetry logging removed
 
+    // Prepare base info with summary (always include summary for debugging/history)
+    const baseInfo = {
+      originalTokenCount,
+      newTokenCount,
+      summary: isSummaryEmpty ? undefined : summary,
+    };
+
     if (isSummaryEmpty) {
       return {
         newHistory: null,
         info: {
-          originalTokenCount,
+          ...baseInfo,
           newTokenCount: originalTokenCount,
           compressionStatus: CompressionStatus.COMPRESSION_FAILED_EMPTY_SUMMARY,
         },
@@ -234,7 +243,7 @@ export class ChatCompressionService {
       return {
         newHistory: null,
         info: {
-          originalTokenCount,
+          ...baseInfo,
           newTokenCount: originalTokenCount,
           compressionStatus:
             CompressionStatus.COMPRESSION_FAILED_TOKEN_COUNT_ERROR,
@@ -244,8 +253,7 @@ export class ChatCompressionService {
       return {
         newHistory: null,
         info: {
-          originalTokenCount,
-          newTokenCount,
+          ...baseInfo,
           compressionStatus:
             CompressionStatus.COMPRESSION_FAILED_INFLATED_TOKEN_COUNT,
         },
@@ -255,8 +263,7 @@ export class ChatCompressionService {
       return {
         newHistory: extraHistory,
         info: {
-          originalTokenCount,
-          newTokenCount,
+          ...baseInfo,
           compressionStatus: CompressionStatus.COMPRESSED,
         },
       };

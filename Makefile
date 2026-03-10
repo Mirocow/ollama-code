@@ -1,6 +1,6 @@
 # Makefile for qwen-code
 
-.PHONY: help install build build-sandbox build-all test lint format preflight clean start debug release run-npx create-alias
+.PHONY: help install build build-sandbox build-all test lint format preflight clean start debug debug-attach release run-npx create-alias
 
 help:
 	@echo "Makefile for qwen-code"
@@ -15,17 +15,22 @@ help:
 	@echo "  make preflight        - Run formatting, linting, and tests"
 	@echo "  make clean            - Remove generated files"
 	@echo "  make start            - Start the Qwen Code CLI"
-	@echo "  make debug            - Start the Qwen Code CLI in debug mode"
+	@echo "  make start ARGS='...' - Start with args: make start ARGS='--resume <id>'"
+	@echo "  make debug            - Start in debug mode"
+	@echo "  make debug-attach     - Start with inspector for VS Code attach"
 	@echo ""
-	@echo "  make run-npx          - Run the CLI using npx (for testing the published package)"
-	@echo "  make create-alias     - Create a 'qwen' alias for your shell"
+	@echo "Examples:"
+	@echo "  make start ARGS='--resume'"
+	@echo "  make debug ARGS='--resume deb246aa...'"
+	@echo ""
+	@echo "  make run-npx          - Run the CLI using npx"
+	@echo "  make create-alias     - Create a 'qwen' alias"
 
 install:
 	npm install
 
 build:
 	npm run build
-
 
 build-all:
 	npm run build:all
@@ -46,11 +51,13 @@ clean:
 	npm run clean
 
 start:
-	npm run start
+	npm run start -- $(ARGS)
 
 debug:
-	npm run debug
+	npm run debug -- $(ARGS)
 
+debug-attach:
+	npm run debug:attach -- $(ARGS)
 
 run-npx:
 	npx https://github.com/QwenLM/qwen-code

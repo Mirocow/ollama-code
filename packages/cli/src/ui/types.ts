@@ -85,6 +85,8 @@ export interface SummaryProps {
 
 export interface HistoryItemBase {
   text?: string; // Text content for user/gemini/info/error messages
+  /** UUID from ChatRecordingService - first 8 chars for display */
+  uuid?: string;
 }
 
 export type HistoryItemUser = HistoryItemBase & {
@@ -203,6 +205,10 @@ export interface ToolDefinition {
   name: string;
   displayName: string;
   description?: string;
+  /** Plugin ID that provides this tool */
+  pluginId?: string;
+  /** Human-readable plugin name */
+  pluginName?: string;
 }
 
 export interface SkillDefinition {

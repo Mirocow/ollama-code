@@ -13,7 +13,6 @@ import { isSubpath } from '../../../../utils/paths.js';
 import type { Config } from '../../../../config/config.js';
 import { DEFAULT_FILE_FILTERING_OPTIONS } from '../../../../config/constants.js';
 import { ToolErrorType } from '../../../../tools/tool-error.js';
-import { ToolDisplayNames, ToolNames } from '../../../../tools/tool-names.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('LS');
@@ -257,12 +256,12 @@ class LSToolInvocation extends BaseToolInvocation<LSToolParams, ToolResult> {
  * Implementation of the LS tool logic
  */
 export class LSTool extends BaseDeclarativeTool<LSToolParams, ToolResult> {
-  static readonly Name = ToolNames.LS;
+  static readonly Name = 'list_directory';
 
   constructor(private config: Config) {
     super(
       LSTool.Name,
-      ToolDisplayNames.LS,
+      'ListFiles',
       'Lists the names of files and subdirectories directly within a specified directory path. Can optionally ignore entries matching provided glob patterns.',
       Kind.Search,
       {

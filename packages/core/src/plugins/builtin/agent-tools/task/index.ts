@@ -5,7 +5,6 @@
  */
 
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from '../../../../tools/tools.js';
-import { ToolNames, ToolDisplayNames } from '../../../../tools/tool-names.js';
 import type {
   ToolResult,
   ToolResultDisplay,
@@ -50,7 +49,7 @@ const debugLogger = createDebugLogger('TASK');
  * for the model to choose from.
  */
 export class TaskTool extends BaseDeclarativeTool<TaskParams, ToolResult> {
-  static readonly Name: string = ToolNames.TASK;
+  static readonly Name: string = 'task';
 
   private subagentManager: SubagentManager;
   private availableSubagents: SubagentConfig[] = [];
@@ -80,7 +79,7 @@ export class TaskTool extends BaseDeclarativeTool<TaskParams, ToolResult> {
 
     super(
       TaskTool.Name,
-      ToolDisplayNames.TASK,
+      'Task',
       'Delegate tasks to specialized subagents. Loading available subagents...', // Initial description
       Kind.Other,
       initialSchema,

@@ -5,7 +5,7 @@
  */
 
 import type { Part , ChatRecord, Config, Kind } from '@ollama-code/ollama-code-core';
-import { ExitPlanModeTool, ToolNames } from '@ollama-code/ollama-code-core';
+import { ExitPlanModeTool } from '@ollama-code/ollama-code-core';
 import type { ExportMessage, ExportSessionData } from './types.js';
 
 /**
@@ -106,7 +106,7 @@ function buildToolCallMessageFromResult(
 
   // Skip todo_write tool - it's already handled by plan update in collect.ts
   // This prevents duplicate todo messages in the export
-  if (toolName === ToolNames.TODO_WRITE) {
+  if (toolName === 'todo_write') {
     return null;
   }
 
@@ -225,7 +225,7 @@ function mapToolKind(kind: Kind | undefined, toolName?: string): string {
     return 'switch_mode';
   }
 
-  if (toolName && toolName === ToolNames.TODO_WRITE) {
+  if (toolName && toolName === 'todo_write') {
     return 'todowrite';
   }
 

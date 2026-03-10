@@ -27,9 +27,38 @@ const lspToolsPlugin: PluginDefinition = {
     enabledByDefault: true,
   },
   
-  toolClasses: [
+  // Unified tools array - tool classes that don't need Config
+  tools: [
     LspTool,
   ],
+  
+  // Tool aliases - short names that resolve to canonical tool names
+  aliases: [
+    { alias: 'language_server', canonicalName: 'lsp', description: 'Language Server Protocol' },
+    { alias: 'intellisense', canonicalName: 'lsp', description: 'Code intelligence' },
+  ],
+  
+  // Context-aware prompts for model guidance
+  prompts: [
+    {
+      priority: 1,
+      content: 'LSP (Language Server Protocol) tool for code intelligence. Provides go-to-definition, find-references, completion, hover info. Works with language servers for TypeScript, Python, Go, etc.',
+    },
+    {
+      priority: 2,
+      content: 'LSP USAGE: Requires language server installed. Supports common operations: definition, references, completion, hover. Check if LSP server is available for the language.',
+    },
+  ],
+  
+  // Plugin capabilities
+  capabilities: {
+    canReadFiles: true,
+    canWriteFiles: false,
+    canExecuteCommands: false,
+    canAccessNetwork: false,
+    canUseStorage: true,
+    canUsePrompts: true,
+  },
   
   hooks: {
     onLoad: async (context) => {

@@ -5,35 +5,24 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { StorageTool, StorageNamespaces, getProjectInfo, clearProjectRootCache } from './index.js';
+import { ModelStorageTool, StorageNamespaces, getGlobalStorage, closeGlobalStorage } from './index.js';
 import type { ToolResult } from '../../../tools/tools.js';
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import * as os from 'node:os';
 
 describe('StorageTool', () => {
-  let storageTool: StorageTool;
-  let testStorageDir: string;
+  let storageTool: ModelStorageTool;
 
   beforeEach(async () => {
-    storageTool = new StorageTool();
-    // Create a temporary test directory
-    testStorageDir = path.join(os.tmpdir(), `storage-test-${Date.now()}`);
-    await fs.mkdir(testStorageDir, { recursive: true });
+    storageTool = new ModelStorageTool();
   });
 
   afterEach(async () => {
-    // Cleanup test directory
-    try {
-      await fs.rm(testStorageDir, { recursive: true, force: true });
-    } catch {
-      // Ignore cleanup errors
-    }
+    // Close storage after each test
+    await closeGlobalStorage();
   });
 
   describe('Tool Configuration', () => {
     it('should have correct tool name', () => {
-      expect(StorageTool.Name).toBe('model_storage');
+      expect(ModelStorageTool.Name).toBe('model_storage');
     });
 
     it('should have valid JSON schema', () => {
@@ -107,10 +96,9 @@ describe('StorageTool', () => {
       it('should set and get a string value', async () => {
         const invocation = storageTool.build({
           operation: 'set',
-          namespace: 'test',
+          namespace: 'test_string',
           key: 'string_key',
           value: 'hello world',
-          scope: 'global',
         });
 
         const setResult = await invocation.execute(new AbortController().signal);
@@ -119,9 +107,8 @@ describe('StorageTool', () => {
         // Now get it
         const getInvocation = storageTool.build({
           operation: 'get',
-          namespace: 'test',
+          namespace: 'test_string',
           key: 'string_key',
-          scope: 'global',
         });
 
         const getResult = await getInvocation.execute(new AbortController().signal);
@@ -133,19 +120,17 @@ describe('StorageTool', () => {
 
         const setInvocation = storageTool.build({
           operation: 'set',
-          namespace: 'test',
+          namespace: 'test_object',
           key: 'object_key',
           value: testValue,
-          scope: 'global',
         });
 
         await setInvocation.execute(new AbortController().signal);
 
         const getInvocation = storageTool.build({
           operation: 'get',
-          namespace: 'test',
+          namespace: 'test_object',
           key: 'object_key',
-          scope: 'global',
         });
 
         const getResult = await getInvocation.execute(new AbortController().signal);
@@ -159,19 +144,17 @@ describe('StorageTool', () => {
 
         const setInvocation = storageTool.build({
           operation: 'set',
-          namespace: 'test',
+          namespace: 'test_array',
           key: 'array_key',
           value: testArray,
-          scope: 'global',
         });
 
         await setInvocation.execute(new AbortController().signal);
 
         const getInvocation = storageTool.build({
           operation: 'get',
-          namespace: 'test',
+          namespace: 'test_array',
           key: 'array_key',
-          scope: 'global',
         });
 
         const getResult = await getInvocation.execute(new AbortController().signal);
@@ -183,9 +166,8 @@ describe('StorageTool', () => {
       it('should return not found for missing key', async () => {
         const getInvocation = storageTool.build({
           operation: 'get',
-          namespace: 'test',
-          key: 'nonexistent_key',
-          scope: 'global',
+          namespace: 'test_missing',
+          key: 'nonexistent_key_xyz',
         });
 
         const result = await getInvocation.execute(new AbortController().signal);
@@ -198,19 +180,17 @@ describe('StorageTool', () => {
         // Set a value first
         const setInvocation = storageTool.build({
           operation: 'set',
-          namespace: 'test',
+          namespace: 'test_delete',
           key: 'to_delete',
           value: 'value',
-          scope: 'global',
         });
         await setInvocation.execute(new AbortController().signal);
 
         // Delete it
         const deleteInvocation = storageTool.build({
           operation: 'delete',
-          namespace: 'test',
+          namespace: 'test_delete',
           key: 'to_delete',
-          scope: 'global',
         });
         const deleteResult = await deleteInvocation.execute(new AbortController().signal);
         expect(deleteResult.llmContent).toContain('Deleted');
@@ -218,9 +198,8 @@ describe('StorageTool', () => {
         // Verify it's gone
         const getInvocation = storageTool.build({
           operation: 'get',
-          namespace: 'test',
+          namespace: 'test_delete',
           key: 'to_delete',
-          scope: 'global',
         });
         const getResult = await getInvocation.execute(new AbortController().signal);
         expect(getResult.llmContent).toContain('not found');
@@ -229,9 +208,8 @@ describe('StorageTool', () => {
       it('should return not found for missing key on delete', async () => {
         const deleteInvocation = storageTool.build({
           operation: 'delete',
-          namespace: 'test',
-          key: 'nonexistent',
-          scope: 'global',
+          namespace: 'test_delete_missing',
+          key: 'nonexistent_xyz',
         });
         const result = await deleteInvocation.execute(new AbortController().signal);
         expect(result.llmContent).toContain('not found');
@@ -240,22 +218,22 @@ describe('StorageTool', () => {
 
     describe('list', () => {
       it('should list all keys in namespace', async () => {
+        const ns = `test_list_${Date.now()}`;
+        
         // Set multiple values
         for (let i = 0; i < 3; i++) {
           const setInvocation = storageTool.build({
             operation: 'set',
-            namespace: 'test_list',
+            namespace: ns,
             key: `key_${i}`,
             value: `value_${i}`,
-            scope: 'global',
           });
           await setInvocation.execute(new AbortController().signal);
         }
 
         const listInvocation = storageTool.build({
           operation: 'list',
-          namespace: 'test_list',
-          scope: 'global',
+          namespace: ns,
         });
 
         const result = await listInvocation.execute(new AbortController().signal);
@@ -267,8 +245,7 @@ describe('StorageTool', () => {
       it('should show empty for empty namespace', async () => {
         const listInvocation = storageTool.build({
           operation: 'list',
-          namespace: 'empty_namespace_xyz',
-          scope: 'global',
+          namespace: 'empty_namespace_xyz_12345',
         });
 
         const result = await listInvocation.execute(new AbortController().signal);
@@ -281,20 +258,18 @@ describe('StorageTool', () => {
         // Create initial array
         const setInvocation = storageTool.build({
           operation: 'set',
-          namespace: 'test',
+          namespace: 'test_append',
           key: 'append_key',
           value: ['item1'],
-          scope: 'global',
         });
         await setInvocation.execute(new AbortController().signal);
 
         // Append
         const appendInvocation = storageTool.build({
           operation: 'append',
-          namespace: 'test',
+          namespace: 'test_append',
           key: 'append_key',
           value: 'item2',
-          scope: 'global',
         });
         const appendResult = await appendInvocation.execute(new AbortController().signal);
         expect(appendResult.llmContent).toContain('2 items');
@@ -302,9 +277,8 @@ describe('StorageTool', () => {
         // Verify
         const getInvocation = storageTool.build({
           operation: 'get',
-          namespace: 'test',
+          namespace: 'test_append',
           key: 'append_key',
-          scope: 'global',
         });
         const result = await getInvocation.execute(new AbortController().signal);
         const parsed = JSON.parse(result.llmContent);
@@ -316,18 +290,16 @@ describe('StorageTool', () => {
         const uniqueKey = `new_array_key_${Date.now()}`;
         const appendInvocation = storageTool.build({
           operation: 'append',
-          namespace: 'test',
+          namespace: 'test_append_new',
           key: uniqueKey,
           value: 'first_item',
-          scope: 'global',
         });
         await appendInvocation.execute(new AbortController().signal);
 
         const getInvocation = storageTool.build({
           operation: 'get',
-          namespace: 'test',
+          namespace: 'test_append_new',
           key: uniqueKey,
-          scope: 'global',
         });
         const result = await getInvocation.execute(new AbortController().signal);
         const parsed = JSON.parse(result.llmContent);
@@ -338,20 +310,18 @@ describe('StorageTool', () => {
         // Set a non-array value
         const setInvocation = storageTool.build({
           operation: 'set',
-          namespace: 'test',
+          namespace: 'test_append_error',
           key: 'non_array',
           value: 'string value',
-          scope: 'global',
         });
         await setInvocation.execute(new AbortController().signal);
 
         // Try to append
         const appendInvocation = storageTool.build({
           operation: 'append',
-          namespace: 'test',
+          namespace: 'test_append_error',
           key: 'non_array',
           value: 'item',
-          scope: 'global',
         });
         const result = await appendInvocation.execute(new AbortController().signal);
         expect(result.llmContent).toContain('Error');
@@ -364,20 +334,18 @@ describe('StorageTool', () => {
         // Set initial object
         const setInvocation = storageTool.build({
           operation: 'set',
-          namespace: 'test',
+          namespace: 'test_merge',
           key: 'merge_key',
           value: { a: 1, b: 2 },
-          scope: 'global',
         });
         await setInvocation.execute(new AbortController().signal);
 
         // Merge
         const mergeInvocation = storageTool.build({
           operation: 'merge',
-          namespace: 'test',
+          namespace: 'test_merge',
           key: 'merge_key',
           value: { b: 3, c: 4 },
-          scope: 'global',
         });
         const mergeResult = await mergeInvocation.execute(new AbortController().signal);
         expect(mergeResult.llmContent).toContain('Merged');
@@ -385,9 +353,8 @@ describe('StorageTool', () => {
         // Verify
         const getInvocation = storageTool.build({
           operation: 'get',
-          namespace: 'test',
+          namespace: 'test_merge',
           key: 'merge_key',
-          scope: 'global',
         });
         const result = await getInvocation.execute(new AbortController().signal);
         const parsed = JSON.parse(result.llmContent);
@@ -397,18 +364,16 @@ describe('StorageTool', () => {
       it('should create new object if key does not exist', async () => {
         const mergeInvocation = storageTool.build({
           operation: 'merge',
-          namespace: 'test',
+          namespace: 'test_merge_new',
           key: 'new_merge_key',
           value: { x: 1, y: 2 },
-          scope: 'global',
         });
         await mergeInvocation.execute(new AbortController().signal);
 
         const getInvocation = storageTool.build({
           operation: 'get',
-          namespace: 'test',
+          namespace: 'test_merge_new',
           key: 'new_merge_key',
-          scope: 'global',
         });
         const result = await getInvocation.execute(new AbortController().signal);
         const parsed = JSON.parse(result.llmContent);
@@ -419,20 +384,18 @@ describe('StorageTool', () => {
         // Set a non-object value
         const setInvocation = storageTool.build({
           operation: 'set',
-          namespace: 'test',
+          namespace: 'test_merge_error',
           key: 'non_object',
           value: 'string value',
-          scope: 'global',
         });
         await setInvocation.execute(new AbortController().signal);
 
         // Try to merge
         const mergeInvocation = storageTool.build({
           operation: 'merge',
-          namespace: 'test',
+          namespace: 'test_merge_error',
           key: 'non_object',
           value: { a: 1 },
-          scope: 'global',
         });
         const result = await mergeInvocation.execute(new AbortController().signal);
         expect(result.llmContent).toContain('Error');
@@ -442,14 +405,15 @@ describe('StorageTool', () => {
 
     describe('clear', () => {
       it('should clear all keys in namespace', async () => {
+        const ns = `test_clear_${Date.now()}`;
+        
         // Set multiple values
         for (let i = 0; i < 3; i++) {
           const setInvocation = storageTool.build({
             operation: 'set',
-            namespace: 'test_clear',
+            namespace: ns,
             key: `key_${i}`,
             value: `value_${i}`,
-            scope: 'global',
           });
           await setInvocation.execute(new AbortController().signal);
         }
@@ -457,8 +421,7 @@ describe('StorageTool', () => {
         // Clear
         const clearInvocation = storageTool.build({
           operation: 'clear',
-          namespace: 'test_clear',
-          scope: 'global',
+          namespace: ns,
         });
         const clearResult = await clearInvocation.execute(new AbortController().signal);
         expect(clearResult.llmContent).toContain('Cleared');
@@ -466,81 +429,11 @@ describe('StorageTool', () => {
         // Verify empty
         const listInvocation = storageTool.build({
           operation: 'list',
-          namespace: 'test_clear',
-          scope: 'global',
+          namespace: ns,
         });
         const listResult = await listInvocation.execute(new AbortController().signal);
         expect(listResult.llmContent).toContain('empty');
       });
-    });
-  });
-
-  describe('Scopes', () => {
-    it('should store in global scope by default', async () => {
-      const setInvocation = storageTool.build({
-        operation: 'set',
-        namespace: 'scope_test',
-        key: 'global_key',
-        value: 'global_value',
-      });
-
-      const result = await setInvocation.execute(new AbortController().signal);
-      expect(result.llmContent).toContain('global');
-    });
-
-    it('should store in project scope when specified', async () => {
-      const setInvocation = storageTool.build({
-        operation: 'set',
-        namespace: 'scope_test',
-        key: 'project_key',
-        value: 'project_value',
-        scope: 'project',
-      });
-
-      const result = await setInvocation.execute(new AbortController().signal);
-      expect(result.llmContent).toContain('project');
-    });
-
-    it('should separate global and project scope', async () => {
-      // Set in global
-      const setGlobal = storageTool.build({
-        operation: 'set',
-        namespace: 'scope_separation',
-        key: 'test_key',
-        value: 'global_value',
-        scope: 'global',
-      });
-      await setGlobal.execute(new AbortController().signal);
-
-      // Set in project
-      const setProject = storageTool.build({
-        operation: 'set',
-        namespace: 'scope_separation',
-        key: 'test_key',
-        value: 'project_value',
-        scope: 'project',
-      });
-      await setProject.execute(new AbortController().signal);
-
-      // Get global
-      const getGlobal = storageTool.build({
-        operation: 'get',
-        namespace: 'scope_separation',
-        key: 'test_key',
-        scope: 'global',
-      });
-      const globalResult = await getGlobal.execute(new AbortController().signal);
-      expect(globalResult.llmContent).toBe('"global_value"');
-
-      // Get project
-      const getProject = storageTool.build({
-        operation: 'get',
-        namespace: 'scope_separation',
-        key: 'test_key',
-        scope: 'project',
-      });
-      const projectResult = await getProject.execute(new AbortController().signal);
-      expect(projectResult.llmContent).toBe('"project_value"');
     });
   });
 
@@ -561,11 +454,46 @@ describe('StorageTool', () => {
         namespace: 'custom_namespace_xyz',
         key: 'test',
         value: 'value',
-        scope: 'global',
       });
 
       const result = await setInvocation.execute(new AbortController().signal);
       expect(result.llmContent).toContain('Stored');
+    });
+
+    it('should use session backend for session namespace', async () => {
+      const setInvocation = storageTool.build({
+        operation: 'set',
+        namespace: 'session',
+        key: 'temp_key',
+        value: 'temp_value',
+      });
+
+      const result = await setInvocation.execute(new AbortController().signal);
+      expect(result.llmContent).toContain('session');
+    });
+
+    it('should use session backend for context namespace', async () => {
+      const setInvocation = storageTool.build({
+        operation: 'set',
+        namespace: 'context',
+        key: 'ctx_key',
+        value: 'ctx_value',
+      });
+
+      const result = await setInvocation.execute(new AbortController().signal);
+      expect(result.llmContent).toContain('session');
+    });
+
+    it('should use persistent backend for knowledge namespace', async () => {
+      const setInvocation = storageTool.build({
+        operation: 'set',
+        namespace: 'knowledge',
+        key: 'fact_key',
+        value: 'fact_value',
+      });
+
+      const result = await setInvocation.execute(new AbortController().signal);
+      expect(result.llmContent).toContain('persistent');
     });
   });
 
@@ -576,7 +504,6 @@ describe('StorageTool', () => {
         namespace: 'roadmap',
         key: 'v1.0',
         value: { features: [] },
-        scope: 'global',
       });
 
       expect(invocation.getDescription()).toContain('set');
@@ -588,7 +515,6 @@ describe('StorageTool', () => {
       const invocation = storageTool.build({
         operation: 'list',
         namespace: 'knowledge',
-        scope: 'project',
       });
 
       expect(invocation.getDescription()).toContain('list');
@@ -600,9 +526,8 @@ describe('StorageTool', () => {
     it('should handle missing key error gracefully', async () => {
       const getInvocation = storageTool.build({
         operation: 'get',
-        namespace: 'test',
+        namespace: 'test_errors',
         key: 'missing_key_xyz',
-        scope: 'global',
       });
 
       const result = await getInvocation.execute(new AbortController().signal);
@@ -612,7 +537,7 @@ describe('StorageTool', () => {
     it('should not require confirmation', async () => {
       const invocation = storageTool.build({
         operation: 'set',
-        namespace: 'test',
+        namespace: 'test_confirm',
         key: 'test_key',
         value: 'test_value',
       });
@@ -622,7 +547,7 @@ describe('StorageTool', () => {
     });
   });
 
-  // ==================== NEW TESTS FOR v0.17.3 ====================
+  // ==================== NEW TESTS FOR v0.17.5 ====================
 
   describe('TTL Support', () => {
     it('should set value with TTL', async () => {
@@ -632,7 +557,6 @@ describe('StorageTool', () => {
         key: 'ttl_key',
         value: 'expires soon',
         ttl: 3600, // 1 hour
-        scope: 'global',
       });
 
       const result = await setInvocation.execute(new AbortController().signal);
@@ -647,7 +571,6 @@ describe('StorageTool', () => {
         key: 'ttl_meta_key',
         value: 'data',
         ttl: 60,
-        scope: 'global',
       });
       await setInvocation.execute(new AbortController().signal);
 
@@ -655,7 +578,6 @@ describe('StorageTool', () => {
         operation: 'get',
         namespace: 'test_ttl_meta',
         key: 'ttl_meta_key',
-        scope: 'global',
         includeMetadata: true,
       });
 
@@ -676,7 +598,6 @@ describe('StorageTool', () => {
         namespace: uniqueNs,
         key: uniqueKey,
         value: { test: 'value' },
-        scope: 'global',
       });
       await setInvocation.execute(new AbortController().signal);
 
@@ -684,7 +605,6 @@ describe('StorageTool', () => {
         operation: 'get',
         namespace: uniqueNs,
         key: uniqueKey,
-        scope: 'global',
         includeMetadata: true,
       });
 
@@ -700,33 +620,31 @@ describe('StorageTool', () => {
 
     it('should increment version on update', async () => {
       const key = `version_test_${Date.now()}`;
+      const ns = 'test_version';
       
       // First set
       const set1 = storageTool.build({
         operation: 'set',
-        namespace: 'test_version',
+        namespace: ns,
         key,
         value: 'v1',
-        scope: 'global',
       });
       await set1.execute(new AbortController().signal);
 
       // Update
       const set2 = storageTool.build({
         operation: 'set',
-        namespace: 'test_version',
+        namespace: ns,
         key,
         value: 'v2',
-        scope: 'global',
       });
       await set2.execute(new AbortController().signal);
 
       // Get with metadata
       const getInvocation = storageTool.build({
         operation: 'get',
-        namespace: 'test_version',
+        namespace: ns,
         key,
-        scope: 'global',
         includeMetadata: true,
       });
 
@@ -741,8 +659,7 @@ describe('StorageTool', () => {
         namespace: 'test_tags',
         key: 'tagged_key',
         value: 'data',
-        tags: ['important', 'test', 'v0.17.3'],
-        scope: 'global',
+        tags: ['important', 'test', 'v0.17.5'],
       });
       await setInvocation.execute(new AbortController().signal);
 
@@ -750,7 +667,6 @@ describe('StorageTool', () => {
         operation: 'get',
         namespace: 'test_tags',
         key: 'tagged_key',
-        scope: 'global',
         includeMetadata: true,
       });
 
@@ -771,7 +687,6 @@ describe('StorageTool', () => {
           key: `key_${i}`,
           value: `value_${i}`,
           tags: [`tag_${i}`],
-          scope: 'global',
         });
         await setInvocation.execute(new AbortController().signal);
       }
@@ -779,7 +694,6 @@ describe('StorageTool', () => {
       const listInvocation = storageTool.build({
         operation: 'list',
         namespace: ns,
-        scope: 'global',
         includeMetadata: true,
       });
 
@@ -795,7 +709,6 @@ describe('StorageTool', () => {
         namespace: 'test_exists',
         key: 'exists_key',
         value: 'data',
-        scope: 'global',
       });
       await setInvocation.execute(new AbortController().signal);
 
@@ -803,7 +716,6 @@ describe('StorageTool', () => {
         operation: 'exists',
         namespace: 'test_exists',
         key: 'exists_key',
-        scope: 'global',
       });
 
       const result = await existsInvocation.execute(new AbortController().signal);
@@ -814,9 +726,8 @@ describe('StorageTool', () => {
     it('should return false for missing key', async () => {
       const existsInvocation = storageTool.build({
         operation: 'exists',
-        namespace: 'test_exists',
+        namespace: 'test_exists_missing',
         key: 'nonexistent_key_xyz',
-        scope: 'global',
       });
 
       const result = await existsInvocation.execute(new AbortController().signal);
@@ -837,7 +748,6 @@ describe('StorageTool', () => {
           key: `key_${i}`,
           value: { data: `value_${i}` },
           tags: ['test'],
-          scope: 'global',
         });
         await setInvocation.execute(new AbortController().signal);
       }
@@ -845,7 +755,6 @@ describe('StorageTool', () => {
       const statsInvocation = storageTool.build({
         operation: 'stats',
         namespace: ns,
-        scope: 'global',
       });
 
       const result = await statsInvocation.execute(new AbortController().signal);
@@ -855,6 +764,7 @@ describe('StorageTool', () => {
       expect(stats.tags).toContain('test');
       expect(stats.oldest).toBeDefined();
       expect(stats.newest).toBeDefined();
+      expect(stats.backend).toBeDefined();
     });
   });
 
@@ -865,7 +775,6 @@ describe('StorageTool', () => {
       const batchInvocation = storageTool.build({
         operation: 'batch',
         namespace: ns,
-        scope: 'global',
         actions: [
           { operation: 'set', key: 'key_a', value: 1 },
           { operation: 'set', key: 'key_b', value: 2 },
@@ -881,7 +790,6 @@ describe('StorageTool', () => {
       const listInvocation = storageTool.build({
         operation: 'list',
         namespace: ns,
-        scope: 'global',
       });
       const listResult = await listInvocation.execute(new AbortController().signal);
       expect(listResult.llmContent).toContain('key_a');
@@ -895,7 +803,6 @@ describe('StorageTool', () => {
       const batchInvocation = storageTool.build({
         operation: 'batch',
         namespace: ns,
-        scope: 'global',
         actions: [
           { operation: 'set', key: 'success', value: 'ok' },
           { operation: 'invalid' as 'set', key: 'fail', value: 'bad' },
@@ -908,26 +815,74 @@ describe('StorageTool', () => {
     });
   });
 
-  describe('Project Root Detection', () => {
-    it('should cache project root', async () => {
-      clearProjectRootCache();
+  describe('Global Storage', () => {
+    it('should initialize global storage on first use', async () => {
+      const storage = await getGlobalStorage();
+      expect(storage).toBeDefined();
       
-      const info1 = await getProjectInfo();
-      const info2 = await getProjectInfo();
-      
-      expect(info1.root).toBe(info2.root);
-      expect(info1.id).toBeDefined();
-      expect(info1.name).toBeDefined();
-      expect(info1.type).toBeDefined();
+      const backend = storage.getBackend();
+      expect(backend.name).toBe('sqlite');
     });
 
-    it('should detect project type', async () => {
-      clearProjectRootCache();
+    it('should return same storage instance on multiple calls', async () => {
+      const storage1 = await getGlobalStorage();
+      const storage2 = await getGlobalStorage();
+      expect(storage1).toBe(storage2);
+    });
+
+    it('should close storage properly', async () => {
+      await getGlobalStorage();
+      await closeGlobalStorage();
       
-      const info = await getProjectInfo();
+      // After close, next call should create new instance
+      const storage = await getGlobalStorage();
+      expect(storage).toBeDefined();
+    });
+  });
+
+  describe('Tags Search', () => {
+    it('should find entries by tags', async () => {
+      const ns = `tags_search_${Date.now()}`;
       
-      // Project type should be one of the valid types
-      expect(['node', 'python', 'go', 'rust', 'java', 'php', 'unknown']).toContain(info.type);
+      // Set values with different tags
+      const set1 = storageTool.build({
+        operation: 'set',
+        namespace: ns,
+        key: 'item1',
+        value: 'data1',
+        tags: ['alpha', 'common'],
+      });
+      await set1.execute(new AbortController().signal);
+
+      const set2 = storageTool.build({
+        operation: 'set',
+        namespace: ns,
+        key: 'item2',
+        value: 'data2',
+        tags: ['beta', 'common'],
+      });
+      await set2.execute(new AbortController().signal);
+
+      const set3 = storageTool.build({
+        operation: 'set',
+        namespace: ns,
+        key: 'item3',
+        value: 'data3',
+        tags: ['gamma'],
+      });
+      await set3.execute(new AbortController().signal);
+
+      // Find by common tag
+      const listInvocation = storageTool.build({
+        operation: 'list',
+        namespace: ns,
+        tags: ['common'],
+      });
+
+      const result = await listInvocation.execute(new AbortController().signal);
+      expect(result.llmContent).toContain('item1');
+      expect(result.llmContent).toContain('item2');
+      expect(result.llmContent).not.toContain('item3');
     });
   });
 });

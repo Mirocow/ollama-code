@@ -71,7 +71,7 @@ const Section: React.FC<SectionProps> = ({ title, children }) => (
 );
 
 const ModelUsageTable: React.FC<{
-  models: ModelMetrics;
+  models: ModelMetrics | undefined;
   totalCachedTokens: number;
   cacheEfficiency: number;
 }> = ({ models, totalCachedTokens, cacheEfficiency }) => {
@@ -79,6 +79,11 @@ const ModelUsageTable: React.FC<{
   const requestsWidth = 8;
   const inputTokensWidth = 15;
   const outputTokensWidth = 15;
+
+  // Handle undefined models or missing nested properties
+  if (!models || !models.api || !models.tokens) {
+    return null;
+  }
 
   // Use byModel for per-model breakdown, or empty object if not available
   const modelsByModel = models.byModel || {};
@@ -192,8 +197,26 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
 }) => {
   const { stats } = useSessionStats();
   const { metrics } = stats;
-  const { models, tools, files } = metrics;
-  const computed = computeSessionStats(metrics);
+  
+  // Handle undefined/null models, tools, or files (can happen during resume with old session data)
+  const models = metrics?.models;
+  const tools = metrics?.tools;
+  const files = metrics?.files;
+  const computed = metrics ? computeSessionStats(metrics) : {
+    totalApiTime: 0,
+    totalToolTime: 0,
+    agentActiveTime: 0,
+    apiTimePercent: 0,
+    toolTimePercent: 0,
+    cacheEfficiency: 0,
+    totalDecisions: 0,
+    successRate: 0,
+    agreementRate: 0,
+    totalCachedTokens: 0,
+    totalPromptTokens: 0,
+    totalLinesAdded: 0,
+    totalLinesRemoved: 0,
+  };
 
   const successThresholds = {
     green: TOOL_SUCCESS_RATE_HIGH,
@@ -248,9 +271,9 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         </StatRow>
         <StatRow title={t('Tool Calls:')}>
           <Text color={theme.text.primary}>
-            {tools.totalCalls} ({' '}
-            <Text color={theme.status.success}>✓ {tools.totalSuccess}</Text>{' '}
-            <Text color={theme.status.error}>x {tools.totalFail}</Text> )
+            {tools?.totalCalls ?? 0} ({' '}
+            <Text color={theme.status.success}>✓ {tools?.totalSuccess ?? 0}</Text>{' '}
+            <Text color={theme.status.error}>x {tools?.totalFail ?? 0}</Text> )
           </Text>
         </StatRow>
         <StatRow title={t('Success Rate:')}>
@@ -308,7 +331,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         </SubStatRow>
       </Section>
 
-      {models.api.totalRequests > 0 && (
+      {models?.api?.totalRequests > 0 && (
         <ModelUsageTable
           models={models}
           totalCachedTokens={computed.totalCachedTokens}

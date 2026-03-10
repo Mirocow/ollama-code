@@ -28,10 +28,55 @@ const agentToolsPlugin: PluginDefinition = {
     enabledByDefault: true,
   },
   
-  toolClasses: [
+  // Unified tools array - tool classes that need Config
+  // PluginRegistry will instantiate them with Config
+  tools: [
     SkillTool,
     TaskTool,
   ],
+  
+  // Tool aliases - short names that resolve to canonical tool names
+  aliases: [
+    // ═══════════════════════════════════════════════════════════════════
+    // task aliases
+    // ═══════════════════════════════════════════════════════════════════
+    { alias: 'agent', canonicalName: 'task', description: 'Spawn subagent task' },
+    { alias: 'subagent', canonicalName: 'task', description: 'Create subagent' },
+    { alias: 'task', canonicalName: 'task', description: 'Task execution' },
+    { alias: 'delegate', canonicalName: 'task', description: 'Delegate to subagent' },
+    // ═══════════════════════════════════════════════════════════════════
+    // skill aliases
+    // ═══════════════════════════════════════════════════════════════════
+    { alias: 'skills', canonicalName: 'skill', description: 'Use skill' },
+    { alias: 'skill', canonicalName: 'skill', description: 'Invoke skill' },
+  ],
+  
+  // Context-aware prompts for model guidance
+  prompts: [
+    {
+      priority: 1,
+      content: 'Agent tools for task delegation: task spawns subagents for parallel/autonomous work, skill invokes specialized skills. Use task for complex multi-step work, skill for domain-specific operations.',
+    },
+    {
+      priority: 2,
+      content: 'TASK tool: Spawns subagents with specific goals. Provide clear instructions, context, and timeout. Subagent works autonomously and reports results. Great for parallel tasks.',
+    },
+    {
+      priority: 3,
+      content: 'SKILL tool: Invokes predefined skills (code review, testing, deployment, etc.). Skills are specialized workflows with domain knowledge. Check available skills with skill list.',
+    },
+  ],
+  
+  // Plugin capabilities
+  capabilities: {
+    canReadFiles: true,
+    canWriteFiles: true,
+    canExecuteCommands: true,
+    canAccessNetwork: true,
+    canUseStorage: true,
+    canUsePrompts: true,
+    canSpawnAgents: true,
+  },
   
   hooks: {
     onLoad: async (context) => {

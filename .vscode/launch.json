@@ -9,6 +9,17 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["--inspect-brk", "scripts/start.js"],
       "console": "integratedTerminal",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js",
+        "${workspaceFolder}/packages/*/dist/**/*.js",
+        "${workspaceFolder}/packages/**/dist/**/*.js"
+      ],
+      "preLaunchTask": "Build",
       "env": {
         "DEBUG": "1",
         "OLLAMA_CODE_NO_RELAUNCH": "true"
@@ -16,14 +27,53 @@
       "skipFiles": ["<node_internals>/**"]
     },
     {
-      "name": "Debug Ollama Code CLI (with args)",
+      "name": "Debug CLI --resume",
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["--inspect-brk", "scripts/start.js"],
-      "args": ["${input:cliArgs}"],
+      "runtimeArgs": ["--inspect-brk", "scripts/start.js", "--resume"],
       "console": "integratedTerminal",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js",
+        "${workspaceFolder}/packages/*/dist/**/*.js"
+      ],
+      "preLaunchTask": "Build",
+      "env": {
+        "DEBUG": "1",
+        "OLLAMA_CODE_NO_RELAUNCH": "true"
+      },
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug CLI --resume (custom session)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "scripts/start.js",
+        "--debug",
+        "--resume",
+        "${input:sessionId}"
+      ],
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js",
+        "${workspaceFolder}/packages/*/dist/**/*.js"
+      ],
+      "preLaunchTask": "Build",
       "env": {
         "DEBUG": "1",
         "OLLAMA_CODE_NO_RELAUNCH": "true"
@@ -38,6 +88,15 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["vitest", "run", "--no-coverage", "${file}"],
       "console": "integratedTerminal",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js",
+        "${workspaceFolder}/packages/*/dist/**/*.js"
+      ],
       "skipFiles": ["<node_internals>/**"]
     },
     {
@@ -46,25 +105,98 @@
       "request": "launch",
       "cwd": "${workspaceFolder}/packages/core",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["--inspect-brk", "--experimental-strip-types", "src/core/test-ollama-api.ts"],
+      "runtimeArgs": [
+        "--inspect-brk",
+        "--experimental-strip-types",
+        "src/core/test-ollama-api.ts"
+      ],
       "console": "integratedTerminal",
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/packages/core/dist/**/*.js"],
       "skipFiles": ["<node_internals>/**"]
     },
     {
-      "name": "Attach to Process",
+      "name": "Attach to Running Process (9229)",
       "type": "node",
       "request": "attach",
       "port": 9229,
       "address": "localhost",
       "localRoot": "${workspaceFolder}",
-      "remoteRoot": null
+      "remoteRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js",
+        "${workspaceFolder}/packages/*/dist/**/*.js",
+        "${workspaceFolder}/packages/**/dist/**/*.js"
+      ],
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Attach to Running Process (pick port)",
+      "type": "node",
+      "request": "attach",
+      "port": "${input:inspectPort}",
+      "address": "localhost",
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js",
+        "${workspaceFolder}/packages/*/dist/**/*.js",
+        "${workspaceFolder}/packages/**/dist/**/*.js"
+      ],
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Attach to Process by PID",
+      "type": "node",
+      "request": "attach",
+      "processId": "${input:processId}",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js",
+        "${workspaceFolder}/packages/*/dist/**/*.js",
+        "${workspaceFolder}/packages/**/dist/**/*.js"
+      ],
+      "skipFiles": ["<node_internals>/**"]
     }
   ],
   "inputs": [
     {
-      "id": "cliArgs",
+      "id": "sessionId",
       "type": "promptString",
-      "description": "Enter CLI arguments"
+      "description": "Enter session ID to resume",
+      "default": ""
+    },
+    {
+      "id": "inspectPort",
+      "type": "pickString",
+      "description": "Select inspect port",
+      "options": [
+        { "label": "9229 (default)", "value": "9229" },
+        { "label": "9230", "value": "9230" },
+        { "label": "9231", "value": "9231" },
+        { "label": "9232", "value": "9232" }
+      ],
+      "default": "9229"
+    },
+    {
+      "id": "processId",
+      "type": "promptString",
+      "description": "Enter process ID (PID) to attach to",
+      "default": ""
     }
   ]
 }

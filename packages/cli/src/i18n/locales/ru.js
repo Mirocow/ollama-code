@@ -25,6 +25,7 @@ export default {
   'Total': 'Всего',
   'Token Budget': 'Бюджет токенов',
   'remaining': 'осталось',
+  'left': 'осталось',
   'Reserved': 'Зарезервировано',
   'tokens': 'токенов',
 

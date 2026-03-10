@@ -12,6 +12,8 @@ import { useSettings } from '../contexts/SettingsContext.js';
 import { useConfig } from '../contexts/ConfigContext.js';
 import { useUIState } from '../contexts/UIStateContext.js';
 import { useSessionStats } from '../contexts/SessionContext.js';
+import { tokenGraphService, getWorkspaceService } from '@ollama-code/ollama-code-core';
+import { execSync } from 'node:child_process';
 
 interface AppHeaderProps {
   version: string;
@@ -54,6 +56,92 @@ const AppHeaderComponent = ({ version }: AppHeaderProps) => {
     [sessionStats.stats.sessionId, sessionStats.stats.lastPromptTokenCount]
   );
 
+  // Get tool count, skill count, plugin count and storage stats from telemetry metrics
+  const { toolCount, skillCount, pluginCount, unhealthyPluginCount, sessionToolCalls, sessionStorageRecords, generatedTokens, averageTps, peakTokens, workspaceName, gitBranch } = useMemo(() => {
+    try {
+      const metrics = sessionStats.stats.metrics;
+
+      // Get tool count from plugin metrics (updated by pluginRegistry.getMetrics())
+      const tools = metrics.plugins?.toolCount || 0;
+
+      // Fallback: try to get from toolRegistry if metrics not available
+      let finalToolCount = tools;
+      if (finalToolCount === 0) {
+        const toolRegistry = config.getToolRegistry();
+        finalToolCount = toolRegistry?.getAllToolNames()?.length || 0;
+      }
+
+      // Get skill count from plugin metrics
+      const skills = metrics.plugins?.skillCount || 0;
+
+      // Get plugin counts from telemetry
+      const loadedPlugins = metrics.plugins?.loadedPlugins || 0;
+      const enabledPlugins = metrics.plugins?.enabledPlugins || 0;
+
+      // Get unhealthy plugins from pluginRegistry
+      const pluginRegistry = config.getPluginRegistry?.();
+      const unhealthyPlugins = pluginRegistry?.getUnhealthyPlugins?.() || [];
+
+      // Get session tool calls from metrics
+      const toolCalls = metrics.tools?.totalCalls || 0;
+
+      // Get storage records - use keys array length for session count
+      const sessionStorageCount = metrics.storage?.keys?.length || 0;
+
+      // Get generated tokens for cost estimation
+      const genTokens = metrics.totalGeneratedTokens || 0;
+
+      // Calculate tokens per second if we have timing data
+      const apiTime = metrics.totalApiTime || 0;
+      const avgTps = genTokens > 0 && apiTime > 0
+        ? Math.round((genTokens / (apiTime / 1000)) * 10) / 10
+        : 0;
+
+      // Get statistics from tokenGraphService
+      const stats = tokenGraphService.getStatistics();
+      const peak = stats.maxPrompt + stats.maxGenerated;
+
+      // Get workspace info
+      let wsName: string | undefined;
+      try {
+        const workspaceService = getWorkspaceService();
+        const currentWs = workspaceService.getCurrentWorkspace();
+        wsName = currentWs?.name;
+      } catch {
+        // Workspace service not available
+      }
+
+      // Get git branch
+      let branch: string | undefined;
+      try {
+        branch = execSync('git branch --show-current', {
+          cwd: targetDir,
+          encoding: 'utf-8',
+          stdio: ['pipe', 'pipe', 'pipe']
+        }).trim();
+        if (!branch) branch = undefined;
+      } catch {
+        // Not a git repo
+      }
+
+      return {
+        toolCount: finalToolCount,
+        skillCount: skills,
+        pluginCount: enabledPlugins || loadedPlugins,
+        unhealthyPluginCount: unhealthyPlugins.length,
+        sessionToolCalls: toolCalls,
+        sessionStorageRecords: sessionStorageCount,
+        generatedTokens: genTokens,
+        averageTps: avgTps,
+        peakTokens: peak,
+        workspaceName: wsName,
+        gitBranch: branch,
+      };
+    } catch {
+      return { toolCount: 0, skillCount: 0, pluginCount: 0, unhealthyPluginCount: 0, sessionToolCalls: 0, sessionStorageRecords: 0, generatedTokens: 0, averageTps: 0, peakTokens: 0, workspaceName: undefined, gitBranch: undefined };
+    }
+  }, [config, sessionStats.stats.metrics, targetDir]);
+
   // Only subscribe to currentModel from UIState
   const model = uiState.currentModel;
 
@@ -69,6 +157,17 @@ const AppHeaderComponent = ({ version }: AppHeaderProps) => {
           sessionId={sessionId}
           contextWindowSize={contextWindowSize}
           promptTokenCount={promptTokenCount}
+          toolCount={toolCount}
+          sessionToolCalls={sessionToolCalls}
+          sessionStorageRecords={sessionStorageRecords}
+          skillCount={skillCount}
+          pluginCount={pluginCount}
+          unhealthyPluginCount={unhealthyPluginCount}
+          generatedTokens={generatedTokens}
+          averageTps={averageTps}
+          peakTokens={peakTokens}
+          workspaceName={workspaceName}
+          gitBranch={gitBranch}
         />
       )}
       {showTips && <Tips />}

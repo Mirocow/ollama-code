@@ -470,7 +470,10 @@ export {
   type ToolCallStats,
   type ModelMetrics,
   type FileMetrics,
-} from './services/uiTelemetry.js';
+  type StorageMetrics,
+  type PluginMetrics,
+  type TelemetrySerializableState,
+} from './services/uiTelemetryService.js';
 
 // Telemetry stubs for backward compatibility
 export * from './telemetry-stubs.js';

@@ -61,6 +61,7 @@ import { computeWindowTitle } from './utils/windowTitle.js';
 import { validateNonInteractiveAuth } from './validateNonInterActiveAuth.js';
 import { showResumeSessionPicker } from './ui/components/StandaloneSessionPicker.js';
 import { initializeLlmOutputLanguage } from './utils/languageUtils.js';
+import { resolvePath } from './utils/resolvePath.js';
 import {
   isFirstRun,
   saveInitialConfig,
@@ -446,10 +447,24 @@ export async function main() {
   );
 
   {
+    // Handle --path argument: change working directory if specified
+    const workingDir = argv.path ? resolvePath(argv.path) : process.cwd();
+    if (argv.path) {
+      try {
+        process.chdir(workingDir);
+        debugLogger.debug(`Working directory changed to: ${workingDir}`);
+      } catch (err) {
+        writeStderrLine(
+          `Error: Cannot change to directory "${argv.path}": ${(err as Error).message}`,
+        );
+        process.exit(1);
+      }
+    }
+
     const config = await loadCliConfig(
       settings.merged,
       argv,
-      process.cwd(),
+      workingDir,
       argv.extensions,
     );
 

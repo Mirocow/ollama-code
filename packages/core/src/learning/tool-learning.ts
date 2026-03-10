@@ -34,7 +34,6 @@ import * as path from 'node:path';
 import { Storage } from '../config/storage.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 import {
-  ToolNames,
   ToolAliases,
   DynamicAliases,
   type ToolName,
@@ -156,69 +155,69 @@ function calculateSimilarity(str1: string, str2: string): number {
  */
 const TOOL_PATTERNS: Record<string, ToolName> = {
   // Git-related hallucinations
-  git_dev: ToolNames.SHELL,
-  git_tool: ToolNames.SHELL,
-  git_command: ToolNames.SHELL,
-  git_cmd: ToolNames.SHELL,
+  git_dev: 'run_shell_command',
+  git_tool: 'run_shell_command',
+  git_command: 'run_shell_command',
+  git_cmd: 'run_shell_command',
 
   // Shell-related hallucinations
-  shell_dev: ToolNames.SHELL,
-  bash_dev: ToolNames.SHELL,
-  command_dev: ToolNames.SHELL,
-  terminal_dev: ToolNames.SHELL,
-  exec_dev: ToolNames.SHELL,
+  shell_dev: 'run_shell_command',
+  bash_dev: 'run_shell_command',
+  command_dev: 'run_shell_command',
+  terminal_dev: 'run_shell_command',
+  exec_dev: 'run_shell_command',
 
   // Python-related hallucinations
-  python_tool: ToolNames.PYTHON,
-  python_command: ToolNames.PYTHON,
-  pip_dev: ToolNames.PYTHON,
-  py_tool: ToolNames.PYTHON,
+  python_tool: 'python_dev',
+  python_command: 'python_dev',
+  pip_dev: 'python_dev',
+  py_tool: 'python_dev',
 
   // Node.js / JavaScript hallucinations
-  javascript_dev: ToolNames.NODEJS,
-  js_dev: ToolNames.NODEJS,
-  node_tool: ToolNames.NODEJS,
-  npm_dev: ToolNames.NODEJS,
+  javascript_dev: 'nodejs_dev',
+  js_dev: 'nodejs_dev',
+  node_tool: 'nodejs_dev',
+  npm_dev: 'nodejs_dev',
 
   // Golang hallucinations
-  go_tool: ToolNames.GOLANG,
-  go_command: ToolNames.GOLANG,
+  go_tool: 'golang_dev',
+  go_command: 'golang_dev',
 
   // Edit-related hallucinations
-  edit_file: ToolNames.EDIT,
-  file_edit: ToolNames.EDIT,
-  modify_file: ToolNames.EDIT,
-  replace_file: ToolNames.EDIT,
+  edit_file: 'edit',
+  file_edit: 'edit',
+  modify_file: 'edit',
+  replace_file: 'edit',
 
   // Read-related hallucinations
-  read_file_content: ToolNames.READ_FILE,
-  file_read: ToolNames.READ_FILE,
-  open_file: ToolNames.READ_FILE,
-  view_file: ToolNames.READ_FILE,
+  read_file_content: 'read_file',
+  file_read: 'read_file',
+  open_file: 'read_file',
+  view_file: 'read_file',
 
   // Write-related hallucinations
-  write_file_content: ToolNames.WRITE_FILE,
-  file_write: ToolNames.WRITE_FILE,
-  create_file: ToolNames.WRITE_FILE,
-  save_file_content: ToolNames.WRITE_FILE,
+  write_file_content: 'write_file',
+  file_write: 'write_file',
+  create_file: 'write_file',
+  save_file_content: 'write_file',
 
   // Search-related hallucinations
-  search_files: ToolNames.GREP,
-  find_text: ToolNames.GREP,
-  search_content: ToolNames.GREP,
-  grep_files: ToolNames.GREP,
+  search_files: 'grep_search',
+  find_text: 'grep_search',
+  search_content: 'grep_search',
+  grep_files: 'grep_search',
 
   // List directory hallucinations
-  list_directory: ToolNames.LS,
-  list_files: ToolNames.LS,
-  dir_list: ToolNames.LS,
-  folder_list: ToolNames.LS,
+  list_directory: 'list_directory',
+  list_files: 'list_directory',
+  dir_list: 'list_directory',
+  folder_list: 'list_directory',
 
   // Web-related hallucinations
-  web_fetch_tool: ToolNames.WEB_FETCH,
-  fetch_url: ToolNames.WEB_FETCH,
-  web_search_tool: ToolNames.WEB_SEARCH,
-  search_web: ToolNames.WEB_SEARCH,
+  web_fetch_tool: 'web_fetch',
+  fetch_url: 'web_fetch',
+  web_search_tool: 'web_search',
+  search_web: 'web_search',
 };
 
 /**
@@ -226,22 +225,42 @@ const TOOL_PATTERNS: Record<string, ToolName> = {
  */
 function generateExplanation(wrongName: string, correctName: string): string {
   const explanations: Record<string, string> = {
-    [ToolNames.SHELL]: `For executing shell commands (including git, bash, etc.), use "${correctName}". There is no separate tool for specific commands like git.`,
-    [ToolNames.PYTHON]: `For Python development operations, use "${correctName}". This tool handles Python, pip, pytest, and related commands.`,
-    [ToolNames.NODEJS]: `For Node.js/JavaScript development, use "${correctName}". This handles npm, yarn, node, and related commands.`,
-    [ToolNames.GOLANG]: `For Go development, use "${correctName}". This handles go, gofmt, and related commands.`,
-    [ToolNames.EDIT]: `For editing existing files, use "${correctName}". Use "${ToolNames.WRITE_FILE}" for creating new files.`,
-    [ToolNames.READ_FILE]: `For reading a single file, use "${correctName}". Use "${ToolNames.READ_MANY_FILES}" for multiple files.`,
-    [ToolNames.WRITE_FILE]: `For creating or overwriting files, use "${correctName}". Use "${ToolNames.EDIT}" for modifying existing files.`,
-    [ToolNames.GREP]: `For searching file contents, use "${correctName}". Use "${ToolNames.GLOB}" for finding files by name pattern.`,
-    [ToolNames.LS]: `For listing directory contents, use "${correctName}".`,
-    [ToolNames.WEB_FETCH]: `For fetching web content, use "${correctName}".`,
-    [ToolNames.WEB_SEARCH]: `For web search, use "${correctName}".`,
+    ['run_shell_command']: `For executing shell commands (including git, bash, etc.), use "${correctName}". There is no separate tool for specific commands like git.`,
+    ['python_dev']: `For Python development operations, use "${correctName}". This tool handles Python, pip, pytest, and related commands.`,
+    ['nodejs_dev']: `For Node.js/JavaScript development, use "${correctName}". This handles npm, yarn, node, and related commands.`,
+    ['golang_dev']: `For Go development, use "${correctName}". This handles go, gofmt, and related commands.`,
+    ['edit']: `For editing existing files, use "${correctName}". Use "write_file" for creating new files.`,
+    ['read_file']: `For reading a single file, use "${correctName}". Use "read_many_files" for multiple files.`,
+    ['write_file']: `For creating or overwriting files, use "${correctName}". Use "edit" for modifying existing files.`,
+    ['grep_search']: `For searching file contents, use "${correctName}". Use "glob" for finding files by name pattern.`,
+    ['list_directory']: `For listing directory contents, use "${correctName}".`,
+    ['web_fetch']: `For fetching web content, use "${correctName}".`,
+    ['web_search']: `For web search, use "${correctName}".`,
+    ['ssh_connect']: `For SSH connections, use "${correctName}". The tool may need to be enabled in plugin configuration.`,
   };
+
+  // Handle edge case where wrongName and correctName are the same
+  // This means the tool is a valid name but not registered
+  if (wrongName === correctName) {
+    // Provide more specific guidance for SSH tools
+    if (wrongName === 'ssh_connect' || wrongName.startsWith('ssh_')) {
+      return `The "SSH Tools" plugin may not be loaded. This can happen if:
+1. The plugin failed to load (check for errors during startup)
+2. The plugin is disabled in configuration
+3. There was an initialization error
+
+Try restarting the application or check the plugin configuration.`;
+    }
+    
+    return (
+      explanations[correctName] ||
+      `Tool "${wrongName}" is a valid tool name but is not currently registered. The tool may need to be enabled in plugin configuration or the plugin may not be loaded. `
+    );
+  }
 
   return (
     explanations[correctName] ||
-    `The tool "${wrongName}" does not exist. Use "${correctName}" instead.`
+    `Tool "${wrongName}" not found. Did you mean "${correctName}"?`
   );
 }
 
@@ -250,17 +269,17 @@ function generateExplanation(wrongName: string, correctName: string): string {
  */
 function generateExample(correctTool: string): string {
   const examples: Record<string, string> = {
-    [ToolNames.SHELL]: `${correctTool}: {"command": "git status"}`,
-    [ToolNames.PYTHON]: `${correctTool}: {"command": "python script.py"}`,
-    [ToolNames.NODEJS]: `${correctTool}: {"command": "npm install"}`,
-    [ToolNames.GOLANG]: `${correctTool}: {"command": "go build"}`,
-    [ToolNames.EDIT]: `${correctTool}: {"file_path": "/path/to/file", "old_string": "old", "new_str": "new"}`,
-    [ToolNames.READ_FILE]: `${correctTool}: {"filepath": "/path/to/file"}`,
-    [ToolNames.WRITE_FILE]: `${correctTool}: {"filepath": "/path/to/file", "content": "content"}`,
-    [ToolNames.GREP]: `${correctTool}: {"pattern": "search_term", "path": "/path"}`,
-    [ToolNames.LS]: `${correctTool}: {"path": "/path/to/dir"}`,
-    [ToolNames.WEB_FETCH]: `${correctTool}: {"url": "https://example.com"}`,
-    [ToolNames.WEB_SEARCH]: `${correctTool}: {"query": "search query"}`,
+    ['run_shell_command']: `${correctTool}: {"command": "git status"}`,
+    ['python_dev']: `${correctTool}: {"command": "python script.py"}`,
+    ['nodejs_dev']: `${correctTool}: {"command": "npm install"}`,
+    ['golang_dev']: `${correctTool}: {"command": "go build"}`,
+    ['edit']: `${correctTool}: {"file_path": "/path/to/file", "old_string": "old", "new_str": "new"}`,
+    ['read_file']: `${correctTool}: {"filepath": "/path/to/file"}`,
+    ['write_file']: `${correctTool}: {"filepath": "/path/to/file", "content": "content"}`,
+    ['grep_search']: `${correctTool}: {"pattern": "search_term", "path": "/path"}`,
+    ['list_directory']: `${correctTool}: {"path": "/path/to/dir"}`,
+    ['web_fetch']: `${correctTool}: {"url": "https://example.com"}`,
+    ['web_search']: `${correctTool}: {"query": "search query"}`,
   };
 
   return examples[correctTool] || `${correctTool}: {...}`;
@@ -537,35 +556,68 @@ export class ToolLearningManager {
   }
 
   /**
-   * Finds the best matching tool for a potentially incorrect tool name.
-   */
-  findBestMatch(toolName: string): { name: string; confidence: number } | null {
+ * Finds the best matching tool for a potentially incorrect tool name.
+ * Returns null if the name is a valid canonical name but the tool is not registered
+ * (to avoid confusing "did you mean X?" when X is exactly what was requested).
+ */
+  findBestMatch(toolName: string): { name: string; confidence: number; isRegistered: boolean } | null {
     const normalized = toolName.toLowerCase().trim();
 
-    // Check if it's already a valid tool name
-    const validTools = Object.values(ToolNames);
-    if (validTools.includes(normalized as ToolName)) {
-      return { name: normalized, confidence: 1 };
+    // Check if it's already a valid tool name (canonical name)
+    const validTools: string[] = [
+      'run_shell_command',
+      'python_dev',
+      'nodejs_dev',
+      'golang_dev',
+      'edit',
+      'read_file',
+      'read_many_files',
+      'write_file',
+      'grep_search',
+      'glob',
+      'list_directory',
+      'web_fetch',
+      'web_search',
+      'ssh_connect',
+      'todo_write',
+      'task',
+      'skill',
+      'save_memory',
+      'exit_plan_mode',
+      'php_dev',
+      'java_dev',
+      'cpp_dev',
+      'rust_dev',
+      'swift_dev',
+      'typescript_dev',
+    ];
+    const canonicalMatch = validTools.find(
+      (name) => name.toLowerCase() === normalized
+    );
+    
+    // If it's a valid canonical name, return it but mark as potentially unregistered
+    if (canonicalMatch) {
+      return { name: canonicalMatch, confidence: 1, isRegistered: false };
     }
 
     // Check static aliases
     if (normalized in ToolAliases) {
-      return { name: ToolAliases[normalized], confidence: 1 };
+      return { name: ToolAliases[normalized], confidence: 1, isRegistered: true };
     }
 
     // Check dynamic aliases
     if (this.dynamicAliases.has(normalized)) {
       const alias = this.dynamicAliases.get(normalized)!;
-      return { name: alias.canonicalName, confidence: 0.95 };
+      return { name: alias.canonicalName, confidence: 0.95, isRegistered: true };
     }
 
     // Check known patterns
     if (normalized in TOOL_PATTERNS) {
-      return { name: TOOL_PATTERNS[normalized], confidence: 0.9 };
+      return { name: TOOL_PATTERNS[normalized], confidence: 0.9, isRegistered: true };
     }
 
     // Use fuzzy matching on all available tool names
-    let bestMatch: { name: string; confidence: number } | null = null;
+    let bestMatch: { name: string; confidence: number; isRegistered: boolean } | null = null;
 
     for (const validName of validTools) {
       const similarity = calculateSimilarity(normalized, validName);
@@ -573,7 +625,7 @@ export class ToolLearningManager {
         similarity > 0.5 &&
         (!bestMatch || similarity > bestMatch.confidence)
       ) {
-        bestMatch = { name: validName, confidence: similarity };
+        bestMatch = { name: validName, confidence: similarity, isRegistered: true };
       }
     }
 
@@ -584,7 +636,7 @@ export class ToolLearningManager {
         similarity > 0.6 &&
         (!bestMatch || similarity > bestMatch.confidence)
       ) {
-        bestMatch = { name: canonical, confidence: similarity };
+        bestMatch = { name: canonical, confidence: similarity, isRegistered: true };
       }
     }
 
@@ -647,33 +699,33 @@ export class ToolLearningManager {
 
     // Available tools reminder
     lines.push('\n## Available Tools (use EXACT names)');
-    const toolCategories = {
+    const toolCategories: Record<string, string[]> = {
       'File Operations': [
-        ToolNames.READ_FILE,
-        ToolNames.READ_MANY_FILES,
-        ToolNames.WRITE_FILE,
-        ToolNames.EDIT,
+        'read_file',
+        'read_many_files',
+        'write_file',
+        'edit',
       ],
-      'Search & Discovery': [ToolNames.GREP, ToolNames.GLOB, ToolNames.LS],
-      'Shell & Commands': [ToolNames.SHELL],
+      'Search & Discovery': ['grep_search', 'glob', 'list_directory'],
+      'Shell & Commands': ['run_shell_command'],
       'Development Tools': [
-        ToolNames.PYTHON,
-        ToolNames.NODEJS,
-        ToolNames.GOLANG,
-        ToolNames.PHP,
-        ToolNames.JAVA,
-        ToolNames.CPP,
-        ToolNames.RUST,
-        ToolNames.SWIFT,
-        ToolNames.TYPESCRIPT,
+        'python_dev',
+        'nodejs_dev',
+        'golang_dev',
+        'php_dev',
+        'java_dev',
+        'cpp_dev',
+        'rust_dev',
+        'swift_dev',
+        'typescript_dev',
       ],
-      'Web & Network': [ToolNames.WEB_FETCH, ToolNames.WEB_SEARCH],
+      'Web & Network': ['web_fetch', 'web_search'],
       'Task Management': [
-        ToolNames.TODO_WRITE,
-        ToolNames.TASK,
-        ToolNames.SKILL,
+        'todo_write',
+        'task',
+        'skill',
       ],
-      'Memory & State': [ToolNames.MEMORY, ToolNames.EXIT_PLAN_MODE],
+      'Memory & State': ['save_memory', 'exit_plan_mode'],
     };
 
     for (const [category, tools] of Object.entries(toolCategories)) {

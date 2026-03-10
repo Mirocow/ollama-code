@@ -62,6 +62,14 @@ export {
   initializePluginRegistry,
 } from './pluginRegistry.js';
 
+// Plugin Configuration
+export {
+  PluginConfig,
+  createPluginConfig,
+  type PluginConfigEntry,
+  type PluginConfigFile,
+} from './pluginConfig.js';
+
 // Security Sandbox
 export {
   PluginSandbox,

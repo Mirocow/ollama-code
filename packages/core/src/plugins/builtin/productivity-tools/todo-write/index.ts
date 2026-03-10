@@ -14,7 +14,6 @@ import * as process from 'process';
 
 import { OLLAMA_DIR } from '../../../../utils/paths.js';
 import type { Config } from '../../../../config/config.js';
-import { ToolDisplayNames, ToolNames } from '../../../../tools/tool-names.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('TODO_WRITE');
@@ -426,12 +425,12 @@ export class TodoWriteTool extends BaseDeclarativeTool<
   TodoWriteParams,
   ToolResult
 > {
-  static readonly Name: string = ToolNames.TODO_WRITE;
+  static readonly Name: string = 'todo_write';
 
   constructor(private readonly config: Config) {
     super(
       TodoWriteTool.Name,
-      ToolDisplayNames.TODO_WRITE,
+      'TodoWrite',
       todoWriteToolDescription,
       Kind.Think,
       todoWriteToolSchemaData.parametersJsonSchema as Record<string, unknown>,

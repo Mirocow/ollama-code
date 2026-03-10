@@ -14,16 +14,22 @@ import type {
   ToolLocation,
   ToolResult,
 } from '../../../../tools/tools.js';
-import { BaseDeclarativeTool, Kind, ToolConfirmationOutcome } from '../../../../tools/tools.js';
+import {
+  BaseDeclarativeTool,
+  Kind,
+  ToolConfirmationOutcome,
+} from '../../../../tools/tools.js';
 import { ToolErrorType } from '../../../../tools/tool-error.js';
 import { makeRelative, shortenPath } from '../../../../utils/paths.js';
 import { isNodeError } from '../../../../utils/errors.js';
 import type { Config } from '../../../../config/config.js';
 import { ApprovalMode } from '../../../../config/config.js';
 import { FileEncoding } from '../../../../services/fileSystemService.js';
-import { DEFAULT_DIFF_OPTIONS, getDiffStat } from '../../../../tools/diffOptions.js';
+import {
+  DEFAULT_DIFF_OPTIONS,
+  getDiffStat,
+} from '../../../../tools/diffOptions.js';
 import { ReadFileTool } from '../read-file/index.js';
-import { ToolNames, ToolDisplayNames } from '../../../../tools/tool-names.js';
 
 import type {
   ModifiableDeclarativeTool,
@@ -32,6 +38,7 @@ import type {
 import { IdeClient } from '../../../../ide/ide-client.js';
 import { safeLiteralReplace } from '../../../../utils/textUtils.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
+import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
 import {
   countOccurrences,
   extractEditSnippet,
@@ -410,7 +417,12 @@ class EditToolInvocation implements ToolInvocation<EditToolParams, ToolResult> {
         diffStat,
       };
 
-      // Telemetry logging removed
+      // Record file edit telemetry with line counts
+      const oldLines = (editData.currentContent ?? '').split('\n').length;
+      const newLines = editData.newContent.split('\n').length;
+      const linesAdded = Math.max(0, newLines - oldLines);
+      const linesRemoved = Math.max(0, oldLines - newLines);
+      uiTelemetryService.recordFileOperation('edit', linesAdded, linesRemoved);
 
       const llmSuccessMessageParts = [
         editData.isNewFile
@@ -462,11 +474,11 @@ export class EditTool
   extends BaseDeclarativeTool<EditToolParams, ToolResult>
   implements ModifiableDeclarativeTool<EditToolParams>
 {
-  static readonly Name = ToolNames.EDIT;
+  static readonly Name = 'edit';
   constructor(private readonly config: Config) {
     super(
       EditTool.Name,
-      ToolDisplayNames.EDIT,
+      'Edit',
       `Replaces text within a file. By default, replaces a single occurrence. Set \`replace_all\` to true when you intend to modify every instance of \`old_string\`. This tool requires providing significant context around the change to ensure precise targeting. Always use the ${ReadFileTool.Name} tool to examine the file's current content before attempting a text replacement.
 
       The user has the ability to modify the \`new_string\` content. If modified, this will be stated in the response.

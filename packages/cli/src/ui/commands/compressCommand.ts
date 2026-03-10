@@ -9,6 +9,44 @@ import { MessageType } from '../types.js';
 import type { SlashCommand } from './types.js';
 import { CommandKind } from './types.js';
 import { t } from '../../i18n/index.js';
+import { CompressionStatus, CompressionReportService } from '@ollama-code/ollama-code-core';
+
+/**
+ * Get human-readable message for compression status
+ */
+function getCompressionStatusMessage(
+  status: CompressionStatus,
+  originalTokens: number,
+  newTokens: number,
+): string {
+  switch (status) {
+    case CompressionStatus.COMPRESSED:
+      const saved = originalTokens - newTokens;
+      const percent = originalTokens > 0 ? Math.round((saved / originalTokens) * 100) : 0;
+      return t(
+        'Context compressed: {{original}} → {{new}} tokens ({{percent}}% saved)',
+        { original: String(originalTokens), new: String(newTokens), percent: String(percent) },
+      );
+
+    case CompressionStatus.NOOP:
+      return t('Context is already optimal, no compression needed.');
+
+    case CompressionStatus.COMPRESSION_FAILED_INFLATED_TOKEN_COUNT:
+      return t(
+        'Compression would increase token count ({{original}} → {{new}}). Keeping original context.',
+        { original: String(originalTokens), new: String(newTokens) },
+      );
+
+    case CompressionStatus.COMPRESSION_FAILED_EMPTY_SUMMARY:
+      return t('Compression failed: model returned empty summary.');
+
+    case CompressionStatus.COMPRESSION_FAILED_TOKEN_COUNT_ERROR:
+      return t('Compression failed: could not calculate token count.');
+
+    default:
+      return t('Compression completed with status: {{status}}', { status });
+  }
+}
 
 export const compressCommand: SlashCommand = {
   name: 'compress',
@@ -43,8 +81,8 @@ export const compressCommand: SlashCommand = {
     };
 
     const config = context.services.config;
-    const geminiClient = config?.getOllamaClient();
-    if (!config || !geminiClient) {
+    const ollamaClient = config?.getOllamaClient();
+    if (!config || !ollamaClient) {
       return {
         type: 'message',
         messageType: 'error',
@@ -52,51 +90,21 @@ export const compressCommand: SlashCommand = {
       };
     }
 
+    const startTime = Date.now();
+
     const doCompress = async () => {
       const promptId = `compress-${Date.now()}`;
-      return await geminiClient.tryCompressChat(promptId, true);
+      return await ollamaClient.tryCompressChat(promptId, true);
     };
-
-    if (executionMode === 'acp') {
-      const messages = async function* () {
-        try {
-          yield {
-            messageType: 'info' as const,
-            content: 'Compressing context...',
-          };
-          const compressed = await doCompress();
-          if (!compressed) {
-            yield {
-              messageType: 'error' as const,
-              content: t('Failed to compress chat history.'),
-            };
-            return;
-          }
-          yield {
-            messageType: 'info' as const,
-            content: `Context compressed (${compressed.originalTokenCount} -> ${compressed.newTokenCount}).`,
-          };
-        } catch (e) {
-          yield {
-            messageType: 'error' as const,
-            content: t('Failed to compress chat history: {{error}}', {
-              error: e instanceof Error ? e.message : String(e),
-            }),
-          };
-        }
-      };
-
-      return { type: 'stream_messages', messages: messages() };
-    }
 
     try {
       if (executionMode === 'interactive') {
         ui.setPendingItem(pendingMessage);
       }
 
-      const compressed = await doCompress();
+      const result = await doCompress();
 
-      if (!compressed) {
+      if (!result) {
         if (executionMode === 'interactive') {
           ui.addItem(
             {
@@ -115,35 +123,80 @@ export const compressCommand: SlashCommand = {
         };
       }
 
+      const statusMessage = getCompressionStatusMessage(
+        result.compressionStatus,
+        result.originalTokenCount,
+        result.newTokenCount,
+      );
+
+      // Generate compression report
+      const duration = Date.now() - startTime;
+      const sessionId = config.getSessionId();
+      const reportService = new CompressionReportService(sessionId);
+      let reportPath: string | null = null;
+      try {
+        reportPath = await reportService.generateReport(result, duration);
+      } catch (reportError) {
+        // Ignore report generation errors - compression result is more important
+      }
+
       if (executionMode === 'interactive') {
+        // Show compression result
         ui.addItem(
           {
             type: MessageType.COMPRESSION,
             compression: {
               isPending: false,
-              originalTokenCount: compressed.originalTokenCount,
-              newTokenCount: compressed.newTokenCount,
-              compressionStatus: compressed.compressionStatus,
+              originalTokenCount: result.originalTokenCount,
+              newTokenCount: result.newTokenCount,
+              compressionStatus: result.compressionStatus,
             },
           } as HistoryItemCompression,
           Date.now(),
         );
+
+        // Show report path if generated
+        if (reportPath) {
+          ui.addItem(
+            {
+              type: MessageType.INFO,
+              text: t('Compression report saved: {{path}}', { path: reportPath }),
+            },
+            Date.now(),
+          );
+        }
+
+        // Show additional info message for non-success cases
+        if (result.compressionStatus !== CompressionStatus.COMPRESSED) {
+          ui.addItem(
+            {
+              type: MessageType.INFO,
+              text: statusMessage,
+            },
+            Date.now(),
+          );
+        }
         return;
       }
 
+      // Non-interactive mode
+      const isSuccess = result.compressionStatus === CompressionStatus.COMPRESSED;
+      const reportInfo = reportPath ? `\n\nReport: ${reportPath}` : '';
       return {
         type: 'message',
-        messageType: 'info',
-        content: `Context compressed (${compressed.originalTokenCount} -> ${compressed.newTokenCount}).`,
+        messageType: isSuccess ? 'info' : 'error',
+        content: statusMessage + reportInfo,
       };
     } catch (e) {
+      const errorMessage = t('Failed to compress chat history: {{error}}', {
+        error: e instanceof Error ? e.message : String(e),
+      });
+
       if (executionMode === 'interactive') {
         ui.addItem(
           {
             type: MessageType.ERROR,
-            text: t('Failed to compress chat history: {{error}}', {
-              error: e instanceof Error ? e.message : String(e),
-            }),
+            text: errorMessage,
           },
           Date.now(),
         );
@@ -153,9 +206,7 @@ export const compressCommand: SlashCommand = {
       return {
         type: 'message',
         messageType: 'error',
-        content: t('Failed to compress chat history: {{error}}', {
-          error: e instanceof Error ? e.message : String(e),
-        }),
+        content: errorMessage,
       };
     } finally {
       if (executionMode === 'interactive') {

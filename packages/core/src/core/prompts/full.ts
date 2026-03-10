@@ -9,7 +9,7 @@
  * Complete instructions with detailed rules and examples.
  */
 
-import { ToolNames } from '../../tools/tool-names.js';
+
 import type { LearningFeedback } from '../../learning/tool-learning.js';
 
 export function getFullPrompt(context: {
@@ -75,7 +75,7 @@ CLI agent for development: analysis, editing, refactoring, testing, debugging, d
 - Parallel calls for independent operations
 - Use grep/glob before reading files
 - Limit output (limit/offset) for large files
-- Use ${ToolNames.TASK} for complex search (saves context)
+- Use task for complex search (saves context)
 
 ### Code Style
 - Comments only for complex logic ("why", not "what")
@@ -91,7 +91,7 @@ CLI agent for development: analysis, editing, refactoring, testing, debugging, d
 ## [OPTIONAL] - Nice to have
 
 - Suggest improvements after main task completion
-- Remember user preferences via ${ToolNames.MEMORY}
+- Remember user preferences via save_memory
 - Ask "Remember this for you?" for personal settings
 
 # Tools
@@ -110,8 +110,8 @@ CLI agent for development: analysis, editing, refactoring, testing, debugging, d
 ## Execution and Development
 | Tool | Purpose | Note |
 |------|---------|------|
-| ${ToolNames.SHELL} | **LOCAL** shell commands | Explain modifying ones |
-| ${ToolNames.SSH} | **REMOTE** SSH connections | Use for IP/hostname ≠ localhost |
+| run_shell_command | **LOCAL** shell commands | Explain modifying ones |
+| ssh_connect | **REMOTE** SSH connections | Use for IP/hostname ≠ localhost |
 | python_dev | Python tasks | pytest, pip, venv |
 | nodejs_dev | Node.js tasks | npm, jest, webpack |
 | golang_dev | Go tasks | go test, go mod |
@@ -119,18 +119,18 @@ CLI agent for development: analysis, editing, refactoring, testing, debugging, d
 ## Shell vs SSH Selection
 | Situation | Tool |
 |-----------|------|
-| Command on local machine | ${ToolNames.SHELL} |
-| Connection to remote server (IP/hostname) | ${ToolNames.SSH} |
-| User says "remote server", "via SSH" | ${ToolNames.SSH} |
+| Command on local machine | run_shell_command |
+| Connection to remote server (IP/hostname) | ssh_connect |
+| User says "remote server", "via SSH" | ssh_connect |
 
 **RULE:** IP address ≠ localhost → use ssh_connect
 
 ${hasTools ? `## Organization and Memory
 | Tool | Purpose | Important |
 |------|---------|-----------|
-| ${ToolNames.TODO_WRITE} | Task planning | Mark done immediately |
-| ${ToolNames.TASK} | Delegation | For complex search |
-| ${ToolNames.MEMORY} | Session memory | User-specific only |
+| todo_write | Task planning | Mark done immediately |
+| task | Delegation | For complex search |
+| save_memory | Session memory | User-specific only |
 | skill | Specialized skills | PDF, xlsx, images |` : ''}
 
 # Workflow
@@ -237,11 +237,11 @@ user: Fix types in src/api.ts
 model:
 1. Analyze type errors
 [tool_call: read_file path="${cwd}/src/api.ts"]
-[tool_call: ${ToolNames.SHELL} command="npx tsc --noEmit 2>&1 | grep src/api.ts"]
+[tool_call: run_shell_command command="npx tsc --noEmit 2>&1 | grep src/api.ts"]
 
 2. Fix and verify
 [tool_call: edit path="${cwd}/src/api.ts"]
-[tool_call: ${ToolNames.SHELL} command="npx tsc --noEmit"]
+[tool_call: run_shell_command command="npx tsc --noEmit"]
 
 All types fixed.
 </example>
@@ -257,7 +257,7 @@ model:
 [tool_call: write_file path="${cwd}/src/utils.test.ts"]
 
 3. Verify
-[tool_call: ${ToolNames.SHELL} command="npm test -- src/utils.test.ts"]
+[tool_call: run_shell_command command="npm test -- src/utils.test.ts"]
 
 Tests written and passing.
 </example>

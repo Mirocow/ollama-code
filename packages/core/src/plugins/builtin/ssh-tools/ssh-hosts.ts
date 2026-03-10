@@ -8,6 +8,9 @@
  * SSH Host Management Tools
  *
  * Tools for managing saved SSH host configurations.
+ * 
+ * NOTE: These tools now accept Config for consistency with the unified plugin system.
+ * Storage is accessed via Storage static methods (global storage for SSH credentials).
  */
 
 import type { Config } from '../../../config/config.js';
@@ -50,7 +53,15 @@ export class SSHAddHostInvocation extends BaseToolInvocation<
   SSHAddHostParams,
   ToolResult
 > {
+  constructor(
+    params: SSHAddHostParams,
+    protected readonly config: Config,
+  ) {
+    super(params);
+  }
+
   getDescription(): string {
+    // Config available via this.config for future storage access
     return `Add SSH profile '${this.params.name}' for ${this.params.user}@${this.params.host}`;
   }
 
@@ -126,7 +137,7 @@ export class SSHAddHostTool extends BaseDeclarativeTool<
 > {
   static Name: string = 'ssh_add_host';
 
-  constructor(_config: Config) {
+  constructor(private readonly config: Config) {
     super(
       SSHAddHostTool.Name,
       'SSHAddHost',
@@ -193,7 +204,7 @@ export class SSHAddHostTool extends BaseDeclarativeTool<
   }
 
   protected createInvocation(params: SSHAddHostParams): ToolInvocation<SSHAddHostParams, ToolResult> {
-    return new SSHAddHostInvocation(params);
+    return new SSHAddHostInvocation(params, this.config);
   }
 }
 
@@ -210,7 +221,15 @@ export class SSHListHostsInvocation extends BaseToolInvocation<
   SSHListHostsParams,
   ToolResult
 > {
+  constructor(
+    params: SSHListHostsParams,
+    protected readonly config: Config,
+  ) {
+    super(params);
+  }
+
   getDescription(): string {
+    // Config available via this.config for future storage access
     return 'List saved SSH profiles';
   }
 
@@ -286,7 +305,7 @@ export class SSHListHostsTool extends BaseDeclarativeTool<
 > {
   static Name: string = 'ssh_list_hosts';
 
-  constructor(_config: Config) {
+  constructor(private readonly config: Config) {
     super(
       SSHListHostsTool.Name,
       'SSHListHosts',
@@ -308,7 +327,7 @@ export class SSHListHostsTool extends BaseDeclarativeTool<
   }
 
   protected createInvocation(params: SSHListHostsParams): ToolInvocation<SSHListHostsParams, ToolResult> {
-    return new SSHListHostsInvocation(params);
+    return new SSHListHostsInvocation(params, this.config);
   }
 }
 
@@ -325,7 +344,15 @@ export class SSHRemoveHostInvocation extends BaseToolInvocation<
   SSHRemoveHostParams,
   ToolResult
 > {
+  constructor(
+    params: SSHRemoveHostParams,
+    protected readonly config: Config,
+  ) {
+    super(params);
+  }
+
   getDescription(): string {
+    // Config available via this.config for future storage access
     return `Remove SSH profile '${this.params.name}'`;
   }
 
@@ -379,7 +406,7 @@ export class SSHRemoveHostTool extends BaseDeclarativeTool<
 > {
   static Name: string = 'ssh_remove_host';
 
-  constructor(_config: Config) {
+  constructor(private readonly config: Config) {
     super(
       SSHRemoveHostTool.Name,
       'SSHRemoveHost',
@@ -408,6 +435,6 @@ export class SSHRemoveHostTool extends BaseDeclarativeTool<
   }
 
   protected createInvocation(params: SSHRemoveHostParams): ToolInvocation<SSHRemoveHostParams, ToolResult> {
-    return new SSHRemoveHostInvocation(params);
+    return new SSHRemoveHostInvocation(params, this.config);
   }
 }

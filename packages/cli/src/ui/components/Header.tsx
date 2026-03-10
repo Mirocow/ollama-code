@@ -14,82 +14,13 @@ import {
   tildeifyPath,
   getModelCapabilities,
   tokenLimit,
+  tokenGraphService,
 } from '@ollama-code/ollama-code-core';
 import { theme } from '../semantic-colors.js';
 import { shortAsciiLogo } from './AsciiArt.js';
 import { getAsciiArtWidth, getCachedStringWidth } from '../utils/textUtils.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import { t, getCurrentLanguage } from '../../i18n/index.js';
-
-/**
- * Extract model size from model name (e.g., "14b" from "qwen2.5-coder:14b")
- * Supports various formats:
- * - Standard: 7b, 14b, 32b, 70b, 72b, 120b, 405b, etc.
- * - Decimal: 0.5b, 1.5b, 2.7b, 8.7b, etc.
- * - MoE: 8x7b, 8x22b, 16x12b, etc.
- * - With suffixes: 7b-q4, 14b-q8, etc.
- * - In name: llama3-70b, mistral-7b, qwen2.5-32b
- */
-function extractModelSize(model: string): string | null {
-  const lowerModel = model.toLowerCase();
-
-  // Skip common non-size suffixes and try again
-  const skipSuffixes = [
-    'instruct',
-    'chat',
-    'base',
-    'preview',
-    'latest',
-    'quantized',
-  ];
-  for (const suffix of skipSuffixes) {
-    if (
-      lowerModel.endsWith('-' + suffix) ||
-      lowerModel.endsWith(':' + suffix)
-    ) {
-      return extractModelSize(lowerModel.slice(0, -(suffix.length + 1)));
-    }
-  }
-
-  // Pattern 1: MoE models like 8x7b, 8x22b, 16x12b
-  const moeMatch = lowerModel.match(/(\d+x\d+b)$/i);
-  if (moeMatch) {
-    return moeMatch[1].toLowerCase();
-  }
-
-  // Pattern 2: Size after colon (Ollama format): model:14b, model:0.5b
-  const colonMatch = lowerModel.match(/:(\d+\.?\d*b)$/i);
-  if (colonMatch) {
-    return colonMatch[1].toLowerCase();
-  }
-
-  // Pattern 3: Size at end with dash: llama3-70b, mistral-7b
-  const dashMatch = lowerModel.match(/-(\d+\.?\d*b)$/i);
-  if (dashMatch) {
-    return dashMatch[1].toLowerCase();
-  }
-
-  // Pattern 4: Size at very end: model70b
-  const endMatch = lowerModel.match(/(\d+\.?\d*b)$/i);
-  if (endMatch) {
-    return endMatch[1].toLowerCase();
-  }
-
-  return null;
-}
-
-/**
- * Format model size for display (add commas for large numbers)
- */
-function formatModelSize(size: string): string {
-  // Handle MoE models like 8x7b -> "8x7B"
-  if (size.includes('x')) {
-    return size.toUpperCase();
-  }
-  // Handle decimal sizes like 0.5b, 1.5b -> "0.5B"
-  // Handle integer sizes like 7b, 14b, 70b -> "7B", "14B", "70B"
-  return size.toUpperCase();
-}
 
 /**
  * Format context window size for display
@@ -118,6 +49,15 @@ function createProgressBar(
   };
 }
 
+/**
+ * Truncate a string to fit within max width, adding ellipsis if needed
+ */
+function truncateString(str: string, maxWidth: number): string {
+  if (str.length <= maxWidth) return str;
+  if (maxWidth <= 3) return str.slice(0, maxWidth);
+  return str.slice(0, maxWidth - 3) + '...';
+}
+
 interface HeaderProps {
   customAsciiArt?: string; // For user-defined ASCII art
   version: string;
@@ -128,6 +68,17 @@ interface HeaderProps {
   sessionId?: string;
   contextWindowSize?: number; // Context window size in tokens
   promptTokenCount?: number; // Current prompt token count for usage display
+  toolCount?: number; // Number of registered tools
+  sessionToolCalls?: number; // Number of tool calls in current session
+  sessionStorageRecords?: number; // Number of storage records created in session
+  skillCount?: number; // Number of available skills
+  pluginCount?: number; // Number of loaded plugins
+  unhealthyPluginCount?: number; // Number of plugins with degraded/error status
+  generatedTokens?: number; // Total generated tokens for cost estimation
+  averageTps?: number; // Average tokens per second
+  peakTokens?: number; // Peak token usage in session
+  workspaceName?: string; // Current workspace name
+  gitBranch?: string; // Current git branch
 }
 
 function titleizeAuthType(value: string): string {
@@ -168,6 +119,17 @@ export const Header: React.FC<HeaderProps> = memo(
     sessionId,
     contextWindowSize,
     promptTokenCount,
+    toolCount,
+    sessionToolCalls,
+    sessionStorageRecords,
+    skillCount,
+    pluginCount,
+    unhealthyPluginCount,
+    generatedTokens,
+    averageTps,
+    peakTokens,
+    workspaceName,
+    gitBranch,
   }) => {
     const { columns: terminalWidth } = useTerminalSize();
 
@@ -195,8 +157,6 @@ export const Header: React.FC<HeaderProps> = memo(
 
     // Get context window size (use provided or auto-detect from model)
     const contextSize = contextWindowSize ?? tokenLimit(model, 'input');
-    const extractedSize = extractModelSize(model);
-    const modelSize = extractedSize ? formatModelSize(extractedSize) : null;
     const contextSizeFormatted = formatContextSize(contextSize);
 
     // Calculate context usage if promptTokenCount is provided
@@ -204,6 +164,48 @@ export const Header: React.FC<HeaderProps> = memo(
       promptTokenCount && contextSize
         ? Math.min(promptTokenCount / contextSize, 1)
         : 0;
+
+    // Estimate session cost based on tokens
+    // For local Ollama, this is just an estimate for reference
+    // Prices are approximate, based on similar API models
+    const estimateSessionCost = (
+      promptTokens: number,
+      genTokens: number,
+      modelName: string,
+    ): string => {
+      // Rough pricing per 1M tokens (very approximate for reference)
+      const lowerModel = modelName.toLowerCase();
+      let inputPricePer1M = 0.15; // Default cheap model
+      let outputPricePer1M = 0.60;
+      
+      // Adjust for model size/type
+      if (lowerModel.includes('70b') || lowerModel.includes('72b')) {
+        inputPricePer1M = 0.9;
+        outputPricePer1M = 3.5;
+      } else if (lowerModel.includes('32b') || lowerModel.includes('34b')) {
+        inputPricePer1M = 0.4;
+        outputPricePer1M = 1.6;
+      } else if (lowerModel.includes('14b') || lowerModel.includes('13b')) {
+        inputPricePer1M = 0.2;
+        outputPricePer1M = 0.8;
+      } else if (lowerModel.includes('7b') || lowerModel.includes('8b')) {
+        inputPricePer1M = 0.1;
+        outputPricePer1M = 0.4;
+      }
+      
+      const inputCost = (promptTokens / 1_000_000) * inputPricePer1M;
+      const outputCost = (genTokens / 1_000_000) * outputPricePer1M;
+      const totalCost = inputCost + outputCost;
+      
+      if (totalCost < 0.01) {
+        return `<$0.01`;
+      }
+      return `$${totalCost.toFixed(2)}`;
+    };
+
+    const sessionCost = generatedTokens 
+      ? estimateSessionCost(promptTokenCount ?? 0, generatedTokens, model)
+      : null;
 
     // Calculate available space properly:
     // First determine if logo can be shown, then use remaining space for path
@@ -225,14 +227,14 @@ export const Header: React.FC<HeaderProps> = memo(
       availableTerminalWidth >= logoWidth + logoGap + minInfoPanelWidth;
 
     // Calculate available width for info panel (use all remaining space)
-    // Cap at 60 when in two-column layout (with logo)
-    const maxInfoPanelWidth = 60;
+    // Cap at reasonable width for readability (increased to fit all stats)
+    const maxInfoPanelWidth = 140;
     const availableInfoPanelWidth = showLogo
       ? Math.min(
           availableTerminalWidth - logoWidth - logoGap,
           maxInfoPanelWidth,
         )
-      : availableTerminalWidth;
+      : Math.min(availableTerminalWidth, maxInfoPanelWidth);
 
     // Calculate max path length (subtract padding/borders from available space)
     const maxPathLength = Math.max(
@@ -245,20 +247,69 @@ export const Header: React.FC<HeaderProps> = memo(
       availableInfoPanelWidth - infoPanelChromeWidth,
     );
 
-    // Calculate progress bar width to fill the panel
-    // Reserve space for percentage text: " 100.0%" = 7 chars
-    const progressBarWidth = Math.max(4, infoPanelContentWidth - 7);
+    // Calculate progress bar width dynamically based on actual text content
+    // Text format: " 999,999/128K | left: 999,999" (varies based on token counts)
+    const promptTokensText = (promptTokenCount?.toLocaleString() ?? '0');
+    const contextSizeText = contextSizeFormatted;
+    const leftTokens = promptTokenCount && contextSize && promptTokenCount < contextSize
+      ? (contextSize - promptTokenCount).toLocaleString()
+      : '';
+    const overflowTokens = promptTokenCount && contextSize && promptTokenCount >= contextSize
+      ? (promptTokenCount - contextSize).toLocaleString()
+      : '';
+
+    // Calculate text width for progress bar line
+    // Use localized "left" text for accurate width calculation
+    const leftText = t('left');
+    let progressTextWidth = 3; // " " before + "/" between
+    progressTextWidth += promptTokensText.length;
+    progressTextWidth += contextSizeText.length;
+
+    if (leftTokens) {
+      // " | left: " + leftTokens (use localized text length)
+      progressTextWidth += 3 + leftText.length + 2 + leftTokens.length; // " | " + leftText + ": " + number
+    } else if (overflowTokens) {
+      // " | ⚠️ OVERFLOW +number"
+      progressTextWidth += 3 + 16 + overflowTokens.length;
+    }
+
+    // Add small buffer to prevent line wrap
+    const buffer = 2;
+
+    // Progress bar fills remaining space, with max width to keep it compact
+    // Width increased to match wider info panel
+    const maxProgressBarWidth = 50;
+    const progressBarWidth = Math.min(
+      maxProgressBarWidth,
+      Math.max(8, infoPanelContentWidth - progressTextWidth - buffer)
+    );
     const progressBar = createProgressBar(
       contextUsagePercentage,
       progressBarWidth,
     );
+
+    // Sparkline width is limited to leave room for progress bar text on the line above
+    // Width increased to match wider info panel
+    const maxSparklineWidth = 70;
+    const sparklineWidth = Math.min(maxSparklineWidth, Math.max(20, infoPanelContentWidth - 5));
+    const sparkline = tokenGraphService.generateCombinedSparkline(sparklineWidth);
 
     // Format server URL (show only host:port, hide http:// prefix for brevity)
     const displayBaseUrl = baseUrl
       ? baseUrl.replace(/^https?:\/\//, '')
       : 'localhost:11434';
 
-    const authModelText = `${formattedAuthType} | ${displayBaseUrl} | ${model}${capabilitiesText}`;
+    // Build model line with truncation if needed
+    const langCode = getCurrentLanguage().toUpperCase();
+    const baseModelLine = `${formattedAuthType} | ${displayBaseUrl} | `;
+    const suffixModelLine = `${capabilitiesText} | ${langCode}`;
+    
+    // Calculate available space for model name
+    const modelLineOverhead = baseModelLine.length + suffixModelLine.length;
+    const maxModelLength = Math.max(10, infoPanelContentWidth - modelLineOverhead);
+    const truncatedModel = truncateString(model, maxModelLength);
+    
+    const authModelText = `${baseModelLine}${truncatedModel}${suffixModelLine}`;
     const modelHintText = ' (/model to change)';
     const showModelHint =
       infoPanelContentWidth > 0 &&
@@ -330,48 +381,88 @@ export const Header: React.FC<HeaderProps> = memo(
               <Text color={theme.text.secondary}>{modelHintText}</Text>
             )}
           </Text>
-          {/* Context and Size info */}
+          {/* Context usage - unified progress bar with remaining tokens */}
           <Text>
-            <Text color={theme.text.secondary}>{t('Context')}: </Text>
-            <Text color={theme.text.accent}>{contextSizeFormatted}</Text>
-            {modelSize && (
-              <>
-                <Text color={theme.text.secondary}> | {t('Size')}: </Text>
-                <Text color={theme.text.accent}>{modelSize}</Text>
-              </>
-            )}
-            <Text color={theme.text.secondary}> | {t('Language')}: </Text>
-            <Text color={theme.text.accent}>{getCurrentLanguage().toUpperCase()}</Text>
-          </Text>
-          {/* Context usage progress bar - full width */}
-          <Text>
+            {/* Progress bar */}
             <Text
               color={
-                contextUsagePercentage > 0.9
-                  ? theme.status.warning
-                  : theme.text.accent
+                contextUsagePercentage > 0.95
+                  ? theme.status.error
+                  : contextUsagePercentage > 0.8
+                    ? theme.status.warning
+                    : theme.text.accent
               }
             >
               {progressBar.filled}
             </Text>
             <Text color={theme.text.secondary}>{progressBar.empty}</Text>
-            <Text color={theme.text.secondary}>
-              {' '}
-              {promptTokenCount?.toLocaleString() ?? 0} / {contextSizeFormatted}{' '}
-              ({(contextUsagePercentage * 100).toFixed(1)}%)
+            {/* Usage stats */}
+            <Text color={theme.text.secondary}> </Text>
+            <Text color={theme.text.accent}>
+              {promptTokenCount?.toLocaleString() ?? 0}
             </Text>
+            <Text color={theme.text.secondary}>/</Text>
+            <Text color={theme.text.accent}>{contextSizeFormatted}</Text>
+            {/* Remaining or overflow warning - only show when there's actual usage */}
+            {promptTokenCount && promptTokenCount > 0 && contextSize && promptTokenCount < contextSize ? (
+              <>
+                <Text color={theme.text.secondary}> | </Text>
+                <Text color={theme.text.secondary}>{t('left')}: </Text>
+                <Text color={theme.text.accent}>
+                  {(contextSize - promptTokenCount).toLocaleString()}
+                </Text>
+              </>
+            ) : promptTokenCount && contextSize && promptTokenCount >= contextSize ? (
+              <>
+                <Text color={theme.text.secondary}> | </Text>
+                <Text color={theme.status.error}>⚠️ OVERFLOW +{((promptTokenCount - contextSize)).toLocaleString()}</Text>
+              </>
+            ) : null}
           </Text>
-          {/* Session ID line (if available) */}
-          {sessionId && (
-            <Text color={theme.text.secondary}>
-              Session:{' '}
-              {sessionId.length > 12
-                ? sessionId.slice(0, 12) + '...'
-                : sessionId}
-            </Text>
+          {/* Sparkline - show if there's history data (even if partially empty) */}
+          {sparkline && sparkline.length > 0 && !sparkline.match(/^░+$/) && (
+            <Text color={theme.text.accent}>{sparkline}</Text>
           )}
+          {/* Session, Tools, Storage, Plugins line - fit within available width */}
+          <Text>
+            {(() => {
+              // Build stats line that fits within available width
+              const parts: Array<{ label: string; value: string }> = [];
+              
+              if (sessionId) {
+                parts.push({ label: 'Session', value: sessionId.length > 8 ? sessionId.slice(0, 8) + '..' : sessionId });
+              }
+              if (toolCount !== undefined) {
+                parts.push({ label: 'Tools', value: `${sessionToolCalls ?? 0}/${toolCount}` });
+              }
+              if (sessionStorageRecords !== undefined) {
+                parts.push({ label: 'Storage', value: String(sessionStorageRecords) });
+              }
+              if (sessionCost) {
+                parts.push({ label: 'Est', value: sessionCost });
+              }
+              if (pluginCount !== undefined && pluginCount > 0) {
+                let pluginValue = String(pluginCount);
+                if (unhealthyPluginCount !== undefined && unhealthyPluginCount > 0) {
+                  pluginValue += `⚠${unhealthyPluginCount}`;
+                }
+                parts.push({ label: 'Plugins', value: pluginValue });
+              }
+              
+              // Build string and truncate if needed
+              const statsLine = parts.map(p => `${p.label}: ${p.value}`).join(' | ');
+              const truncatedLine = truncateString(statsLine, infoPanelContentWidth);
+              
+              return <Text color={theme.text.secondary}>{truncatedLine}</Text>;
+            })()}
+          </Text>
           {/* Directory line */}
-          <Text color={theme.text.secondary}>{displayPath}</Text>
+          <Text color={theme.text.secondary}>
+            {displayPath}
+            {gitBranch && (
+              <Text color={theme.text.accent}> ({gitBranch})</Text>
+            )}
+          </Text>
         </Box>
       </Box>
     );

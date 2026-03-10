@@ -17,6 +17,7 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "declaration": true,
+    "declarationMap": true,
     "allowSyntheticDefaultImports": true,
     "verbatimModuleSyntax": true,
     "lib": ["ES2023"],

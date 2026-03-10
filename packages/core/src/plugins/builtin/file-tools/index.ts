@@ -34,8 +34,8 @@ export function createFileToolsPlugin(): PluginDefinition {
       enabledByDefault: true,
     },
     
-    // Use toolFactories for tools that need Config
-    toolFactories: [
+    // Unified tools array - factory functions for tools that need Config
+    tools: [
       (config: unknown) => new ReadFileTool(config as Config),
       (config: unknown) => new WriteFileTool(config as Config),
       (config: unknown) => new EditTool(config as Config),
@@ -43,6 +43,106 @@ export function createFileToolsPlugin(): PluginDefinition {
       (config: unknown) => new GlobTool(config as Config),
       (config: unknown) => new ReadManyFilesTool(config as Config),
     ],
+    
+    // Tool aliases - short names that resolve to canonical tool names
+    // Includes common model hallucinations and variations
+    aliases: [
+      // ═══════════════════════════════════════════════════════════════════
+      // read_file aliases
+      // ═══════════════════════════════════════════════════════════════════
+      { alias: 'read', canonicalName: 'read_file', description: 'Read file content' },
+      { alias: 'read_file', canonicalName: 'read_file', description: 'Read file content' },
+      { alias: 'read-file', canonicalName: 'read_file', description: 'Read file content' },
+      { alias: 'cat_file', canonicalName: 'read_file', description: 'Display file content' },
+      { alias: 'open', canonicalName: 'read_file', description: 'Open and read file' },
+      { alias: 'view', canonicalName: 'read_file', description: 'View file content' },
+      { alias: 'ReadFile', canonicalName: 'read_file', description: 'Read file content' },
+      { alias: 'Read-File', canonicalName: 'read_file', description: 'Read file content' },
+      { alias: 'readFile', canonicalName: 'read_file', description: 'Read file content' },
+      // ═══════════════════════════════════════════════════════════════════
+      // write_file aliases
+      // ═══════════════════════════════════════════════════════════════════
+      { alias: 'write', canonicalName: 'write_file', description: 'Write content to file' },
+      { alias: 'create', canonicalName: 'write_file', description: 'Create new file' },
+      { alias: 'write_file', canonicalName: 'write_file', description: 'Write content to file' },
+      { alias: 'write-file', canonicalName: 'write_file', description: 'Write content to file' },
+      { alias: 'save_file', canonicalName: 'write_file', description: 'Save content to file' },
+      { alias: 'new_file', canonicalName: 'write_file', description: 'Create new file' },
+      { alias: 'WriteFile', canonicalName: 'write_file', description: 'Write content to file' },
+      { alias: 'Write-File', canonicalName: 'write_file', description: 'Write content to file' },
+      { alias: 'writeFile', canonicalName: 'write_file', description: 'Write content to file' },
+      // ═══════════════════════════════════════════════════════════════════
+      // edit aliases (including common model hallucinations)
+      // ═══════════════════════════════════════════════════════════════════
+      { alias: 'edit', canonicalName: 'edit', description: 'Edit file content' },
+      { alias: 'Edit', canonicalName: 'edit', description: 'Edit file content' },
+      { alias: 'edit-file', canonicalName: 'edit', description: 'Edit file content' },
+      { alias: 'edit_file', canonicalName: 'edit', description: 'Edit file content' },
+      { alias: 'replace', canonicalName: 'edit', description: 'Replace text in file' },
+      { alias: 'modify', canonicalName: 'edit', description: 'Modify file content' },
+      { alias: 'patch', canonicalName: 'edit', description: 'Patch file content' },
+      { alias: 'sed', canonicalName: 'edit', description: 'Stream edit file' },
+      // ═══════════════════════════════════════════════════════════════════
+      // list_directory aliases (including common model hallucinations)
+      // ═══════════════════════════════════════════════════════════════════
+      { alias: 'ls', canonicalName: 'list_directory', description: 'List directory contents' },
+      { alias: 'list', canonicalName: 'list_directory', description: 'List files and directories' },
+      { alias: 'dir', canonicalName: 'list_directory', description: 'Show directory contents' },
+      { alias: 'list_directory', canonicalName: 'list_directory', description: 'List directory contents' },
+      { alias: 'list_dir', canonicalName: 'list_directory', description: 'List directory contents' },
+      { alias: 'list_files', canonicalName: 'list_directory', description: 'List files' },
+      { alias: 'ListFiles', canonicalName: 'list_directory', description: 'List files' },
+      { alias: 'list-files', canonicalName: 'list_directory', description: 'List files' },
+      { alias: 'List-Files', canonicalName: 'list_directory', description: 'List files' },
+      { alias: 'ListDirectory', canonicalName: 'list_directory', description: 'List directory' },
+      { alias: 'list-directory', canonicalName: 'list_directory', description: 'List directory' },
+      // ═══════════════════════════════════════════════════════════════════
+      // glob aliases
+      // ═══════════════════════════════════════════════════════════════════
+      { alias: 'glob', canonicalName: 'glob', description: 'Find files by pattern' },
+      { alias: 'files', canonicalName: 'glob', description: 'Find files by pattern' },
+      { alias: 'find_files', canonicalName: 'glob', description: 'Find files matching pattern' },
+      { alias: 'glob_search', canonicalName: 'glob', description: 'Search files by glob pattern' },
+      { alias: 'pattern', canonicalName: 'glob', description: 'Search files by pattern' },
+      // ═══════════════════════════════════════════════════════════════════
+      // read_many_files aliases
+      // ═══════════════════════════════════════════════════════════════════
+      { alias: 'readmany', canonicalName: 'read_many_files', description: 'Read multiple files at once' },
+      { alias: 'read_all', canonicalName: 'read_many_files', description: 'Read all specified files' },
+      { alias: 'cat', canonicalName: 'read_many_files', description: 'Concatenate files' },
+      { alias: 'read_many', canonicalName: 'read_many_files', description: 'Read many files' },
+      { alias: 'read_files', canonicalName: 'read_many_files', description: 'Read multiple files' },
+    ],
+    
+    // Context-aware prompts for model guidance
+    prompts: [
+      {
+        priority: 1,
+        content: 'File tools for filesystem operations: read_file reads single files, write_file creates/overwrites files, edit makes precise string replacements, list_directory shows folder contents, glob finds files by pattern, read_many_files reads multiple files efficiently.',
+      },
+      {
+        priority: 2,
+        content: 'EDIT TOOL: Use for precise replacements. Provide old_string (must match exactly) and new_string. For large changes, use write_file instead. Always read file first to see exact content.',
+      },
+      {
+        priority: 3,
+        content: 'GLOB patterns: **/*.ts matches all .ts files recursively, src/**/*.js matches in src folder, *.json matches in current directory. Use list_directory first to understand project structure.',
+      },
+      {
+        priority: 4,
+        content: 'Use read_many_files when you need to read multiple files - it is more efficient than multiple read_file calls. Provide array of file paths. Good for analyzing code structure across multiple files.',
+      },
+    ],
+    
+    // Plugin capabilities
+    capabilities: {
+      canReadFiles: true,
+      canWriteFiles: true,
+      canExecuteCommands: false,
+      canAccessNetwork: false,
+      canUseStorage: true,
+      canUsePrompts: true,
+    },
     
     hooks: {
       onLoad: async (context) => {
