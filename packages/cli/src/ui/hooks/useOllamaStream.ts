@@ -335,13 +335,14 @@ export const useOllamaStream = (
   }, [setPendingHistoryItem, pendingHistoryItemRef, pendingHistoryItem]);
 
   // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       if (pendingUpdateTimerRef.current) {
         clearTimeout(pendingUpdateTimerRef.current);
       }
-    };
-  }, []);
+    },
+    [],
+  );
 
   const onExec = useCallback(async (done: Promise<void>) => {
     setIsResponding(true);
@@ -852,7 +853,11 @@ export const useOllamaStream = (
   );
 
   const handleErrorEvent = useCallback(
-    (eventValue: OllamaErrorEventValue, userMessageTimestamp: number, userUuid?: string) => {
+    (
+      eventValue: OllamaErrorEventValue,
+      userMessageTimestamp: number,
+      userUuid?: string,
+    ) => {
       // Reset content accumulator on error
       contentAccumulator.reset('error');
 
@@ -1190,24 +1195,27 @@ export const useOllamaStream = (
     [config, addItem],
   );
 
-  const handleLoopDetectedEvent = useCallback((userUuid?: string) => {
-    // Record loop detection to session for debugging
-    try {
-      const chatRecordingService = config.getChatRecordingService();
-      if (chatRecordingService) {
-        chatRecordingService.recordLoopDetected({
-          requestUuid: userUuid,
-        });
+  const handleLoopDetectedEvent = useCallback(
+    (userUuid?: string) => {
+      // Record loop detection to session for debugging
+      try {
+        const chatRecordingService = config.getChatRecordingService();
+        if (chatRecordingService) {
+          chatRecordingService.recordLoopDetected({
+            requestUuid: userUuid,
+          });
+        }
+      } catch (error) {
+        debugLogger.error('Error saving loop detection record:', error);
       }
-    } catch (error) {
-      debugLogger.error('Error saving loop detection record:', error);
-    }
 
-    // Show the confirmation dialog to choose whether to disable loop detection
-    setLoopDetectionConfirmationRequest({
-      onComplete: handleLoopDetectionConfirmation,
-    });
-  }, [handleLoopDetectionConfirmation, config]);
+      // Show the confirmation dialog to choose whether to disable loop detection
+      setLoopDetectionConfirmationRequest({
+        onComplete: handleLoopDetectionConfirmation,
+      });
+    },
+    [handleLoopDetectionConfirmation, config],
+  );
 
   const processOllamaStreamEvents = useCallback(
     async (
@@ -1495,6 +1503,7 @@ export const useOllamaStream = (
       handleLoopDetectedEvent,
       handleVisionSwitch,
       restoreOriginalModel,
+      flushPendingHistoryItem,
     ],
   );
 

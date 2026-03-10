@@ -9,7 +9,10 @@ import { MessageType } from '../types.js';
 import type { SlashCommand } from './types.js';
 import { CommandKind } from './types.js';
 import { t } from '../../i18n/index.js';
-import { CompressionStatus, CompressionReportService } from '@ollama-code/ollama-code-core';
+import {
+  CompressionStatus,
+  CompressionReportService,
+} from '@ollama-code/ollama-code-core';
 
 /**
  * Get human-readable message for compression status
@@ -20,13 +23,19 @@ function getCompressionStatusMessage(
   newTokens: number,
 ): string {
   switch (status) {
-    case CompressionStatus.COMPRESSED:
+    case CompressionStatus.COMPRESSED: {
       const saved = originalTokens - newTokens;
-      const percent = originalTokens > 0 ? Math.round((saved / originalTokens) * 100) : 0;
+      const percent =
+        originalTokens > 0 ? Math.round((saved / originalTokens) * 100) : 0;
       return t(
         'Context compressed: {{original}} → {{new}} tokens ({{percent}}% saved)',
-        { original: String(originalTokens), new: String(newTokens), percent: String(percent) },
+        {
+          original: String(originalTokens),
+          new: String(newTokens),
+          percent: String(percent),
+        },
       );
+    }
 
     case CompressionStatus.NOOP:
       return t('Context is already optimal, no compression needed.');
@@ -136,7 +145,7 @@ export const compressCommand: SlashCommand = {
       let reportPath: string | null = null;
       try {
         reportPath = await reportService.generateReport(result, duration);
-      } catch (reportError) {
+      } catch (_reportError) {
         // Ignore report generation errors - compression result is more important
       }
 
@@ -160,7 +169,9 @@ export const compressCommand: SlashCommand = {
           ui.addItem(
             {
               type: MessageType.INFO,
-              text: t('Compression report saved: {{path}}', { path: reportPath }),
+              text: t('Compression report saved: {{path}}', {
+                path: reportPath,
+              }),
             },
             Date.now(),
           );
@@ -180,7 +191,8 @@ export const compressCommand: SlashCommand = {
       }
 
       // Non-interactive mode
-      const isSuccess = result.compressionStatus === CompressionStatus.COMPRESSED;
+      const isSuccess =
+        result.compressionStatus === CompressionStatus.COMPRESSED;
       const reportInfo = reportPath ? `\n\nReport: ${reportPath}` : '';
       return {
         type: 'message',

@@ -124,15 +124,8 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      // Enforce bracket notation for index signature access (matches noPropertyAccessFromIndexSignature)
-      '@typescript-eslint/dot-notation': [
-        'error',
-        {
-          allowIndexSignaturePropertyAccess: false,
-          allowPrivateClassPropertyAccess: false,
-          allowProtectedClassPropertyAccess: false,
-        },
-      ],
+      // Disabled: requires type information (parserOptions.project)
+      // '@typescript-eslint/dot-notation': 'off',
       'import/no-internal-modules': 'off', // Disable this rule as it causes too many issues
       'import/no-relative-packages': 'error',
       'no-cond-assign': 'error',
@@ -168,7 +161,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/*/src/**/*.test.{ts,tsx}', 'packages/**/test/**/*.test.{ts,tsx}'],
+    files: ['packages/*/src/**/*.test.{ts,tsx}', 'packages/**/test/**/*.test.{ts,tsx}', 'packages/**/__tests__/*.{ts,tsx}'],
     plugins: {
       vitest,
     },
@@ -187,15 +180,8 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      // Enforce bracket notation for index signature access in tests too
-      '@typescript-eslint/dot-notation': [
-        'error',
-        {
-          allowIndexSignaturePropertyAccess: false,
-          allowPrivateClassPropertyAccess: false,
-          allowProtectedClassPropertyAccess: false,
-        },
-      ],
+      // Disabled: requires type information (parserOptions.project)
+      // '@typescript-eslint/dot-notation': 'off',
       '@typescript-eslint/no-explicit-any': 'off', // Allow any in tests
       'arrow-body-style': 'off', // Allow arrow function bodies in tests
     },
@@ -337,9 +323,13 @@ export default tseslint.config(
       'packages/cli/src/utils/stdioHelpers.ts',            // wraps console.clear()
       'packages/cli/src/commands/plugins-marketplace.ts',  // CLI output for plugin commands
       'packages/cli/src/ui/stores/eventBus.ts',            // event bus logging
+      'packages/cli/src/ui/components/ModelDialog.tsx',    // model loading warnings
       'packages/core/src/observability/telemetryService.ts', // telemetry logging
       'packages/core/src/plugins/plugin-cli.ts',           // plugin CLI tool
       'packages/core/src/prompts/templates/index.ts',      // template loading warnings
+      'packages/core/src/services/auditLogService.ts',     // audit logging
+      'packages/core/src/services/structuredLogger.ts',    // structured logging
+      'packages/core/src/config/storage.ts',               // storage warnings
     ],
     rules: { 'no-console': 'off' },
   },

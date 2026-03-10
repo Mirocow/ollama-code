@@ -50,13 +50,13 @@ interface ModelStatsDisplayProps {
 
 /**
  * ModelStatsDisplay shows per-model statistics.
- * 
+ *
  * The byModel data structure contains:
  * - promptTokens: number
  * - generatedTokens: number
  * - cachedTokens: number
  * - apiTime: number
- * 
+ *
  * Aggregate data (totalRequests, totalErrors) is in models.api.
  */
 export const ModelStatsDisplay: React.FC<ModelStatsDisplayProps> = ({
@@ -110,13 +110,21 @@ export const ModelStatsDisplay: React.FC<ModelStatsDisplayProps> = ({
   // Helper to get values from byModel entries
   // byModel entries have: promptTokens, generatedTokens, cachedTokens, apiTime
   const getModelValues = (
-    getter: (metrics: { promptTokens: number; generatedTokens: number; cachedTokens: number; apiTime: number }) => string | React.ReactElement,
+    getter: (metrics: {
+      promptTokens: number;
+      generatedTokens: number;
+      cachedTokens: number;
+      apiTime: number;
+    }) => string | React.ReactElement,
   ) => activeModels.map(([, m]) => getter(m));
 
   const hasCached = activeModels.some(([, m]) => m.cachedTokens > 0);
 
   // Calculate cache hit rate for a model
-  const getCacheHitRate = (m: { promptTokens: number; cachedTokens: number }) => {
+  const getCacheHitRate = (m: {
+    promptTokens: number;
+    cachedTokens: number;
+  }) => {
     if (m.promptTokens === 0) return 0;
     return (m.cachedTokens / m.promptTokens) * 100;
   };
@@ -169,10 +177,13 @@ export const ModelStatsDisplay: React.FC<ModelStatsDisplayProps> = ({
       />
       <StatRow
         title={t('Errors')}
-        values={modelNames.map(() => (
+        values={modelNames.map((_, index) => (
           <Text
+            key={index}
             color={
-              models.api.totalErrors > 0 ? theme.status.error : theme.text.primary
+              models.api.totalErrors > 0
+                ? theme.status.error
+                : theme.text.primary
             }
           >
             {models.api.totalErrors.toLocaleString()}
@@ -182,9 +193,10 @@ export const ModelStatsDisplay: React.FC<ModelStatsDisplayProps> = ({
       <StatRow
         title={t('Avg Latency')}
         values={modelNames.map(() => {
-          const avgLatency = models.api.totalRequests > 0
-            ? models.api.totalLatencyMs / models.api.totalRequests
-            : 0;
+          const avgLatency =
+            models.api.totalRequests > 0
+              ? models.api.totalLatencyMs / models.api.totalRequests
+              : 0;
           return formatDuration(avgLatency);
         })}
       />

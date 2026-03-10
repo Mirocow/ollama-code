@@ -40,29 +40,65 @@ const debugLogger = createDebugLogger('SSH');
  * Maps "кракозябры" back to Russian
  */
 const RU_TO_EN_MAP: Record<string, string> = {
-  'jn': 'от', 'vjtuj': 'моего', 'gjkmpjdfntkz': 'пользователя',
-  'rf': 'ка', 'ds': 'вы', 'pltcm': 'здесь', 'ghbdtn': 'привет',
-  'rfr': 'как', 'ltkj': 'дело', 'gj': 'по', 'vj': 'ми',
-  'yt': 'не', 'yj': 'но', 'jq': 'ий', 'a': 'а', 'b': 'и',
-  'd': 'в', 'k': 'л', 'r': 'к', 't': 'е', 'n': 'т',
-  'y': 'н', 'j': 'о', 'g': 'п', 'h': 'р', 'c': 'с',
-  'm': 'ь', 'q': 'й', 'w': 'ц', 'e': 'у', 'z': 'я',
-  'x': 'ч', 'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з',
-  's': 'ы', '[': 'х', ']': 'ъ',
+  jn: 'от',
+  vjtuj: 'моего',
+  gjkmpjdfntkz: 'пользователя',
+  rf: 'ка',
+  ds: 'вы',
+  pltcm: 'здесь',
+  ghbdtn: 'привет',
+  rfr: 'как',
+  ltkj: 'дело',
+  gj: 'по',
+  vj: 'ми',
+  yt: 'не',
+  yj: 'но',
+  jq: 'ий',
+  a: 'а',
+  b: 'и',
+  d: 'в',
+  k: 'л',
+  r: 'к',
+  t: 'е',
+  n: 'т',
+  y: 'н',
+  j: 'о',
+  g: 'п',
+  h: 'р',
+  c: 'с',
+  m: 'ь',
+  q: 'й',
+  w: 'ц',
+  e: 'у',
+  z: 'я',
+  x: 'ч',
+  u: 'г',
+  i: 'ш',
+  o: 'щ',
+  p: 'з',
+  s: 'ы',
+  '[': 'х',
+  ']': 'ъ',
 };
 
 /**
  * Detects if text appears to be Russian typed on English keyboard
  * Returns decoded Russian text if detected, null otherwise
  */
-function detectWrongKeyboardLayout(text: string): { isWrongLayout: boolean; decoded: string; original: string } {
+function detectWrongKeyboardLayout(text: string): {
+  isWrongLayout: boolean;
+  decoded: string;
+  original: string;
+} {
   if (!text || text.length === 0) {
     return { isWrongLayout: false, decoded: text, original: text };
   }
 
   // Check if text contains only Latin letters (typical of wrong layout)
-  const onlyLatin = /^[a-zA-Z\s\d\.,!?@#$%^&*()\-_=+\[\]{};:'"<>\/\\]+$/.test(text);
-  
+  const onlyLatin = /^[a-zA-Z\s\d.,!?@#$%^&*()\-_=+[\]{};:'"<>/\\]+$/.test(
+    text,
+  );
+
   if (!onlyLatin) {
     return { isWrongLayout: false, decoded: text, original: text };
   }
@@ -70,10 +106,12 @@ function detectWrongKeyboardLayout(text: string): { isWrongLayout: boolean; deco
   // Try to decode using the map
   let decoded = text.toLowerCase();
   let hasMatches = false;
-  
+
   // Sort by length descending to match longer patterns first
-  const sortedKeys = Object.keys(RU_TO_EN_MAP).sort((a, b) => b.length - a.length);
-  
+  const sortedKeys = Object.keys(RU_TO_EN_MAP).sort(
+    (a, b) => b.length - a.length,
+  );
+
   for (const en of sortedKeys) {
     if (decoded.includes(en)) {
       decoded = decoded.replace(new RegExp(en, 'g'), RU_TO_EN_MAP[en]!);
@@ -147,7 +185,9 @@ function resolveSSHParams(params: SSHToolParams): ResolvedSSHParams {
   if (params.profile) {
     const hostConfig = Storage.getSSHHost(params.profile);
     if (!hostConfig) {
-      throw new Error(`SSH profile '${params.profile}' not found. Use ssh_add_host to create it.`);
+      throw new Error(
+        `SSH profile '${params.profile}' not found. Use ssh_add_host to create it.`,
+      );
     }
 
     // Merge profile with overrides
@@ -220,7 +260,10 @@ function buildSSHCommand(params: ResolvedSSHParams): string {
 
   // Add timeout for command execution
   if (params.timeout) {
-    parts.push('-o', `ServerAliveInterval=${Math.floor(params.timeout / 1000)}`);
+    parts.push(
+      '-o',
+      `ServerAliveInterval=${Math.floor(params.timeout / 1000)}`,
+    );
   }
 
   // Add user@host
@@ -307,7 +350,8 @@ export class SSHToolInvocation extends BaseToolInvocation<
   ): Promise<ToolResult> {
     if (signal.aborted) {
       return {
-        llmContent: 'SSH connection was cancelled by user before it could start.',
+        llmContent:
+          'SSH connection was cancelled by user before it could start.',
         returnDisplay: 'Connection cancelled by user.',
       };
     }
@@ -330,10 +374,14 @@ export class SSHToolInvocation extends BaseToolInvocation<
         (event) => {
           if (event.type === 'data') {
             cumulativeOutput = event.chunk;
-            if (updateOutput && Date.now() - lastUpdateTime > OUTPUT_UPDATE_INTERVAL_MS) {
-              const outputDisplay = typeof cumulativeOutput === 'string'
-                ? cumulativeOutput
-                : { ansiOutput: cumulativeOutput };
+            if (
+              updateOutput &&
+              Date.now() - lastUpdateTime > OUTPUT_UPDATE_INTERVAL_MS
+            ) {
+              const outputDisplay =
+                typeof cumulativeOutput === 'string'
+                  ? cumulativeOutput
+                  : { ansiOutput: cumulativeOutput };
               updateOutput(outputDisplay);
               lastUpdateTime = Date.now();
             }
@@ -364,7 +412,9 @@ export class SSHToolInvocation extends BaseToolInvocation<
           `Output: ${result.output || '(empty)'}`,
           `Exit Code: ${result.exitCode ?? '(none)'}`,
           result.error ? `Error: ${result.error.message}` : '',
-        ].filter(Boolean).join('\n');
+        ]
+          .filter(Boolean)
+          .join('\n');
       }
 
       const executionError = result.error
@@ -378,11 +428,13 @@ export class SSHToolInvocation extends BaseToolInvocation<
 
       return {
         llmContent,
-        returnDisplay: result.output || `SSH ${result.aborted ? 'cancelled' : 'completed'}`,
+        returnDisplay:
+          result.output || `SSH ${result.aborted ? 'cancelled' : 'completed'}`,
         ...executionError,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       debugLogger.error('SSH execution error:', errorMessage);
 
       return {
@@ -400,7 +452,7 @@ export class SSHToolInvocation extends BaseToolInvocation<
 function getSSHToolDescription(): string {
   const currentUser = getCurrentUsername();
   const currentHost = getCurrentHostname();
-  
+
   return `Connects to a remote machine via SSH and executes commands.
 
 This tool provides secure SSH connectivity to remote servers for remote command execution, system administration, and file operations.
@@ -451,10 +503,7 @@ This tool provides secure SSH connectivity to remote servers for remote command 
 `;
 }
 
-export class SSHTool extends BaseDeclarativeTool<
-  SSHToolParams,
-  ToolResult
-> {
+export class SSHTool extends BaseDeclarativeTool<SSHToolParams, ToolResult> {
   static Name: string = 'ssh_connect';
   // Static allowlist to persist across all instances
   private static allowlist: Set<string> = new Set();
@@ -470,19 +519,23 @@ export class SSHTool extends BaseDeclarativeTool<
         properties: {
           profile: {
             type: 'string',
-            description: 'Name of saved SSH profile (use ssh_add_host to create). Alternative to host/user.',
+            description:
+              'Name of saved SSH profile (use ssh_add_host to create). Alternative to host/user.',
           },
           host: {
             type: 'string',
-            description: 'The hostname or IP address of the remote server (or use profile).',
+            description:
+              'The hostname or IP address of the remote server (or use profile).',
           },
           user: {
             type: 'string',
-            description: 'The username for SSH authentication (or use profile).',
+            description:
+              'The username for SSH authentication (or use profile).',
           },
           command: {
             type: 'string',
-            description: 'The command to execute on the remote server. Leave empty for interactive shell.',
+            description:
+              'The command to execute on the remote server. Leave empty for interactive shell.',
           },
           port: {
             type: 'number',
@@ -490,11 +543,13 @@ export class SSHTool extends BaseDeclarativeTool<
           },
           identity_file: {
             type: 'string',
-            description: 'Path to SSH private key file for key-based authentication.',
+            description:
+              'Path to SSH private key file for key-based authentication.',
           },
           password: {
             type: 'string',
-            description: 'Password for password authentication (discouraged, use identity_file instead).',
+            description:
+              'Password for password authentication (discouraged, use identity_file instead).',
           },
           timeout: {
             type: 'number',
@@ -512,38 +567,48 @@ export class SSHTool extends BaseDeclarativeTool<
     );
   }
 
-  protected override validateToolParamValues(params: SSHToolParams): string | null {
+  protected override validateToolParamValues(
+    params: SSHToolParams,
+  ): string | null {
     const warnings: string[] = [];
     const currentUser = getCurrentUsername();
-    
+
     // Check for wrong keyboard layout in user and password
     if (params.user) {
       const userCheck = detectWrongKeyboardLayout(params.user);
       if (userCheck.isWrongLayout) {
-        warnings.push(`⚠️ Username "${params.user}" appears to be typed with wrong keyboard layout. Did you mean "${userCheck.decoded}"?`);
+        warnings.push(
+          `⚠️ Username "${params.user}" appears to be typed with wrong keyboard layout. Did you mean "${userCheck.decoded}"?`,
+        );
       }
     }
-    
+
     if (params.password) {
       const passCheck = detectWrongKeyboardLayout(params.password);
       if (passCheck.isWrongLayout) {
-        warnings.push(`⚠️ Password appears to be typed with wrong keyboard layout. Decoded: "${passCheck.decoded}". Consider re-typing with correct layout.`);
+        warnings.push(
+          `⚠️ Password appears to be typed with wrong keyboard layout. Decoded: "${passCheck.decoded}". Consider re-typing with correct layout.`,
+        );
       }
-      
+
       // Warn about suspiciously short passwords
       if (params.password.length < 4) {
-        warnings.push(`⚠️ Password is very short (${params.password.length} chars). Are you sure this is correct?`);
+        warnings.push(
+          `⚠️ Password is very short (${params.password.length} chars). Are you sure this is correct?`,
+        );
       }
     }
-    
+
     // Check host parameter
     if (params.host) {
       const hostCheck = detectWrongKeyboardLayout(params.host);
       if (hostCheck.isWrongLayout) {
-        warnings.push(`⚠️ Host "${params.host}" appears to be typed with wrong keyboard layout. Did you mean "${hostCheck.decoded}"?`);
+        warnings.push(
+          `⚠️ Host "${params.host}" appears to be typed with wrong keyboard layout. Did you mean "${hostCheck.decoded}"?`,
+        );
       }
     }
-    
+
     // Either profile OR (host + user) must be specified
     if (params.profile) {
       // Profile specified - validate it exists
@@ -571,7 +636,10 @@ export class SSHTool extends BaseDeclarativeTool<
       }
     }
     if (params.timeout !== undefined) {
-      if (typeof params.timeout !== 'number' || !Number.isInteger(params.timeout)) {
+      if (
+        typeof params.timeout !== 'number' ||
+        !Number.isInteger(params.timeout)
+      ) {
         return 'Timeout must be an integer number of milliseconds.';
       }
       if (params.timeout <= 0) {
@@ -581,13 +649,13 @@ export class SSHTool extends BaseDeclarativeTool<
         return 'Timeout cannot exceed 600000ms (10 minutes).';
       }
     }
-    
+
     // Return warnings if any (they don't block execution but inform the model)
     if (warnings.length > 0) {
       // Log warnings for debugging
       debugLogger.warn('SSH parameter warnings:', warnings.join('; '));
     }
-    
+
     return null;
   }
 

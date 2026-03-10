@@ -6,14 +6,13 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
-  StreamingContentAccumulator,
+  type StreamingContentAccumulator,
   createStreamingContentAccumulator,
   ensureString,
   hasSignificantContent,
   validateContent,
   type ContentChunkEvent,
   type ThoughtChunkEvent,
-  type TurnFinishedEvent,
 } from '../useStreamingContentAccumulator.js';
 
 describe('ensureString', () => {
@@ -47,7 +46,9 @@ describe('ensureString', () => {
   });
 
   it('extracts description from object with description property', () => {
-    expect(ensureString({ description: 'a description' })).toBe('a description');
+    expect(ensureString({ description: 'a description' })).toBe(
+      'a description',
+    );
   });
 
   it('stringifies other objects', () => {
@@ -524,15 +525,7 @@ describe('Integration: Full Turn Lifecycle', () => {
     acc.startTurn('response-123');
 
     // Simulate streaming
-    const chunks = [
-      'I',
-      ' will',
-      ' help',
-      ' you',
-      ' with',
-      ' that',
-      '.',
-    ];
+    const chunks = ['I', ' will', ' help', ' you', ' with', ' that', '.'];
 
     chunks.forEach((chunk) => acc.appendText(chunk));
 
@@ -561,7 +554,9 @@ describe('Integration: Full Turn Lifecycle', () => {
     // Then responds
     acc.appendText('Based on my analysis...');
 
-    expect(acc.getThought()).toBe('Let me analyze this... I should check the files.');
+    expect(acc.getThought()).toBe(
+      'Let me analyze this... I should check the files.',
+    );
     expect(acc.getText()).toBe('Based on my analysis...');
     expect(acc.hasSignificantContent()).toBe(true);
   });

@@ -122,13 +122,13 @@ export const Header: React.FC<HeaderProps> = memo(
     toolCount,
     sessionToolCalls,
     sessionStorageRecords,
-    skillCount,
+    skillCount: _skillCount,
     pluginCount,
     unhealthyPluginCount,
     generatedTokens,
-    averageTps,
-    peakTokens,
-    workspaceName,
+    averageTps: _averageTps,
+    peakTokens: _peakTokens,
+    workspaceName: _workspaceName,
     gitBranch,
   }) => {
     const { columns: terminalWidth } = useTerminalSize();
@@ -176,8 +176,8 @@ export const Header: React.FC<HeaderProps> = memo(
       // Rough pricing per 1M tokens (very approximate for reference)
       const lowerModel = modelName.toLowerCase();
       let inputPricePer1M = 0.15; // Default cheap model
-      let outputPricePer1M = 0.60;
-      
+      let outputPricePer1M = 0.6;
+
       // Adjust for model size/type
       if (lowerModel.includes('70b') || lowerModel.includes('72b')) {
         inputPricePer1M = 0.9;
@@ -192,18 +192,18 @@ export const Header: React.FC<HeaderProps> = memo(
         inputPricePer1M = 0.1;
         outputPricePer1M = 0.4;
       }
-      
+
       const inputCost = (promptTokens / 1_000_000) * inputPricePer1M;
       const outputCost = (genTokens / 1_000_000) * outputPricePer1M;
       const totalCost = inputCost + outputCost;
-      
+
       if (totalCost < 0.01) {
         return `<$0.01`;
       }
       return `$${totalCost.toFixed(2)}`;
     };
 
-    const sessionCost = generatedTokens 
+    const sessionCost = generatedTokens
       ? estimateSessionCost(promptTokenCount ?? 0, generatedTokens, model)
       : null;
 
@@ -249,14 +249,16 @@ export const Header: React.FC<HeaderProps> = memo(
 
     // Calculate progress bar width dynamically based on actual text content
     // Text format: " 999,999/128K | left: 999,999" (varies based on token counts)
-    const promptTokensText = (promptTokenCount?.toLocaleString() ?? '0');
+    const promptTokensText = promptTokenCount?.toLocaleString() ?? '0';
     const contextSizeText = contextSizeFormatted;
-    const leftTokens = promptTokenCount && contextSize && promptTokenCount < contextSize
-      ? (contextSize - promptTokenCount).toLocaleString()
-      : '';
-    const overflowTokens = promptTokenCount && contextSize && promptTokenCount >= contextSize
-      ? (promptTokenCount - contextSize).toLocaleString()
-      : '';
+    const leftTokens =
+      promptTokenCount && contextSize && promptTokenCount < contextSize
+        ? (contextSize - promptTokenCount).toLocaleString()
+        : '';
+    const overflowTokens =
+      promptTokenCount && contextSize && promptTokenCount >= contextSize
+        ? (promptTokenCount - contextSize).toLocaleString()
+        : '';
 
     // Calculate text width for progress bar line
     // Use localized "left" text for accurate width calculation
@@ -281,7 +283,7 @@ export const Header: React.FC<HeaderProps> = memo(
     const maxProgressBarWidth = 50;
     const progressBarWidth = Math.min(
       maxProgressBarWidth,
-      Math.max(8, infoPanelContentWidth - progressTextWidth - buffer)
+      Math.max(8, infoPanelContentWidth - progressTextWidth - buffer),
     );
     const progressBar = createProgressBar(
       contextUsagePercentage,
@@ -291,8 +293,12 @@ export const Header: React.FC<HeaderProps> = memo(
     // Sparkline width is limited to leave room for progress bar text on the line above
     // Width increased to match wider info panel
     const maxSparklineWidth = 70;
-    const sparklineWidth = Math.min(maxSparklineWidth, Math.max(20, infoPanelContentWidth - 5));
-    const sparkline = tokenGraphService.generateCombinedSparkline(sparklineWidth);
+    const sparklineWidth = Math.min(
+      maxSparklineWidth,
+      Math.max(20, infoPanelContentWidth - 5),
+    );
+    const sparkline =
+      tokenGraphService.generateCombinedSparkline(sparklineWidth);
 
     // Format server URL (show only host:port, hide http:// prefix for brevity)
     const displayBaseUrl = baseUrl
@@ -303,12 +309,15 @@ export const Header: React.FC<HeaderProps> = memo(
     const langCode = getCurrentLanguage().toUpperCase();
     const baseModelLine = `${formattedAuthType} | ${displayBaseUrl} | `;
     const suffixModelLine = `${capabilitiesText} | ${langCode}`;
-    
+
     // Calculate available space for model name
     const modelLineOverhead = baseModelLine.length + suffixModelLine.length;
-    const maxModelLength = Math.max(10, infoPanelContentWidth - modelLineOverhead);
+    const maxModelLength = Math.max(
+      10,
+      infoPanelContentWidth - modelLineOverhead,
+    );
     const truncatedModel = truncateString(model, maxModelLength);
-    
+
     const authModelText = `${baseModelLine}${truncatedModel}${suffixModelLine}`;
     const modelHintText = ' (/model to change)';
     const showModelHint =
@@ -404,7 +413,10 @@ export const Header: React.FC<HeaderProps> = memo(
             <Text color={theme.text.secondary}>/</Text>
             <Text color={theme.text.accent}>{contextSizeFormatted}</Text>
             {/* Remaining or overflow warning - only show when there's actual usage */}
-            {promptTokenCount && promptTokenCount > 0 && contextSize && promptTokenCount < contextSize ? (
+            {promptTokenCount &&
+            promptTokenCount > 0 &&
+            contextSize &&
+            promptTokenCount < contextSize ? (
               <>
                 <Text color={theme.text.secondary}> | </Text>
                 <Text color={theme.text.secondary}>{t('left')}: </Text>
@@ -412,10 +424,15 @@ export const Header: React.FC<HeaderProps> = memo(
                   {(contextSize - promptTokenCount).toLocaleString()}
                 </Text>
               </>
-            ) : promptTokenCount && contextSize && promptTokenCount >= contextSize ? (
+            ) : promptTokenCount &&
+              contextSize &&
+              promptTokenCount >= contextSize ? (
               <>
                 <Text color={theme.text.secondary}> | </Text>
-                <Text color={theme.status.error}>⚠️ OVERFLOW +{((promptTokenCount - contextSize)).toLocaleString()}</Text>
+                <Text color={theme.status.error}>
+                  ⚠️ OVERFLOW +
+                  {(promptTokenCount - contextSize).toLocaleString()}
+                </Text>
               </>
             ) : null}
           </Text>
@@ -428,40 +445,58 @@ export const Header: React.FC<HeaderProps> = memo(
             {(() => {
               // Build stats line that fits within available width
               const parts: Array<{ label: string; value: string }> = [];
-              
+
               if (sessionId) {
-                parts.push({ label: 'Session', value: sessionId.length > 8 ? sessionId.slice(0, 8) + '..' : sessionId });
+                parts.push({
+                  label: 'Session',
+                  value:
+                    sessionId.length > 8
+                      ? sessionId.slice(0, 8) + '..'
+                      : sessionId,
+                });
               }
               if (toolCount !== undefined) {
-                parts.push({ label: 'Tools', value: `${sessionToolCalls ?? 0}/${toolCount}` });
+                parts.push({
+                  label: 'Tools',
+                  value: `${sessionToolCalls ?? 0}/${toolCount}`,
+                });
               }
               if (sessionStorageRecords !== undefined) {
-                parts.push({ label: 'Storage', value: String(sessionStorageRecords) });
+                parts.push({
+                  label: 'Storage',
+                  value: String(sessionStorageRecords),
+                });
               }
               if (sessionCost) {
                 parts.push({ label: 'Est', value: sessionCost });
               }
               if (pluginCount !== undefined && pluginCount > 0) {
                 let pluginValue = String(pluginCount);
-                if (unhealthyPluginCount !== undefined && unhealthyPluginCount > 0) {
+                if (
+                  unhealthyPluginCount !== undefined &&
+                  unhealthyPluginCount > 0
+                ) {
                   pluginValue += `⚠${unhealthyPluginCount}`;
                 }
                 parts.push({ label: 'Plugins', value: pluginValue });
               }
-              
+
               // Build string and truncate if needed
-              const statsLine = parts.map(p => `${p.label}: ${p.value}`).join(' | ');
-              const truncatedLine = truncateString(statsLine, infoPanelContentWidth);
-              
+              const statsLine = parts
+                .map((p) => `${p.label}: ${p.value}`)
+                .join(' | ');
+              const truncatedLine = truncateString(
+                statsLine,
+                infoPanelContentWidth,
+              );
+
               return <Text color={theme.text.secondary}>{truncatedLine}</Text>;
             })()}
           </Text>
           {/* Directory line */}
           <Text color={theme.text.secondary}>
             {displayPath}
-            {gitBranch && (
-              <Text color={theme.text.accent}> ({gitBranch})</Text>
-            )}
+            {gitBranch && <Text color={theme.text.accent}> ({gitBranch})</Text>}
           </Text>
         </Box>
       </Box>

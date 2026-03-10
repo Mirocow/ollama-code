@@ -6,21 +6,25 @@
 
 /**
  * Plugin Tool Adapter
- * 
+ *
  * Bridges the plugin system with the tool registry,
  * allowing plugins to register tools that integrate seamlessly
  * with the existing tool system.
- * 
+ *
  * ALL tools have access to storage, env, and prompts by default.
  */
 
-import type { PluginTool, ToolExecutionContext, ToolExecutionResult } from './types.js';
-import type { 
-  AnyDeclarativeTool, 
-  ToolResult, 
+import type {
+  PluginTool,
+  ToolExecutionContext,
+  ToolExecutionResult,
+} from './types.js';
+import type {
+  AnyDeclarativeTool,
+  ToolResult,
   ToolResultDisplay,
   ToolInvocation,
-  Kind 
+  Kind,
 } from '../tools/tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation } from '../tools/tools.js';
 import { ToolErrorType } from '../tools/tool-error.js';
@@ -57,7 +61,9 @@ let globalContextProvider: PluginToolContextProvider | null = null;
 /**
  * Set the global context provider for all plugin tools
  */
-export function setPluginToolContextProvider(provider: PluginToolContextProvider): void {
+export function setPluginToolContextProvider(
+  provider: PluginToolContextProvider,
+): void {
   globalContextProvider = provider;
 }
 
@@ -78,8 +84,12 @@ export class PluginToolAdapter extends BaseDeclarativeTool<
   private pluginTool: PluginTool;
   private pluginId: string;
   private contextProvider?: PluginToolContextProvider;
-  
-  constructor(pluginTool: PluginTool, pluginId: string, contextProvider?: PluginToolContextProvider) {
+
+  constructor(
+    pluginTool: PluginTool,
+    pluginId: string,
+    contextProvider?: PluginToolContextProvider,
+  ) {
     super(
       pluginTool.name,
       pluginTool.name,
@@ -87,31 +97,31 @@ export class PluginToolAdapter extends BaseDeclarativeTool<
       mapToolCategory(pluginTool.category),
       pluginTool.parameters as Record<string, unknown>,
       true, // isOutputMarkdown
-      false // canUpdateOutput
+      false, // canUpdateOutput
     );
     this.pluginTool = pluginTool;
     this.pluginId = pluginId;
     this.contextProvider = contextProvider;
   }
-  
+
   protected createInvocation(
-    params: Record<string, unknown>
+    params: Record<string, unknown>,
   ): ToolInvocation<Record<string, unknown>, ToolResult> {
     return new PluginToolInvocation(
       this.pluginTool,
       this.pluginId,
       params,
-      this.contextProvider || globalContextProvider
+      this.contextProvider || globalContextProvider,
     );
   }
-  
+
   /**
    * Get the original plugin tool
    */
   getPluginTool(): PluginTool {
     return this.pluginTool;
   }
-  
+
   /**
    * Get the plugin ID
    */
@@ -130,63 +140,66 @@ class PluginToolInvocation extends BaseToolInvocation<
   private pluginTool: PluginTool;
   private pluginId: string;
   private contextProvider: PluginToolContextProvider | null;
-  
+
   constructor(
     pluginTool: PluginTool,
     pluginId: string,
     params: Record<string, unknown>,
-    contextProvider: PluginToolContextProvider | null | undefined
+    contextProvider: PluginToolContextProvider | null | undefined,
   ) {
     super(params);
     this.pluginTool = pluginTool;
     this.pluginId = pluginId;
     this.contextProvider = contextProvider || null;
   }
-  
+
   getDescription(): string {
     if (this.pluginTool.buildConfirmationMessage) {
       return this.pluginTool.buildConfirmationMessage(this.params);
     }
     return `${this.pluginTool.name}(${JSON.stringify(this.params)})`;
   }
-  
+
   async execute(
     signal: AbortSignal,
-    _updateOutput?: (output: ToolResultDisplay) => void
+    _updateOutput?: (output: ToolResultDisplay) => void,
   ): Promise<ToolResult> {
     try {
       // Create execution context with ALL services available
       const context = this.createExecutionContext(signal);
-      
+
       // Execute with timeout if specified
       const timeout = this.pluginTool.timeout;
       let result: ToolExecutionResult;
-      
+
       if (timeout) {
         result = await this.executeWithTimeout(
           this.pluginTool.execute(this.params, context),
           timeout,
-          signal
+          signal,
         );
       } else {
         result = await this.pluginTool.execute(this.params, context);
       }
-      
+
       // Convert to ToolResult
       return {
-        llmContent: result.success 
-          ? (typeof result.data === 'string' 
-              ? result.data 
-              : JSON.stringify(result.data, null, 2))
+        llmContent: result.success
+          ? typeof result.data === 'string'
+            ? result.data
+            : JSON.stringify(result.data, null, 2)
           : `Error: ${result.error || 'Unknown error'}`,
         returnDisplay: result.display?.summary || result.error || 'Success',
-        error: result.success ? undefined : {
-          message: result.error || 'Plugin tool execution failed',
-          type: ToolErrorType.EXECUTION_FAILED,
-        },
+        error: result.success
+          ? undefined
+          : {
+              message: result.error || 'Plugin tool execution failed',
+              type: ToolErrorType.EXECUTION_FAILED,
+            },
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
         llmContent: `Error: ${errorMessage}`,
         returnDisplay: errorMessage,
@@ -197,23 +210,24 @@ class PluginToolInvocation extends BaseToolInvocation<
       };
     }
   }
-  
+
   /**
    * Create execution context with ALL services available
    */
   private createExecutionContext(signal: AbortSignal): ToolExecutionContext {
     const provider = this.contextProvider;
-    
+
     // Create env access object
     const envAccess = {
-      get: (name: string, defaultValue?: string) => {
-        return provider?.getEnv(name, defaultValue) ?? process.env[name] ?? defaultValue;
-      },
-      getAll: () => {
-        return provider?.getAllEnv() ?? { ...process.env } as Record<string, string | undefined>;
-      }
+      get: (name: string, defaultValue?: string) =>
+        provider?.getEnv(name, defaultValue) ??
+        process.env[name] ??
+        defaultValue,
+      getAll: () =>
+        provider?.getAllEnv() ??
+        ({ ...process.env } as Record<string, string | undefined>),
     };
-    
+
     // If we have a context provider, use it
     if (provider) {
       return {
@@ -226,10 +240,12 @@ class PluginToolInvocation extends BaseToolInvocation<
             version: '1.0.0',
           },
           logger: {
-            debug: (...args) => debugLogger.debug(`[${this.pluginId}]`, ...args),
+            debug: (...args) =>
+              debugLogger.debug(`[${this.pluginId}]`, ...args),
             info: (...args) => debugLogger.info(`[${this.pluginId}]`, ...args),
             warn: (...args) => debugLogger.warn(`[${this.pluginId}]`, ...args),
-            error: (...args) => debugLogger.error(`[${this.pluginId}]`, ...args),
+            error: (...args) =>
+              debugLogger.error(`[${this.pluginId}]`, ...args),
           },
           events: {
             emit: () => {},
@@ -266,10 +282,12 @@ class PluginToolInvocation extends BaseToolInvocation<
         env: envAccess,
       };
     }
-    
+
     // Fallback context when no provider is available (should not happen in normal operation)
-    debugLogger.warn(`No context provider available for plugin tool ${this.pluginId}`);
-    
+    debugLogger.warn(
+      `No context provider available for plugin tool ${this.pluginId}`,
+    );
+
     return {
       signal,
       plugin: {
@@ -306,7 +324,9 @@ class PluginToolInvocation extends BaseToolInvocation<
           getEnv: envAccess.get,
           getAllEnv: envAccess.getAll,
           getPromptRegistry: () => {
-            throw new Error('PromptRegistry not available - no context provider set.');
+            throw new Error(
+              'PromptRegistry not available - no context provider set.',
+            );
           },
           getSessionId: () => '',
           getModelId: () => undefined,
@@ -319,24 +339,24 @@ class PluginToolInvocation extends BaseToolInvocation<
       env: envAccess,
     };
   }
-  
+
   private async executeWithTimeout(
     promise: Promise<ToolExecutionResult>,
     timeout: number,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<ToolExecutionResult> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(new Error(`Plugin tool execution timed out after ${timeout}ms`));
       }, timeout);
-      
+
       const abortHandler = () => {
         clearTimeout(timeoutId);
         reject(new Error('Plugin tool execution was cancelled'));
       };
-      
+
       signal.addEventListener('abort', abortHandler);
-      
+
       promise
         .then(resolve)
         .catch(reject)
@@ -353,17 +373,19 @@ class PluginToolInvocation extends BaseToolInvocation<
  */
 function mapToolCategory(category?: string): Kind {
   const categoryMap: Record<string, Kind> = {
-    'read': 'read' as Kind,
-    'edit': 'edit' as Kind,
-    'delete': 'delete' as Kind,
-    'move': 'move' as Kind,
-    'search': 'search' as Kind,
-    'execute': 'execute' as Kind,
-    'fetch': 'fetch' as Kind,
-    'other': 'other' as Kind,
+    read: 'read' as Kind,
+    edit: 'edit' as Kind,
+    delete: 'delete' as Kind,
+    move: 'move' as Kind,
+    search: 'search' as Kind,
+    execute: 'execute' as Kind,
+    fetch: 'fetch' as Kind,
+    other: 'other' as Kind,
   };
-  
-  return category ? (categoryMap[category] || 'other' as Kind) : 'other' as Kind;
+
+  return category
+    ? categoryMap[category] || ('other' as Kind)
+    : ('other' as Kind);
 }
 
 /**
@@ -373,7 +395,7 @@ export function registerPluginTools(
   tools: PluginTool[],
   pluginId: string,
   registerFn: (tool: AnyDeclarativeTool) => void,
-  contextProvider?: PluginToolContextProvider
+  contextProvider?: PluginToolContextProvider,
 ): void {
   for (const tool of tools) {
     const adapter = new PluginToolAdapter(tool, pluginId, contextProvider);
@@ -387,7 +409,7 @@ export function registerPluginTools(
  */
 export function unregisterPluginTools(
   toolIds: string[],
-  unregisterFn: (toolId: string) => void
+  unregisterFn: (toolId: string) => void,
 ): void {
   for (const toolId of toolIds) {
     unregisterFn(toolId);
@@ -401,7 +423,7 @@ export function unregisterPluginTools(
 export function pluginToolToDeclarative(
   pluginTool: PluginTool,
   pluginId: string,
-  contextProvider?: PluginToolContextProvider
+  contextProvider?: PluginToolContextProvider,
 ): AnyDeclarativeTool {
   return new PluginToolAdapter(pluginTool, pluginId, contextProvider);
 }

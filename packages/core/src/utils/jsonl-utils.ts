@@ -87,7 +87,7 @@ function parseJsonObjectsFromLine<T>(line: string, isLastLine: boolean): T[] {
 
     // Find the end of the JSON object by counting braces
     let depth = 0;
-    let startPos = pos;
+    const startPos = pos;
     let inString = false;
     let escape = false;
     let foundComplete = false;
@@ -125,13 +125,15 @@ function parseJsonObjectsFromLine<T>(line: string, isLastLine: boolean): T[] {
     }
 
     const jsonStr = trimmed.slice(startPos, pos);
-    
+
     // If this is the last line and JSON is incomplete, skip it (truncated write)
     if (!foundComplete && isLastLine) {
-      debugLogger.warn(`Skipping incomplete JSON at end of file: ${jsonStr.slice(0, 50)}...`);
+      debugLogger.warn(
+        `Skipping incomplete JSON at end of file: ${jsonStr.slice(0, 50)}...`,
+      );
       break;
     }
-    
+
     // If we found a complete object or this isn't the last line, try to parse
     if (jsonStr.length > 0) {
       try {
@@ -139,9 +141,13 @@ function parseJsonObjectsFromLine<T>(line: string, isLastLine: boolean): T[] {
       } catch {
         // If incomplete on last line, skip
         if (isLastLine && !foundComplete) {
-          debugLogger.warn(`Skipping malformed JSON at end of file: ${jsonStr.slice(0, 50)}...`);
+          debugLogger.warn(
+            `Skipping malformed JSON at end of file: ${jsonStr.slice(0, 50)}...`,
+          );
         } else {
-          debugLogger.warn(`Skipping malformed JSON: ${jsonStr.slice(0, 50)}...`);
+          debugLogger.warn(
+            `Skipping malformed JSON: ${jsonStr.slice(0, 50)}...`,
+          );
         }
       }
     }
@@ -168,7 +174,7 @@ export async function readLines<T = unknown>(
 
     const results: T[] = [];
     const lines: string[] = [];
-    
+
     // Collect all lines first to know which is last
     for await (const line of rl) {
       lines.push(line);
@@ -178,7 +184,7 @@ export async function readLines<T = unknown>(
       const line = lines[i];
       const trimmed = line.trim();
       if (trimmed.length > 0) {
-        const isLastLine = (i === lines.length - 1);
+        const isLastLine = i === lines.length - 1;
         const objects = parseJsonObjectsFromLine<T>(trimmed, isLastLine);
         for (const obj of objects) {
           if (results.length >= count) break;
@@ -214,7 +220,7 @@ export async function read<T = unknown>(filePath: string): Promise<T[]> {
 
     const results: T[] = [];
     const lines: string[] = [];
-    
+
     // Collect all lines first to know which is last
     for await (const line of rl) {
       lines.push(line);
@@ -224,7 +230,7 @@ export async function read<T = unknown>(filePath: string): Promise<T[]> {
       const line = lines[i];
       const trimmed = line.trim();
       if (trimmed.length > 0) {
-        const isLastLine = (i === lines.length - 1);
+        const isLastLine = i === lines.length - 1;
         const objects = parseJsonObjectsFromLine<T>(trimmed, isLastLine);
         results.push(...objects);
       }
@@ -241,7 +247,7 @@ export async function read<T = unknown>(filePath: string): Promise<T[]> {
 
 /**
  * Appends a line to a JSONL file with crash protection.
- * 
+ *
  * Safety features:
  * - Mutex prevents concurrent writes to the same file
  * - Validates JSON before writing
@@ -266,13 +272,13 @@ export function writeLineSync(filePath: string, data: unknown): void {
   // For sync context, we still need to use the lock mechanism
   // But since Mutex is async, we use a simple spinlock approach
   ensureDir(filePath);
-  
+
   // Validate JSON first
   const jsonStr = JSON.stringify(data);
   validateJson(jsonStr); // Will throw if invalid
-  
+
   const line = `${jsonStr}\n`;
-  
+
   // Open file in append mode, write, then fsync
   const fd = fs.openSync(filePath, 'a');
   try {
@@ -289,13 +295,13 @@ export function writeLineSync(filePath: string, data: unknown): void {
  */
 function writeLineSyncInternal(filePath: string, data: unknown): void {
   ensureDir(filePath);
-  
+
   // Validate JSON first
   const jsonStr = JSON.stringify(data);
   validateJson(jsonStr); // Will throw if invalid
-  
+
   const line = `${jsonStr}\n`;
-  
+
   // Open file in append mode, write, then fsync
   const fd = fs.openSync(filePath, 'a');
   try {
@@ -314,11 +320,11 @@ function writeLineSyncInternal(filePath: string, data: unknown): void {
  */
 export function write(filePath: string, data: unknown[]): void {
   ensureDir(filePath);
-  
+
   // Write all lines to a temp file first
   const tempPath = `${filePath}.tmp`;
   const lines = data.map((item) => JSON.stringify(item)).join('\n') + '\n';
-  
+
   // Write to temp file with fsync
   const fd = fs.openSync(tempPath, 'w');
   try {
@@ -327,7 +333,7 @@ export function write(filePath: string, data: unknown[]): void {
   } finally {
     fs.closeSync(fd);
   }
-  
+
   // Atomic rename (this is atomic on POSIX systems)
   fs.renameSync(tempPath, filePath);
 }
@@ -380,11 +386,13 @@ export async function repair(filePath: string): Promise<number> {
     if (records.length === 0) {
       return 0;
     }
-    
+
     // Rewrite the file with only valid records
     write(filePath, records);
-    
-    debugLogger.info(`Repaired ${filePath}: preserved ${records.length} valid records`);
+
+    debugLogger.info(
+      `Repaired ${filePath}: preserved ${records.length} valid records`,
+    );
     return records.length;
   } catch (error) {
     debugLogger.error(`Error repairing ${filePath}:`, error);

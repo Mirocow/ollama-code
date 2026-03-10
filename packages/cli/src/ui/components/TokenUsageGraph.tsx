@@ -69,12 +69,16 @@ const Sparkline: React.FC<{
   max?: number;
 }> = memo(({ values, width, color, max }) => {
   if (values.length === 0) {
-    return <Text color={theme.text.secondary}>{GRAPH_CHARS.empty.repeat(width)}</Text>;
+    return (
+      <Text color={theme.text.secondary}>
+        {GRAPH_CHARS.empty.repeat(width)}
+      </Text>
+    );
   }
 
   const maxValue = max ?? Math.max(...values, 1);
   const displayValues = values.slice(-width);
-  
+
   // Scale to fit width
   const scaledValues: number[] = [];
   const scale = displayValues.length / width;
@@ -84,7 +88,7 @@ const Sparkline: React.FC<{
   }
 
   // Convert to bar heights (0-4)
-  const barHeights = scaledValues.map(v => {
+  const barHeights = scaledValues.map((v) => {
     const normalized = v / maxValue;
     if (normalized > 0.75) return 4;
     if (normalized > 0.5) return 3;
@@ -94,13 +98,18 @@ const Sparkline: React.FC<{
   });
 
   // Render as block characters
-  const bars = barHeights.map(h => {
+  const bars = barHeights.map((h) => {
     switch (h) {
-      case 4: return '█';
-      case 3: return '▓';
-      case 2: return '▒';
-      case 1: return '░';
-      default: return ' ';
+      case 4:
+        return '█';
+      case 3:
+        return '▓';
+      case 2:
+        return '▒';
+      case 1:
+        return '░';
+      default:
+        return ' ';
     }
   });
 
@@ -143,167 +152,203 @@ MiniBar.displayName = 'MiniBar';
 
 /**
  * Token Usage Graph Component
- * 
+ *
  * Displays real-time token usage visualization with:
  * - Sparkline graphs for prompt, generated, and cached tokens
  * - Current values with mini bar graphs
  * - Total statistics
  */
-export const TokenUsageGraph: React.FC<TokenUsageGraphProps> = memo(({
-  dataPoints,
-  maxPoints = 30,
-  width = 40,
-  height = 3,
-  showLegend = true,
-  showCurrentValues = true,
-  showTotals = true,
-}) => {
-  if (dataPoints.length === 0) {
-    return (
-      <Box borderStyle="round" borderColor={theme.border.default} paddingX={1}>
-        <Text color={theme.text.secondary}>{t('No token usage data available.')}</Text>
-      </Box>
+export const TokenUsageGraph: React.FC<TokenUsageGraphProps> = memo(
+  ({
+    dataPoints,
+    maxPoints = 30,
+    width = 40,
+    height: _height = 3,
+    showLegend = true,
+    showCurrentValues = true,
+    showTotals = true,
+  }) => {
+    if (dataPoints.length === 0) {
+      return (
+        <Box
+          borderStyle="round"
+          borderColor={theme.border.default}
+          paddingX={1}
+        >
+          <Text color={theme.text.secondary}>
+            {t('No token usage data available.')}
+          </Text>
+        </Box>
+      );
+    }
+
+    // Get last N data points
+    const recentPoints = dataPoints.slice(-maxPoints);
+
+    // Extract values for each metric
+    const promptValues = recentPoints.map((p) => p.promptTokens);
+    const generatedValues = recentPoints.map((p) => p.generatedTokens);
+    const cachedValues = recentPoints.map((p) => p.cachedTokens);
+
+    // Calculate current and max values
+    const lastPoint = recentPoints[recentPoints.length - 1];
+    const maxPrompt = Math.max(...promptValues, 1);
+    const maxGenerated = Math.max(...generatedValues, 1);
+    const maxCached = Math.max(...cachedValues, 1);
+
+    // Calculate totals
+    const totalPrompt = recentPoints.reduce(
+      (sum, p) => sum + p.promptTokens,
+      0,
     );
-  }
+    const totalGenerated = recentPoints.reduce(
+      (sum, p) => sum + p.generatedTokens,
+      0,
+    );
+    const totalCached = recentPoints.reduce(
+      (sum, p) => sum + p.cachedTokens,
+      0,
+    );
 
-  // Get last N data points
-  const recentPoints = dataPoints.slice(-maxPoints);
+    // Calculate average generation speed (tokens per second)
+    const timeDiff =
+      recentPoints.length > 1
+        ? (recentPoints[recentPoints.length - 1].timestamp -
+            recentPoints[0].timestamp) /
+          1000
+        : 1;
+    const avgSpeed = timeDiff > 0 ? Math.round(totalGenerated / timeDiff) : 0;
 
-  // Extract values for each metric
-  const promptValues = recentPoints.map(p => p.promptTokens);
-  const generatedValues = recentPoints.map(p => p.generatedTokens);
-  const cachedValues = recentPoints.map(p => p.cachedTokens);
+    // Calculate cache hit rate
+    const cacheHitRate =
+      totalPrompt > 0 ? ((totalCached / totalPrompt) * 100).toFixed(1) : '0';
 
-  // Calculate current and max values
-  const lastPoint = recentPoints[recentPoints.length - 1];
-  const maxPrompt = Math.max(...promptValues, 1);
-  const maxGenerated = Math.max(...generatedValues, 1);
-  const maxCached = Math.max(...cachedValues, 1);
+    return (
+      <Box
+        borderStyle="round"
+        borderColor={theme.border.default}
+        flexDirection="column"
+        paddingY={1}
+        paddingX={2}
+      >
+        <Text bold color={theme.text.accent}>
+          {t('Token Usage Graph')}
+        </Text>
 
-  // Calculate totals
-  const totalPrompt = recentPoints.reduce((sum, p) => sum + p.promptTokens, 0);
-  const totalGenerated = recentPoints.reduce((sum, p) => sum + p.generatedTokens, 0);
-  const totalCached = recentPoints.reduce((sum, p) => sum + p.cachedTokens, 0);
+        {/* Sparkline graphs */}
+        <Box height={1} />
 
-  // Calculate average generation speed (tokens per second)
-  const timeDiff = recentPoints.length > 1
-    ? (recentPoints[recentPoints.length - 1].timestamp - recentPoints[0].timestamp) / 1000
-    : 1;
-  const avgSpeed = timeDiff > 0 ? Math.round(totalGenerated / timeDiff) : 0;
-
-  // Calculate cache hit rate
-  const cacheHitRate = totalPrompt > 0
-    ? ((totalCached / totalPrompt) * 100).toFixed(1)
-    : '0';
-
-  return (
-    <Box
-      borderStyle="round"
-      borderColor={theme.border.default}
-      flexDirection="column"
-      paddingY={1}
-      paddingX={2}
-    >
-      <Text bold color={theme.text.accent}>
-        {t('Token Usage Graph')}
-      </Text>
-
-      {/* Sparkline graphs */}
-      <Box height={1} />
-      
-      {/* Prompt tokens sparkline */}
-      <Box>
-        <Box width={10}>
-          <Text color={theme.text.link}>{t('Prompt')}</Text>
-        </Box>
-        <Sparkline values={promptValues} width={width} color={theme.text.accent} max={maxPrompt} />
-      </Box>
-
-      {/* Generated tokens sparkline */}
-      <Box>
-        <Box width={10}>
-          <Text color={theme.status.success}>{t('Generated')}</Text>
-        </Box>
-        <Sparkline values={generatedValues} width={width} color={theme.status.success} max={maxGenerated} />
-      </Box>
-
-      {/* Cached tokens sparkline */}
-      <Box>
-        <Box width={10}>
-          <Text color={theme.text.secondary}>{t('Cached')}</Text>
-        </Box>
-        <Sparkline values={cachedValues} width={width} color={theme.text.secondary} max={maxCached} />
-      </Box>
-
-      {/* Current values */}
-      {showCurrentValues && lastPoint && (
-        <>
-          <Box height={1} />
-          <Text bold color={theme.text.primary}>{t('Current')}</Text>
-          <MiniBar
-            value={lastPoint.promptTokens}
-            max={maxPrompt}
+        {/* Prompt tokens sparkline */}
+        <Box>
+          <Box width={10}>
+            <Text color={theme.text.link}>{t('Prompt')}</Text>
+          </Box>
+          <Sparkline
+            values={promptValues}
             width={width}
             color={theme.text.accent}
-            label={t('Prompt')}
+            max={maxPrompt}
           />
-          <MiniBar
-            value={lastPoint.generatedTokens}
-            max={maxGenerated}
+        </Box>
+
+        {/* Generated tokens sparkline */}
+        <Box>
+          <Box width={10}>
+            <Text color={theme.status.success}>{t('Generated')}</Text>
+          </Box>
+          <Sparkline
+            values={generatedValues}
             width={width}
             color={theme.status.success}
-            label={t('Generated')}
+            max={maxGenerated}
           />
-          <MiniBar
-            value={lastPoint.cachedTokens}
-            max={maxCached}
+        </Box>
+
+        {/* Cached tokens sparkline */}
+        <Box>
+          <Box width={10}>
+            <Text color={theme.text.secondary}>{t('Cached')}</Text>
+          </Box>
+          <Sparkline
+            values={cachedValues}
             width={width}
             color={theme.text.secondary}
-            label={t('Cached')}
+            max={maxCached}
           />
-        </>
-      )}
+        </Box>
 
-      {/* Totals and statistics */}
-      {showTotals && (
-        <>
-          <Box height={1} />
-          <Box>
-            <Text color={theme.text.secondary}>
-              {t('Total: {{prompt}} in / {{generated}} out', {
-                prompt: formatTokens(totalPrompt),
-                generated: formatTokens(totalGenerated),
-              })}
+        {/* Current values */}
+        {showCurrentValues && lastPoint && (
+          <>
+            <Box height={1} />
+            <Text bold color={theme.text.primary}>
+              {t('Current')}
             </Text>
-          </Box>
-          <Box>
-            <Text color={theme.text.secondary}>
-              {t('Speed: {{speed}} tok/s | Cache: {{rate}}%', {
-                speed: String(avgSpeed),
-                rate: cacheHitRate,
-              })}
-            </Text>
-          </Box>
-        </>
-      )}
+            <MiniBar
+              value={lastPoint.promptTokens}
+              max={maxPrompt}
+              width={width}
+              color={theme.text.accent}
+              label={t('Prompt')}
+            />
+            <MiniBar
+              value={lastPoint.generatedTokens}
+              max={maxGenerated}
+              width={width}
+              color={theme.status.success}
+              label={t('Generated')}
+            />
+            <MiniBar
+              value={lastPoint.cachedTokens}
+              max={maxCached}
+              width={width}
+              color={theme.text.secondary}
+              label={t('Cached')}
+            />
+          </>
+        )}
 
-      {/* Legend */}
-      {showLegend && (
-        <>
-          <Box height={1} />
-          <Box>
-            <Text color={theme.text.accent}>█</Text>
-            <Text color={theme.text.secondary}> {t('Prompt')} </Text>
-            <Text color={theme.status.success}>█</Text>
-            <Text color={theme.text.secondary}> {t('Generated')} </Text>
-            <Text color={theme.text.secondary}>█</Text>
-            <Text color={theme.text.secondary}> {t('Cached')}</Text>
-          </Box>
-        </>
-      )}
-    </Box>
-  );
-});
+        {/* Totals and statistics */}
+        {showTotals && (
+          <>
+            <Box height={1} />
+            <Box>
+              <Text color={theme.text.secondary}>
+                {t('Total: {{prompt}} in / {{generated}} out', {
+                  prompt: formatTokens(totalPrompt),
+                  generated: formatTokens(totalGenerated),
+                })}
+              </Text>
+            </Box>
+            <Box>
+              <Text color={theme.text.secondary}>
+                {t('Speed: {{speed}} tok/s | Cache: {{rate}}%', {
+                  speed: String(avgSpeed),
+                  rate: cacheHitRate,
+                })}
+              </Text>
+            </Box>
+          </>
+        )}
+
+        {/* Legend */}
+        {showLegend && (
+          <>
+            <Box height={1} />
+            <Box>
+              <Text color={theme.text.accent}>█</Text>
+              <Text color={theme.text.secondary}> {t('Prompt')} </Text>
+              <Text color={theme.status.success}>█</Text>
+              <Text color={theme.text.secondary}> {t('Generated')} </Text>
+              <Text color={theme.text.secondary}>█</Text>
+              <Text color={theme.text.secondary}> {t('Cached')}</Text>
+            </Box>
+          </>
+        )}
+      </Box>
+    );
+  },
+);
 
 TokenUsageGraph.displayName = 'TokenUsageGraph';
 
@@ -319,7 +364,7 @@ export const useTokenUsageHistory = (maxPoints: number = 100) => {
       timestamp: Date.now(),
     };
 
-    setDataPoints(prev => {
+    setDataPoints((prev) => {
       const newPoints = [...prev, newPoint];
       return newPoints.slice(-maxPoints);
     });

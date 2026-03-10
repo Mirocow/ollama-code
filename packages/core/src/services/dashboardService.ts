@@ -48,24 +48,24 @@ export interface DashboardStats {
     totalCost: number;
     averageSessionDuration: number;
     mostUsedModel: string;
-    mostUsedTools: { name: string; count: number }[];
+    mostUsedTools: Array<{ name: string; count: number }>;
   };
 
   // Time-based stats
-  daily: {
+  daily: Array<{
     date: string;
     sessions: number;
     tokens: number;
     cost: number;
-  }[];
+  }>;
 
   // Model usage
-  modelUsage: {
+  modelUsage: Array<{
     model: string;
     sessions: number;
     tokens: number;
     cost: number;
-  }[];
+  }>;
 }
 
 export class DashboardService {
@@ -78,7 +78,7 @@ export class DashboardService {
     this.currentSessionId = sessionId;
     this.metricsFile = path.join(
       Storage.getGlobalOllamaDir(),
-      'dashboard-metrics.json'
+      'dashboard-metrics.json',
     );
     this.ensureMetricsFile();
   }
@@ -113,7 +113,7 @@ export class DashboardService {
 
     // Update or add session
     const existingIndex = data.sessions.findIndex(
-      (s: DashboardSessionRecord) => s.sessionId === this.currentSessionId
+      (s: DashboardSessionRecord) => s.sessionId === this.currentSessionId,
     );
     if (existingIndex >= 0) {
       data.sessions[existingIndex] = session;
@@ -135,7 +135,7 @@ export class DashboardService {
   endSession(): void {
     const data = this.readMetricsData();
     const session = data.sessions.find(
-      (s: DashboardSessionRecord) => s.sessionId === this.currentSessionId
+      (s: DashboardSessionRecord) => s.sessionId === this.currentSessionId,
     );
     if (session) {
       session.endTime = Date.now();
@@ -151,7 +151,7 @@ export class DashboardService {
 
     // Current session from saved data
     const currentSessionRecord = data.sessions.find(
-      (s: DashboardSessionRecord) => s.sessionId === this.currentSessionId
+      (s: DashboardSessionRecord) => s.sessionId === this.currentSessionId,
     );
 
     const currentSession = {
@@ -166,23 +166,35 @@ export class DashboardService {
 
     // Aggregate stats
     const sessions = data.sessions as DashboardSessionRecord[];
-    const totalPromptTokens = sessions.reduce((sum, s) => sum + s.promptTokens, 0);
-    const totalGeneratedTokens = sessions.reduce((sum, s) => sum + s.generatedTokens, 0);
+    const totalPromptTokens = sessions.reduce(
+      (sum, s) => sum + s.promptTokens,
+      0,
+    );
+    const totalGeneratedTokens = sessions.reduce(
+      (sum, s) => sum + s.generatedTokens,
+      0,
+    );
     const totalCost = sessions.reduce((sum, s) => sum + s.cost, 0);
     const totalToolCalls = sessions.reduce((sum, s) => sum + s.toolCalls, 0);
 
     // Average session duration
-    const completedSessions = sessions.filter(s => s.endTime);
-    const averageSessionDuration = completedSessions.length > 0
-      ? completedSessions.reduce((sum, s) => sum + (s.endTime! - s.startTime), 0) / completedSessions.length
-      : 0;
+    const completedSessions = sessions.filter((s) => s.endTime);
+    const averageSessionDuration =
+      completedSessions.length > 0
+        ? completedSessions.reduce(
+            (sum, s) => sum + (s.endTime! - s.startTime),
+            0,
+          ) / completedSessions.length
+        : 0;
 
     // Most used model
     const modelCounts = new Map<string, number>();
-    sessions.forEach(s => {
+    sessions.forEach((s) => {
       modelCounts.set(s.model, (modelCounts.get(s.model) || 0) + 1);
     });
-    const mostUsedModel = [...modelCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';
+    const mostUsedModel =
+      [...modelCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ||
+      'unknown';
 
     // Daily stats (last 7 days)
     const daily = this.getDailyStats(sessions);
@@ -207,8 +219,13 @@ export class DashboardService {
     };
   }
 
-  private getDailyStats(sessions: DashboardSessionRecord[]): DashboardStats['daily'] {
-    const dailyMap = new Map<string, { sessions: number; tokens: number; cost: number }>();
+  private getDailyStats(
+    sessions: DashboardSessionRecord[],
+  ): DashboardStats['daily'] {
+    const dailyMap = new Map<
+      string,
+      { sessions: number; tokens: number; cost: number }
+    >();
     const now = new Date();
 
     // Initialize last 7 days
@@ -220,7 +237,7 @@ export class DashboardService {
     }
 
     // Aggregate sessions by date
-    sessions.forEach(s => {
+    sessions.forEach((s) => {
       const dateStr = new Date(s.startTime).toISOString().split('T')[0];
       const existing = dailyMap.get(dateStr);
       if (existing) {
@@ -235,11 +252,20 @@ export class DashboardService {
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  private getModelUsage(sessions: DashboardSessionRecord[]): DashboardStats['modelUsage'] {
-    const modelMap = new Map<string, { sessions: number; tokens: number; cost: number }>();
+  private getModelUsage(
+    sessions: DashboardSessionRecord[],
+  ): DashboardStats['modelUsage'] {
+    const modelMap = new Map<
+      string,
+      { sessions: number; tokens: number; cost: number }
+    >();
 
-    sessions.forEach(s => {
-      const existing = modelMap.get(s.model) || { sessions: 0, tokens: 0, cost: 0 };
+    sessions.forEach((s) => {
+      const existing = modelMap.get(s.model) || {
+        sessions: 0,
+        tokens: 0,
+        cost: 0,
+      };
       existing.sessions++;
       existing.tokens += s.promptTokens + s.generatedTokens;
       existing.cost += s.cost;
@@ -324,7 +350,7 @@ export class DashboardService {
    */
   static createBarChart(values: number[], width: number = 20): string[] {
     const max = Math.max(...values, 1);
-    return values.map(v => {
+    return values.map((v) => {
       const filled = Math.round((v / max) * width);
       return '█'.repeat(filled) + '░'.repeat(width - filled);
     });
@@ -333,7 +359,10 @@ export class DashboardService {
 
 let dashboardServiceInstance: DashboardService | null = null;
 
-export function getDashboardService(storage: Storage, sessionId: string): DashboardService {
+export function getDashboardService(
+  storage: Storage,
+  sessionId: string,
+): DashboardService {
   if (!dashboardServiceInstance) {
     dashboardServiceInstance = new DashboardService(storage, sessionId);
   }

@@ -66,52 +66,182 @@ export interface CommandInfo {
  */
 export const AVAILABLE_COMMANDS: CommandInfo[] = [
   // Basic
-  { name: 'return', description: 'Submit input', category: 'Basic', defaultBinding: 'Enter' },
-  { name: 'escape', description: 'Cancel/Close', category: 'Basic', defaultBinding: 'Esc' },
+  {
+    name: 'return',
+    description: 'Submit input',
+    category: 'Basic',
+    defaultBinding: 'Enter',
+  },
+  {
+    name: 'escape',
+    description: 'Cancel/Close',
+    category: 'Basic',
+    defaultBinding: 'Esc',
+  },
 
   // Cursor
-  { name: 'home', description: 'Go to start of line', category: 'Cursor', defaultBinding: 'Ctrl+A' },
-  { name: 'end', description: 'Go to end of line', category: 'Cursor', defaultBinding: 'Ctrl+E' },
+  {
+    name: 'home',
+    description: 'Go to start of line',
+    category: 'Cursor',
+    defaultBinding: 'Ctrl+A',
+  },
+  {
+    name: 'end',
+    description: 'Go to end of line',
+    category: 'Cursor',
+    defaultBinding: 'Ctrl+E',
+  },
 
   // Editing
-  { name: 'killLineRight', description: 'Delete from cursor to end', category: 'Editing', defaultBinding: 'Ctrl+K' },
-  { name: 'killLineLeft', description: 'Delete from start to cursor', category: 'Editing', defaultBinding: 'Ctrl+U' },
-  { name: 'clearInput', description: 'Clear input', category: 'Editing', defaultBinding: 'Ctrl+C' },
-  { name: 'deleteWordBackward', description: 'Delete word backward', category: 'Editing', defaultBinding: 'Ctrl+Backspace' },
-  { name: 'newline', description: 'Insert newline', category: 'Editing', defaultBinding: 'Ctrl+J / Shift+Enter' },
+  {
+    name: 'killLineRight',
+    description: 'Delete from cursor to end',
+    category: 'Editing',
+    defaultBinding: 'Ctrl+K',
+  },
+  {
+    name: 'killLineLeft',
+    description: 'Delete from start to cursor',
+    category: 'Editing',
+    defaultBinding: 'Ctrl+U',
+  },
+  {
+    name: 'clearInput',
+    description: 'Clear input',
+    category: 'Editing',
+    defaultBinding: 'Ctrl+C',
+  },
+  {
+    name: 'deleteWordBackward',
+    description: 'Delete word backward',
+    category: 'Editing',
+    defaultBinding: 'Ctrl+Backspace',
+  },
+  {
+    name: 'newline',
+    description: 'Insert newline',
+    category: 'Editing',
+    defaultBinding: 'Ctrl+J / Shift+Enter',
+  },
 
   // Navigation
-  { name: 'historyUp', description: 'Previous history item', category: 'Navigation', defaultBinding: 'Ctrl+P / ↑' },
-  { name: 'historyDown', description: 'Next history item', category: 'Navigation', defaultBinding: 'Ctrl+N / ↓' },
+  {
+    name: 'historyUp',
+    description: 'Previous history item',
+    category: 'Navigation',
+    defaultBinding: 'Ctrl+P / ↑',
+  },
+  {
+    name: 'historyDown',
+    description: 'Next history item',
+    category: 'Navigation',
+    defaultBinding: 'Ctrl+N / ↓',
+  },
 
   // Screen
-  { name: 'clearScreen', description: 'Clear terminal', category: 'Screen', defaultBinding: 'Ctrl+L' },
-  { name: 'showMoreLines', description: 'Show more output lines', category: 'Screen', defaultBinding: 'Ctrl+S' },
+  {
+    name: 'clearScreen',
+    description: 'Clear terminal',
+    category: 'Screen',
+    defaultBinding: 'Ctrl+L',
+  },
+  {
+    name: 'showMoreLines',
+    description: 'Show more output lines',
+    category: 'Screen',
+    defaultBinding: 'Ctrl+S',
+  },
 
   // Tools
-  { name: 'openExternalEditor', description: 'Open in external editor', category: 'Tools', defaultBinding: 'Ctrl+X' },
-  { name: 'pasteClipboardImage', description: 'Paste image from clipboard', category: 'Tools', defaultBinding: 'Ctrl+V' },
-  { name: 'reverseSearch', description: 'Search command history', category: 'Tools', defaultBinding: 'Ctrl+R' },
+  {
+    name: 'openExternalEditor',
+    description: 'Open in external editor',
+    category: 'Tools',
+    defaultBinding: 'Ctrl+X',
+  },
+  {
+    name: 'pasteClipboardImage',
+    description: 'Paste image from clipboard',
+    category: 'Tools',
+    defaultBinding: 'Ctrl+V',
+  },
+  {
+    name: 'reverseSearch',
+    description: 'Search command history',
+    category: 'Tools',
+    defaultBinding: 'Ctrl+R',
+  },
 
   // Session
-  { name: 'saveSession', description: 'Save current session', category: 'Session', defaultBinding: 'Ctrl+Shift+S' },
-  { name: 'showSessions', description: 'List saved sessions', category: 'Session', defaultBinding: 'Ctrl+O' },
+  {
+    name: 'saveSession',
+    description: 'Save current session',
+    category: 'Session',
+    defaultBinding: 'Ctrl+Shift+S',
+  },
+  {
+    name: 'showSessions',
+    description: 'List saved sessions',
+    category: 'Session',
+    defaultBinding: 'Ctrl+O',
+  },
 
   // Model
-  { name: 'switchModel', description: 'Switch AI model', category: 'Model', defaultBinding: 'Ctrl+M' },
-  { name: 'reloadModel', description: 'Reload current model', category: 'Model', defaultBinding: 'Ctrl+Shift+R' },
+  {
+    name: 'switchModel',
+    description: 'Switch AI model',
+    category: 'Model',
+    defaultBinding: 'Ctrl+M',
+  },
+  {
+    name: 'reloadModel',
+    description: 'Reload current model',
+    category: 'Model',
+    defaultBinding: 'Ctrl+Shift+R',
+  },
 
   // Help
-  { name: 'showHelp', description: 'Show help', category: 'Help', defaultBinding: 'Ctrl+H' },
-  { name: 'showShortcuts', description: 'Show keyboard shortcuts', category: 'Help', defaultBinding: 'Shift+?' },
+  {
+    name: 'showHelp',
+    description: 'Show help',
+    category: 'Help',
+    defaultBinding: 'Ctrl+H',
+  },
+  {
+    name: 'showShortcuts',
+    description: 'Show keyboard shortcuts',
+    category: 'Help',
+    defaultBinding: 'Shift+?',
+  },
 
   // Undo/Redo
-  { name: 'undo', description: 'Undo last action', category: 'History', defaultBinding: 'Ctrl+Z' },
-  { name: 'redo', description: 'Redo last action', category: 'History', defaultBinding: 'Ctrl+Y / Ctrl+Shift+Z' },
+  {
+    name: 'undo',
+    description: 'Undo last action',
+    category: 'History',
+    defaultBinding: 'Ctrl+Z',
+  },
+  {
+    name: 'redo',
+    description: 'Redo last action',
+    category: 'History',
+    defaultBinding: 'Ctrl+Y / Ctrl+Shift+Z',
+  },
 
   // App
-  { name: 'quit', description: 'Quit application', category: 'App', defaultBinding: 'Ctrl+C' },
-  { name: 'exit', description: 'Exit application', category: 'App', defaultBinding: 'Ctrl+D' },
+  {
+    name: 'quit',
+    description: 'Quit application',
+    category: 'App',
+    defaultBinding: 'Ctrl+C',
+  },
+  {
+    name: 'exit',
+    description: 'Exit application',
+    category: 'App',
+    defaultBinding: 'Ctrl+D',
+  },
 ];
 
 /**
@@ -174,7 +304,11 @@ export class KeyBindingsService {
 
   private constructor() {
     const homeDir = os.homedir();
-    this.globalConfigPath = path.join(homeDir, '.ollama-code', 'keybindings.json');
+    this.globalConfigPath = path.join(
+      homeDir,
+      '.ollama-code',
+      'keybindings.json',
+    );
   }
 
   /**
@@ -191,7 +325,11 @@ export class KeyBindingsService {
    * Set project root for project-specific keybindings
    */
   setProjectRoot(projectRoot: string): void {
-    this.projectConfigPath = path.join(projectRoot, '.ollama-code', 'keybindings.json');
+    this.projectConfigPath = path.join(
+      projectRoot,
+      '.ollama-code',
+      'keybindings.json',
+    );
   }
 
   /**
@@ -257,7 +395,7 @@ export class KeyBindingsService {
     const configPath =
       scope === 'global'
         ? this.globalConfigPath
-        : this.projectConfigPath ?? this.globalConfigPath;
+        : (this.projectConfigPath ?? this.globalConfigPath);
 
     // Ensure directory exists
     const dir = path.dirname(configPath);
@@ -275,7 +413,9 @@ export class KeyBindingsService {
   /**
    * Get user bindings for a command
    */
-  async getUserBindings(command: string): Promise<KeyBindingDefinition[] | null> {
+  async getUserBindings(
+    command: string,
+  ): Promise<KeyBindingDefinition[] | null> {
     const config = await this.loadConfig();
     return config.bindings?.[command] ?? null;
   }
@@ -297,7 +437,10 @@ export class KeyBindingsService {
   /**
    * Reset binding to default (remove from user config)
    */
-  async resetBinding(command: string, scope: 'global' | 'project' = 'global'): Promise<void> {
+  async resetBinding(
+    command: string,
+    scope: 'global' | 'project' = 'global',
+  ): Promise<void> {
     const config = await this.loadConfig();
     if (config.bindings && command in config.bindings) {
       delete config.bindings[command];
@@ -308,7 +451,9 @@ export class KeyBindingsService {
   /**
    * Reset all bindings to defaults
    */
-  async resetAllBindings(scope: 'global' | 'project' = 'global'): Promise<void> {
+  async resetAllBindings(
+    scope: 'global' | 'project' = 'global',
+  ): Promise<void> {
     await this.saveConfig({ version: 1, bindings: {} }, scope);
   }
 
@@ -365,6 +510,9 @@ export class KeyBindingsService {
         case 'tab':
           keyName = '⇥';
           break;
+        default:
+          // Keep original key name for other keys
+          break;
       }
       parts.push(keyName.toUpperCase());
     }
@@ -398,7 +546,7 @@ export class KeyBindingsService {
   getConfigPath(scope: 'global' | 'project' = 'global'): string {
     return scope === 'global'
       ? this.globalConfigPath
-      : this.projectConfigPath ?? this.globalConfigPath;
+      : (this.projectConfigPath ?? this.globalConfigPath);
   }
 }
 

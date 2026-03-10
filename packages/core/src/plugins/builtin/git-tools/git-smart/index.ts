@@ -76,7 +76,10 @@ function executeGitCommand(command: string, cwd: string): GitOperationResult {
 /**
  * Smart diff with context
  */
-function diffSmart(args: Record<string, unknown>, cwd: string): GitOperationResult {
+function diffSmart(
+  args: Record<string, unknown>,
+  cwd: string,
+): GitOperationResult {
   const file = args['file'] as string;
   const branch1 = args['branch1'] as string;
   const branch2 = args['branch2'] as string;
@@ -160,7 +163,10 @@ function diffSmart(args: Record<string, unknown>, cwd: string): GitOperationResu
 /**
  * Blame analysis for code authorship
  */
-function blameAnalysis(args: Record<string, unknown>, cwd: string): GitOperationResult {
+function blameAnalysis(
+  args: Record<string, unknown>,
+  cwd: string,
+): GitOperationResult {
   const file = args['file'] as string;
   if (!file) {
     return { success: false, output: '', error: 'File path is required' };
@@ -181,7 +187,10 @@ function blameAnalysis(args: Record<string, unknown>, cwd: string): GitOperation
 
   // Parse blame output
   const lines = blameResult.output.split('\n');
-  const authorStats: Record<string, { lines: number; firstCommit: string; lastCommit: string }> = {};
+  const authorStats: Record<
+    string,
+    { lines: number; firstCommit: string; lastCommit: string }
+  > = {};
   let currentAuthor = '';
   let currentTime = '';
 
@@ -217,8 +226,9 @@ function blameAnalysis(args: Record<string, unknown>, cwd: string): GitOperation
   }
 
   // Format output
-  const sorted = Object.entries(authorStats)
-    .sort((a, b) => b[1].lines - a[1].lines);
+  const sorted = Object.entries(authorStats).sort(
+    (a, b) => b[1].lines - a[1].lines,
+  );
 
   const totalLines = sorted.reduce((sum, [, stats]) => sum + stats.lines, 0);
   const output: string[] = [
@@ -236,8 +246,12 @@ function blameAnalysis(args: Record<string, unknown>, cwd: string): GitOperation
     const barLength = Math.round((stats.lines / totalLines) * 20);
     const bar = '█'.repeat(barLength) + '░'.repeat(20 - barLength);
 
-    const firstDate = new Date(parseInt(stats.firstCommit) * 1000).toLocaleDateString();
-    const lastDate = new Date(parseInt(stats.lastCommit) * 1000).toLocaleDateString();
+    const firstDate = new Date(
+      parseInt(stats.firstCommit, 10) * 1000,
+    ).toLocaleDateString();
+    const lastDate = new Date(
+      parseInt(stats.lastCommit, 10) * 1000,
+    ).toLocaleDateString();
 
     output.push(`### ${author}`);
     output.push(`  Lines: ${stats.lines} (${percentage}%)`);
@@ -252,7 +266,10 @@ function blameAnalysis(args: Record<string, unknown>, cwd: string): GitOperation
 /**
  * Search through commit history
  */
-function historySearch(args: Record<string, unknown>, cwd: string): GitOperationResult {
+function historySearch(
+  args: Record<string, unknown>,
+  cwd: string,
+): GitOperationResult {
   const query = args['query'] as string;
   const author = args['author'] as string;
   const since = args['since'] as string;
@@ -316,7 +333,10 @@ function historySearch(args: Record<string, unknown>, cwd: string): GitOperation
 /**
  * File history with detailed changes
  */
-function fileHistory(args: Record<string, unknown>, cwd: string): GitOperationResult {
+function fileHistory(
+  args: Record<string, unknown>,
+  cwd: string,
+): GitOperationResult {
   const file = args['file'] as string;
   if (!file) {
     return { success: false, output: '', error: 'File path is required' };
@@ -335,10 +355,7 @@ function fileHistory(args: Record<string, unknown>, cwd: string): GitOperationRe
   if (!result.success) return result;
 
   const lines = result.output.split('\n');
-  const output: string[] = [
-    `# File History: ${file}`,
-    '',
-  ];
+  const output: string[] = [`# File History: ${file}`, ''];
 
   let commitCount = 0;
   for (let i = 0; i < lines.length; i++) {
@@ -364,7 +381,10 @@ function fileHistory(args: Record<string, unknown>, cwd: string): GitOperationRe
 /**
  * Author statistics
  */
-function authorStats(args: Record<string, unknown>, cwd: string): GitOperationResult {
+function authorStats(
+  args: Record<string, unknown>,
+  cwd: string,
+): GitOperationResult {
   const since = args['since'] as string;
   const until = args['until'] as string;
   const byFileType = args['byFileType'] as boolean;
@@ -382,10 +402,7 @@ function authorStats(args: Record<string, unknown>, cwd: string): GitOperationRe
   if (!result.success) return result;
 
   const lines = result.output.split('\n').filter(Boolean);
-  const output: string[] = [
-    '# Author Statistics',
-    '',
-  ];
+  const output: string[] = ['# Author Statistics', ''];
 
   let rank = 1;
   for (const line of lines) {
@@ -400,7 +417,8 @@ function authorStats(args: Record<string, unknown>, cwd: string): GitOperationRe
   }
 
   if (byFileType) {
-    const extCommand = "git ls-files | sed 's/.*\\.//' | sort | uniq -c | sort -rn | head -20";
+    const extCommand =
+      "git ls-files | sed 's/.*\\.//' | sort | uniq -c | sort -rn | head -20";
     const extResult = executeGitCommand(extCommand, cwd);
 
     if (extResult.success) {
@@ -416,7 +434,10 @@ function authorStats(args: Record<string, unknown>, cwd: string): GitOperationRe
 /**
  * Code hotspots analysis
  */
-function hotspots(args: Record<string, unknown>, cwd: string): GitOperationResult {
+function hotspots(
+  args: Record<string, unknown>,
+  cwd: string,
+): GitOperationResult {
   const maxFiles = (args['maxFiles'] as number) || 20;
   const since = args['since'] as string;
 
@@ -443,7 +464,7 @@ function hotspots(args: Record<string, unknown>, cwd: string): GitOperationResul
     const match = line.match(/^\s*(\d+)\s+(.+)$/);
     if (match) {
       const [, count, file] = match;
-      const barLength = Math.min(Math.round(parseInt(count) / 5), 20);
+      const barLength = Math.min(Math.round(parseInt(count, 10) / 5), 20);
       const bar = '█'.repeat(barLength);
       output.push(`${file}`);
       output.push(`  Changes: ${count} ${bar}`);
@@ -455,20 +476,26 @@ function hotspots(args: Record<string, unknown>, cwd: string): GitOperationResul
 }
 
 // Handler map
-const gitSmartHandlers: Record<GitSmartOperation, (args: Record<string, unknown>, cwd: string) => GitOperationResult> = {
+const gitSmartHandlers: Record<
+  GitSmartOperation,
+  (args: Record<string, unknown>, cwd: string) => GitOperationResult
+> = {
   diff_smart: diffSmart,
   blame_analysis: blameAnalysis,
   history_search: historySearch,
   file_history: fileHistory,
   author_stats: authorStats,
-  hotspots: hotspots,
+  hotspots,
 };
 
 // ============================================================================
 // Tool Invocation
 // ============================================================================
 
-class GitSmartToolInvocation extends BaseToolInvocation<GitSmartToolParams, ToolResult> {
+class GitSmartToolInvocation extends BaseToolInvocation<
+  GitSmartToolParams,
+  ToolResult
+> {
   constructor(
     params: GitSmartToolParams,
     private readonly config: Config,
@@ -605,7 +632,10 @@ Find files with most changes.
 - \`since\`: Date range start`;
 }
 
-export class GitSmartTool extends BaseDeclarativeTool<GitSmartToolParams, ToolResult> {
+export class GitSmartTool extends BaseDeclarativeTool<
+  GitSmartToolParams,
+  ToolResult
+> {
   static Name = 'git_smart';
 
   constructor(private readonly config: Config) {
@@ -623,7 +653,9 @@ export class GitSmartTool extends BaseDeclarativeTool<GitSmartToolParams, ToolRe
   /**
    * Validates the parameter values beyond JSON schema.
    */
-  protected override validateToolParamValues(params: GitSmartToolParams): string | null {
+  protected override validateToolParamValues(
+    params: GitSmartToolParams,
+  ): string | null {
     if (params.operation === 'blame_analysis' && !params.args?.['file']) {
       return 'file is required for blame_analysis';
     }

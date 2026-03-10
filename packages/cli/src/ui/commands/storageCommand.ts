@@ -6,6 +6,7 @@
 
 import {
   StorageNamespaces,
+  type StorageNamespace,
   getProjectInfo,
   type StorageEntry,
 } from '@ollama-code/ollama-code-core';
@@ -29,9 +30,7 @@ const getStorageDir = (scope: 'global' | 'project' = 'global'): string => {
 const getNamespaceFilePath = (
   namespace: string,
   scope: 'global' | 'project' = 'global',
-): string => {
-  return path.join(getStorageDir(scope), `${namespace}.json`);
-};
+): string => path.join(getStorageDir(scope), `${namespace}.json`);
 
 const readNamespaceData = async (
   namespace: string,
@@ -162,7 +161,9 @@ export const storageCommand: SlashCommand = {
               for (const ns of allGlobal.sort()) {
                 const exists = globalNs.includes(ns);
                 const marker = exists ? '✓' : '○';
-                const predefinedMarker = predefined.includes(ns as any)
+                const predefinedMarker = predefined.includes(
+                  ns as StorageNamespace,
+                )
                   ? ' [predefined]'
                   : '';
                 message += `  ${marker} ${ns}${predefinedMarker}\n`;
@@ -197,7 +198,9 @@ export const storageCommand: SlashCommand = {
           context.ui.addItem(
             {
               type: MessageType.ERROR,
-              text: t('Error listing storage: {{error}}', { error: errorMessage }),
+              text: t('Error listing storage: {{error}}', {
+                error: errorMessage,
+              }),
             },
             Date.now(),
           );
@@ -221,7 +224,9 @@ export const storageCommand: SlashCommand = {
             for (const ns of allNs.sort()) {
               const exists = namespaces.includes(ns);
               const marker = exists ? '✓' : '○';
-              const predefinedMarker = predefined.includes(ns as any)
+              const predefinedMarker = predefined.includes(
+                ns as StorageNamespace,
+              )
                 ? ' [predefined]'
                 : '';
               message += `  ${marker} ${ns}${predefinedMarker}\n`;
@@ -310,11 +315,14 @@ export const storageCommand: SlashCommand = {
             context.ui.addItem(
               {
                 type: MessageType.INFO,
-                text: t('Key "{{key}}" not found in {{namespace}} ({{scope}})', {
-                  key,
-                  namespace,
-                  scope,
-                }),
+                text: t(
+                  'Key "{{key}}" not found in {{namespace}} ({{scope}})',
+                  {
+                    key,
+                    namespace,
+                    scope,
+                  },
+                ),
               },
               Date.now(),
             );
@@ -326,19 +334,16 @@ export const storageCommand: SlashCommand = {
             context.ui.addItem(
               {
                 type: MessageType.INFO,
-                text: t(
-                  '{{key}} in {{namespace}} ({{scope}}):\n{{value}}',
-                  {
-                    key,
-                    namespace,
-                    scope,
-                    value: JSON.stringify(
-                      { value: entry.value, metadata: entry.metadata },
-                      null,
-                      2,
-                    ),
-                  },
-                ),
+                text: t('{{key}} in {{namespace}} ({{scope}}):\n{{value}}', {
+                  key,
+                  namespace,
+                  scope,
+                  value: JSON.stringify(
+                    { value: entry.value, metadata: entry.metadata },
+                    null,
+                    2,
+                  ),
+                }),
               },
               Date.now(),
             );
@@ -346,15 +351,12 @@ export const storageCommand: SlashCommand = {
             context.ui.addItem(
               {
                 type: MessageType.INFO,
-                text: t(
-                  '{{key}} in {{namespace}} ({{scope}}):\n{{value}}',
-                  {
-                    key,
-                    namespace,
-                    scope,
-                    value: JSON.stringify(entry.value, null, 2),
-                  },
-                ),
+                text: t('{{key}} in {{namespace}} ({{scope}}):\n{{value}}', {
+                  key,
+                  namespace,
+                  scope,
+                  value: JSON.stringify(entry.value, null, 2),
+                }),
               },
               Date.now(),
             );
@@ -365,7 +367,9 @@ export const storageCommand: SlashCommand = {
           context.ui.addItem(
             {
               type: MessageType.ERROR,
-              text: t('Error getting value: {{error}}', { error: errorMessage }),
+              text: t('Error getting value: {{error}}', {
+                error: errorMessage,
+              }),
             },
             Date.now(),
           );
@@ -380,10 +384,7 @@ export const storageCommand: SlashCommand = {
         );
       },
       kind: CommandKind.BUILT_IN,
-      action: (
-        context,
-        args,
-      ): SlashCommandActionReturn | void => {
+      action: (context, args): SlashCommandActionReturn | void => {
         const parts = args?.trim().split(/\s+/) || [];
 
         if (parts.length < 3) {
@@ -433,10 +434,11 @@ export const storageCommand: SlashCommand = {
         context.ui.addItem(
           {
             type: MessageType.INFO,
-            text: t(
-              'Setting {{key}} in {{namespace}} ({{scope}})...',
-              { key, namespace, scope },
-            ),
+            text: t('Setting {{key}} in {{namespace}} ({{scope}})...', {
+              key,
+              namespace,
+              scope,
+            }),
           },
           Date.now(),
         );
@@ -464,10 +466,7 @@ export const storageCommand: SlashCommand = {
         );
       },
       kind: CommandKind.BUILT_IN,
-      action: (
-        context,
-        args,
-      ): SlashCommandActionReturn | void => {
+      action: (context, args): SlashCommandActionReturn | void => {
         const parts = args?.trim().split(/\s+/) || [];
 
         if (parts.length < 2) {
@@ -487,10 +486,11 @@ export const storageCommand: SlashCommand = {
         context.ui.addItem(
           {
             type: MessageType.INFO,
-            text: t(
-              'Deleting {{key}} from {{namespace}} ({{scope}})...',
-              { key, namespace, scope },
-            ),
+            text: t('Deleting {{key}} from {{namespace}} ({{scope}})...', {
+              key,
+              namespace,
+              scope,
+            }),
           },
           Date.now(),
         );
@@ -515,17 +515,16 @@ export const storageCommand: SlashCommand = {
         );
       },
       kind: CommandKind.BUILT_IN,
-      action: (
-        context,
-        args,
-      ): SlashCommandActionReturn | void => {
+      action: (context, args): SlashCommandActionReturn | void => {
         const parts = args?.trim().split(/\s+/) || [];
 
         if (parts.length < 1) {
           return {
             type: 'message',
             messageType: 'error',
-            content: t('Usage: /storage clear <namespace> [--global|--project]'),
+            content: t(
+              'Usage: /storage clear <namespace> [--global|--project]',
+            ),
           };
         }
 
@@ -535,10 +534,10 @@ export const storageCommand: SlashCommand = {
         context.ui.addItem(
           {
             type: MessageType.INFO,
-            text: t(
-              'Clearing all data in {{namespace}} ({{scope}})...',
-              { namespace, scope },
-            ),
+            text: t('Clearing all data in {{namespace}} ({{scope}})...', {
+              namespace,
+              scope,
+            }),
           },
           Date.now(),
         );
@@ -564,7 +563,8 @@ export const storageCommand: SlashCommand = {
       kind: CommandKind.BUILT_IN,
       action: async (context, args): Promise<void> => {
         const parts = args?.trim().split(/\s+/) || [];
-        const namespace = parts[0] && !parts[0].startsWith('--') ? parts[0] : null;
+        const namespace =
+          parts[0] && !parts[0].startsWith('--') ? parts[0] : null;
         const scope = parts.includes('--project') ? 'project' : 'global';
 
         try {
@@ -623,7 +623,9 @@ export const storageCommand: SlashCommand = {
               context.ui.addItem(
                 {
                   type: MessageType.INFO,
-                  text: t('No storage data found in {{scope}} scope.', { scope }),
+                  text: t('No storage data found in {{scope}} scope.', {
+                    scope,
+                  }),
                 },
                 Date.now(),
               );
@@ -675,7 +677,9 @@ export const storageCommand: SlashCommand = {
           context.ui.addItem(
             {
               type: MessageType.ERROR,
-              text: t('Error getting stats: {{error}}', { error: errorMessage }),
+              text: t('Error getting stats: {{error}}', {
+                error: errorMessage,
+              }),
             },
             Date.now(),
           );
@@ -712,7 +716,7 @@ export const storageCommand: SlashCommand = {
         const scope = parts.includes('--project') ? 'project' : 'global';
 
         try {
-          let exportData: Record<string, unknown> = {};
+          const exportData: Record<string, unknown> = {};
 
           if (namespace) {
             // Export specific namespace
@@ -731,13 +735,10 @@ export const storageCommand: SlashCommand = {
           context.ui.addItem(
             {
               type: MessageType.INFO,
-              text: t(
-                'Exported {{count}} namespace(s) to {{file}}',
-                {
-                  count: String(Object.keys(exportData).length),
-                  file: filePath,
-                },
-              ),
+              text: t('Exported {{count}} namespace(s) to {{file}}', {
+                count: String(Object.keys(exportData).length),
+                file: filePath,
+              }),
             },
             Date.now(),
           );
@@ -771,7 +772,9 @@ export const storageCommand: SlashCommand = {
           context.ui.addItem(
             {
               type: MessageType.ERROR,
-              text: t('Usage: /storage import <file.json> [--global|--project]'),
+              text: t(
+                'Usage: /storage import <file.json> [--global|--project]',
+              ),
             },
             Date.now(),
           );

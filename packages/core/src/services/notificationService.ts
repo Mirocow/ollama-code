@@ -23,11 +23,7 @@ const debugLogger = createDebugLogger('NOTIFICATIONS');
 /**
  * Notification type
  */
-export type NotificationType = 
-  | 'success'
-  | 'error'
-  | 'warning'
-  | 'info';
+export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
 /**
  * Notification options
@@ -116,7 +112,12 @@ export class NotificationService {
       return;
     }
 
-    const { title, body, type = 'info', sound = this.config.soundEnabled } = options;
+    const {
+      title,
+      body,
+      type = 'info',
+      sound = this.config.soundEnabled,
+    } = options;
 
     // Send desktop notification
     this.sendDesktopNotification(title, body, type);
@@ -135,7 +136,7 @@ export class NotificationService {
   private sendDesktopNotification(
     title: string,
     body: string,
-    type: NotificationType,
+    _type: NotificationType,
   ): void {
     const platform = os.platform();
 
@@ -231,9 +232,7 @@ export class NotificationService {
   notifyComplete(operation: string, duration?: number): void {
     if (!this.config.notifyOnComplete) return;
 
-    const durationStr = duration
-      ? ` (${this.formatDuration(duration)})`
-      : '';
+    const durationStr = duration ? ` (${this.formatDuration(duration)})` : '';
 
     this.notify({
       title: 'Ollama Code',

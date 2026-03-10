@@ -93,10 +93,7 @@ interface GitOperationResult {
 /**
  * Executes a git command and returns the result
  */
-function executeGitCommand(
-  command: string,
-  cwd: string,
-): GitOperationResult {
+function executeGitCommand(command: string, cwd: string): GitOperationResult {
   try {
     const output = execSync(command, {
       cwd,
@@ -163,7 +160,10 @@ function getCurrentBranch(cwd: string): string | null {
 /**
  * Gets remote URL info
  */
-function getRemoteInfo(cwd: string, remote: string = 'origin'): { host: string; owner: string; repo: string } | null {
+function getRemoteInfo(
+  cwd: string,
+  remote: string = 'origin',
+): { host: string; owner: string; repo: string } | null {
   const result = executeGitCommand(`git remote get-url ${remote}`, cwd);
   if (!result.success) return null;
 
@@ -176,7 +176,9 @@ function getRemoteInfo(cwd: string, remote: string = 'origin'): { host: string; 
   }
 
   // Parse HTTPS URL: https://github.com/owner/repo.git
-  const httpsMatch = url.match(/https?:\/\/([^/]+)\/([^/]+)\/([^.]+)(?:\.git)?/);
+  const httpsMatch = url.match(
+    /https?:\/\/([^/]+)\/([^/]+)\/([^.]+)(?:\.git)?/,
+  );
   if (httpsMatch) {
     return { host: httpsMatch[1], owner: httpsMatch[2], repo: httpsMatch[3] };
   }
@@ -212,7 +214,11 @@ const gitWorkflowHandlers: Record<
   commit: (args, cwd) => {
     const message = args['message'];
     if (!message || typeof message !== 'string') {
-      return { success: false, output: '', error: 'Commit message is required' };
+      return {
+        success: false,
+        output: '',
+        error: 'Commit message is required',
+      };
     }
     const amend = args['amend'] ? ' --amend' : '';
     const noVerify = args['noVerify'] ? ' --no-verify' : '';
@@ -230,7 +236,10 @@ const gitWorkflowHandlers: Record<
   push: (args, cwd) => {
     const remote = args['remote'] || 'origin';
     const branch = args['branch'] || getCurrentBranch(cwd);
-    const setUpstream = args['setUpstream'] || args['set_upstream'] ? ` -u ${remote} ${branch}` : '';
+    const setUpstream =
+      args['setUpstream'] || args['set_upstream']
+        ? ` -u ${remote} ${branch}`
+        : '';
     const force = args['force'] ? ' --force-with-lease' : '';
     const all = args['all'] ? ' --all' : '';
 
@@ -253,7 +262,10 @@ const gitWorkflowHandlers: Record<
     const noRebase = args['noRebase'] ? ' --no-rebase' : '';
 
     if (branch) {
-      return executeGitCommand(`git pull ${remote} ${branch}${rebase}${noRebase}`, cwd);
+      return executeGitCommand(
+        `git pull ${remote} ${branch}${rebase}${noRebase}`,
+        cwd,
+      );
     }
 
     return executeGitCommand(`git pull${rebase}${noRebase}`, cwd);
@@ -281,13 +293,20 @@ const gitWorkflowHandlers: Record<
   merge: (args, cwd) => {
     const branch = args['branch'];
     if (!branch || typeof branch !== 'string') {
-      return { success: false, output: '', error: 'Branch name is required for merge' };
+      return {
+        success: false,
+        output: '',
+        error: 'Branch name is required for merge',
+      };
     }
     const noFf = args['noFf'] ? ' --no-ff' : '';
     const ffOnly = args['ffOnly'] ? ' --ff-only' : '';
     const message = args['message'] ? ` -m "${args['message']}"` : '';
 
-    return executeGitCommand(`git merge${noFf}${ffOnly}${message} ${branch}`, cwd);
+    return executeGitCommand(
+      `git merge${noFf}${ffOnly}${message} ${branch}`,
+      cwd,
+    );
   },
 
   // ---- CREATE BRANCH ----
@@ -349,8 +368,10 @@ const gitWorkflowHandlers: Record<
   create_mr: (args, cwd) => {
     const title = args['title'];
     const description = args['description'] || '';
-    const targetBranch = args['targetBranch'] || args['target_branch'] || 'main';
-    const sourceBranch = args['sourceBranch'] || args['source_branch'] || getCurrentBranch(cwd);
+    const targetBranch =
+      args['targetBranch'] || args['target_branch'] || 'main';
+    const sourceBranch =
+      args['sourceBranch'] || args['source_branch'] || getCurrentBranch(cwd);
     const assignee = args['assignee'] ? ` --assignee ${args['assignee']}` : '';
     const labels = args['labels'] ? ` --labels "${args['labels']}"` : '';
     const draft = args['draft'] ? ' --draft' : '';
@@ -359,16 +380,29 @@ const gitWorkflowHandlers: Record<
     // Check if this is a GitLab repository
     const remoteInfo = getRemoteInfo(cwd);
     if (!remoteInfo) {
-      return { success: false, output: '', error: 'Could not determine remote repository info' };
+      return {
+        success: false,
+        output: '',
+        error: 'Could not determine remote repository info',
+      };
     }
 
     // Push branch first if requested
     if (push) {
-      const pushResult = executeGitCommand(`git push -u origin ${sourceBranch}`, cwd);
+      const pushResult = executeGitCommand(
+        `git push -u origin ${sourceBranch}`,
+        cwd,
+      );
       if (!pushResult.success) {
         // Branch might already exist, try without -u
-        const pushResult2 = executeGitCommand(`git push origin ${sourceBranch}`, cwd);
-        if (!pushResult2.success && !pushResult2.error?.includes('up to date')) {
+        const pushResult2 = executeGitCommand(
+          `git push origin ${sourceBranch}`,
+          cwd,
+        );
+        if (
+          !pushResult2.success &&
+          !pushResult2.error?.includes('up to date')
+        ) {
           return pushResult2;
         }
       }
@@ -402,7 +436,9 @@ Git commands executed:
     }
 
     // Use glab CLI to create MR
-    const escapedTitle = (title as string)?.replace(/"/g, '\\"') || `Merge ${sourceBranch} into ${targetBranch}`;
+    const escapedTitle =
+      (title as string)?.replace(/"/g, '\\"') ||
+      `Merge ${sourceBranch} into ${targetBranch}`;
     const escapedDesc = (description as string)?.replace(/"/g, '\\"') || '';
 
     return executeGitCommand(
@@ -425,7 +461,11 @@ Git commands executed:
     // Check if this is a GitHub repository
     const remoteInfo = getRemoteInfo(cwd);
     if (!remoteInfo) {
-      return { success: false, output: '', error: 'Could not determine remote repository info' };
+      return {
+        success: false,
+        output: '',
+        error: 'Could not determine remote repository info',
+      };
     }
 
     // Push branch first if requested
@@ -433,7 +473,10 @@ Git commands executed:
       const pushResult = executeGitCommand(`git push -u origin ${head}`, cwd);
       if (!pushResult.success) {
         const pushResult2 = executeGitCommand(`git push origin ${head}`, cwd);
-        if (!pushResult2.success && !pushResult2.error?.includes('up to date')) {
+        if (
+          !pushResult2.success &&
+          !pushResult2.error?.includes('up to date')
+        ) {
           return pushResult2;
         }
       }
@@ -466,7 +509,8 @@ Git commands executed:
     }
 
     // Use gh CLI to create PR
-    const escapedTitle = (title as string)?.replace(/"/g, '\\"') || `Merge ${head} into ${base}`;
+    const escapedTitle =
+      (title as string)?.replace(/"/g, '\\"') || `Merge ${head} into ${base}`;
     const escapedDesc = (description as string)?.replace(/"/g, '\\"') || '';
 
     return executeGitCommand(
@@ -480,8 +524,13 @@ Git commands executed:
     const hostType = getRemoteHostType(cwd);
     const title = args['title'];
     const description = args['description'] || '';
-    const targetBranch = args['targetBranch'] || args['target_branch'] || args['base'] || 'main';
-    const sourceBranch = args['sourceBranch'] || args['source_branch'] || args['head'] || getCurrentBranch(cwd);
+    const targetBranch =
+      args['targetBranch'] || args['target_branch'] || args['base'] || 'main';
+    const sourceBranch =
+      args['sourceBranch'] ||
+      args['source_branch'] ||
+      args['head'] ||
+      getCurrentBranch(cwd);
     const assignee = args['assignee'] ? ` --assignee ${args['assignee']}` : '';
     const labels = args['labels'] ? ` --labels "${args['labels']}"` : '';
     const draft = args['draft'] ? ' --draft' : '';
@@ -489,21 +538,36 @@ Git commands executed:
 
     const remoteInfo = getRemoteInfo(cwd);
     if (!remoteInfo) {
-      return { success: false, output: '', error: 'Could not determine remote repository info' };
+      return {
+        success: false,
+        output: '',
+        error: 'Could not determine remote repository info',
+      };
     }
 
     // Push branch first if requested
     if (push) {
-      const pushResult = executeGitCommand(`git push -u origin ${sourceBranch}`, cwd);
+      const pushResult = executeGitCommand(
+        `git push -u origin ${sourceBranch}`,
+        cwd,
+      );
       if (!pushResult.success) {
-        const pushResult2 = executeGitCommand(`git push origin ${sourceBranch}`, cwd);
-        if (!pushResult2.success && !pushResult2.error?.includes('up to date')) {
+        const pushResult2 = executeGitCommand(
+          `git push origin ${sourceBranch}`,
+          cwd,
+        );
+        if (
+          !pushResult2.success &&
+          !pushResult2.error?.includes('up to date')
+        ) {
           return pushResult2;
         }
       }
     }
 
-    const escapedTitle = (title as string)?.replace(/"/g, '\\"') || `Merge ${sourceBranch} into ${targetBranch}`;
+    const escapedTitle =
+      (title as string)?.replace(/"/g, '\\"') ||
+      `Merge ${sourceBranch} into ${targetBranch}`;
     const escapedDesc = (description as string)?.replace(/"/g, '\\"') || '';
 
     // GitHub
@@ -559,7 +623,11 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
   clone: (args, cwd) => {
     const url = args['url'];
     if (!url || typeof url !== 'string') {
-      return { success: false, output: '', error: 'Repository URL is required' };
+      return {
+        success: false,
+        output: '',
+        error: 'Repository URL is required',
+      };
     }
 
     const directory = args['directory'] ? ` "${args['directory']}"` : '';
@@ -599,13 +667,25 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
       lines.push('');
       lines.push('**Quick Links:**');
       if (isGitHub) {
-        lines.push(`- Repository: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}`);
-        lines.push(`- Create PR: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/compare/main...${currentBranch}?expand=1`);
-        lines.push(`- Actions: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/actions`);
+        lines.push(
+          `- Repository: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}`,
+        );
+        lines.push(
+          `- Create PR: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/compare/main...${currentBranch}?expand=1`,
+        );
+        lines.push(
+          `- Actions: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/actions`,
+        );
       } else if (isGitLab) {
-        lines.push(`- Repository: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}`);
-        lines.push(`- Create MR: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_requests/new?source_branch=${currentBranch}`);
-        lines.push(`- Pipelines: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/pipelines`);
+        lines.push(
+          `- Repository: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}`,
+        );
+        lines.push(
+          `- Create MR: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_requests/new?source_branch=${currentBranch}`,
+        );
+        lines.push(
+          `- Pipelines: https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/pipelines`,
+        );
       }
     }
 
@@ -623,8 +703,12 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
     const gitName = executeGitCommand('git config --global user.name', cwd);
     const gitEmail = executeGitCommand('git config --global user.email', cwd);
     results.push('## Git Configuration');
-    results.push(`- **User Name:** ${gitName.success ? gitName.output : 'Not set'}`);
-    results.push(`- **User Email:** ${gitEmail.success ? gitEmail.output : 'Not set'}`);
+    results.push(
+      `- **User Name:** ${gitName.success ? gitName.output : 'Not set'}`,
+    );
+    results.push(
+      `- **User Email:** ${gitEmail.success ? gitEmail.output : 'Not set'}`,
+    );
     results.push('');
 
     // Check GitHub CLI (if platform is github or auto)
@@ -640,7 +724,9 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
         results.push('❌ **Status:** Not authenticated or not installed');
         if (ghAuth.error?.includes('not found')) {
           results.push('');
-          results.push('**Install:** `brew install gh` or see https://cli.github.com');
+          results.push(
+            '**Install:** `brew install gh` or see https://cli.github.com',
+          );
         }
       }
       results.push('');
@@ -659,7 +745,9 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
         results.push('❌ **Status:** Not authenticated or not installed');
         if (glabAuth.error?.includes('not found')) {
           results.push('');
-          results.push('**Install:** `brew install glab` or see https://gitlab.com/gitlab-org/cli');
+          results.push(
+            '**Install:** `brew install glab` or see https://gitlab.com/gitlab-org/cli',
+          );
         }
       }
       results.push('');
@@ -667,7 +755,10 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
 
     // Check SSH keys
     results.push('## SSH Keys');
-    const sshDir = executeGitCommand('ls -la ~/.ssh/*.pub 2>/dev/null || echo "No public keys found"', cwd);
+    const sshDir = executeGitCommand(
+      'ls -la ~/.ssh/*.pub 2>/dev/null || echo "No public keys found"',
+      cwd,
+    );
     results.push('```');
     results.push(sshDir.output || 'No SSH public keys found');
     results.push('```');
@@ -677,7 +768,9 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
     if (remoteInfo) {
       results.push('## Detected Remote');
       results.push(`- **Host:** ${remoteInfo.host}`);
-      results.push(`- **Platform:** ${remoteInfo.host.includes('github.com') ? 'GitHub' : 'GitLab'}`);
+      results.push(
+        `- **Platform:** ${remoteInfo.host.includes('github.com') ? 'GitHub' : 'GitLab'}`,
+      );
     }
 
     return { success: true, output: results.join('\n') };
@@ -696,7 +789,9 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
     // Determine platform
     let detectedPlatform = platform;
     if (platform === 'auto' && remoteInfo) {
-      detectedPlatform = remoteInfo.host.includes('github.com') ? 'github' : 'gitlab';
+      detectedPlatform = remoteInfo.host.includes('github.com')
+        ? 'github'
+        : 'gitlab';
     }
 
     if (detectedPlatform === 'github' || platform === 'auto') {
@@ -705,9 +800,14 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
 
       if (method === 'token' && token) {
         // Login with token
-        const loginResult = executeGitCommand(`echo "${token}" | gh auth login --with-token`, cwd);
+        const loginResult = executeGitCommand(
+          `echo "${token}" | gh auth login --with-token`,
+          cwd,
+        );
         if (loginResult.success) {
-          lines.push('✅ **Successfully authenticated with GitHub using token!**');
+          lines.push(
+            '✅ **Successfully authenticated with GitHub using token!**',
+          );
         } else {
           lines.push(`❌ **Failed to authenticate:** ${loginResult.error}`);
         }
@@ -749,16 +849,24 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
       lines.push('');
     }
 
-    if (detectedPlatform === 'gitlab' || (platform === 'auto' && !remoteInfo?.host?.includes('github.com'))) {
+    if (
+      detectedPlatform === 'gitlab' ||
+      (platform === 'auto' && !remoteInfo?.host?.includes('github.com'))
+    ) {
       lines.push('## GitLab Authentication');
       lines.push('');
 
       const gitlabHost = hostname || remoteInfo?.host || 'gitlab.com';
 
       if (method === 'token' && token) {
-        const loginResult = executeGitCommand(`glab auth login --hostname ${gitlabHost} --token ${token}`, cwd);
+        const loginResult = executeGitCommand(
+          `glab auth login --hostname ${gitlabHost} --token ${token}`,
+          cwd,
+        );
         if (loginResult.success) {
-          lines.push(`✅ **Successfully authenticated with ${gitlabHost} using token!**`);
+          lines.push(
+            `✅ **Successfully authenticated with ${gitlabHost} using token!**`,
+          );
         } else {
           lines.push(`❌ **Failed to authenticate:** ${loginResult.error}`);
         }
@@ -779,9 +887,13 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
         lines.push('');
         lines.push('### Method 2: Login with Personal Access Token');
         lines.push('```bash');
-        lines.push(`# Create token at: https://${gitlabHost}/-/profile/personal_access_tokens`);
+        lines.push(
+          `# Create token at: https://${gitlabHost}/-/profile/personal_access_tokens`,
+        );
         lines.push('# Required scopes: api, write_repository');
-        lines.push(`glab auth login --hostname ${gitlabHost} --token YOUR_TOKEN`);
+        lines.push(
+          `glab auth login --hostname ${gitlabHost} --token YOUR_TOKEN`,
+        );
         lines.push('```');
         lines.push('');
         lines.push('### Method 3: SSH Key Setup');
@@ -822,19 +934,25 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
       if (ghLogout.success || ghLogout.output?.includes('logged out')) {
         lines.push('✅ Successfully logged out from GitHub');
       } else {
-        lines.push(`Result: ${ghLogout.output || ghLogout.error || 'Not logged in'}`);
+        lines.push(
+          `Result: ${ghLogout.output || ghLogout.error || 'Not logged in'}`,
+        );
       }
       lines.push('');
     }
 
     if (platform === 'gitlab' || platform === 'all' || platform === 'auto') {
-      const glabCmd = hostname ? `glab auth logout --hostname ${hostname}` : 'glab auth logout';
+      const glabCmd = hostname
+        ? `glab auth logout --hostname ${hostname}`
+        : 'glab auth logout';
       const glabLogout = executeGitCommand(glabCmd, cwd);
       lines.push('## GitLab');
       if (glabLogout.success || glabLogout.output?.includes('logged out')) {
         lines.push('✅ Successfully logged out from GitLab');
       } else {
-        lines.push(`Result: ${glabLogout.output || glabLogout.error || 'Not logged in'}`);
+        lines.push(
+          `Result: ${glabLogout.output || glabLogout.error || 'Not logged in'}`,
+        );
       }
     }
 
@@ -858,7 +976,10 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
     const lines: string[] = ['# Setting Authentication Token', ''];
 
     if (platform === 'github') {
-      const loginResult = executeGitCommand(`echo "${token}" | gh auth login --with-token`, cwd);
+      const loginResult = executeGitCommand(
+        `echo "${token}" | gh auth login --with-token`,
+        cwd,
+      );
       if (loginResult.success) {
         lines.push('✅ **GitHub token set successfully!**');
         lines.push('');
@@ -868,7 +989,10 @@ https://${remoteInfo.host}/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_reques
       }
     } else if (platform === 'gitlab') {
       const gitlabHost = hostname || 'gitlab.com';
-      const loginResult = executeGitCommand(`glab auth login --hostname ${gitlabHost} --token ${token}`, cwd);
+      const loginResult = executeGitCommand(
+        `glab auth login --hostname ${gitlabHost} --token ${token}`,
+        cwd,
+      );
       if (loginResult.success) {
         lines.push(`✅ **GitLab token set successfully for ${gitlabHost}!**`);
         lines.push('');
@@ -950,7 +1074,10 @@ class GitWorkflowToolInvocation extends BaseToolInvocation<
 
     if (!result.success) {
       return {
-        llmContent: this.formatErrorResult(operation, result.error || 'Unknown error'),
+        llmContent: this.formatErrorResult(
+          operation,
+          result.error || 'Unknown error',
+        ),
         returnDisplay: `❌ Git ${operation.replace(/_/g, ' ')} failed: ${result.error}`,
         error: {
           message: result.error || 'Git operation failed',
@@ -1001,7 +1128,10 @@ class GitWorkflowToolInvocation extends BaseToolInvocation<
   /**
    * Formats error result as markdown.
    */
-  private formatErrorResult(operation: GitWorkflowOperation, error: string): string {
+  private formatErrorResult(
+    operation: GitWorkflowOperation,
+    error: string,
+  ): string {
     return [
       `# Git ${operation.replace(/_/g, ' ')} - Failed`,
       '',
@@ -1021,14 +1151,19 @@ class GitWorkflowToolInvocation extends BaseToolInvocation<
    */
   private getNextSteps(operation: GitWorkflowOperation): string {
     const steps: Record<string, string> = {
-      status: '- Use `add` to stage changes\n- Use `commit` to commit staged changes',
+      status:
+        '- Use `add` to stage changes\n- Use `commit` to commit staged changes',
       add: '- Use `status` to verify staged changes\n- Use `commit` to commit staged changes',
-      commit: '- Use `push` to push to remote\n- Use `log` to see commit history',
+      commit:
+        '- Use `push` to push to remote\n- Use `log` to see commit history',
       push: '- Use `status` to check if up-to-date\n- Create MR/PR if needed',
       pull: '- Resolve conflicts if any\n- Use `status` to check current state',
-      fetch: '- Use `status` to see if ahead/behind\n- Use `pull` to merge changes',
-      create_branch: '- Use `switch` to change branches\n- Make changes and commit',
-      switch: '- Use `status` to check branch state\n- Use `log` to see recent commits',
+      fetch:
+        '- Use `status` to see if ahead/behind\n- Use `pull` to merge changes',
+      create_branch:
+        '- Use `switch` to change branches\n- Make changes and commit',
+      switch:
+        '- Use `status` to check branch state\n- Use `log` to see recent commits',
       create_mr: '- Wait for review\n- Address any feedback',
       create_pr: '- Wait for review\n- Address any feedback',
     };
@@ -1039,7 +1174,10 @@ class GitWorkflowToolInvocation extends BaseToolInvocation<
   /**
    * Returns troubleshooting tips for common errors.
    */
-  private getTroubleshootingTips(operation: GitWorkflowOperation, error: string): string {
+  private getTroubleshootingTips(
+    operation: GitWorkflowOperation,
+    error: string,
+  ): string {
     if (error.includes('not a git repository')) {
       return '- Make sure you are in a git repository\n- Initialize with `git init` if needed';
     }
@@ -1048,17 +1186,24 @@ class GitWorkflowToolInvocation extends BaseToolInvocation<
       return '- Resolve the conflicts in the marked files\n- Use `git status` to see conflicted files';
     }
 
-    if (error.includes('Authentication failed') || error.includes('permission denied')) {
+    if (
+      error.includes('Authentication failed') ||
+      error.includes('permission denied')
+    ) {
       return '- Check your credentials (SSH key, token, etc.)\n- For HTTPS, you may need a personal access token';
     }
 
     const tips: Record<string, string> = {
       push: '- Make sure you have the right permissions\n- Try `git pull` first if behind remote\n- Use `--force-with-lease` only if necessary',
       pull: '- Commit or stash your changes first\n- Use `--rebase` for cleaner history',
-      commit: '- Make sure you have staged changes with `git add`\n- Check pre-commit hooks if failing',
+      commit:
+        '- Make sure you have staged changes with `git add`\n- Check pre-commit hooks if failing',
     };
 
-    return tips[operation] || '- Check the error message for details\n- Use `git status` to see current state';
+    return (
+      tips[operation] ||
+      '- Check the error message for details\n- Use `git status` to see current state'
+    );
   }
 }
 
@@ -1105,7 +1250,8 @@ const gitWorkflowToolSchema = {
     },
     directory: {
       type: 'string',
-      description: 'Working directory for git operations (optional, defaults to project root)',
+      description:
+        'Working directory for git operations (optional, defaults to project root)',
     },
   },
   required: ['operation'],
@@ -1234,6 +1380,10 @@ export class GitWorkflowTool extends BaseDeclarativeTool<
         if (!args['title']) {
           return `${operation} requires a "title" argument`;
         }
+        break;
+
+      default:
+        // No validation needed for other operations
         break;
     }
 

@@ -80,36 +80,36 @@ export interface EnhancedSessionRecord {
   startTime: number;
   endTime?: number;
   model: string;
-  
+
   // Token metrics
   promptTokens: number;
   generatedTokens: number;
   cachedTokens: number;
-  
+
   // Speed metrics
   speedMetrics: SpeedMetrics;
-  
+
   // Tool metrics
   toolCalls: number;
   toolExecutions: ToolExecutionRecord[];
-  
+
   // File metrics
   fileOperations: FileOperationRecord[];
   filesRead: number;
   filesWritten: number;
   filesEdited: number;
   linesEdited: number;
-  
+
   // Git metrics
   gitOperations: number;
-  
+
   // Error tracking
   errors: number;
   errorDetails: Array<{ timestamp: number; message: string }>;
-  
+
   // Cost
   cost: number;
-  
+
   // Message count
   messagesCount: number;
 }
@@ -150,28 +150,28 @@ export interface EnhancedDashboardStats {
     averageSessionDuration: number;
     averageTps: number;
     mostUsedModel: string;
-    mostUsedTools: { name: string; count: number; avgDuration: number }[];
+    mostUsedTools: Array<{ name: string; count: number; avgDuration: number }>;
     bestPerformingModel: { model: string; avgTps: number };
   };
 
   // Time-based stats
-  daily: {
+  daily: Array<{
     date: string;
     sessions: number;
     tokens: number;
     cost: number;
     avgTps: number;
-  }[];
+  }>;
 
   // Model usage
-  modelUsage: {
+  modelUsage: Array<{
     model: string;
     sessions: number;
     tokens: number;
     cost: number;
     avgTps: number;
     avgCachedRate: number;
-  }[];
+  }>;
 
   // Performance trends
   trends: {
@@ -188,9 +188,13 @@ export class EnhancedDashboardService {
   private sessionStart: number;
   private currentSessionId: string;
   private metricsFile: string;
-  
+
   // Real-time tracking
-  private tokenEvents: Array<{ timestamp: number; tokens: number; type: 'prompt' | 'generated' }> = [];
+  private tokenEvents: Array<{
+    timestamp: number;
+    tokens: number;
+    type: 'prompt' | 'generated';
+  }> = [];
   private toolExecutions: ToolExecutionRecord[] = [];
   private fileOperations: FileOperationRecord[] = [];
   private messagesCount = 0;
@@ -312,8 +316,10 @@ export class EnhancedDashboardService {
    * Calculate speed metrics
    */
   calculateSpeedMetrics(): SpeedMetrics {
-    const generatedEvents = this.tokenEvents.filter(e => e.type === 'generated');
-    
+    const generatedEvents = this.tokenEvents.filter(
+      (e) => e.type === 'generated',
+    );
+
     if (generatedEvents.length === 0 || this.totalGeneratingTime === 0) {
       return {
         averageTps: 0,
@@ -325,18 +331,22 @@ export class EnhancedDashboardService {
       };
     }
 
-    const totalGenerated = generatedEvents.reduce((sum, e) => sum + e.tokens, 0);
+    const totalGenerated = generatedEvents.reduce(
+      (sum, e) => sum + e.tokens,
+      0,
+    );
     const averageTps = (totalGenerated / this.totalGeneratingTime) * 1000;
-    
+
     // Calculate peak TPS (sliding window)
     let peakTps = 0;
     const windowSize = 5000; // 5 second window
     const now = Date.now();
-    
+
     for (let i = 0; i < generatedEvents.length; i++) {
       const windowEvents = generatedEvents.filter(
-        e => e.timestamp >= generatedEvents[i].timestamp && 
-             e.timestamp <= generatedEvents[i].timestamp + windowSize,
+        (e) =>
+          e.timestamp >= generatedEvents[i].timestamp &&
+          e.timestamp <= generatedEvents[i].timestamp + windowSize,
       );
       const windowTokens = windowEvents.reduce((sum, e) => sum + e.tokens, 0);
       const windowTps = (windowTokens / windowSize) * 1000;
@@ -345,7 +355,7 @@ export class EnhancedDashboardService {
 
     // Current TPS (last 2 seconds)
     const recentEvents = generatedEvents.filter(
-      e => e.timestamp >= now - 2000,
+      (e) => e.timestamp >= now - 2000,
     );
     const recentTokens = recentEvents.reduce((sum, e) => sum + e.tokens, 0);
     const currentTps = (recentTokens / 2000) * 1000;
@@ -366,7 +376,7 @@ export class EnhancedDashboardService {
   saveSession(metrics: Partial<EnhancedSessionRecord>): void {
     const data = this.readMetricsData();
     const speedMetrics = this.calculateSpeedMetrics();
-    
+
     const session: EnhancedSessionRecord = {
       sessionId: this.currentSessionId,
       startTime: this.sessionStart,
@@ -378,11 +388,15 @@ export class EnhancedDashboardService {
       toolCalls: this.toolExecutions.length,
       toolExecutions: this.toolExecutions.slice(-50), // Keep last 50
       fileOperations: this.fileOperations.slice(-100), // Keep last 100
-      filesRead: this.fileOperations.filter(f => f.operation === 'read').length,
-      filesWritten: this.fileOperations.filter(f => f.operation === 'write' || f.operation === 'create').length,
-      filesEdited: this.fileOperations.filter(f => f.operation === 'edit').length,
+      filesRead: this.fileOperations.filter((f) => f.operation === 'read')
+        .length,
+      filesWritten: this.fileOperations.filter(
+        (f) => f.operation === 'write' || f.operation === 'create',
+      ).length,
+      filesEdited: this.fileOperations.filter((f) => f.operation === 'edit')
+        .length,
       linesEdited: this.fileOperations
-        .filter(f => f.operation === 'edit')
+        .filter((f) => f.operation === 'edit')
         .reduce((sum, f) => sum + (f.linesAffected || 0), 0),
       gitOperations: 0,
       errors: this.errors.length,
@@ -431,7 +445,7 @@ export class EnhancedDashboardService {
   getStats(): EnhancedDashboardStats {
     const data = this.readMetricsData();
     const sessions = data.sessions as EnhancedSessionRecord[];
-    
+
     // Current session
     const currentSessionRecord = sessions.find(
       (s: EnhancedSessionRecord) => s.sessionId === this.currentSessionId,
@@ -442,9 +456,10 @@ export class EnhancedDashboardService {
       promptTokens: currentSessionRecord?.promptTokens || 0,
       generatedTokens: currentSessionRecord?.generatedTokens || 0,
       cachedTokens: currentSessionRecord?.cachedTokens || 0,
-      speedMetrics: currentSessionRecord?.speedMetrics || this.calculateSpeedMetrics(),
+      speedMetrics:
+        currentSessionRecord?.speedMetrics || this.calculateSpeedMetrics(),
       toolCalls: currentSessionRecord?.toolCalls || 0,
-      toolsUsed: [...new Set(this.toolExecutions.map(t => t.toolName))],
+      toolsUsed: [...new Set(this.toolExecutions.map((t) => t.toolName))],
       filesRead: currentSessionRecord?.filesRead || 0,
       filesWritten: currentSessionRecord?.filesWritten || 0,
       filesEdited: currentSessionRecord?.filesEdited || 0,
@@ -455,39 +470,75 @@ export class EnhancedDashboardService {
     };
 
     // Aggregated stats
-    const totalPromptTokens = sessions.reduce((sum, s) => sum + s.promptTokens, 0);
-    const totalGeneratedTokens = sessions.reduce((sum, s) => sum + s.generatedTokens, 0);
-    const totalCachedTokens = sessions.reduce((sum, s) => sum + (s.cachedTokens || 0), 0);
+    const totalPromptTokens = sessions.reduce(
+      (sum, s) => sum + s.promptTokens,
+      0,
+    );
+    const totalGeneratedTokens = sessions.reduce(
+      (sum, s) => sum + s.generatedTokens,
+      0,
+    );
+    const totalCachedTokens = sessions.reduce(
+      (sum, s) => sum + (s.cachedTokens || 0),
+      0,
+    );
     const totalCost = sessions.reduce((sum, s) => sum + s.cost, 0);
     const totalToolCalls = sessions.reduce((sum, s) => sum + s.toolCalls, 0);
-    const totalFilesRead = sessions.reduce((sum, s) => sum + (s.filesRead || 0), 0);
-    const totalFilesWritten = sessions.reduce((sum, s) => sum + (s.filesWritten || 0), 0);
-    const totalLinesEdited = sessions.reduce((sum, s) => sum + (s.linesEdited || 0), 0);
+    const totalFilesRead = sessions.reduce(
+      (sum, s) => sum + (s.filesRead || 0),
+      0,
+    );
+    const totalFilesWritten = sessions.reduce(
+      (sum, s) => sum + (s.filesWritten || 0),
+      0,
+    );
+    const totalLinesEdited = sessions.reduce(
+      (sum, s) => sum + (s.linesEdited || 0),
+      0,
+    );
 
     // Average session duration
-    const completedSessions = sessions.filter(s => s.endTime);
-    const averageSessionDuration = completedSessions.length > 0
-      ? completedSessions.reduce((sum, s) => sum + (s.endTime! - s.startTime), 0) / completedSessions.length
-      : 0;
+    const completedSessions = sessions.filter((s) => s.endTime);
+    const averageSessionDuration =
+      completedSessions.length > 0
+        ? completedSessions.reduce(
+            (sum, s) => sum + (s.endTime! - s.startTime),
+            0,
+          ) / completedSessions.length
+        : 0;
 
     // Average TPS across all sessions
-    const sessionsWithTps = sessions.filter(s => s.speedMetrics?.averageTps > 0);
-    const averageTps = sessionsWithTps.length > 0
-      ? sessionsWithTps.reduce((sum, s) => sum + s.speedMetrics.averageTps, 0) / sessionsWithTps.length
-      : 0;
+    const sessionsWithTps = sessions.filter(
+      (s) => s.speedMetrics?.averageTps > 0,
+    );
+    const averageTps =
+      sessionsWithTps.length > 0
+        ? sessionsWithTps.reduce(
+            (sum, s) => sum + s.speedMetrics.averageTps,
+            0,
+          ) / sessionsWithTps.length
+        : 0;
 
     // Most used model
     const modelCounts = new Map<string, number>();
-    sessions.forEach(s => {
+    sessions.forEach((s) => {
       modelCounts.set(s.model, (modelCounts.get(s.model) || 0) + 1);
     });
-    const mostUsedModel = [...modelCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';
+    const mostUsedModel =
+      [...modelCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ||
+      'unknown';
 
     // Most used tools
-    const toolCounts = new Map<string, { count: number; totalDuration: number }>();
-    sessions.forEach(s => {
-      s.toolExecutions?.forEach(t => {
-        const existing = toolCounts.get(t.toolName) || { count: 0, totalDuration: 0 };
+    const toolCounts = new Map<
+      string,
+      { count: number; totalDuration: number }
+    >();
+    sessions.forEach((s) => {
+      s.toolExecutions?.forEach((t) => {
+        const existing = toolCounts.get(t.toolName) || {
+          count: 0,
+          totalDuration: 0,
+        };
         existing.count++;
         existing.totalDuration += t.duration;
         toolCounts.set(t.toolName, existing);
@@ -504,19 +555,24 @@ export class EnhancedDashboardService {
 
     // Best performing model (by avg TPS)
     const modelTps = new Map<string, { totalTps: number; count: number }>();
-    sessionsWithTps.forEach(s => {
+    sessionsWithTps.forEach((s) => {
       const existing = modelTps.get(s.model) || { totalTps: 0, count: 0 };
       existing.totalTps += s.speedMetrics.averageTps;
       existing.count++;
       modelTps.set(s.model, existing);
     });
     const bestPerformingModel = {
-      model: [...modelTps.entries()]
-        .map(([model, stats]) => ({ model, avgTps: stats.totalTps / stats.count }))
-        .sort((a, b) => b.avgTps - a.avgTps)[0]?.model || 'unknown',
-      avgTps: [...modelTps.entries()]
-        .map(([, stats]) => stats.totalTps / stats.count)
-        .sort((a, b) => b - a)[0] || 0,
+      model:
+        [...modelTps.entries()]
+          .map(([model, stats]) => ({
+            model,
+            avgTps: stats.totalTps / stats.count,
+          }))
+          .sort((a, b) => b.avgTps - a.avgTps)[0]?.model || 'unknown',
+      avgTps:
+        [...modelTps.entries()]
+          .map(([, stats]) => stats.totalTps / stats.count)
+          .sort((a, b) => b - a)[0] || 0,
     };
 
     // Daily stats
@@ -552,8 +608,19 @@ export class EnhancedDashboardService {
     };
   }
 
-  private getDailyStats(sessions: EnhancedSessionRecord[]): EnhancedDashboardStats['daily'] {
-    const dailyMap = new Map<string, { sessions: number; tokens: number; cost: number; totalTps: number; tpsCount: number }>();
+  private getDailyStats(
+    sessions: EnhancedSessionRecord[],
+  ): EnhancedDashboardStats['daily'] {
+    const dailyMap = new Map<
+      string,
+      {
+        sessions: number;
+        tokens: number;
+        cost: number;
+        totalTps: number;
+        tpsCount: number;
+      }
+    >();
     const now = new Date();
 
     // Initialize last 7 days
@@ -561,11 +628,17 @@ export class EnhancedDashboardService {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      dailyMap.set(dateStr, { sessions: 0, tokens: 0, cost: 0, totalTps: 0, tpsCount: 0 });
+      dailyMap.set(dateStr, {
+        sessions: 0,
+        tokens: 0,
+        cost: 0,
+        totalTps: 0,
+        tpsCount: 0,
+      });
     }
 
     // Aggregate sessions by date
-    sessions.forEach(s => {
+    sessions.forEach((s) => {
       const dateStr = new Date(s.startTime).toISOString().split('T')[0];
       const existing = dailyMap.get(dateStr);
       if (existing) {
@@ -585,16 +658,38 @@ export class EnhancedDashboardService {
         sessions: stats.sessions,
         tokens: stats.tokens,
         cost: stats.cost,
-        avgTps: stats.tpsCount > 0 ? Math.round((stats.totalTps / stats.tpsCount) * 10) / 10 : 0,
+        avgTps:
+          stats.tpsCount > 0
+            ? Math.round((stats.totalTps / stats.tpsCount) * 10) / 10
+            : 0,
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  private getModelUsage(sessions: EnhancedSessionRecord[]): EnhancedDashboardStats['modelUsage'] {
-    const modelMap = new Map<string, { sessions: number; tokens: number; cost: number; totalTps: number; tpsCount: number; totalCached: number }>();
+  private getModelUsage(
+    sessions: EnhancedSessionRecord[],
+  ): EnhancedDashboardStats['modelUsage'] {
+    const modelMap = new Map<
+      string,
+      {
+        sessions: number;
+        tokens: number;
+        cost: number;
+        totalTps: number;
+        tpsCount: number;
+        totalCached: number;
+      }
+    >();
 
-    sessions.forEach(s => {
-      const existing = modelMap.get(s.model) || { sessions: 0, tokens: 0, cost: 0, totalTps: 0, tpsCount: 0, totalCached: 0 };
+    sessions.forEach((s) => {
+      const existing = modelMap.get(s.model) || {
+        sessions: 0,
+        tokens: 0,
+        cost: 0,
+        totalTps: 0,
+        tpsCount: 0,
+        totalCached: 0,
+      };
       existing.sessions++;
       existing.tokens += s.promptTokens + s.generatedTokens;
       existing.cost += s.cost;
@@ -612,21 +707,31 @@ export class EnhancedDashboardService {
         sessions: stats.sessions,
         tokens: stats.tokens,
         cost: stats.cost,
-        avgTps: stats.tpsCount > 0 ? Math.round((stats.totalTps / stats.tpsCount) * 10) / 10 : 0,
-        avgCachedRate: stats.tokens > 0 ? Math.round((stats.totalCached / stats.tokens) * 1000) / 10 : 0,
+        avgTps:
+          stats.tpsCount > 0
+            ? Math.round((stats.totalTps / stats.tpsCount) * 10) / 10
+            : 0,
+        avgCachedRate:
+          stats.tokens > 0
+            ? Math.round((stats.totalCached / stats.tokens) * 1000) / 10
+            : 0,
       }))
       .sort((a, b) => b.sessions - a.sessions)
       .slice(0, 10);
   }
 
-  private getTrends(sessions: EnhancedSessionRecord[]): EnhancedDashboardStats['trends'] {
+  private getTrends(
+    sessions: EnhancedSessionRecord[],
+  ): EnhancedDashboardStats['trends'] {
     // Get last 20 sessions for trends
     const recentSessions = sessions.slice(-20);
-    
+
     return {
-      tpsHistory: recentSessions.map(s => s.speedMetrics?.averageTps || 0),
-      tokenHistory: recentSessions.map(s => s.promptTokens + s.generatedTokens),
-      timestamps: recentSessions.map(s => s.startTime),
+      tpsHistory: recentSessions.map((s) => s.speedMetrics?.averageTps || 0),
+      tokenHistory: recentSessions.map(
+        (s) => s.promptTokens + s.generatedTokens,
+      ),
+      timestamps: recentSessions.map((s) => s.startTime),
     };
   }
 
@@ -677,58 +782,120 @@ export class EnhancedDashboardService {
     const stats = this.getStats();
     const lines: string[] = [];
 
-    lines.push('┌─────────────────────────────────────────────────────────────┐');
-    lines.push('│              Session Performance Dashboard                   │');
-    lines.push('├─────────────────────────────────────────────────────────────┤');
-    
+    lines.push(
+      '┌─────────────────────────────────────────────────────────────┐',
+    );
+    lines.push(
+      '│              Session Performance Dashboard                   │',
+    );
+    lines.push(
+      '├─────────────────────────────────────────────────────────────┤',
+    );
+
     // Current session
     const cs = stats.currentSession;
-    lines.push('│ CURRENT SESSION                                             │');
-    lines.push('├─────────────────────────────────────────────────────────────┤');
-    lines.push(`│ Duration: ${EnhancedDashboardService.formatDuration(cs.duration).padEnd(20)} Messages: ${String(cs.messagesCount).padEnd(14)} │`);
-    lines.push(`│ Tokens:  ${(cs.promptTokens + cs.generatedTokens).toLocaleString().padEnd(19)} Speed: ${String(cs.speedMetrics.averageTps).padEnd(15)} │`);
+    lines.push(
+      '│ CURRENT SESSION                                             │',
+    );
+    lines.push(
+      '├─────────────────────────────────────────────────────────────┤',
+    );
+    lines.push(
+      `│ Duration: ${EnhancedDashboardService.formatDuration(cs.duration).padEnd(20)} Messages: ${String(cs.messagesCount).padEnd(14)} │`,
+    );
+    lines.push(
+      `│ Tokens:  ${(cs.promptTokens + cs.generatedTokens).toLocaleString().padEnd(19)} Speed: ${String(cs.speedMetrics.averageTps).padEnd(15)} │`,
+    );
     lines.push(`│ Prompt:  ${cs.promptTokens.toLocaleString().padEnd(48)} │`);
-    lines.push(`│ Generated: ${cs.generatedTokens.toLocaleString().padEnd(46)} │`);
+    lines.push(
+      `│ Generated: ${cs.generatedTokens.toLocaleString().padEnd(46)} │`,
+    );
     if (cs.cachedTokens > 0) {
       const cacheRate = ((cs.cachedTokens / cs.promptTokens) * 100).toFixed(1);
-      lines.push(`│ Cached:  ${cs.cachedTokens.toLocaleString().padEnd(20)} (${cacheRate}%)                    │`);
+      lines.push(
+        `│ Cached:  ${cs.cachedTokens.toLocaleString().padEnd(20)} (${cacheRate}%)                    │`,
+      );
     }
-    
+
     // Speed metrics
-    lines.push('├─────────────────────────────────────────────────────────────┤');
-    lines.push('│ SPEED METRICS                                               │');
-    lines.push('├─────────────────────────────────────────────────────────────┤');
-    lines.push(`│ Average: ${String(cs.speedMetrics.averageTps).padEnd(20)} Peak: ${String(cs.speedMetrics.peakTps).padEnd(17)} │`);
-    lines.push(`│ Thinking: ${EnhancedDashboardService.formatDuration(cs.speedMetrics.thinkingTimeMs).padEnd(19)} Generating: ${EnhancedDashboardService.formatDuration(cs.speedMetrics.generatingTimeMs).padEnd(13)} │`);
-    
+    lines.push(
+      '├─────────────────────────────────────────────────────────────┤',
+    );
+    lines.push(
+      '│ SPEED METRICS                                               │',
+    );
+    lines.push(
+      '├─────────────────────────────────────────────────────────────┤',
+    );
+    lines.push(
+      `│ Average: ${String(cs.speedMetrics.averageTps).padEnd(20)} Peak: ${String(cs.speedMetrics.peakTps).padEnd(17)} │`,
+    );
+    lines.push(
+      `│ Thinking: ${EnhancedDashboardService.formatDuration(cs.speedMetrics.thinkingTimeMs).padEnd(19)} Generating: ${EnhancedDashboardService.formatDuration(cs.speedMetrics.generatingTimeMs).padEnd(13)} │`,
+    );
+
     // Tool metrics
-    lines.push('├─────────────────────────────────────────────────────────────┤');
-    lines.push('│ TOOLS & FILES                                               │');
-    lines.push('├─────────────────────────────────────────────────────────────┤');
-    lines.push(`│ Tool Calls: ${String(cs.toolCalls).padEnd(18)} Tools Used: ${String(cs.toolsUsed.length).padEnd(13)} │`);
-    lines.push(`│ Files Read: ${String(cs.filesRead).padEnd(18)} Written: ${String(cs.filesWritten).padEnd(17)} │`);
-    lines.push(`│ Files Edited: ${String(cs.filesEdited).padEnd(16)} Lines: ${String(cs.linesEdited).padEnd(19)} │`);
-    
+    lines.push(
+      '├─────────────────────────────────────────────────────────────┤',
+    );
+    lines.push(
+      '│ TOOLS & FILES                                               │',
+    );
+    lines.push(
+      '├─────────────────────────────────────────────────────────────┤',
+    );
+    lines.push(
+      `│ Tool Calls: ${String(cs.toolCalls).padEnd(18)} Tools Used: ${String(cs.toolsUsed.length).padEnd(13)} │`,
+    );
+    lines.push(
+      `│ Files Read: ${String(cs.filesRead).padEnd(18)} Written: ${String(cs.filesWritten).padEnd(17)} │`,
+    );
+    lines.push(
+      `│ Files Edited: ${String(cs.filesEdited).padEnd(16)} Lines: ${String(cs.linesEdited).padEnd(19)} │`,
+    );
+
     // Aggregated
     const agg = stats.aggregated;
-    lines.push('├─────────────────────────────────────────────────────────────┤');
-    lines.push('│ AGGREGATED STATISTICS                                       │');
-    lines.push('├─────────────────────────────────────────────────────────────┤');
-    lines.push(`│ Sessions: ${String(agg.totalSessions).padEnd(19)} Total Cost: ${EnhancedDashboardService.formatCost(agg.totalCost).padEnd(14)} │`);
-    lines.push(`│ Total Tokens: ${(agg.totalPromptTokens + agg.totalGeneratedTokens).toLocaleString().padEnd(43)} │`);
-    lines.push(`│ Avg Session: ${EnhancedDashboardService.formatDuration(agg.averageSessionDuration).padEnd(17)} Avg Speed: ${String(agg.averageTps).padEnd(12)} │`);
-    
+    lines.push(
+      '├─────────────────────────────────────────────────────────────┤',
+    );
+    lines.push(
+      '│ AGGREGATED STATISTICS                                       │',
+    );
+    lines.push(
+      '├─────────────────────────────────────────────────────────────┤',
+    );
+    lines.push(
+      `│ Sessions: ${String(agg.totalSessions).padEnd(19)} Total Cost: ${EnhancedDashboardService.formatCost(agg.totalCost).padEnd(14)} │`,
+    );
+    lines.push(
+      `│ Total Tokens: ${(agg.totalPromptTokens + agg.totalGeneratedTokens).toLocaleString().padEnd(43)} │`,
+    );
+    lines.push(
+      `│ Avg Session: ${EnhancedDashboardService.formatDuration(agg.averageSessionDuration).padEnd(17)} Avg Speed: ${String(agg.averageTps).padEnd(12)} │`,
+    );
+
     // Most used tools
     if (agg.mostUsedTools.length > 0) {
-      lines.push('├─────────────────────────────────────────────────────────────┤');
-      lines.push('│ TOP TOOLS                                                   │');
-      lines.push('├─────────────────────────────────────────────────────────────┤');
+      lines.push(
+        '├─────────────────────────────────────────────────────────────┤',
+      );
+      lines.push(
+        '│ TOP TOOLS                                                   │',
+      );
+      lines.push(
+        '├─────────────────────────────────────────────────────────────┤',
+      );
       for (const tool of agg.mostUsedTools.slice(0, 5)) {
-        lines.push(`│ ${tool.name.padEnd(20)} ${String(tool.count).padEnd(10)} avg ${tool.avgDuration}ms                │`);
+        lines.push(
+          `│ ${tool.name.padEnd(20)} ${String(tool.count).padEnd(10)} avg ${tool.avgDuration}ms                │`,
+        );
       }
     }
 
-    lines.push('└─────────────────────────────────────────────────────────────┘');
+    lines.push(
+      '└─────────────────────────────────────────────────────────────┘',
+    );
 
     return lines.join('\n');
   }
@@ -775,7 +942,10 @@ export function getEnhancedDashboardService(
   sessionId: string,
 ): EnhancedDashboardService {
   if (!enhancedDashboardServiceInstance) {
-    enhancedDashboardServiceInstance = new EnhancedDashboardService(storage, sessionId);
+    enhancedDashboardServiceInstance = new EnhancedDashboardService(
+      storage,
+      sessionId,
+    );
   }
   return enhancedDashboardServiceInstance;
 }

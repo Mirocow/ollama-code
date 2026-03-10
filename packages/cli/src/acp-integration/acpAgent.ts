@@ -9,7 +9,7 @@ import type { ReadableStream, WritableStream } from 'node:stream/web';
 import {
   APPROVAL_MODE_INFO,
   APPROVAL_MODES,
-  ApprovalMode,
+  type ApprovalMode,
   AuthType,
   createDebugLogger,
   MCPServerConfig,
@@ -365,21 +365,23 @@ class OllamaAgent {
 
     const availableModels = allConfiguredModels;
 
-    const mappedAvailableModels = availableModels.map((model: AvailableModel) => {
-      const effectiveModelId =
-        model.isRuntimeModel && model.runtimeSnapshotId
-          ? model.runtimeSnapshotId
-          : model.id;
+    const mappedAvailableModels = availableModels.map(
+      (model: AvailableModel) => {
+        const effectiveModelId =
+          model.isRuntimeModel && model.runtimeSnapshotId
+            ? model.runtimeSnapshotId
+            : model.id;
 
-      return {
-        modelId: formatAcpModelId(effectiveModelId, model.authType),
-        name: model.label,
-        description: model.description ?? null,
-        _meta: {
-          contextLimit: model.contextWindowSize ?? tokenLimit(model.id),
-        },
-      };
-    });
+        return {
+          modelId: formatAcpModelId(effectiveModelId, model.authType),
+          name: model.label,
+          description: model.description ?? null,
+          _meta: {
+            contextLimit: model.contextWindowSize ?? tokenLimit(model.id),
+          },
+        };
+      },
+    );
 
     return {
       currentModelId,

@@ -6,7 +6,7 @@
 
 /**
  * Plugin Manager
- * 
+ *
  * Manages plugin lifecycle, registration, and execution.
  */
 
@@ -42,7 +42,9 @@ export class PluginManager {
   private config: Record<string, unknown> = {};
   private storage: Storage | null = null;
   private storageData: Record<string, unknown> = {};
-  private promptRegistry: import('../prompts/prompt-registry.js').PromptRegistry | null = null;
+  private promptRegistry:
+    | import('../prompts/prompt-registry.js').PromptRegistry
+    | null = null;
   private sessionId: string = '';
   private modelId: string | undefined;
 
@@ -65,7 +67,9 @@ export class PluginManager {
   /**
    * Set prompt registry for plugins
    */
-  setPromptRegistry(registry: import('../prompts/prompt-registry.js').PromptRegistry): void {
+  setPromptRegistry(
+    registry: import('../prompts/prompt-registry.js').PromptRegistry,
+  ): void {
     this.promptRegistry = registry;
   }
 
@@ -88,13 +92,13 @@ export class PluginManager {
    */
   async registerPlugin(definition: PluginDefinition): Promise<void> {
     const { metadata } = definition;
-    
+
     if (this.plugins.has(metadata.id)) {
       throw new Error(`Plugin "${metadata.id}" is already registered`);
     }
-    
+
     debugLogger.info(`Registering plugin: ${metadata.name} (${metadata.id})`);
-    
+
     const context = this.createPluginContext(definition);
     const instance: PluginInstance = {
       definition,
@@ -102,9 +106,9 @@ export class PluginManager {
       status: 'unloaded',
       config: definition.defaultConfig ?? {},
     };
-    
+
     this.plugins.set(metadata.id, instance);
-    
+
     // Register PluginTool objects (simple declarative tools)
     // Tool classes and factory functions are handled by pluginRegistry
     if (definition.tools) {
@@ -115,7 +119,7 @@ export class PluginManager {
         }
       }
     }
-    
+
     debugLogger.info(`Plugin "${metadata.id}" registered successfully`);
   }
 
@@ -127,24 +131,24 @@ export class PluginManager {
     if (!instance) {
       throw new Error(`Plugin "${pluginId}" is not registered`);
     }
-    
+
     // Disable if enabled
     if (instance.status === 'enabled') {
       await this.disablePlugin(pluginId);
     }
-    
+
     // Unload if loaded
     if (instance.status === 'loaded') {
       await this.unloadPlugin(pluginId);
     }
-    
+
     // Unregister tools
     for (const [toolId, tool] of this.tools) {
       if (tool.id.startsWith(`${pluginId}:`)) {
         this.tools.delete(toolId);
       }
     }
-    
+
     this.plugins.delete(pluginId);
     debugLogger.info(`Plugin "${pluginId}" unregistered`);
   }
@@ -157,28 +161,31 @@ export class PluginManager {
     if (!instance) {
       throw new Error(`Plugin "${pluginId}" is not registered`);
     }
-    
+
     if (instance.status !== 'unloaded') {
-      throw new Error(`Plugin "${pluginId}" is already loaded (status: ${instance.status})`);
+      throw new Error(
+        `Plugin "${pluginId}" is already loaded (status: ${instance.status})`,
+      );
     }
-    
+
     debugLogger.info(`Loading plugin: ${pluginId}`);
-    
+
     try {
       const { definition, context } = instance;
-      
+
       if (definition.hooks?.onLoad) {
         await definition.hooks.onLoad(context);
       }
-      
+
       instance.status = 'loaded';
       instance.loadedAt = new Date();
-      
+
       this.emitEvent(`plugin:${pluginId}:loaded`, { pluginId });
       debugLogger.info(`Plugin "${pluginId}" loaded successfully`);
     } catch (error) {
       instance.status = 'error';
-      instance.error = error instanceof Error ? error : new Error(String(error));
+      instance.error =
+        error instanceof Error ? error : new Error(String(error));
       debugLogger.error(`Failed to load plugin "${pluginId}":`, error);
       throw error;
     }
@@ -192,23 +199,25 @@ export class PluginManager {
     if (!instance) {
       throw new Error(`Plugin "${pluginId}" is not registered`);
     }
-    
+
     if (instance.status !== 'loaded' && instance.status !== 'error') {
-      throw new Error(`Plugin "${pluginId}" is not loaded (status: ${instance.status})`);
+      throw new Error(
+        `Plugin "${pluginId}" is not loaded (status: ${instance.status})`,
+      );
     }
-    
+
     debugLogger.info(`Unloading plugin: ${pluginId}`);
-    
+
     try {
       const { definition, context } = instance;
-      
+
       if (definition.hooks?.onUnload) {
         await definition.hooks.onUnload(context);
       }
-      
+
       instance.status = 'unloaded';
       instance.loadedAt = undefined;
-      
+
       this.emitEvent(`plugin:${pluginId}:unloaded`, { pluginId });
       debugLogger.info(`Plugin "${pluginId}" unloaded successfully`);
     } catch (error) {
@@ -225,32 +234,33 @@ export class PluginManager {
     if (!instance) {
       throw new Error(`Plugin "${pluginId}" is not registered`);
     }
-    
+
     if (instance.status === 'enabled') {
       return; // Already enabled
     }
-    
+
     if (instance.status === 'unloaded') {
       await this.loadPlugin(pluginId);
     }
-    
+
     debugLogger.info(`Enabling plugin: ${pluginId}`);
-    
+
     try {
       const { definition, context } = instance;
-      
+
       if (definition.hooks?.onEnable) {
         await definition.hooks.onEnable(context);
       }
-      
+
       instance.status = 'enabled';
       instance.enabledAt = new Date();
-      
+
       this.emitEvent('plugin:enabled', { pluginId });
       debugLogger.info(`Plugin "${pluginId}" enabled successfully`);
     } catch (error) {
       instance.status = 'error';
-      instance.error = error instanceof Error ? error : new Error(String(error));
+      instance.error =
+        error instanceof Error ? error : new Error(String(error));
       debugLogger.error(`Failed to enable plugin "${pluginId}":`, error);
       throw error;
     }
@@ -264,23 +274,23 @@ export class PluginManager {
     if (!instance) {
       throw new Error(`Plugin "${pluginId}" is not registered`);
     }
-    
+
     if (instance.status !== 'enabled') {
       return; // Already disabled
     }
-    
+
     debugLogger.info(`Disabling plugin: ${pluginId}`);
-    
+
     try {
       const { definition, context } = instance;
-      
+
       if (definition.hooks?.onDisable) {
         await definition.hooks.onDisable(context);
       }
-      
+
       instance.status = 'loaded';
       instance.enabledAt = undefined;
-      
+
       this.emitEvent('plugin:disabled', { pluginId });
       debugLogger.info(`Plugin "${pluginId}" disabled successfully`);
     } catch (error) {
@@ -307,7 +317,7 @@ export class PluginManager {
    * Get plugins by status
    */
   getPluginsByStatus(status: PluginStatus): PluginInstance[] {
-    return this.getAllPlugins().filter(p => p.status === status);
+    return this.getAllPlugins().filter((p) => p.status === status);
   }
 
   /**
@@ -322,11 +332,11 @@ export class PluginManager {
    */
   private registerTool(tool: PluginTool, pluginId: string): void {
     const toolId = `${pluginId}:${tool.id}`;
-    
+
     if (this.tools.has(toolId)) {
       throw new Error(`Tool "${toolId}" is already registered`);
     }
-    
+
     this.tools.set(toolId, { ...tool, id: toolId });
     debugLogger.info(`Tool "${toolId}" registered`);
   }
@@ -351,50 +361,54 @@ export class PluginManager {
   async executeTool(
     toolId: string,
     params: Record<string, unknown>,
-    context?: Partial<import('./types.js').ToolExecutionContext>
+    context?: Partial<import('./types.js').ToolExecutionContext>,
   ): Promise<unknown> {
     const tool = this.tools.get(toolId);
     if (!tool) {
       throw new Error(`Tool "${toolId}" not found`);
     }
-    
+
     // Find plugin context
     const [pluginId] = toolId.split(':');
     const instance = this.plugins.get(pluginId);
-    
+
     if (!instance || instance.status !== 'enabled') {
       throw new Error(`Plugin for tool "${toolId}" is not enabled`);
     }
-    
+
     // Execute with lifecycle hooks
     const { definition } = instance;
     const startTime = Date.now();
-    
+
     try {
       // Before execute hook
       if (definition.hooks?.onBeforeToolExecute) {
         const shouldContinue = await definition.hooks.onBeforeToolExecute(
           toolId,
           params,
-          instance.context
+          instance.context,
         );
         if (!shouldContinue) {
           throw new Error(`Tool execution cancelled by plugin hook`);
         }
       }
-      
+
       // Build complete execution context with ALL required properties
       const envAccess = {
-        get: (name: string, defaultValue?: string) => process.env[name] ?? defaultValue,
-        getAll: () => ({ ...process.env }) as Record<string, string | undefined>,
+        get: (name: string, defaultValue?: string) =>
+          process.env[name] ?? defaultValue,
+        getAll: () =>
+          ({ ...process.env }) as Record<string, string | undefined>,
       };
-      
+
       const fullContext: import('./types.js').ToolExecutionContext = {
         plugin: instance.context,
         // Storage - available to ALL tools
-        storage: this.storage ?? context?.storage!,
+        storage: (this.storage ??
+          context?.storage) as import('../config/storage.js').Storage,
         // Prompt registry - available to ALL tools
-        promptRegistry: this.promptRegistry ?? context?.promptRegistry!,
+        promptRegistry: (this.promptRegistry ??
+          context?.promptRegistry) as import('../prompts/prompt-registry.js').PromptRegistry,
         // Session ID - available to ALL tools
         sessionId: this.sessionId ?? context?.sessionId ?? '',
         // Model ID
@@ -404,30 +418,30 @@ export class PluginManager {
         // Spread any additional context
         ...context,
       };
-      
+
       // Execute tool
       const result = await tool.execute(params, fullContext);
-      
+
       // Record successful execution for health metrics
       const executionTime = Date.now() - startTime;
       this.recordToolExecution(pluginId, executionTime, true);
-      
+
       // After execute hook
       if (definition.hooks?.onAfterToolExecute) {
         await definition.hooks.onAfterToolExecute(
           toolId,
           params,
           result,
-          instance.context
+          instance.context,
         );
       }
-      
+
       return result;
     } catch (error) {
       // Record failed execution for health metrics
       const executionTime = Date.now() - startTime;
       this.recordToolExecution(pluginId, executionTime, false);
-      
+
       debugLogger.error(`Tool "${toolId}" execution failed:`, error);
       throw error;
     }
@@ -438,30 +452,36 @@ export class PluginManager {
    */
   private createPluginContext(definition: PluginDefinition): PluginContext {
     const { metadata } = definition;
-    
+
     const logger: PluginLogger = {
       debug: (...args) => debugLogger.debug(`[${metadata.name}]`, ...args),
       info: (...args) => debugLogger.info(`[${metadata.name}]`, ...args),
       warn: (...args) => debugLogger.warn(`[${metadata.name}]`, ...args),
       error: (...args) => debugLogger.error(`[${metadata.name}]`, ...args),
     };
-    
+
     const events: PluginEventEmitter = {
-      emit: (event, data) => this.emitEvent(`plugin:${metadata.id}:${event}`, data),
-      on: (event, callback) => this.addEventListener(`plugin:${metadata.id}:${event}`, callback),
+      emit: (event, data) =>
+        this.emitEvent(`plugin:${metadata.id}:${event}`, data),
+      on: (event, callback) =>
+        this.addEventListener(`plugin:${metadata.id}:${event}`, callback),
       once: (event, callback) => {
-        const unsubscribe = this.addEventListener(`plugin:${metadata.id}:${event}`, (data) => {
-          unsubscribe();
-          callback(data);
-        });
+        const unsubscribe = this.addEventListener(
+          `plugin:${metadata.id}:${event}`,
+          (data) => {
+            unsubscribe();
+            callback(data);
+          },
+        );
         return unsubscribe;
       },
     };
-    
+
     const services: PluginServices = {
       registerTool: (tool) => this.registerTool(tool, metadata.id),
       unregisterTool: (toolId) => this.tools.delete(`${metadata.id}:${toolId}`),
-      getTools: () => this.getAllTools().filter(t => t.id.startsWith(`${metadata.id}:`)),
+      getTools: () =>
+        this.getAllTools().filter((t) => t.id.startsWith(`${metadata.id}:`)),
       showNotification: (notification) => {
         this.emitEvent('notification', notification);
       },
@@ -488,16 +508,16 @@ export class PluginManager {
         this.storageData[fullKey] = value;
       },
       // Environment variables access - available to ALL plugins
-      getEnv: (name: string, defaultValue?: string) => {
-        return process.env[name] ?? defaultValue;
-      },
-      getAllEnv: () => {
-        return { ...process.env } as Record<string, string | undefined>;
-      },
+      getEnv: (name: string, defaultValue?: string) =>
+        process.env[name] ?? defaultValue,
+      getAllEnv: () =>
+        ({ ...process.env }) as Record<string, string | undefined>,
       // Prompt registry access - available to ALL plugins
       getPromptRegistry: () => {
         if (!this.promptRegistry) {
-          throw new Error('PromptRegistry not initialized. Call setPromptRegistry() first.');
+          throw new Error(
+            'PromptRegistry not initialized. Call setPromptRegistry() first.',
+          );
         }
         return this.promptRegistry;
       },
@@ -506,7 +526,7 @@ export class PluginManager {
       // Model ID access - available to ALL plugins
       getModelId: () => this.modelId,
     };
-    
+
     return {
       config: definition.defaultConfig ?? {},
       metadata,
@@ -532,7 +552,10 @@ export class PluginManager {
     }
   }
 
-  private addEventListener(event: string, callback: (data: unknown) => void): () => void {
+  private addEventListener(
+    event: string,
+    callback: (data: unknown) => void,
+  ): () => void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
@@ -557,7 +580,10 @@ export class PluginManager {
    * Hot reload a plugin - disable, unregister, re-register, and enable
    * Useful for development and updating plugins without restart
    */
-  async reloadPlugin(pluginId: string, newDefinition?: PluginDefinition): Promise<void> {
+  async reloadPlugin(
+    pluginId: string,
+    newDefinition?: PluginDefinition,
+  ): Promise<void> {
     const instance = this.plugins.get(pluginId);
     if (!instance) {
       throw new Error(`Plugin "${pluginId}" is not registered`);
@@ -586,11 +612,11 @@ export class PluginManager {
 
       // Record event
       this.recordEvent('plugin:reloaded', pluginId);
-      
+
       debugLogger.info(`Plugin "${pluginId}" reloaded successfully`);
     } catch (error) {
       debugLogger.error(`Failed to reload plugin "${pluginId}":`, error);
-      
+
       // Try to recover by re-registering original definition
       try {
         await this.registerPlugin(currentDefinition);
@@ -598,9 +624,12 @@ export class PluginManager {
           await this.enablePlugin(pluginId);
         }
       } catch (recoveryError) {
-        debugLogger.error(`Failed to recover plugin "${pluginId}":`, recoveryError);
+        debugLogger.error(
+          `Failed to recover plugin "${pluginId}":`,
+          recoveryError,
+        );
       }
-      
+
       throw error;
     }
   }
@@ -631,7 +660,9 @@ export class PluginManager {
   /**
    * Validate dependencies for a plugin
    */
-  validateDependencies(definition: PluginDefinition): DependencyValidationResult {
+  validateDependencies(
+    definition: PluginDefinition,
+  ): DependencyValidationResult {
     const result: DependencyValidationResult = {
       valid: true,
       missingRequired: [],
@@ -646,7 +677,7 @@ export class PluginManager {
 
     for (const dep of dependencies) {
       const instance = this.plugins.get(dep.pluginId);
-      
+
       if (!instance) {
         if (dep.optional) {
           result.missingOptional.push({
@@ -667,8 +698,11 @@ export class PluginManager {
 
       // Check version constraints
       const actualVersion = instance.definition.metadata.version;
-      
-      if (dep.minVersion && this.compareVersions(actualVersion, dep.minVersion) < 0) {
+
+      if (
+        dep.minVersion &&
+        this.compareVersions(actualVersion, dep.minVersion) < 0
+      ) {
         result.versionConflicts.push({
           pluginId: dep.pluginId,
           required: dep.minVersion,
@@ -679,7 +713,10 @@ export class PluginManager {
         }
       }
 
-      if (dep.maxVersion && this.compareVersions(actualVersion, dep.maxVersion) > 0) {
+      if (
+        dep.maxVersion &&
+        this.compareVersions(actualVersion, dep.maxVersion) > 0
+      ) {
         result.versionConflicts.push({
           pluginId: dep.pluginId,
           required: `<=${dep.maxVersion}`,
@@ -711,7 +748,7 @@ export class PluginManager {
 
     const visit = (pluginId: string, depth: number): number => {
       if (visited.has(pluginId)) {
-        const existing = orders.find(o => o.pluginId === pluginId);
+        const existing = orders.find((o) => o.pluginId === pluginId);
         return existing?.order ?? 0;
       }
 
@@ -722,7 +759,7 @@ export class PluginManager {
 
       visiting.add(pluginId);
       const instance = this.plugins.get(pluginId);
-      
+
       let maxDepOrder = -1;
       const deps: string[] = [];
 
@@ -775,7 +812,7 @@ export class PluginManager {
   private compareVersions(a: string, b: string): number {
     const partsA = a.split('.').map(Number);
     const partsB = b.split('.').map(Number);
-    
+
     for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
       const numA = partsA[i] || 0;
       const numB = partsB[i] || 0;
@@ -846,7 +883,7 @@ export class PluginManager {
    */
   async checkPluginHealth(
     pluginId: string,
-    options: HealthCheckOptions = {}
+    options: HealthCheckOptions = {},
   ): Promise<PluginHealth> {
     const instance = this.plugins.get(pluginId);
     const existing = this.healthMetrics.get(pluginId);
@@ -878,9 +915,10 @@ export class PluginManager {
       health.lastError = instance.error?.message || 'Unknown error';
       health.lastErrorAt = now;
     } else if (instance.status === 'enabled') {
-      const failureRate = health.toolCallsTotal > 0
-        ? health.toolCallsFailed / health.toolCallsTotal
-        : 0;
+      const failureRate =
+        health.toolCallsTotal > 0
+          ? health.toolCallsFailed / health.toolCallsTotal
+          : 0;
 
       if (failureRate > 0.5) {
         health.status = 'error';
@@ -908,9 +946,9 @@ export class PluginManager {
 
     // Record event if status changed
     if (existing && existing.status !== health.status) {
-      this.recordEvent('plugin:health-changed', pluginId, { 
-        oldStatus: existing.status, 
-        newStatus: health.status 
+      this.recordEvent('plugin:health-changed', pluginId, {
+        oldStatus: existing.status,
+        newStatus: health.status,
       });
     }
 
@@ -920,7 +958,9 @@ export class PluginManager {
   /**
    * Check health of all plugins
    */
-  async checkAllPluginHealth(options: HealthCheckOptions = {}): Promise<PluginHealth[]> {
+  async checkAllPluginHealth(
+    options: HealthCheckOptions = {},
+  ): Promise<PluginHealth[]> {
     const results: PluginHealth[] = [];
 
     for (const pluginId of this.plugins.keys()) {
@@ -928,7 +968,10 @@ export class PluginManager {
         const health = await this.checkPluginHealth(pluginId, options);
         results.push(health);
       } catch (error) {
-        debugLogger.error(`Failed to check health for plugin ${pluginId}:`, error);
+        debugLogger.error(
+          `Failed to check health for plugin ${pluginId}:`,
+          error,
+        );
       }
     }
 
@@ -938,7 +981,11 @@ export class PluginManager {
   /**
    * Record tool execution for health metrics
    */
-  private recordToolExecution(pluginId: string, executionTimeMs: number, success: boolean): void {
+  private recordToolExecution(
+    pluginId: string,
+    executionTimeMs: number,
+    success: boolean,
+  ): void {
     const health = this.healthMetrics.get(pluginId) || {
       pluginId,
       status: 'unknown' as PluginHealthStatus,
@@ -978,7 +1025,11 @@ export class PluginManager {
   /**
    * Record an event for history
    */
-  private recordEvent(type: PluginEventType, pluginId?: string, data?: unknown): void {
+  private recordEvent(
+    type: PluginEventType,
+    pluginId?: string,
+    data?: unknown,
+  ): void {
     const event: PluginEvent = {
       type,
       pluginId,
@@ -995,10 +1046,13 @@ export class PluginManager {
   /**
    * Get event history
    */
-  getEventHistory(filter?: { pluginId?: string; type?: PluginEventType }): PluginEvent[] {
+  getEventHistory(filter?: {
+    pluginId?: string;
+    type?: PluginEventType;
+  }): PluginEvent[] {
     if (!filter) return [...this.eventHistory];
 
-    return this.eventHistory.filter(event => {
+    return this.eventHistory.filter((event) => {
       if (filter.pluginId && event.pluginId !== filter.pluginId) return false;
       if (filter.type && event.type !== filter.type) return false;
       return true;
