@@ -14,6 +14,7 @@ import * as jsonl from '../utils/jsonl-utils.js';
 import type {
   ChatCompressionRecordPayload,
   ChatRecord,
+  UiTelemetryRecordPayload,
 } from './chatRecordingService.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
@@ -747,4 +748,36 @@ export function getResumePromptTokenCount(
   }
 
   return fallback;
+}
+
+/**
+ * Extracts telemetry state from a resumed session's conversation.
+ * Finds the last ui_telemetry system record and returns its payload.
+ * This enables restoring session metrics (token counts, tool calls, etc.) on resume.
+ *
+ * @param conversation The conversation record from a resumed session
+ * @returns The telemetry state payload, or undefined if not found
+ */
+export function getResumeTelemetryState(
+  conversation: ConversationRecord,
+): UiTelemetryRecordPayload | undefined {
+  // Search from the end to find the most recent telemetry record
+  for (let i = conversation.messages.length - 1; i >= 0; i--) {
+    const record = conversation.messages[i];
+    if (record.type === 'system' && record.subtype === 'ui_telemetry') {
+      const payload = record.systemPayload as
+        | UiTelemetryRecordPayload
+        | undefined;
+      if (payload?.telemetryState) {
+        debugLogger.info('Found telemetry state in session', {
+          index: i,
+          hasTokenHistory: !!payload.telemetryState.tokenHistory,
+        });
+        return payload;
+      }
+    }
+  }
+
+  debugLogger.info('No telemetry state found in session');
+  return undefined;
 }

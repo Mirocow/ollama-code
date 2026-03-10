@@ -44,14 +44,17 @@ import {
   COMPRESSION_TOKEN_THRESHOLD,
 } from '../services/chatCompressionService.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
-//import { uiTelemetryService } from '../services/uiTelemetryService.js';
+import { uiTelemetryService } from '../services/uiTelemetryService.js';
 
 // Utilities
 import {
   getDirectoryContextString,
   getInitialChatHistory,
 } from '../utils/environmentContext.js';
-import { buildApiHistoryFromConversation } from '../services/sessionService.js';
+import {
+  buildApiHistoryFromConversation,
+  getResumeTelemetryState,
+} from '../services/sessionService.js';
 import { reportError } from '../utils/errorReporting.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { checkNextSpeaker } from '../utils/nextSpeakerChecker.js';
@@ -90,10 +93,13 @@ export class OllamaClient {
     const resumedSessionData = this.config.getResumedSessionData();
     if (resumedSessionData) {
       // Restore telemetry state from previous session
-      //const telemetryState = getResumeTelemetryState(resumedSessionData.conversation);
-      //if (telemetryState?.telemetryState) {
-      //  uiTelemetryService.importState(telemetryState.telemetryState);
-      //}
+      const telemetryPayload = getResumeTelemetryState(
+        resumedSessionData.conversation,
+      );
+      if (telemetryPayload?.telemetryState) {
+        debugLogger.info('Restoring telemetry state from resumed session');
+        uiTelemetryService.importState(telemetryPayload.telemetryState);
+      }
 
       // Convert resumed session to API history format
       // Each ChatRecord's message field is already a Content object
