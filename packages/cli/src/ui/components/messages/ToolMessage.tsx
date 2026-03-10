@@ -139,6 +139,22 @@ const useResultDisplayRenderer = (
       return { type: 'ansi', data: resultDisplay.ansiOutput as AnsiOutput };
     }
 
+    // Handle unknown object types by serializing to JSON
+    // This prevents [object Object] from being displayed
+    if (typeof resultDisplay === 'object' && resultDisplay !== null) {
+      try {
+        return {
+          type: 'string',
+          data: JSON.stringify(resultDisplay, null, 2),
+        };
+      } catch {
+        return {
+          type: 'string',
+          data: '[Unable to display result]',
+        };
+      }
+    }
+
     // Default to string
     return {
       type: 'string',
