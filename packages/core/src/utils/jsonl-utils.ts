@@ -36,9 +36,15 @@ import { createDebugLogger } from './debugLogger.js';
 const debugLogger = createDebugLogger('JSONL');
 
 /**
- * A map of file paths to mutexes for preventing concurrent writes.
+ * A map of file paths to mutexes for preventing concurrent writes (async).
  */
 const fileLocks = new Map<string, Mutex>();
+
+/**
+ * A map of file paths to lock status for synchronous operations.
+ * Since Mutex is async-only, we need a separate sync locking mechanism.
+ */
+const syncFileLocks = new Map<string, { locked: boolean; queue: Array<() => void> }>();
 
 /**
  * Gets or creates a mutex for a specific file path.
@@ -48,6 +54,73 @@ function getFileLock(filePath: string): Mutex {
     fileLocks.set(filePath, new Mutex());
   }
   return fileLocks.get(filePath)!;
+}
+
+/**
+ * Gets or creates a sync lock for a specific file path.
+ */
+function getSyncFileLock(filePath: string): {
+  locked: boolean;
+  queue: Array<() => void>;
+} {
+  if (!syncFileLocks.has(filePath)) {
+    syncFileLocks.set(filePath, { locked: false, queue: [] });
+  }
+  return syncFileLocks.get(filePath)!;
+}
+
+/**
+ * Acquires a synchronous lock for a file.
+ * Uses a queue-based approach since JS is single-threaded.
+ */
+function acquireSyncLock(filePath: string): boolean {
+  const lock = getSyncFileLock(filePath);
+  if (lock.locked) {
+    return false; // Already locked
+  }
+  lock.locked = true;
+  return true;
+}
+
+/**
+ * Releases a synchronous lock for a file.
+ */
+function releaseSyncLock(filePath: string): void {
+  const lock = syncFileLocks.get(filePath);
+  if (lock) {
+    lock.locked = false;
+    // Process next item in queue if any
+    const next = lock.queue.shift();
+    if (next) {
+      next();
+    }
+  }
+}
+
+/**
+ * Executes a function with a sync lock, queuing if necessary.
+ * This ensures writes are serialized even when called from different async contexts.
+ */
+function withSyncLock<T>(filePath: string, fn: () => T): T {
+  const lock = getSyncFileLock(filePath);
+
+  if (!lock.locked) {
+    // Not locked, execute immediately
+    lock.locked = true;
+    try {
+      return fn();
+    } finally {
+      releaseSyncLock(filePath);
+    }
+  }
+
+  // Already locked - this shouldn't happen in normal single-threaded JS
+  // unless called from within another withSyncLock for the same file
+  // In that case, we have a reentrant call which is safe (same call stack)
+  debugLogger.warn(
+    `Reentrant sync lock detected for ${filePath} - executing immediately`,
+  );
+  return fn();
 }
 
 /**
@@ -66,6 +139,28 @@ function ensureDir(filePath: string): void {
  */
 function validateJson(jsonStr: string): unknown {
   return JSON.parse(jsonStr);
+}
+
+/**
+ * Writes all data to a file descriptor, handling partial writes.
+ * fs.writeSync may not write all bytes in a single call, especially for large strings.
+ * This function loops until all bytes are written.
+ *
+ * @param fd File descriptor
+ * @param data String to write
+ */
+function writeAllSync(fd: number, data: string): void {
+  const buffer = Buffer.from(data, 'utf8');
+  let offset = 0;
+  let bytesWritten = 0;
+
+  while (offset < buffer.length) {
+    bytesWritten = fs.writeSync(fd, buffer, offset, buffer.length - offset, null);
+    if (bytesWritten === 0) {
+      throw new Error('writeAllSync: wrote 0 bytes, possible disk full or I/O error');
+    }
+    offset += bytesWritten;
+  }
 }
 
 /**
@@ -266,28 +361,35 @@ export async function writeLine(
 
 /**
  * Synchronous version of writeLine for use in non-async contexts.
- * Uses mutex for concurrency control.
+ * Uses queue-based locking for concurrency control to prevent interleaved writes.
+ *
+ * IMPORTANT: This function uses a sync locking mechanism to serialize writes.
+ * Without proper locking, concurrent writes from different async contexts can
+ * interleave, corrupting the JSONL file with mixed/partial records.
  */
 export function writeLineSync(filePath: string, data: unknown): void {
-  // For sync context, we still need to use the lock mechanism
-  // But since Mutex is async, we use a simple spinlock approach
   ensureDir(filePath);
 
-  // Validate JSON first
+  // Validate and serialize JSON BEFORE acquiring lock to minimize lock time
   const jsonStr = JSON.stringify(data);
   validateJson(jsonStr); // Will throw if invalid
 
   const line = `${jsonStr}\n`;
 
-  // Open file in append mode, write, then fsync
-  const fd = fs.openSync(filePath, 'a');
-  try {
-    fs.writeSync(fd, line, 0, 'utf8');
-    // Force write to disk for crash protection
-    fs.fsyncSync(fd);
-  } finally {
-    fs.closeSync(fd);
-  }
+  // Use sync lock to prevent concurrent writes
+  withSyncLock(filePath, () => {
+    // Open file in append mode, write, then fsync
+    const fd = fs.openSync(filePath, 'a');
+    try {
+      // CRITICAL: fs.writeSync may not write all bytes in one call!
+      // We must loop until all bytes are written to prevent partial writes.
+      writeAllSync(fd, line);
+      // Force write to disk for crash protection
+      fs.fsyncSync(fd);
+    } finally {
+      fs.closeSync(fd);
+    }
+  });
 }
 
 /**
@@ -305,7 +407,8 @@ function writeLineSyncInternal(filePath: string, data: unknown): void {
   // Open file in append mode, write, then fsync
   const fd = fs.openSync(filePath, 'a');
   try {
-    fs.writeSync(fd, line, 0, 'utf8');
+    // CRITICAL: fs.writeSync may not write all bytes in one call!
+    writeAllSync(fd, line);
     // Force write to disk for crash protection
     fs.fsyncSync(fd);
   } finally {
@@ -328,7 +431,8 @@ export function write(filePath: string, data: unknown[]): void {
   // Write to temp file with fsync
   const fd = fs.openSync(tempPath, 'w');
   try {
-    fs.writeSync(fd, lines, 0, 'utf8');
+    // CRITICAL: fs.writeSync may not write all bytes in one call!
+    writeAllSync(fd, lines);
     fs.fsyncSync(fd);
   } finally {
     fs.closeSync(fd);

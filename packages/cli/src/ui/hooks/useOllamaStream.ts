@@ -1231,7 +1231,14 @@ export const useOllamaStream = (
       let ollamaMessageBuffer = '';
       let thoughtBuffer = '';
       const toolCallRequests: ToolCallRequestInfo[] = [];
+      let eventCount = 0;
       for await (const event of stream) {
+        eventCount++;
+        debugLogger.info(`Event #${eventCount} received`, { 
+          type: event.type,
+          expectedFinished: ServerOllamaEventType.Finished,
+          isFinished: event.type === ServerOllamaEventType.Finished,
+        });
         switch (event.type) {
           case ServerOllamaEventType.Thought:
             // If the thought has a subject, it's a discrete status update rather than
@@ -1276,6 +1283,7 @@ export const useOllamaStream = (
             handleSessionTokenLimitExceededEvent(event.value);
             break;
           case ServerOllamaEventType.Finished:
+            debugLogger.info('Finished event matched in switch, calling handleFinishedEvent');
             handleFinishedEvent(
               event as ServerOllamaFinishedEvent,
               userMessageTimestamp,

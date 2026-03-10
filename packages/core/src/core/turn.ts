@@ -33,6 +33,9 @@ import {
   parseThought,
   type ThoughtSummary,
 } from '../utils/thoughtUtils.js';
+import { createDebugLogger } from '../utils/debugLogger.js';
+
+const debugLogger = createDebugLogger('TURN');
 
 // Define a structure for tools passed to the server
 export interface ServerTool {
@@ -239,6 +242,7 @@ export class Turn {
     req: PartListUnion,
     signal: AbortSignal,
   ): AsyncGenerator<ServerOllamaStreamEvent> {
+    debugLogger.info('Turn.run started', { model, promptId: this.prompt_id });
     try {
       // Note: This assumes `sendMessageStream` yields events like
       // { type: StreamEventType.RETRY } or { type: StreamEventType.CHUNK, value: GenerateContentResponse }
@@ -326,6 +330,10 @@ export class Turn {
       }
       
       // Stream ended - yield final Finished event
+      debugLogger.info('Stream loop ended normally, yielding Finished event', {
+        finishReason: this.finishReason,
+        debugResponsesCount: this.debugResponses.length,
+      });
       yield {
         type: OllamaEventType.Finished,
         value: {
@@ -335,10 +343,17 @@ export class Turn {
             : undefined,
         },
       };
+      debugLogger.info('Finished event yielded successfully');
     } catch (e) {
+      debugLogger.error('Error in Turn.run', { error: e instanceof Error ? e.message : String(e) });
       if (signal.aborted) {
+        debugLogger.info('Signal aborted, yielding UserCancelled + Finished events');
         yield { type: OllamaEventType.UserCancelled };
-        // Regular cancellation error, fail gracefully.
+        // Yield Finished event even on user cancel for proper cleanup
+        yield {
+          type: OllamaEventType.Finished,
+          value: { reason: undefined, usageMetadata: undefined },
+        };
         return;
       }
 
@@ -367,6 +382,12 @@ export class Turn {
       };
       await this.chat.maybeIncludeSchemaDepthContext(structuredError);
       yield { type: OllamaEventType.Error, value: { error: structuredError } };
+      // Yield Finished event even on error for proper cleanup and session recording
+      debugLogger.info('Yielding Finished event after error');
+      yield {
+        type: OllamaEventType.Finished,
+        value: { reason: undefined, usageMetadata: undefined },
+      };
       return;
     }
   }

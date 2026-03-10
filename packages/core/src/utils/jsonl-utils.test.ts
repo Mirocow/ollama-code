@@ -177,6 +177,49 @@ describe('jsonl-utils', () => {
       const fileExists = fs.existsSync(nestedFile);
       expect(fileExists).toBe(true);
     });
+
+    it('should handle large records without truncation', () => {
+      // Create a large record that would be > 64KB when serialized
+      // This tests the writeAllSync function which handles partial writes
+      const largeData = {
+        id: 1,
+        largeArray: new Array(10000).fill('x'.repeat(100)),
+        nested: {
+          data: 'y'.repeat(50000),
+        },
+      };
+
+      writeLineSync(testFile, largeData);
+
+      const content = fs.readFileSync(testFile, 'utf-8');
+      const parsed = JSON.parse(content.trim());
+
+      expect(parsed.id).toBe(1);
+      expect(parsed.largeArray).toHaveLength(10000);
+      expect(parsed.nested.data).toBe('y'.repeat(50000));
+    });
+
+    it('should handle multiple large records correctly', () => {
+      const largeRecord = {
+        id: 0,
+        data: 'x'.repeat(100000),
+      };
+
+      // Write 5 large records
+      for (let i = 0; i < 5; i++) {
+        writeLineSync(testFile, { ...largeRecord, id: i });
+      }
+
+      const content = fs.readFileSync(testFile, 'utf-8');
+      const lines = content.trim().split('\n');
+
+      expect(lines).toHaveLength(5);
+      for (let i = 0; i < 5; i++) {
+        const parsed = JSON.parse(lines[i]);
+        expect(parsed.id).toBe(i);
+        expect(parsed.data).toBe('x'.repeat(100000));
+      }
+    });
   });
 
   describe('write', () => {

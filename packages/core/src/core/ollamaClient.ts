@@ -435,6 +435,8 @@ export class OllamaClient {
       this.sessionTurnCount > this.config.getMaxSessionTurns()
     ) {
       yield { type: OllamaEventType.MaxSessionTurns };
+      // Yield Finished event for proper cleanup
+      yield { type: OllamaEventType.Finished, value: { reason: undefined, usageMetadata: undefined } };
       return new Turn(this.getChat(), prompt_id);
     }
     // Ensure turns never exceeds MAX_TURNS to prevent infinite loops
@@ -482,6 +484,8 @@ export class OllamaClient {
       const loopDetected = await this.loopDetector.turnStarted(signal);
       if (loopDetected) {
         yield { type: OllamaEventType.LoopDetected };
+        // Yield Finished event for proper cleanup
+        yield { type: OllamaEventType.Finished, value: { reason: undefined, usageMetadata: undefined } };
         return turn;
       }
     }
@@ -520,11 +524,14 @@ export class OllamaClient {
       if (!this.config.getSkipLoopDetection()) {
         if (this.loopDetector.addAndCheck(event)) {
           yield { type: OllamaEventType.LoopDetected };
+          // Yield Finished event for proper cleanup
+          yield { type: OllamaEventType.Finished, value: { reason: undefined, usageMetadata: undefined } };
           return turn;
         }
       }
       yield event;
       if (event.type === OllamaEventType.Error) {
+        // Note: Finished event is already yielded by turn.run() in error case
         return turn;
       }
     }
