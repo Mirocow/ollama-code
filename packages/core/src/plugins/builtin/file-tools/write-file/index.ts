@@ -27,17 +27,14 @@ import { ToolErrorType } from '../../../../tools/tool-error.js';
 import { FileEncoding } from '../../../../services/fileSystemService.js';
 import { makeRelative, shortenPath } from '../../../../utils/paths.js';
 import { getErrorMessage, isNodeError } from '../../../../utils/errors.js';
-import {
-  DEFAULT_DIFF_OPTIONS,
-  getDiffStat,
-} from '../../../../tools/diffOptions.js';
+import { DEFAULT_DIFF_OPTIONS, getDiffStat } from '../../../../tools/diffOptions.js';
 import type {
   ModifiableDeclarativeTool,
   ModifyContext,
 } from '../../../../tools/modifiable-tool.js';
 import { IdeClient } from '../../../../ide/ide-client.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
-import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
+import { uiTelemetryService } from '../../../../services/uiTelemetry.js';
 
 const debugLogger = createDebugLogger('WRITE_FILE');
 

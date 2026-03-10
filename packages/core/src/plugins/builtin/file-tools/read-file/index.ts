@@ -6,16 +6,8 @@
 
 import path from 'node:path';
 import { makeRelative, shortenPath } from '../../../../utils/paths.js';
-import type {
-  ToolInvocation,
-  ToolLocation,
-  ToolResult,
-} from '../../../../tools/tools.js';
-import {
-  BaseDeclarativeTool,
-  BaseToolInvocation,
-  Kind,
-} from '../../../../tools/tools.js';
+import type { ToolInvocation, ToolLocation, ToolResult } from '../../../../tools/tools.js';
+import { BaseDeclarativeTool, BaseToolInvocation, Kind } from '../../../../tools/tools.js';
 
 import type { PartUnion } from '../../../../types/content.js';
 import { processSingleFileContent } from '../../../../utils/fileUtils.js';
@@ -23,7 +15,7 @@ import type { Config } from '../../../../config/config.js';
 
 import { isSubpath } from '../../../../utils/paths.js';
 import { Storage } from '../../../../config/storage.js';
-import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
+import { uiTelemetryService } from '../../../../services/uiTelemetry.js';
 
 /**
  * Parameters for the ReadFile tool

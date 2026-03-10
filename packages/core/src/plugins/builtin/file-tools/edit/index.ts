@@ -14,22 +14,16 @@ import type {
   ToolLocation,
   ToolResult,
 } from '../../../../tools/tools.js';
-import {
-  BaseDeclarativeTool,
-  Kind,
-  ToolConfirmationOutcome,
-} from '../../../../tools/tools.js';
+import { BaseDeclarativeTool, Kind, ToolConfirmationOutcome } from '../../../../tools/tools.js';
 import { ToolErrorType } from '../../../../tools/tool-error.js';
 import { makeRelative, shortenPath } from '../../../../utils/paths.js';
 import { isNodeError } from '../../../../utils/errors.js';
 import type { Config } from '../../../../config/config.js';
 import { ApprovalMode } from '../../../../config/config.js';
 import { FileEncoding } from '../../../../services/fileSystemService.js';
-import {
-  DEFAULT_DIFF_OPTIONS,
-  getDiffStat,
-} from '../../../../tools/diffOptions.js';
+import { DEFAULT_DIFF_OPTIONS, getDiffStat } from '../../../../tools/diffOptions.js';
 import { ReadFileTool } from '../read-file/index.js';
+
 
 import type {
   ModifiableDeclarativeTool,
@@ -38,7 +32,7 @@ import type {
 import { IdeClient } from '../../../../ide/ide-client.js';
 import { safeLiteralReplace } from '../../../../utils/textUtils.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
-import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
+import { uiTelemetryService } from '../../../../services/uiTelemetry.js';
 import {
   countOccurrences,
   extractEditSnippet,
