@@ -14,5 +14,4 @@ export {
   injectDataIntoHtmlTemplate,
 } from './formatters/html.js';
 export { toJson } from './formatters/json.js';
-export { toJsonl } from './formatters/jsonl.js';
 export { generateExportFilename } from './utils.js';

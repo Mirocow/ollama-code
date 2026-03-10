@@ -5,9 +5,6 @@
  */
 
 import { type Config } from '../config/config.js';
-import path from 'node:path';
-import fs from 'node:fs';
-import os from 'node:os';
 import { randomUUID } from 'node:crypto';
 import {
   type PartListUnion,
@@ -16,9 +13,9 @@ import {
   createUserContent,
   createModelContent,
 } from '../types/content.js';
-import * as jsonl from '../utils/jsonl-utils.js';
 import { getGitBranch } from '../utils/gitUtils.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
+import { SessionService } from './sessionService.js';
 
 const debugLogger = createDebugLogger('CHAT_RECORDING');
 import type {
@@ -27,7 +24,6 @@ import type {
 } from '../core/turn.js';
 import type { Status } from '../core/coreToolScheduler.js';
 import type { TaskResultDisplay } from '../tools/tools.js';
-
 
 /**
  * A single record stored in the JSONL file.
@@ -202,12 +198,15 @@ export interface UiTelemetryRecordPayload {
         totalGeneratedTokens: number;
         totalCachedTokens: number;
         totalApiTime: number;
-        byModel: Record<string, {
-          promptTokens: number;
-          generatedTokens: number;
-          cachedTokens: number;
-          apiTime: number;
-        }>;
+        byModel: Record<
+          string,
+          {
+            promptTokens: number;
+            generatedTokens: number;
+            cachedTokens: number;
+            apiTime: number;
+          }
+        >;
       };
       tools: {
         totalCalls: number;
@@ -220,19 +219,22 @@ export interface UiTelemetryRecordPayload {
           modify: number;
           auto_accept: number;
         };
-        byName: Record<string, {
-          toolName: string;
-          count: number;
-          success: number;
-          fail: number;
-          durationMs: number;
-          decisions: {
-            accept: number;
-            reject: number;
-            modify: number;
-            auto_accept: number;
-          };
-        }>;
+        byName: Record<
+          string,
+          {
+            toolName: string;
+            count: number;
+            success: number;
+            fail: number;
+            durationMs: number;
+            decisions: {
+              accept: number;
+              reject: number;
+              modify: number;
+              auto_accept: number;
+            };
+          }
+        >;
       };
       files: {
         read: number;
@@ -292,19 +294,24 @@ export interface UiTelemetryRecordPayload {
  * - Linear history reconstruction
  * - Future checkpointing (branch from any historical point)
  *
- * File location: ~/.ollama-code/tmp/<project_id>/chats/
+ * **Storage Location:** Uses SessionService for all file operations.
+ * Sessions are stored in: ~/.ollama-code/projects/<project_id>/chats/
  *
- * For session management (list, load, remove), use SessionService.
+ * For session management (list, load, remove), use SessionService directly.
  */
 export class ChatRecordingService {
   /** UUID of the last written record in the chain */
   private lastRecordUuid: string | null = null;
   private readonly config: Config;
+  /** SessionService instance for all file operations */
+  private readonly sessionService: SessionService;
 
   constructor(config: Config) {
     this.config = config;
     this.lastRecordUuid =
       config.getResumedSessionData()?.lastCompletedUuid ?? null;
+    // Create SessionService for all file operations
+    this.sessionService = new SessionService(config.getProjectRoot());
   }
 
   /**
@@ -313,56 +320,6 @@ export class ChatRecordingService {
    */
   private getSessionId(): string {
     return this.config.getSessionId();
-  }
-
-  /**
-   * Gets the sessions directory path.
-   * Uses ~/.ollama-code/sessions/ for unified storage.
-   * @returns The path to the sessions directory.
-   */
-  private ensureSessionsDir(): string {
-    const sessionsDir = path.join(os.homedir(), '.ollama-code', 'sessions');
-
-    try {
-      fs.mkdirSync(sessionsDir, { recursive: true });
-    } catch {
-      // Ignore errors - directory will be created if it doesn't exist
-    }
-
-    return sessionsDir;
-  }
-
-  /**
-   * Ensures the session file exists, creating it if it doesn't exist.
-   * File path: ~/.ollama-code/sessions/<sessionId>.jsonl
-   * Uses atomic file creation to avoid race conditions.
-   * @returns The path to the session file.
-   * @throws Error if the file cannot be created or accessed.
-   */
-  private ensureSessionFile(): string {
-    const sessionsDir = this.ensureSessionsDir();
-    const sessionFile = path.join(sessionsDir, `${this.getSessionId()}.jsonl`);
-
-    if (fs.existsSync(sessionFile)) {
-      return sessionFile;
-    }
-
-    try {
-      // Use 'wx' flag for exclusive creation - atomic operation that fails if file exists
-      // This avoids the TOCTOU race condition of existsSync + writeFileSync
-      fs.writeFileSync(sessionFile, '', { flag: 'wx', encoding: 'utf8' });
-    } catch (error) {
-      const nodeError = error as NodeJS.ErrnoException;
-      // EEXIST means file already exists, which is expected and fine
-      if (nodeError.code !== 'EEXIST') {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(
-          `Failed to create session file at ${sessionFile}: ${message}`,
-        );
-      }
-    }
-
-    return sessionFile;
   }
 
   /**
@@ -385,18 +342,18 @@ export class ChatRecordingService {
 
   /**
    * Appends a record to the session file and updates lastRecordUuid.
+   * Delegates all file operations to SessionService.
    */
   private appendRecord(record: ChatRecord): void {
-    const sessionFile = this.ensureSessionFile();
-    debugLogger.info('Appending record to file', { 
-      sessionFile, 
+    debugLogger.info('Appending record to session', {
       recordType: record.type,
-      sessionId: record.sessionId 
+      sessionId: record.sessionId,
     });
 
-    jsonl.writeLineSync(sessionFile, record);
+    // Use SessionService for all file operations
+    this.sessionService.appendRecord(record.sessionId, record);
     this.lastRecordUuid = record.uuid;
-    
+
     debugLogger.info('Record appended successfully', { uuid: record.uuid });
   }
 
@@ -409,7 +366,10 @@ export class ChatRecordingService {
    * @returns The UUID of the created record
    */
   recordUserMessage(message: PartListUnion, uuid?: string): string {
-    debugLogger.info('recordUserMessage called', { sessionId: this.getSessionId(), uuid });
+    debugLogger.info('recordUserMessage called', {
+      sessionId: this.getSessionId(),
+      uuid,
+    });
     const recordUuid = uuid || randomUUID();
     const baseRecord = this.createBaseRecord('user');
     const record: ChatRecord = {
@@ -443,14 +403,14 @@ export class ChatRecordingService {
     requestUuid?: string;
   }): string {
     const uuid = data.uuid || randomUUID();
-    debugLogger.info('recordAssistantTurn called', { 
+    debugLogger.info('recordAssistantTurn called', {
       sessionId: this.getSessionId(),
       model: data.model,
       hasMessage: !!data.message,
       uuid,
-      requestUuid: data.requestUuid
+      requestUuid: data.requestUuid,
     });
-    
+
     const baseRecord = this.createBaseRecord('assistant');
     const record: ChatRecord = {
       ...baseRecord,
@@ -471,7 +431,10 @@ export class ChatRecordingService {
     }
 
     this.appendRecord(record);
-    debugLogger.info('Assistant turn saved successfully', { uuid: record.uuid, requestUuid: data.requestUuid });
+    debugLogger.info('Assistant turn saved successfully', {
+      uuid: record.uuid,
+      requestUuid: data.requestUuid,
+    });
     return record.uuid;
   }
 
@@ -610,7 +573,10 @@ export class ChatRecordingService {
       };
 
       this.appendRecord(record);
-      debugLogger.info('Error recorded to session', { message: payload.message, status: payload.status });
+      debugLogger.info('Error recorded to session', {
+        message: payload.message,
+        status: payload.status,
+      });
     } catch (error) {
       debugLogger.error('Error saving error record:', error);
     }
@@ -629,7 +595,9 @@ export class ChatRecordingService {
       };
 
       this.appendRecord(record);
-      debugLogger.info('Loop detection recorded to session', { requestUuid: payload.requestUuid });
+      debugLogger.info('Loop detection recorded to session', {
+        requestUuid: payload.requestUuid,
+      });
     } catch (error) {
       debugLogger.error('Error saving loop detection record:', error);
     }

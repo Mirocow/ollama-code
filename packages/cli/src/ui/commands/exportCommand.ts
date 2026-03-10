@@ -12,14 +12,13 @@ import {
   type MessageActionReturn,
   CommandKind,
 } from './types.js';
-import { SessionService } from '@ollama-code/ollama-code-core';
+import { SessionService, jsonl } from '@ollama-code/ollama-code-core';
 import {
   collectSessionData,
   normalizeSessionData,
   toMarkdown,
   toHtml,
   toJson,
-  toJsonl,
   generateExportFilename,
 } from '../utils/export/index.js';
 
@@ -288,14 +287,27 @@ async function exportJsonlAction(
       config,
     );
 
-    // Generate JSONL from SSOT
-    const jsonl = toJsonl(normalizedData);
-
+    // Generate filename and filepath
     const filename = generateExportFilename('jsonl');
     const filepath = path.join(cwd, filename);
 
-    // Write to file
-    await fs.writeFile(filepath, jsonl, 'utf-8');
+    // Prepare data for JSONL format
+    const lines: unknown[] = [];
+
+    // Add session metadata as the first line
+    lines.push({
+      type: 'session_metadata',
+      sessionId: normalizedData.sessionId,
+      startTime: normalizedData.startTime,
+    });
+
+    // Add each message as a separate line
+    for (const message of normalizedData.messages) {
+      lines.push(message);
+    }
+
+    // Use jsonl.write from core for crash-safe atomic write
+    jsonl.write(filepath, lines);
 
     return {
       type: 'message',

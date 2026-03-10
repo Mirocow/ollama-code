@@ -119,9 +119,13 @@ const MAX_PROMPT_SCAN_LINES = 10;
  * - Listing sessions with pagination (ordered by mtime)
  * - Loading full session data for resumption
  * - Removing sessions
+ * - Creating and appending records to sessions
  *
  * Sessions are stored as JSONL files, one per session.
- * File location: ~/.ollama-code/tmp/<project_id>/chats/
+ * File location: ~/.ollama-code/projects/<project_id>/chats/
+ *
+ * This is the single source of truth for all session storage operations.
+ * ChatRecordingService should use this service for all file operations.
  */
 export class SessionService {
   private readonly storage: Storage;
@@ -132,8 +136,78 @@ export class SessionService {
     this.projectHash = getProjectHash(cwd);
   }
 
-  private getChatsDir(): string {
-    return path.join(this.storage.getProjectDir(), 'chats');
+  /**
+   * Gets the chats directory path for the current project.
+   * This is the single source of truth for session file locations.
+   */
+  getChatsDir(): string {
+    const chatsDir = path.join(this.storage.getProjectDir(), 'chats');
+    // Ensure directory exists
+    if (!fs.existsSync(chatsDir)) {
+      fs.mkdirSync(chatsDir, { recursive: true });
+    }
+    return chatsDir;
+  }
+
+  /**
+   * Gets the file path for a specific session.
+   *
+   * @param sessionId The session ID
+   * @returns The full path to the session file
+   */
+  getSessionFilePath(sessionId: string): string {
+    return path.join(this.getChatsDir(), `${sessionId}.jsonl`);
+  }
+
+  /**
+   * Ensures a session file exists, creating it if necessary.
+   * Uses atomic file creation to avoid race conditions.
+   *
+   * @param sessionId The session ID
+   * @returns The path to the session file
+   */
+  ensureSessionFile(sessionId: string): string {
+    const filePath = this.getSessionFilePath(sessionId);
+
+    if (fs.existsSync(filePath)) {
+      return filePath;
+    }
+
+    try {
+      // Use 'wx' flag for exclusive creation - atomic operation that fails if file exists
+      fs.writeFileSync(filePath, '', { flag: 'wx', encoding: 'utf8' });
+    } catch (error) {
+      const nodeError = error as NodeJS.ErrnoException;
+      // EEXIST means file already exists, which is expected and fine
+      if (nodeError.code !== 'EEXIST') {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Failed to create session file at ${filePath}: ${message}`,
+        );
+      }
+    }
+
+    return filePath;
+  }
+
+  /**
+   * Appends a record to a session file.
+   * Creates the file if it doesn't exist.
+   *
+   * @param sessionId The session ID
+   * @param record The chat record to append
+   */
+  appendRecord(sessionId: string, record: ChatRecord): void {
+    const sessionFile = this.ensureSessionFile(sessionId);
+    debugLogger.info('Appending record to session file', {
+      sessionFile,
+      recordType: record.type,
+      sessionId,
+    });
+
+    jsonl.writeLineSync(sessionFile, record);
+
+    debugLogger.info('Record appended successfully', { uuid: record.uuid });
   }
 
   /**
@@ -642,7 +716,6 @@ export function buildApiHistoryFromConversation(
   }
   return result;
 }
-
 
 /**
  * Returns the best available prompt token count for resuming telemetry:
