@@ -32,7 +32,7 @@ import type {
 import { IdeClient } from '../../../../ide/ide-client.js';
 import { safeLiteralReplace } from '../../../../utils/textUtils.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
-import { uiTelemetryService } from '../../../../services/uiTelemetry.js';
+import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
 import {
   countOccurrences,
   extractEditSnippet,

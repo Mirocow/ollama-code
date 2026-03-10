@@ -15,7 +15,7 @@ import type { Config } from '../../../../config/config.js';
 
 import { isSubpath } from '../../../../utils/paths.js';
 import { Storage } from '../../../../config/storage.js';
-import { uiTelemetryService } from '../../../../services/uiTelemetry.js';
+import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
 
 /**
  * Parameters for the ReadFile tool

@@ -20,7 +20,7 @@ import type { ToolRegistry } from '../tools/tool-registry.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 import type { PluginDefinition, PluginTool, UnifiedToolItem, PluginHealth, DependencyValidationResult, PluginLoadOrder } from './types.js';
 import type { Config } from '../config/config.js';
-import { uiTelemetryService } from '../services/uiTelemetry.js';
+import { uiTelemetryService } from '../services/uiTelemetryService.js';
 import { BuiltinAgentRegistry } from '../subagents/builtin-agents.js';
 import { registerPluginAliases, unregisterPluginAliases, getDynamicAliasCount } from '../tools/tool-names.js';
 import { setPluginToolContextProvider, type PluginToolContextProvider } from './pluginToolAdapter.js';

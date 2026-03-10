@@ -24,7 +24,7 @@ import {
   type ToolResultDisplay,
 } from '../../../../tools/tools.js';
 import { ToolErrorType } from '../../../../tools/tool-error.js';
-import { uiTelemetryService } from '../../../../services/uiTelemetry.js';
+import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
 
 // ============================================================================
 // Type Definitions

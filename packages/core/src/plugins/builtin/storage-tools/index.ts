@@ -36,7 +36,7 @@ import * as os from 'node:os';
 import { Storage } from '../../../config/storage.js';
 import { ToolErrorType } from '../../../tools/tool-error.js';
 import { createDebugLogger } from '../../../utils/debugLogger.js';
-import { uiTelemetryService } from '../../../services/uiTelemetry.js';
+import { uiTelemetryService } from '../../../services/uiTelemetryService.js';
 
 const debugLogger = createDebugLogger('STORAGE_TOOL');
 

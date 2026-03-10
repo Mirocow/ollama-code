@@ -34,7 +34,7 @@ import type {
 } from '../../../../tools/modifiable-tool.js';
 import { IdeClient } from '../../../../ide/ide-client.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
-import { uiTelemetryService } from '../../../../services/uiTelemetry.js';
+import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
 
 const debugLogger = createDebugLogger('WRITE_FILE');
 
