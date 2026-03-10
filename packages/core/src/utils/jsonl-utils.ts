@@ -10,7 +10,7 @@
  * Features:
  * - Atomic writes with fsync for crash protection
  * - Handles corrupted files (concatenated JSON objects, incomplete lines)
- * - Mutex-based concurrency control
+ * - Simple spinlock for concurrency control (works for both sync and async)
  * - Automatic recovery on read
  *
  * Reading operations:
@@ -19,7 +19,7 @@
  *
  * Writing operations:
  * - writeLine() - Async append with crash protection
- * - writeLineSync() - Sync append (use in non-async contexts)
+ * - writeLineSync() - Sync append (uses spinlock)
  * - write() - Overwrites entire file with array of objects
  *
  * Utility operations:
@@ -30,7 +30,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
-import { Mutex } from 'async-mutex';
 import { createDebugLogger } from './debugLogger.js';
 
 const debugLogger = createDebugLogger('JSONL');
@@ -40,109 +39,16 @@ const debugLogger = createDebugLogger('JSONL');
  * CRITICAL: This is the SINGLE source of truth for file locking.
  * Both sync and async operations must use this lock.
  */
-const fileLocks = new Map<string, { locked: boolean; queue: Array<() => void> }>();
+const fileLocks = new Map<string, { locked: boolean }>();
 
 /**
  * Gets or creates a lock for a specific file path.
- * This lock is used by BOTH sync and async operations.
  */
-function getFileLock(filePath: string): { locked: boolean; queue: Array<() => void> } {
+function getFileLock(filePath: string): { locked: boolean } {
   if (!fileLocks.has(filePath)) {
-    fileLocks.set(filePath, { locked: false, queue: [] });
+    fileLocks.set(filePath, { locked: false });
   }
   return fileLocks.get(filePath)!;
-}
-
-/**
- * Executes a function with a sync lock.
- * Uses a simple spin-lock with busy-wait (necessary for sync context).
- * 
- * WARNING: This will block the thread if lock is held by another operation.
- * The maxWaitMs parameter prevents infinite blocking.
- */
-function withSyncLock<T>(filePath: string, fn: () => T, maxWaitMs: number = 5000): T {
-  const lock = getFileLock(filePath);
-  
-  // Spin-wait until lock is available (busy-wait for sync context)
-  const startTime = Date.now();
-  while (lock.locked) {
-    if (Date.now() - startTime > maxWaitMs) {
-      throw new Error(`Lock timeout for ${filePath} after ${maxWaitMs}ms`);
-    }
-    // Busy-wait - necessary evil for sync context
-    // Note: this blocks the thread, but ensures serialization
-  }
-  
-  // Acquire lock
-  lock.locked = true;
-  try {
-    return fn();
-  } finally {
-    lock.locked = false;
-    // Process queued async operations
-    const next = lock.queue.shift();
-    if (next) {
-      // Schedule next operation via setImmediate
-      setImmediate(next);
-    }
-  }
-}
-
-/**
- * Waits for lock to be available, then executes the function.
- * Used by async code to coordinate with sync writeLineSync calls.
- * 
- * This creates a proper barrier: if sync code is holding the lock,
- * async code will wait (via setImmediate) until it's released.
- */
-async function waitForSyncLockAndExecute<T>(filePath: string, fn: () => T): Promise<T> {
-  const lock = getFileLock(filePath);
-  
-  // If lock is available, execute immediately
-  if (!lock.locked) {
-    lock.locked = true;
-    try {
-      return fn();
-    } finally {
-      lock.locked = false;
-      // Process queued operations
-      const next = lock.queue.shift();
-      if (next) {
-        setImmediate(next);
-      }
-    }
-  }
-  
-  // Lock is held - queue our operation and wait
-  return new Promise<T>((resolve, reject) => {
-    const executeWhenReady = () => {
-      if (!lock.locked) {
-        lock.locked = true;
-        try {
-          const result = fn();
-          resolve(result);
-        } catch (e) {
-          reject(e);
-        } finally {
-          lock.locked = false;
-          // Process next queued operation
-          const next = lock.queue.shift();
-          if (next) {
-            setImmediate(next);
-          }
-        }
-      } else {
-        // Still locked, re-queue
-        lock.queue.push(executeWhenReady);
-        setImmediate(executeWhenReady);
-      }
-    };
-    
-    // Add to queue
-    lock.queue.push(executeWhenReady);
-    // Try to execute soon
-    setImmediate(executeWhenReady);
-  });
 }
 
 /**
@@ -363,84 +269,101 @@ export async function read<T = unknown>(filePath: string): Promise<T[]> {
 }
 
 /**
+ * Internal sync write implementation (no locking).
+ * CRITICAL: Caller must ensure lock is held before calling this!
+ */
+function writeLineSyncInternal(filePath: string, data: unknown): void {
+  ensureDir(filePath);
+
+  const jsonStr = JSON.stringify(data);
+  validateJson(jsonStr);
+
+  const line = `${jsonStr}\n`;
+
+  const fd = fs.openSync(filePath, 'a');
+  try {
+    writeAllSync(fd, line);
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+/**
+ * Executes a function with a spinlock for the given file.
+ * Works for both sync and async contexts.
+ */
+function withSpinlock<T>(filePath: string, fn: () => T): T {
+  const lock = getFileLock(filePath);
+
+  // Spin-wait until lock is available
+  // This is necessary for proper coordination between sync and async contexts
+  while (lock.locked) {
+    // In sync context, we just busy-wait
+    // In async context, this may block the event loop temporarily
+    // but ensures proper serialization
+  }
+
+  lock.locked = true;
+  try {
+    return fn();
+  } finally {
+    lock.locked = false;
+  }
+}
+
+/**
+ * Async version of withSpinlock that yields during wait.
+ * This prevents blocking the event loop.
+ */
+async function withSpinlockAsync<T>(filePath: string, fn: () => T): Promise<T> {
+  const lock = getFileLock(filePath);
+
+  // Wait until lock is available, yielding to event loop
+  while (lock.locked) {
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+
+  lock.locked = true;
+  try {
+    return fn();
+  } finally {
+    lock.locked = false;
+  }
+}
+
+/**
  * Appends a line to a JSONL file with crash protection.
  *
  * Safety features:
- * - Uses sync lock with async wait for full synchronization
+ * - Uses spinlock with async yield for concurrency control
  * - Validates JSON before writing
  * - Uses fsync to ensure data is written to disk
  * - Atomic append operation
- * 
- * CRITICAL: This function coordinates with writeLineSync through syncFileLocks.
- * It waits for any sync write to complete before starting, and vice versa.
  */
 export async function writeLine(
   filePath: string,
   data: unknown,
 ): Promise<void> {
-  // Use waitForSyncLockAndExecute to coordinate with sync writes
-  await waitForSyncLockAndExecute(filePath, () => {
+  await withSpinlockAsync(filePath, () => {
     writeLineSyncInternal(filePath, data);
   });
 }
 
 /**
  * Synchronous version of writeLine for use in non-async contexts.
- * Uses queue-based locking for concurrency control to prevent interleaved writes.
  *
- * IMPORTANT: This function uses a sync locking mechanism to serialize writes.
- * Without proper locking, concurrent writes from different async contexts can
- * interleave, corrupting the JSONL file with mixed/partial records.
+ * WARNING: Uses busy-wait spinlock which may briefly block the thread!
+ *
+ * Safety features:
+ * - Uses spinlock for concurrency control with async writeLine
+ * - Validates JSON before writing
+ * - Uses fsync to ensure data is written to disk
  */
 export function writeLineSync(filePath: string, data: unknown): void {
-  ensureDir(filePath);
-
-  // Validate and serialize JSON BEFORE acquiring lock to minimize lock time
-  const jsonStr = JSON.stringify(data);
-  validateJson(jsonStr); // Will throw if invalid
-
-  const line = `${jsonStr}\n`;
-
-  // Use sync lock to prevent concurrent writes
-  withSyncLock(filePath, () => {
-    // Open file in append mode, write, then fsync
-    const fd = fs.openSync(filePath, 'a');
-    try {
-      // CRITICAL: fs.writeSync may not write all bytes in one call!
-      // We must loop until all bytes are written to prevent partial writes.
-      writeAllSync(fd, line);
-      // Force write to disk for crash protection
-      fs.fsyncSync(fd);
-    } finally {
-      fs.closeSync(fd);
-    }
+  withSpinlock(filePath, () => {
+    writeLineSyncInternal(filePath, data);
   });
-}
-
-/**
- * Internal sync write with fsync for crash protection.
- * CRITICAL: This function does NOT use locking - caller must ensure proper synchronization
- * by wrapping the call in withSyncLock().
- */
-function writeLineSyncInternal(filePath: string, data: unknown): void {
-  ensureDir(filePath);
-
-  // Validate JSON first
-  const jsonStr = JSON.stringify(data);
-  validateJson(jsonStr); // Will throw if invalid
-
-  const line = `${jsonStr}\n`;
-
-  // Open file in append mode, write, then fsync
-  const fd = fs.openSync(filePath, 'a');
-  try {
-    // CRITICAL: fs.writeSync may not write all bytes in one call!
-    writeAllSync(fd, line);
-    // Force write to disk for crash protection
-    fs.fsyncSync(fd);
-  } finally {
-    fs.closeSync(fd);
-  }
 }
 
 /**
@@ -458,7 +381,6 @@ export function write(filePath: string, data: unknown[]): void {
   // Write to temp file with fsync
   const fd = fs.openSync(tempPath, 'w');
   try {
-    // CRITICAL: fs.writeSync may not write all bytes in one call!
     writeAllSync(fd, lines);
     fs.fsyncSync(fd);
   } finally {

@@ -162,7 +162,7 @@ describe('jsonl-utils', () => {
       // This tests that writeLine (async) and writeLineSync (sync) 
       // properly coordinate through the shared syncFileLocks mechanism
       
-      const promises: Promise<void>[] = [];
+      const promises: Array<Promise<void>> = [];
       const syncWrites = 5;
       const asyncWrites = 5;
       
@@ -200,7 +200,7 @@ describe('jsonl-utils', () => {
 
     it('should handle rapid fire mixed writes without data corruption', async () => {
       const iterations = 20;
-      const promises: Promise<void>[] = [];
+      const promises: Array<Promise<void>> = [];
       
       for (let i = 0; i < iterations; i++) {
         // Alternate between sync and async
