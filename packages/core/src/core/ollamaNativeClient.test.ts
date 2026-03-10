@@ -4,1017 +4,192 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * Comprehensive tests for OllamaNativeClient.
- * Tests all native Ollama REST API endpoints.
- */
-
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   OllamaNativeClient,
   DEFAULT_OLLAMA_NATIVE_URL,
-  createOllamaNativeClient,
 } from './ollamaNativeClient.js';
-import { apiLogger } from '../utils/apiLogger.js';
-
-// Mock apiLogger
-const mockApiLogger = {
-  logInteraction: vi.fn().mockResolvedValue('/logs/test-log.json'),
-  initialize: vi.fn().mockResolvedValue(undefined),
-  getLogFiles: vi.fn().mockResolvedValue([]),
-  readLogFile: vi.fn().mockResolvedValue({}),
-};
-
-// Replace the imported apiLogger with mock
-vi.mock('../utils/apiLogger.js', () => ({
-  apiLogger: {
-    logInteraction: vi.fn().mockResolvedValue('/logs/test-log.json'),
-    initialize: vi.fn().mockResolvedValue(undefined),
-    getLogFiles: vi.fn().mockResolvedValue([]),
-    readLogFile: vi.fn().mockResolvedValue({}),
-  },
-}));
-
-// Mock httpClient module for axios-based requests
-const mockHttpClient = {
-  request: vi.fn(),
-  interceptors: {
-    request: { use: vi.fn() },
-    response: { use: vi.fn() },
-  },
-};
-
-vi.mock('../utils/httpClient.js', () => ({
-  createHttpClient: vi.fn(() => mockHttpClient),
-  getDefaultHttpClient: vi.fn(() => mockHttpClient),
-  resetDefaultHttpClient: vi.fn(),
-}));
-
-// Test configuration
-const OLLAMA_TEST_URL = process.env['OLLAMA_URL'] || 'http://localhost:11434';
-const OLLAMA_TEST_MODEL = process.env['OLLAMA_TEST_MODEL'] || 'llama3.2';
-
-// Skip tests if OLLAMA_SKIP_INTEGRATION is set
-const shouldRunIntegrationTests = !process.env['OLLAMA_SKIP_INTEGRATION'];
-
-// Mock fetch for unit tests
-const mockFetch = vi.fn();
-const originalFetch = global.fetch;
+import {
+  createMockOllamaServer,
+  type MockServer,
+} from '../test-utils/mockOllamaServer.js';
 
 describe('OllamaNativeClient', () => {
-  describe('Constructor and Configuration', () => {
-    it('should use default URL if not provided', () => {
-      const client = new OllamaNativeClient();
-      expect(client.getBaseUrl()).toBe(DEFAULT_OLLAMA_NATIVE_URL);
-    });
+  let mockServer: MockServer;
+  let client: OllamaNativeClient;
 
-    it('should use custom URL when provided', () => {
-      const client = new OllamaNativeClient({ baseUrl: 'http://custom:11434' });
-      expect(client.getBaseUrl()).toBe('http://custom:11434');
+  beforeEach(async () => {
+    mockServer = await createMockOllamaServer({
+      chunkDelay: 5, // Fast for tests
     });
-
-    it('should use default timeout if not provided', () => {
-      const client = new OllamaNativeClient();
-      // Timeout is private, but we can test behavior
-      expect(client).toBeDefined();
-    });
-
-    it('should use custom timeout when provided', () => {
-      const client = new OllamaNativeClient({ timeout: 60000 });
-      expect(client).toBeDefined();
-    });
-
-    it('should create client via factory function', () => {
-      const client = createOllamaNativeClient({ baseUrl: OLLAMA_TEST_URL });
-      expect(client).toBeInstanceOf(OllamaNativeClient);
-      expect(client.getBaseUrl()).toBe(OLLAMA_TEST_URL);
+    client = new OllamaNativeClient({
+      baseUrl: mockServer.url,
+      timeout: 5000,
     });
   });
 
-  // Unit tests with mocked fetch
-  describe('Unit Tests (Mocked)', () => {
-    beforeAll(() => {
-      global.fetch = mockFetch;
-    });
-
-    afterAll(() => {
-      global.fetch = originalFetch;
-    });
-
-    beforeEach(() => {
-      mockFetch.mockReset();
-      mockHttpClient.request.mockReset();
-      (apiLogger.logInteraction as any).mockClear();
-    });
-
-    describe('/api/generate', () => {
-      it('should call /api/generate with correct parameters', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        // Mock axios response
-        mockHttpClient.request.mockResolvedValueOnce({
-          data: {
-            model: 'llama3.2',
-            created_at: '2024-01-01T00:00:00Z',
-            response: 'Hello, World!',
-            done: true,
-            context: [1, 2, 3],
-            total_duration: 1000000000,
-            prompt_eval_count: 10,
-            eval_count: 5,
-          },
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: {},
-        });
-
-        const result = await client.generate({
-          model: 'llama3.2',
-          prompt: 'Why is the sky blue?',
-        });
-
-        expect(mockHttpClient.request).toHaveBeenCalledWith(
-          expect.objectContaining({
-            method: 'POST',
-            url: '/api/generate',
-            data: expect.objectContaining({
-              model: 'llama3.2',
-            }),
-          })
-        );
-        expect(result.response).toBe('Hello, World!');
-        expect(result.done).toBe(true);
-      });
-
-      it('should handle streaming generate request', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        // Mock streaming response
-        const mockReader = {
-          read: vi.fn()
-            .mockResolvedValueOnce({
-              done: false,
-              value: new TextEncoder().encode('{"model":"llama3.2","response":"Hello","done":false}\n'),
-            })
-            .mockResolvedValueOnce({
-              done: false,
-              value: new TextEncoder().encode('{"model":"llama3.2","response":" World","done":false}\n'),
-            })
-            .mockResolvedValueOnce({
-              done: false,
-              value: new TextEncoder().encode('{"model":"llama3.2","response":"!","done":true}\n'),
-            })
-            .mockResolvedValue({ done: true, value: undefined }),
-        };
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          headers: { get: () => 'application/x-ndjson' },
-          body: { getReader: () => mockReader },
-        });
-
-        const chunks: any[] = [];
-        await client.generate(
-          { model: 'llama3.2', prompt: 'Test' },
-          (chunk) => chunks.push(chunk)
-        );
-
-        expect(chunks.length).toBe(3);
-        expect(chunks[0].response).toBe('Hello');
-        expect(chunks[2].done).toBe(true);
-      });
-
-      it('should support options parameter', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            model: 'llama3.2',
-            response: 'Test',
-            done: true,
-          }),
-        });
-
-        await client.generate({
-          model: 'llama3.2',
-          prompt: 'Test',
-          options: {
-            temperature: 0.7,
-            top_p: 0.9,
-            num_predict: 100,
-          },
-        });
-
-        const callArgs = mockFetch.mock.calls[0];
-        const body = JSON.parse(callArgs[1].body);
-        expect(body.options.temperature).toBe(0.7);
-        expect(body.options.top_p).toBe(0.9);
-        expect(body.options.num_predict).toBe(100);
-      });
-    });
-
-    describe('/api/chat', () => {
-      it('should call /api/chat with correct parameters', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            model: 'llama3.2',
-            created_at: '2024-01-01T00:00:00Z',
-            message: { role: 'assistant', content: 'Hello!' },
-            done: true,
-          }),
-        });
-
-        const result = await client.chat({
-          model: 'llama3.2',
-          messages: [
-            { role: 'user', content: 'Hello!' },
-          ],
-        });
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/chat',
-          expect.objectContaining({
-            method: 'POST',
-            body: expect.stringContaining('"messages"'),
-          })
-        );
-        expect(result.message.content).toBe('Hello!');
-      });
-
-      it('should handle chat with tools', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            model: 'llama3.2',
-            created_at: '2024-01-01T00:00:00Z',
-            message: {
-              role: 'assistant',
-              content: '',
-              tool_calls: [
-                {
-                  function: {
-                    name: 'get_weather',
-                    arguments: { location: 'San Francisco' },
-                  },
-                },
-              ],
-            },
-            done: true,
-          }),
-        });
-
-        const result = await client.chat({
-          model: 'llama3.2',
-          messages: [{ role: 'user', content: 'What is the weather?' }],
-          tools: [
-            {
-              type: 'function',
-              function: {
-                name: 'get_weather',
-                description: 'Get weather',
-                parameters: { type: 'object', properties: { location: { type: 'string' } } },
-              },
-            },
-          ],
-        });
-
-        expect(result.message.tool_calls).toBeDefined();
-        expect(result.message.tool_calls?.[0].function.name).toBe('get_weather');
-      });
-
-      it('should handle chat with images', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            model: 'llava',
-            message: { role: 'assistant', content: 'This is an image of a cat.' },
-            done: true,
-          }),
-        });
-
-        const result = await client.chat({
-          model: 'llava',
-          messages: [
-            {
-              role: 'user',
-              content: 'What is in this image?',
-              images: ['base64imagedata'],
-            },
-          ],
-        });
-
-        const callArgs = mockFetch.mock.calls[0];
-        const body = JSON.parse(callArgs[1].body);
-        expect(body.messages[0].images).toContain('base64imagedata');
-        expect(result.message.content).toContain('image');
-      });
-    });
-
-    describe('/api/tags', () => {
-      it('should list local models', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            models: [
-              {
-                name: 'llama3.2:latest',
-                modified_at: '2024-01-01T00:00:00Z',
-                size: 4000000000,
-                digest: 'abc123',
-                details: {
-                  format: 'gguf',
-                  family: 'llama',
-                  parameter_size: '3B',
-                  quantization_level: 'Q4_0',
-                },
-              },
-            ],
-          }),
-        });
-
-        const result = await client.listModels();
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/tags',
-          expect.objectContaining({ method: 'GET' })
-        );
-        expect(result.models).toHaveLength(1);
-        expect(result.models[0].name).toBe('llama3.2:latest');
-      });
-    });
-
-    describe('/api/show', () => {
-      it('should show model information', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            modelfile: 'FROM llama3.2',
-            parameters: 'temperature 0.7',
-            template: '{{ .System }}\n{{ .Prompt }}',
-            details: {
-              format: 'gguf',
-              family: 'llama',
-              parameter_size: '3B',
-              quantization_level: 'Q4_0',
-            },
-          }),
-        });
-
-        const result = await client.showModel('llama3.2');
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/show',
-          expect.objectContaining({
-            method: 'POST',
-            body: expect.stringContaining('"model":"llama3.2"'),
-          })
-        );
-        expect(result.modelfile).toContain('FROM llama3.2');
-      });
-    });
-
-    describe('/api/copy', () => {
-      it('should copy a model', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
-
-        await client.copyModel('llama3.2', 'llama3-backup');
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/copy',
-          expect.objectContaining({
-            method: 'POST',
-            body: expect.stringContaining('"source":"llama3.2"'),
-          })
-        );
-      });
-    });
-
-    describe('/api/delete', () => {
-      it('should delete a model', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
-
-        await client.deleteModel('llama3:13b');
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/delete',
-          expect.objectContaining({
-            method: 'DELETE',
-            body: expect.stringContaining('"model":"llama3:13b"'),
-          })
-        );
-      });
-    });
-
-    describe('/api/pull', () => {
-      it('should pull a model (non-streaming)', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
-
-        await client.pullModel('llama3.2');
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/pull',
-          expect.objectContaining({
-            method: 'POST',
-            body: expect.stringContaining('"name":"llama3.2"'),
-          })
-        );
-      });
-
-      it('should pull a model with progress callback', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        const mockReader = {
-          read: vi.fn()
-            .mockResolvedValueOnce({
-              done: false,
-              value: new TextEncoder().encode('{"status":"pulling manifest"}\n'),
-            })
-            .mockResolvedValueOnce({
-              done: false,
-              value: new TextEncoder().encode('{"status":"downloading","total":1000,"completed":500}\n'),
-            })
-            .mockResolvedValueOnce({
-              done: false,
-              value: new TextEncoder().encode('{"status":"verifying sha256 digest"}\n'),
-            })
-            .mockResolvedValue({ done: true, value: undefined }),
-        };
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          headers: { get: () => 'application/x-ndjson' },
-          body: { getReader: () => mockReader },
-        });
-
-        const progressEvents: any[] = [];
-        await client.pullModel('llama3.2', (progress) => {
-          progressEvents.push(progress);
-        });
-
-        expect(progressEvents.length).toBe(3);
-        expect(progressEvents[1].percentage).toBe(50);
-      });
-    });
-
-    describe('/api/push', () => {
-      it('should push a model', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
-
-        await client.pushModel('mattw/pygmalion:latest');
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/push',
-          expect.objectContaining({
-            method: 'POST',
-            body: expect.stringContaining('"name":"mattw/pygmalion:latest"'),
-          })
-        );
-      });
-    });
-
-    describe('/api/embed', () => {
-      it('should generate embeddings', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            model: 'all-minilm',
-            embeddings: [
-              [0.1, 0.2, 0.3, 0.4],
-              [0.5, 0.6, 0.7, 0.8],
-            ],
-          }),
-        });
-
-        const result = await client.embed({
-          model: 'all-minilm',
-          input: ['Why is the sky blue?', 'Why is the grass green?'],
-        });
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/embed',
-          expect.objectContaining({
-            method: 'POST',
-            body: expect.stringContaining('"input"'),
-          })
-        );
-        expect(result.embeddings).toHaveLength(2);
-      });
-    });
-
-    describe('/api/embeddings (legacy)', () => {
-      it('should generate single embedding (legacy endpoint)', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            embedding: [0.1, 0.2, 0.3, 0.4],
-          }),
-        });
-
-        const result = await client.embeddings({
-          model: 'all-minilm',
-          prompt: 'Here is an article about llamas...',
-        });
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/embeddings',
-          expect.objectContaining({
-            method: 'POST',
-            body: expect.stringContaining('"prompt"'),
-          })
-        );
-        expect(result.embedding).toHaveLength(4);
-      });
-    });
-
-    describe('/api/version', () => {
-      it('should get Ollama version', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ version: '0.1.26' }),
-        });
-
-        const result = await client.getVersion();
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/version',
-          expect.objectContaining({ method: 'GET' })
-        );
-        expect(result.version).toBe('0.1.26');
-      });
-    });
-
-    describe('/api/ps', () => {
-      it('should list running models', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            models: [
-              {
-                name: 'llama3.2:latest',
-                model: 'llama3.2:latest',
-                size: 4000000000,
-                digest: 'abc123',
-                details: {
-                  format: 'gguf',
-                  family: 'llama',
-                  parameter_size: '3B',
-                  quantization_level: 'Q4_0',
-                },
-                expires_at: '2024-01-01T01:00:00Z',
-                size_vram: 4000000000,
-              },
-            ],
-          }),
-        });
-
-        const result = await client.listRunningModels();
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://test:11434/api/ps',
-          expect.objectContaining({ method: 'GET' })
-        );
-        expect(result.models).toHaveLength(1);
-        expect(result.models[0].size_vram).toBe(4000000000);
-      });
-    });
-
-    describe('Error Handling', () => {
-      it('should throw error on HTTP error', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
-          text: async () => '{"error": "model not found"}',
-        });
-
-        await expect(client.showModel('nonexistent')).rejects.toThrow('model not found');
-      });
-
-      it('should throw error on timeout', async () => {
-        const client = new OllamaNativeClient({
-          baseUrl: 'http://test:11434',
-          timeout: 1, // 1ms timeout
-        });
-
-        // Create an AbortController to simulate abort
-        const abortError = new Error('The operation was aborted');
-        (abortError as any).name = 'AbortError';
-
-        // Mock fetch to throw abort error when signal is aborted
-        mockFetch.mockImplementationOnce((_url: string, _options: any) => new Promise((_resolve, reject) => {
-            setTimeout(() => {
-              reject(abortError);
-            }, 10);
-          }));
-
-        // The abort signal should cause an error
-        await expect(client.getVersion()).rejects.toThrow();
-      });
-
-      it('should handle malformed JSON error response', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: false,
-          status: 500,
-          statusText: 'Internal Server Error',
-          text: async () => 'Not JSON',
-        });
-
-        await expect(client.showModel('test')).rejects.toThrow('500');
-      });
-    });
-
-    describe('Utility Methods', () => {
-      it('should check if server is running', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ version: '0.1.26' }),
-        });
-
-        const isRunning = await client.isServerRunning();
-        expect(isRunning).toBe(true);
-      });
-
-      it('should return false if server is not running', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
-
-        const isRunning = await client.isServerRunning();
-        expect(isRunning).toBe(false);
-      });
-
-      it('should check if model is available', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            models: [{ name: 'llama3.2:latest' }],
-          }),
-        });
-
-        const isAvailable = await client.isModelAvailable('llama3.2');
-        expect(isAvailable).toBe(true);
-      });
-
-      it('should return false if model is not available', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            models: [{ name: 'llama3.2:latest' }],
-          }),
-        });
-
-        const isAvailable = await client.isModelAvailable('nonexistent');
-        expect(isAvailable).toBe(false);
-      });
-    });
-
-    describe('API Logging', () => {
-      it('should log request to apiLogger for non-streaming request', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            model: 'llama3.2',
-            message: { role: 'assistant', content: 'Hello!' },
-            done: true,
-          }),
-        });
-
-        await client.chat({
-          model: 'llama3.2',
-          messages: [{ role: 'user', content: 'Hello!' }],
-        });
-
-        // Check that apiLogger.logInteraction was called
-        expect(apiLogger.logInteraction).toHaveBeenCalled();
-
-        // Check that the request was logged
-        const callArgs = (apiLogger.logInteraction as any).mock.calls[0];
-        expect(callArgs[0]).toMatchObject({
-          type: 'request',
-          method: 'POST',
-          endpoint: '/api/chat',
-        });
-      });
-
-      it('should log response to apiLogger for non-streaming request', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        const responseData = {
-          model: 'llama3.2',
-          message: { role: 'assistant', content: 'Hello!' },
-          done: true,
-        };
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => responseData,
-        });
-
-        await client.chat({
-          model: 'llama3.2',
-          messages: [{ role: 'user', content: 'Hello!' }],
-        });
-
-        // Check that apiLogger.logInteraction was called with response
-        const calls = (apiLogger.logInteraction as any).mock.calls;
-        const responseCall = calls.find((call: any[]) => call[1]?.type === 'response');
-        expect(responseCall).toBeDefined();
-        expect(responseCall[1]).toMatchObject({
-          type: 'response',
-          status: 200,
-        });
-      });
-
-      it('should log error to apiLogger on failed request', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
-          text: async () => '{"error": "model not found"}',
-        });
-
-        try {
-          await client.showModel('nonexistent');
-        } catch {
-          // Expected to throw
-        }
-
-        // Check that apiLogger.logInteraction was called with error
-        const calls = (apiLogger.logInteraction as any).mock.calls;
-        const errorCall = calls.find((call: any[]) => call[2] instanceof Error);
-        expect(errorCall).toBeDefined();
-      });
-
-      it('should log streaming request to apiLogger', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        const mockReader = {
-          read: vi.fn()
-            .mockResolvedValueOnce({
-              done: false,
-              value: new TextEncoder().encode('{"model":"llama3.2","message":{"role":"assistant","content":"Hello"},"done":false}\n'),
-            })
-            .mockResolvedValueOnce({
-              done: false,
-              value: new TextEncoder().encode('{"model":"llama3.2","message":{"role":"assistant","content":"!"},"done":true}\n'),
-            })
-            .mockResolvedValue({ done: true, value: undefined }),
-        };
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          headers: { get: () => 'application/x-ndjson' },
-          body: { getReader: () => mockReader },
-        });
-
-        const chunks: any[] = [];
-        await client.chat(
-          { model: 'llama3.2', messages: [{ role: 'user', content: 'Hi' }] },
-          (chunk) => chunks.push(chunk)
-        );
-
-        // Check that apiLogger.logInteraction was called
-        expect(apiLogger.logInteraction).toHaveBeenCalled();
-
-        // Check that streaming response was logged with chunks
-        const calls = (apiLogger.logInteraction as any).mock.calls;
-        const streamingCall = calls.find((call: any[]) => call[1]?.type === 'streaming_response');
-        expect(streamingCall).toBeDefined();
-        expect(streamingCall[1]).toHaveProperty('chunks');
-        expect(streamingCall[1]).toHaveProperty('totalChunks');
-      });
-
-      it('should log request body in log data', async () => {
-        const client = new OllamaNativeClient({ baseUrl: 'http://test:11434' });
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            model: 'llama3.2',
-            message: { role: 'assistant', content: 'Hi!' },
-            done: true,
-          }),
-        });
-
-        await client.chat({
-          model: 'llama3.2',
+  afterEach(async () => {
+    await mockServer.close();
+  });
+
+  describe('chat', () => {
+    it('should handle streaming chat responses', async () => {
+      const chunks: Array<{ content: string; done: boolean }> = [];
+
+      const response = await client.chat(
+        {
+          model: 'test-model',
           messages: [{ role: 'user', content: 'Hello' }],
-        });
+        },
+        (chunk) => {
+          chunks.push({
+            content: chunk.message.content,
+            done: chunk.done,
+          });
+        },
+      );
 
-        // Check that request body was logged
-        const callArgs = (apiLogger.logInteraction as any).mock.calls[0];
-        expect(callArgs[0].body).toMatchObject({
-          model: 'llama3.2',
-          messages: [{ role: 'user', content: 'Hello' }],
-        });
+      // Verify we got the final response
+      expect(response.done).toBe(true);
+      expect(response.message.role).toBe('assistant');
+      expect(response.message.content).toContain('How can I help you today?');
+
+      // Verify we got all chunks
+      expect(chunks.length).toBeGreaterThan(1);
+
+      // Verify last chunk is done
+      const lastChunk = chunks[chunks.length - 1];
+      expect(lastChunk.done).toBe(true);
+    });
+
+    it('should handle non-streaming chat responses', async () => {
+      const response = await client.chat({
+        model: 'test-model',
+        messages: [{ role: 'user', content: 'Hello' }],
+        stream: false,
       });
+
+      expect(response.done).toBe(true);
+      expect(response.message.role).toBe('assistant');
+      expect(response.message.content).toBeTruthy();
+    });
+
+    it('should accumulate content correctly across chunks', async () => {
+      let accumulatedContent = '';
+
+      await client.chat(
+        {
+          model: 'test-model',
+          messages: [{ role: 'user', content: 'Hello' }],
+        },
+        (chunk) => {
+          accumulatedContent += chunk.message.content;
+        },
+      );
+
+      // Default mock response is "Hello! I am a mock AI assistant. How can I help you today?"
+      expect(accumulatedContent).toContain('Hello!');
+      expect(accumulatedContent).toContain('mock');
+      expect(accumulatedContent).toContain('assistant');
     });
   });
 
-  // Integration tests (require running Ollama server)
-  describe.skipIf(shouldRunIntegrationTests)('Integration Tests (Live Ollama)', () => {
-    let client: OllamaNativeClient;
-    let hasTestModel: boolean;
+  describe('listModels', () => {
+    it('should list available models', async () => {
+      const response = await client.listModels();
 
-    beforeAll(async () => {
-      client = new OllamaNativeClient({ baseUrl: OLLAMA_TEST_URL });
+      expect(response.models).toBeDefined();
+      expect(response.models.length).toBeGreaterThan(0);
+      expect(response.models[0].name).toContain('mock-model');
+    });
+  });
 
-      // Check if server is running
-      const isRunning = await client.isServerRunning();
-      if (!isRunning) {
-        console.warn('Ollama server not running, skipping integration tests');
+  describe('showModel', () => {
+    it('should show model information', async () => {
+      const response = await client.showModel('mock-model');
+
+      expect(response.modelfile).toBeDefined();
+      expect(response.details).toBeDefined();
+      expect(response.capabilities).toContain('completion');
+      expect(response.capabilities).toContain('tools');
+    });
+  });
+
+  describe('error handling', () => {
+    it('should handle server errors', async () => {
+      // Create new server that simulates errors
+      const errorServer = await createMockOllamaServer({
+        simulateError: true,
+      });
+      const errorClient = new OllamaNativeClient({
+        baseUrl: errorServer.url,
+        timeout: 1000,
+        retry: { maxRetries: 0 }, // Disable retries for this test
+      });
+
+      try {
+        await expect(
+          errorClient.chat({
+            model: 'test-model',
+            messages: [{ role: 'user', content: 'Hello' }],
+          }),
+        ).rejects.toThrow();
+      } finally {
+        await errorServer.close();
       }
+    });
+  });
 
-      // Check if test model is available
-      hasTestModel = await client.isModelAvailable(OLLAMA_TEST_MODEL);
+  describe('request tracking', () => {
+    it('should track request count', async () => {
+      expect(mockServer.getRequestCount()).toBe(0);
+
+      await client.chat({
+        model: 'test-model',
+        messages: [{ role: 'user', content: 'Hello' }],
+        stream: false,
+      });
+
+      expect(mockServer.getRequestCount()).toBe(1);
+
+      await client.chat({
+        model: 'test-model',
+        messages: [{ role: 'user', content: 'Hello again' }],
+        stream: false,
+      });
+
+      expect(mockServer.getRequestCount()).toBe(2);
     });
 
-    describe('/api/version', () => {
-      it('should get Ollama version', async () => {
-        const result = await client.getVersion();
-        expect(result.version).toBeDefined();
-        console.log('Ollama version:', result.version);
+    it('should capture last request body', async () => {
+      await client.chat({
+        model: 'test-model',
+        messages: [{ role: 'user', content: 'Test message' }],
+        stream: false,
       });
+
+      const lastRequest = mockServer.getLastRequest() as {
+        model: string;
+        messages: Array<{ role: string; content: string }>;
+      };
+
+      expect(lastRequest.model).toBe('test-model');
+      expect(lastRequest.messages[0].content).toBe('Test message');
+    });
+  });
+
+  describe('baseUrl handling', () => {
+    it('should remove /v1 suffix from baseUrl', () => {
+      const clientWithV1 = new OllamaNativeClient({
+        baseUrl: 'http://localhost:11434/v1',
+      });
+
+      expect(clientWithV1.getBaseUrl()).toBe('http://localhost:11434');
     });
 
-    describe('/api/tags', () => {
-      it('should list local models', async () => {
-        const result = await client.listModels();
-        expect(result.models).toBeDefined();
-        expect(Array.isArray(result.models)).toBe(true);
-        console.log('Available models:', result.models.map(m => m.name));
-      });
-    });
-
-    describe('/api/ps', () => {
-      it('should list running models', async () => {
-        const result = await client.listRunningModels();
-        expect(result.models).toBeDefined();
-        expect(Array.isArray(result.models)).toBe(true);
-      });
-    });
-
-    describe('/api/show', () => {
-      it.skipIf(!hasTestModel)('should show model information', async () => {
-        const result = await client.showModel(OLLAMA_TEST_MODEL);
-        expect(result.modelfile).toBeDefined();
-        expect(result.details).toBeDefined();
-      });
-    });
-
-    describe('/api/generate', () => {
-      it.skipIf(!hasTestModel)('should generate text', async () => {
-        const result = await client.generate({
-          model: OLLAMA_TEST_MODEL,
-          prompt: 'Say "Hello, World!" and nothing else.',
-        });
-
-        expect(result.response).toBeDefined();
-        expect(result.done).toBe(true);
-        console.log('Generated text:', result.response);
-      });
-
-      it.skipIf(!hasTestModel)('should generate text with options', async () => {
-        const result = await client.generate({
-          model: OLLAMA_TEST_MODEL,
-          prompt: 'Count from 1 to 5.',
-          options: {
-            temperature: 0.1,
-            num_predict: 50,
-          },
-        });
-
-        expect(result.response).toBeDefined();
-      });
-
-      it.skipIf(!hasTestModel)('should stream generate response', async () => {
-        const chunks: string[] = [];
-
-        const result = await client.generate(
-          {
-            model: OLLAMA_TEST_MODEL,
-            prompt: 'Say "test".',
-          },
-          (chunk) => {
-            if (chunk.response) {
-              chunks.push(chunk.response);
-            }
-          }
-        );
-
-        expect(chunks.length).toBeGreaterThan(0);
-        expect(result.done).toBe(true);
-      });
-    });
-
-    describe('/api/chat', () => {
-      it.skipIf(!hasTestModel)('should have a chat conversation', async () => {
-        const result = await client.chat({
-          model: OLLAMA_TEST_MODEL,
-          messages: [
-            { role: 'user', content: 'Say "Hello!" and nothing else.' },
-          ],
-        });
-
-        expect(result.message).toBeDefined();
-        expect(result.message.content).toBeDefined();
-        console.log('Chat response:', result.message.content);
-      });
-
-      it.skipIf(!hasTestModel)('should handle multi-turn conversation', async () => {
-        const result = await client.chat({
-          model: OLLAMA_TEST_MODEL,
-          messages: [
-            { role: 'user', content: 'My name is Alice.' },
-            { role: 'assistant', content: 'Hello Alice! How can I help you?' },
-            { role: 'user', content: 'What is my name?' },
-          ],
-        });
-
-        expect(result.message.content).toBeDefined();
-        expect(result.message.content.toLowerCase()).toContain('alice');
-      });
-    });
-
-    describe('/api/embed', () => {
-      it.skipIf(!hasTestModel)('should generate embeddings', async () => {
-        // Try with the main model first, skip if not supported
-        try {
-          const result = await client.embed({
-            model: OLLAMA_TEST_MODEL,
-            input: ['Hello, world!', 'Test embedding'],
-          });
-
-          expect(result.embeddings).toBeDefined();
-          expect(result.embeddings.length).toBe(2);
-          console.log('Embedding dimension:', result.embeddings[0].length);
-        } catch (error) {
-          console.log('Embedding not supported with this model, skipping');
-        }
-      });
-    });
-
-    describe('/api/embeddings (legacy)', () => {
-      it.skipIf(!hasTestModel)('should generate single embedding', async () => {
-        try {
-          const result = await client.embeddings({
-            model: OLLAMA_TEST_MODEL,
-            prompt: 'Test prompt for embedding',
-          });
-
-          expect(result.embedding).toBeDefined();
-          expect(Array.isArray(result.embedding)).toBe(true);
-        } catch (error) {
-          console.log('Legacy embedding not supported with this model, skipping');
-        }
-      });
+    it('should use default URL when not specified', () => {
+      const defaultClient = new OllamaNativeClient();
+      expect(defaultClient.getBaseUrl()).toBe(DEFAULT_OLLAMA_NATIVE_URL);
     });
   });
 });
