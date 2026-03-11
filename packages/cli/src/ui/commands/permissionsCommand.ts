@@ -17,12 +17,15 @@ import type {
 } from './types.js';
 import { CommandKind } from './types.js';
 import {
-  permissionService,
+  getPermissionService,
   type PermissionLevel,
   type ToolCategory,
   type PermissionRule,
 } from '@ollama-code/ollama-code-core';
 import { t } from '../../i18n/index.js';
+
+// Get the permission service instance
+const permissionService = getPermissionService();
 
 /**
  * Format permission level for display
@@ -69,7 +72,9 @@ function showRules(): string {
   ];
 
   for (const [level, count] of Object.entries(summary.byLevel)) {
-    lines.push(`  ${formatLevel(level as PermissionLevel)}: ${count}`);
+    lines.push(
+      `  ${formatLevel(level as PermissionLevel)}: ${count as number}`,
+    );
   }
 
   lines.push('');
@@ -77,7 +82,7 @@ function showRules(): string {
   lines.push('─'.repeat(50));
 
   for (const [category, count] of Object.entries(summary.byCategory)) {
-    if (count > 0) {
+    if ((count as number) > 0) {
       lines.push(`  ${formatCategory(category as ToolCategory)}: ${count}`);
     }
   }
@@ -135,10 +140,10 @@ function showCategory(category: string): string {
   ];
 
   if (!validCategories.includes(cat)) {
-    return t(
-      'Invalid category: {{category}}. Valid categories: {{valid}}',
-      { category, valid: validCategories.join(', ') },
-    );
+    return t('Invalid category: {{category}}. Valid categories: {{valid}}', {
+      category,
+      valid: validCategories.join(', '),
+    });
   }
 
   const rules = permissionService.getRulesByCategory(cat);
@@ -177,10 +182,10 @@ function setLevel(tool: string, level: string): string {
   ];
 
   if (!validLevels.includes(level as PermissionLevel)) {
-    return t(
-      'Invalid level: {{level}}. Valid levels: {{valid}}',
-      { level, valid: validLevels.join(', ') },
-    );
+    return t('Invalid level: {{level}}. Valid levels: {{valid}}', {
+      level,
+      valid: validLevels.join(', '),
+    });
   }
 
   const existingRule = permissionService.getRule(tool);
@@ -311,7 +316,10 @@ export const permissionsCommand: SlashCommand = {
     },
   ],
 
-  action: (_context: CommandContext, args: string): SlashCommandActionReturn => {
+  action: (
+    _context: CommandContext,
+    args: string,
+  ): SlashCommandActionReturn => {
     const parts = args.trim().split(/\s+/);
     const subcommand = parts[0]?.toLowerCase();
 

@@ -14,13 +14,16 @@ import {
   tildeifyPath,
   getModelCapabilities,
   tokenLimit,
-  tokenGraphService,
+  getTokenGraphService,
 } from '@ollama-code/ollama-code-core';
 import { theme } from '../semantic-colors.js';
 import { shortAsciiLogo } from './AsciiArt.js';
 import { getAsciiArtWidth, getCachedStringWidth } from '../utils/textUtils.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import { t, getCurrentLanguage } from '../../i18n/index.js';
+
+// Get the token graph service instance
+const tokenGraphService = getTokenGraphService();
 
 /**
  * Format context window size for display

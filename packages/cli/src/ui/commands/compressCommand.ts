@@ -140,8 +140,7 @@ export const compressCommand: SlashCommand = {
 
       // Generate compression report
       const duration = Date.now() - startTime;
-      const sessionId = config.getSessionId();
-      const reportService = new CompressionReportService(sessionId);
+      const reportService = new CompressionReportService(config);
       let reportPath: string | null = null;
       try {
         reportPath = await reportService.generateReport(result, duration);

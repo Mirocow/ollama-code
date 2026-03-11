@@ -12,9 +12,12 @@ import { useSettings } from '../contexts/SettingsContext.js';
 import { useConfig } from '../contexts/ConfigContext.js';
 import { useUIState } from '../contexts/UIStateContext.js';
 import { useSessionStats } from '../contexts/SessionContext.js';
-import { tokenGraphService } from '@ollama-code/ollama-code-core';
+import { getTokenGraphService } from '@ollama-code/ollama-code-core';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
+
+// Get the token graph service instance
+const tokenGraphService = getTokenGraphService();
 
 interface AppHeaderProps {
   version: string;
@@ -31,21 +34,22 @@ const AppHeaderComponent = ({ version }: AppHeaderProps) => {
   const sessionStats = useSessionStats();
 
   // Memoize config-derived values
-  const { authType, baseUrl, targetDir, showBanner, contextWindowSize } = useMemo(() => {
-    const contentGeneratorConfig = config.getContentGeneratorConfig();
-    return {
-      authType: contentGeneratorConfig?.authType,
-      baseUrl: contentGeneratorConfig?.baseUrl,
-      targetDir: config.getTargetDir(),
-      showBanner: !config.getScreenReader(),
-      contextWindowSize: contentGeneratorConfig?.contextWindowSize,
-    };
-  }, [config]);
+  const { authType, baseUrl, targetDir, showBanner, contextWindowSize } =
+    useMemo(() => {
+      const contentGeneratorConfig = config.getContentGeneratorConfig();
+      return {
+        authType: contentGeneratorConfig?.authType,
+        baseUrl: contentGeneratorConfig?.baseUrl,
+        targetDir: config.getTargetDir(),
+        showBanner: !config.getScreenReader(),
+        contextWindowSize: contentGeneratorConfig?.contextWindowSize,
+      };
+    }, [config]);
 
   // Memoize settings-derived values
   const showTips = useMemo(
     () => !(settings.merged.ui?.hideTips || config.getScreenReader()),
-    [settings.merged.ui?.hideTips, config]
+    [settings.merged.ui?.hideTips, config],
   );
 
   // Memoize session stats
@@ -54,11 +58,23 @@ const AppHeaderComponent = ({ version }: AppHeaderProps) => {
       sessionId: sessionStats.stats.sessionId,
       promptTokenCount: sessionStats.stats.lastPromptTokenCount,
     }),
-    [sessionStats.stats.sessionId, sessionStats.stats.lastPromptTokenCount]
+    [sessionStats.stats.sessionId, sessionStats.stats.lastPromptTokenCount],
   );
 
   // Get tool count, skill count, plugin count and storage stats from telemetry metrics
-  const { toolCount, skillCount, pluginCount, unhealthyPluginCount, sessionToolCalls, sessionStorageRecords, generatedTokens, averageTps, peakTokens, workspaceName, gitBranch } = useMemo(() => {
+  const {
+    toolCount,
+    skillCount,
+    pluginCount,
+    unhealthyPluginCount,
+    sessionToolCalls,
+    sessionStorageRecords,
+    generatedTokens,
+    averageTps,
+    peakTokens,
+    workspaceName,
+    gitBranch,
+  } = useMemo(() => {
     try {
       const metrics = sessionStats.stats.metrics;
 
@@ -94,9 +110,10 @@ const AppHeaderComponent = ({ version }: AppHeaderProps) => {
 
       // Calculate tokens per second if we have timing data
       const apiTime = metrics.totalApiTime || 0;
-      const avgTps = genTokens > 0 && apiTime > 0
-        ? Math.round((genTokens / (apiTime / 1000)) * 10) / 10
-        : 0;
+      const avgTps =
+        genTokens > 0 && apiTime > 0
+          ? Math.round((genTokens / (apiTime / 1000)) * 10) / 10
+          : 0;
 
       // Get statistics from tokenGraphService
       const stats = tokenGraphService.getStatistics();
@@ -111,7 +128,7 @@ const AppHeaderComponent = ({ version }: AppHeaderProps) => {
         branch = execSync('git branch --show-current', {
           cwd: targetDir,
           encoding: 'utf-8',
-          stdio: ['pipe', 'pipe', 'pipe']
+          stdio: ['pipe', 'pipe', 'pipe'],
         }).trim();
         if (!branch) branch = undefined;
       } catch {
@@ -132,7 +149,19 @@ const AppHeaderComponent = ({ version }: AppHeaderProps) => {
         gitBranch: branch,
       };
     } catch {
-      return { toolCount: 0, skillCount: 0, pluginCount: 0, unhealthyPluginCount: 0, sessionToolCalls: 0, sessionStorageRecords: 0, generatedTokens: 0, averageTps: 0, peakTokens: 0, workspaceName: undefined, gitBranch: undefined };
+      return {
+        toolCount: 0,
+        skillCount: 0,
+        pluginCount: 0,
+        unhealthyPluginCount: 0,
+        sessionToolCalls: 0,
+        sessionStorageRecords: 0,
+        generatedTokens: 0,
+        averageTps: 0,
+        peakTokens: 0,
+        workspaceName: undefined,
+        gitBranch: undefined,
+      };
     }
   }, [config, sessionStats.stats.metrics, targetDir]);
 

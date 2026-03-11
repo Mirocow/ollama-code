@@ -14,7 +14,10 @@ import { MessageType } from '../types.js';
 import type { SlashCommand, SlashCommandActionReturn } from './types.js';
 import { CommandKind } from './types.js';
 import { t } from '../../i18n/index.js';
-import { tokenGraphService } from '@ollama-code/ollama-code-core';
+import { getTokenGraphService } from '@ollama-code/ollama-code-core';
+
+// Get the token graph service instance
+const tokenGraphService = getTokenGraphService();
 
 /**
  * Token Graph command for visualizing token usage
@@ -75,7 +78,9 @@ export const tokenGraphCommand: SlashCommand = {
 
         message += t('Summary\n');
         message += '─'.repeat(20) + '\n';
-        message += t('Messages: {{count}}\n', { count: String(stats.messageCount) });
+        message += t('Messages: {{count}}\n', {
+          count: String(stats.messageCount),
+        });
         message += t('Total Prompt: {{tokens}}\n', {
           tokens: formatTokens(stats.totalPrompt),
         });
@@ -91,19 +96,27 @@ export const tokenGraphCommand: SlashCommand = {
 
         message += '\n' + t('Averages\n');
         message += '─'.repeat(20) + '\n';
-        message += t('Avg Prompt: {{tokens}}\n', { tokens: formatTokens(stats.avgPrompt) });
+        message += t('Avg Prompt: {{tokens}}\n', {
+          tokens: formatTokens(stats.avgPrompt),
+        });
         message += t('Avg Generated: {{tokens}}\n', {
           tokens: formatTokens(stats.avgGenerated),
         });
-        message += t('Avg Rate: {{rate}}\n', { rate: stats.avgRate.toFixed(2) });
+        message += t('Avg Rate: {{rate}}\n', {
+          rate: stats.avgRate.toFixed(2),
+        });
 
         message += '\n' + t('Peaks\n');
         message += '─'.repeat(20) + '\n';
-        message += t('Max Prompt: {{tokens}}\n', { tokens: formatTokens(stats.maxPrompt) });
+        message += t('Max Prompt: {{tokens}}\n', {
+          tokens: formatTokens(stats.maxPrompt),
+        });
         message += t('Max Generated: {{tokens}}\n', {
           tokens: formatTokens(stats.maxGenerated),
         });
-        message += t('Peak Rate: {{rate}}\n', { rate: stats.peakRate.toFixed(2) });
+        message += t('Peak Rate: {{rate}}\n', {
+          rate: stats.peakRate.toFixed(2),
+        });
 
         // By model breakdown
         const models = Object.entries(byModel);
@@ -111,9 +124,14 @@ export const tokenGraphCommand: SlashCommand = {
           message += '\n' + t('By Model\n');
           message += '─'.repeat(20) + '\n';
           for (const [model, data] of models) {
+            const modelData = data as {
+              count: number;
+              promptTokens: number;
+              generatedTokens: number;
+            };
             message += `${model}:\n`;
-            message += `  ${t('Messages')}: ${data.count}\n`;
-            message += `  ${t('Tokens')}: ${formatTokens(data.promptTokens + data.generatedTokens)}\n`;
+            message += `  ${t('Messages')}: ${modelData.count}\n`;
+            message += `  ${t('Tokens')}: ${formatTokens(modelData.promptTokens + modelData.generatedTokens)}\n`;
           }
         }
 
@@ -183,7 +201,9 @@ export const tokenGraphCommand: SlashCommand = {
     {
       name: 'history',
       get description() {
-        return t('Show recent token usage records. Usage: /token-graph history [count]');
+        return t(
+          'Show recent token usage records. Usage: /token-graph history [count]',
+        );
       },
       kind: CommandKind.BUILT_IN,
       action: async (context, args): Promise<void> => {
@@ -209,9 +229,10 @@ export const tokenGraphCommand: SlashCommand = {
         message += '─'.repeat(60) + '\n';
 
         for (const record of history) {
-          const rate = record.promptTokens > 0
-            ? (record.generatedTokens / record.promptTokens).toFixed(2)
-            : '0.00';
+          const rate =
+            record.promptTokens > 0
+              ? (record.generatedTokens / record.promptTokens).toFixed(2)
+              : '0.00';
           message += `${String(record.messageIndex).padStart(5)} | `;
           message += `${formatTokens(record.promptTokens).padStart(7)} | `;
           message += `${formatTokens(record.generatedTokens).padStart(9)} | `;
