@@ -823,3 +823,16 @@ export {
   type ActivityLogRecordPayload,
   type ActivityType,
 } from './services/chatRecordingService.js';
+
+// ============================================================================
+// Memory Summary Service
+// ============================================================================
+
+export {
+  MemorySummaryService,
+  getMemorySummaryService,
+  resetMemorySummaryService,
+  type ActivitySummary,
+  type SessionMemorySummary,
+  type CreateSummaryOptions,
+} from './services/memorySummaryService.js';

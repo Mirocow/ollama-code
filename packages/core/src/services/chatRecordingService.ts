@@ -16,6 +16,11 @@ import {
 import { getGitBranch } from '../utils/gitUtils.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 import { SessionService } from './sessionService.js';
+import { MemorySummaryService } from './memorySummaryService.js';
+// Re-export types for backward compatibility
+export { type ActivityType, type ActivityLogRecordPayload } from '../types/activity.js';
+// Import for local use
+import type { ActivityLogRecordPayload as ActivityLogPayload } from '../types/activity.js';
 
 const debugLogger = createDebugLogger('CHAT_RECORDING');
 import type {
@@ -103,7 +108,7 @@ export interface ChatRecord {
     | AtCommandRecordPayload
     | ErrorRecordPayload
     | LoopDetectedRecordPayload
-    | ActivityLogRecordPayload;
+    | ActivityLogPayload;
 }
 
 /**
@@ -170,45 +175,7 @@ export interface LoopDetectedRecordPayload {
   turnCount?: number;
 }
 
-/**
- * Activity types that can be recorded.
- */
-export type ActivityType =
-  | 'tool_call'
-  | 'file_read'
-  | 'file_write'
-  | 'file_edit'
-  | 'shell_command'
-  | 'model_request'
-  | 'model_response'
-  | 'user_action';
-
-/**
- * Stored payload for activity log events.
- * Records significant actions for session memory and resume context.
- */
-export interface ActivityLogRecordPayload {
-  /** Type of activity */
-  activityType: ActivityType;
-  /** Timestamp when activity occurred */
-  timestamp: number;
-  /** Human-readable description */
-  description: string;
-  /** Tool name if applicable */
-  toolName?: string;
-  /** File path if applicable */
-  filePath?: string;
-  /** Command if shell command */
-  command?: string;
-  /** Success status */
-  success: boolean;
-  /** Error message if failed */
-  error?: string;
-  /** Duration in milliseconds if applicable */
-  durationMs?: number;
-  /** Additional metadata */
-  metadata?: Record<string, unknown>;
-}
+// Activity types are imported from types/activity.ts and re-exported above
 
 /**
  * Stored payload for UI telemetry replay.
@@ -347,6 +314,8 @@ export class ChatRecordingService {
   private readonly config: Config;
   /** SessionService instance for all file operations */
   private readonly sessionService: SessionService;
+  /** MemorySummaryService for aggregating activities */
+  private readonly memorySummaryService: MemorySummaryService;
 
   constructor(config: Config) {
     this.config = config;
@@ -354,6 +323,8 @@ export class ChatRecordingService {
       config.getResumedSessionData()?.lastCompletedUuid ?? null;
     // Create SessionService for all file operations
     this.sessionService = new SessionService(config.getProjectRoot());
+    // Create MemorySummaryService for activity aggregation
+    this.memorySummaryService = new MemorySummaryService(config);
   }
 
   /**
@@ -654,7 +625,7 @@ export class ChatRecordingService {
    * - Enable better session memory on resume
    * - Track what work was done in a session
    */
-  recordActivityLog(payload: ActivityLogRecordPayload): void {
+  recordActivityLog(payload: ActivityLogPayload): void {
     try {
       const record: ChatRecord = {
         ...this.createBaseRecord('system'),
@@ -664,6 +635,10 @@ export class ChatRecordingService {
       };
 
       this.appendRecord(record);
+
+      // Also add to MemorySummaryService for aggregation
+      this.memorySummaryService.addActivity(payload);
+
       debugLogger.info('Activity logged to session', {
         activityType: payload.activityType,
         description: payload.description,
@@ -672,5 +647,13 @@ export class ChatRecordingService {
     } catch (error) {
       debugLogger.error('Error saving activity log record:', error);
     }
+  }
+
+  /**
+   * Get the MemorySummaryService instance for this session.
+   * Use this to create summaries or get activity statistics.
+   */
+  getMemorySummaryService(): MemorySummaryService {
+    return this.memorySummaryService;
   }
 }
