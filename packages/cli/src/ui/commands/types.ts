@@ -5,7 +5,13 @@
  */
 
 import type { ReactNode } from 'react';
-import type { Content, PartListUnion , Config, GitService, Logger } from '@ollama-code/ollama-code-core';
+import type {
+  Content,
+  PartListUnion,
+  Config,
+  GitService,
+  Logger,
+} from '@ollama-code/ollama-code-core';
 import type {
   HistoryItemWithoutId,
   HistoryItem,
@@ -136,7 +142,7 @@ export interface OpenDialogActionReturn {
 
   dialog:
     | 'help'
-    | 'auth'
+    | 'connect'
     | 'theme'
     | 'editor'
     | 'settings'

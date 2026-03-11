@@ -9,7 +9,7 @@ import type { SlashCommand } from '../ui/commands/types.js';
 import type { Config } from '@ollama-code/ollama-code-core';
 import { agentsCommand } from '../ui/commands/agentsCommand.js';
 import { approvalModeCommand } from '../ui/commands/approvalModeCommand.js';
-import { authCommand } from '../ui/commands/authCommand.js';
+import { connectCommand } from '../ui/commands/connectCommand.js';
 import { clearCommand } from '../ui/commands/clearCommand.js';
 import { compressCommand } from '../ui/commands/compressCommand.js';
 //import { copyCommand } from '../ui/commands/copyCommand.js';
@@ -56,7 +56,7 @@ export class BuiltinCommandLoader implements ICommandLoader {
     const allDefinitions: Array<SlashCommand | null> = [
       agentsCommand,
       approvalModeCommand,
-      authCommand,
+      connectCommand,
       clearCommand,
       compressCommand,
       // copyCommand,

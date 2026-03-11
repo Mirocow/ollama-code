@@ -5,7 +5,8 @@
  */
 
 import { useCallback, useMemo, useEffect, useState } from 'react';
-import { type PartListUnion ,
+import {
+  type PartListUnion,
   type Logger,
   type Config,
   createDebugLogger,
@@ -394,7 +395,7 @@ export const useSlashCommandProcessor = (
                   return { type: 'handled' };
                 case 'dialog':
                   switch (result.dialog) {
-                    case 'auth':
+                    case 'connect':
                       actions.openAuthDialog();
                       return { type: 'handled' };
                     case 'theme':
