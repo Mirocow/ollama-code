@@ -12,7 +12,7 @@
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as os from 'node:os';
+import { getOllamaDir } from '../utils/paths.js';
 
 // ============================================================================
 // Types
@@ -134,7 +134,7 @@ export class ResponseCache<T = unknown> {
     if (this.config.persistent) {
       this.storagePath =
         this.config.storageDir ||
-        path.join(os.homedir(), '.ollama-code', 'cache', 'responses');
+        path.join(getOllamaDir(), 'cache', 'responses');
       this.loadFromDisk();
     }
   }

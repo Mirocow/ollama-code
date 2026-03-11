@@ -7,7 +7,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { homedir } from 'node:os';
 import { execSync } from 'node:child_process';
 import { writeStderrLine } from '../utils/stdioHelpers.js';
 import {
@@ -15,6 +14,7 @@ import {
   SUPPORTED_LANGUAGES,
   getLanguageNameFromLocale,
 } from './languages.js';
+import { getOllamaDir } from '@ollama-code/ollama-code-core';
 
 export type { SupportedLanguage };
 export { getLanguageNameFromLocale };
@@ -34,8 +34,7 @@ const getBuiltinLocalesDir = (): string => {
   return path.join(path.dirname(__filename), 'locales');
 };
 
-const getUserLocalesDir = (): string =>
-  path.join(homedir(), '.ollama-code', 'locales');
+const getUserLocalesDir = (): string => path.join(getOllamaDir(), 'locales');
 
 /**
  * Get the path to the user's custom locales directory.
@@ -124,17 +123,23 @@ export function detectSystemLanguage(): SupportedLanguage {
   if (process.platform === 'darwin') {
     try {
       // Get AppleLocale first to determine region
-      const localeResult = execSync('defaults read -g AppleLocale 2>/dev/null', {
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe']
-      }).trim();
-      
+      const localeResult = execSync(
+        'defaults read -g AppleLocale 2>/dev/null',
+        {
+          encoding: 'utf-8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+        },
+      ).trim();
+
       // Check AppleLanguages for all preferred languages
-      const langResult = execSync('defaults read -g AppleLanguages 2>/dev/null', {
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe']
-      }).trim();
-      
+      const langResult = execSync(
+        'defaults read -g AppleLanguages 2>/dev/null',
+        {
+          encoding: 'utf-8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+        },
+      ).trim();
+
       // Extract all language codes from AppleLanguages array
       const langCodes: string[] = [];
       if (langResult) {
@@ -146,7 +151,7 @@ export function detectSystemLanguage(): SupportedLanguage {
           }
         }
       }
-      
+
       // Determine region from AppleLocale
       let regionCode: string | null = null;
       if (localeResult) {
@@ -155,25 +160,56 @@ export function detectSystemLanguage(): SupportedLanguage {
           regionCode = regionMatch[1].toUpperCase();
         }
       }
-      
+
       // Map regions to likely preferred languages (only supported languages)
       // For unsupported languages, fallback to English or AppleLanguages
       const regionToLang: Record<string, string> = {
         // Russian
-        'RU': 'ru', 'UA': 'ru', 'BY': 'ru', 'KZ': 'ru', 'KG': 'ru',
+        RU: 'ru',
+        UA: 'ru',
+        BY: 'ru',
+        KZ: 'ru',
+        KG: 'ru',
         // Chinese
-        'CN': 'zh', 'TW': 'zh', 'HK': 'zh', 'SG': 'zh',
+        CN: 'zh',
+        TW: 'zh',
+        HK: 'zh',
+        SG: 'zh',
         // German
-        'DE': 'de', 'AT': 'de', 'CH': 'de', 'LI': 'de',
+        DE: 'de',
+        AT: 'de',
+        CH: 'de',
+        LI: 'de',
         // Japanese
-        'JP': 'ja',
+        JP: 'ja',
         // Portuguese
-        'BR': 'pt', 'PT': 'pt', 'AO': 'pt', 'MZ': 'pt', 'CV': 'pt', 'GW': 'pt', 'TL': 'pt',
+        BR: 'pt',
+        PT: 'pt',
+        AO: 'pt',
+        MZ: 'pt',
+        CV: 'pt',
+        GW: 'pt',
+        TL: 'pt',
       };
-      
+
       // English-speaking regions
-      const englishRegions = ['US', 'GB', 'AU', 'CA', 'NZ', 'IE', 'ZA', 'PH', 'MT', 'IN', 'PK', 'NG', 'KE', 'GH'];
-      
+      const englishRegions = [
+        'US',
+        'GB',
+        'AU',
+        'CA',
+        'NZ',
+        'IE',
+        'ZA',
+        'PH',
+        'MT',
+        'IN',
+        'PK',
+        'NG',
+        'KE',
+        'GH',
+      ];
+
       // For non-English regions, prefer the region's language
       // This handles cases like: AppleLanguages = [en-GB, ru-RU], AppleLocale = en_RU
       // User likely speaks Russian despite English being first
@@ -185,14 +221,14 @@ export function detectSystemLanguage(): SupportedLanguage {
           }
         }
       }
-      
+
       // Fallback: use first language from AppleLanguages that we support
       for (const code of langCodes) {
         for (const lang of SUPPORTED_LANGUAGES) {
           if (code === lang.code) return lang.code;
         }
       }
-      
+
       // Last fallback: use region-based language
       if (regionCode) {
         const preferredLang = regionToLang[regionCode];

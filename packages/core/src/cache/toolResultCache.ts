@@ -12,7 +12,7 @@
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as os from 'node:os';
+import { getOllamaDir } from '../utils/paths.js';
 
 // ============================================================================
 // Types
@@ -206,7 +206,7 @@ export class ToolResultCache<T = unknown> {
     if (this.config.persistent) {
       this.storagePath =
         this.config.storageDir ||
-        path.join(os.homedir(), '.ollama-code', 'cache', 'tool-results');
+        path.join(getOllamaDir(), 'cache', 'tool-results');
       this.loadFromDisk();
     }
   }
@@ -523,7 +523,9 @@ export class ToolResultCache<T = unknown> {
   // Private Methods
   // ============================================================================
 
-  private normalizeInput(input: Record<string, unknown>): Record<string, unknown> {
+  private normalizeInput(
+    input: Record<string, unknown>,
+  ): Record<string, unknown> {
     // Sort keys for consistent serialization
     const sorted: Record<string, unknown> = {};
     for (const key of Object.keys(input).sort()) {

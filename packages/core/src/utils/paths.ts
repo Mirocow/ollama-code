@@ -13,7 +13,7 @@ import { isNodeError } from './errors.js';
 
 /**
  * Ollama Code directory name
- * @deprecated Use config.getOllamaDir() or Storage.getOllamaDir() instead
+ * @deprecated Use getOllamaDir() instead
  */
 export const OLLAMA_DIR = '.ollama-code';
 
@@ -38,12 +38,34 @@ export function getProjectsDir(): string {
 }
 
 /**
- * Get project-specific directory (~/.ollama-code/projects/<project-hash>/)
- * Used for project-specific data storage
+ * Get project-specific base directory (~/.ollama-code/projects/<project-hash>/)
+ * This is the root directory for all project-specific data
+ * @param projectRoot The absolute path to the project's root directory
+ * @returns The centralized project directory path
  */
-export function getProjectStorageDir(projectRoot: string): string {
+export function getProjectDir(projectRoot: string): string {
   const projectHash = getProjectHash(projectRoot);
   return path.join(getProjectsDir(), projectHash);
+}
+
+/**
+ * Get project-specific storage directory (~/.ollama-code/projects/<project-hash>/storage/)
+ * Used for project-specific storage data (model storage tool)
+ * @param projectRoot The absolute path to the project's root directory
+ * @returns The centralized project storage directory path
+ */
+export function getProjectStorageDir(projectRoot: string): string {
+  return path.join(getProjectDir(projectRoot), 'storage');
+}
+
+/**
+ * Get project-specific todos directory (~/.ollama-code/projects/<project-hash>/todos/)
+ * Used for project-specific todo lists
+ * @param projectRoot The absolute path to the project's root directory
+ * @returns The centralized project todos directory path
+ */
+export function getProjectTodoDir(projectRoot: string): string {
+  return path.join(getProjectDir(projectRoot), 'todos');
 }
 
 /**

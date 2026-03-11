@@ -9,6 +9,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { inspect } from 'node:util';
+import { getOllamaDir } from '../utils/paths.js';
 
 /**
  * Log levels
@@ -225,8 +226,7 @@ export class StructuredLogger {
 
     // Set log file path
     if (!this.config.logFilePath) {
-      const appDir = path.join(os.homedir(), '.ollama-code');
-      this.logPath = path.join(appDir, 'logs', `${name}.log`);
+      this.logPath = path.join(getOllamaDir(), 'logs', `${name}.log`);
     } else {
       this.logPath = this.config.logFilePath;
     }
@@ -362,8 +362,12 @@ export class StructuredLogger {
 
     const timestamp = entry.timestamp.substring(11, 19);
     const level = entry.level.toUpperCase().padEnd(5);
-    const component = entry.component ? `\x1b[36m[${entry.component}]\x1b[0m` : '';
-    const operation = entry.operation ? `\x1b[33m(${entry.operation})\x1b[0m` : '';
+    const component = entry.component
+      ? `\x1b[36m[${entry.component}]\x1b[0m`
+      : '';
+    const operation = entry.operation
+      ? `\x1b[33m(${entry.operation})\x1b[0m`
+      : '';
 
     let message = `${timestamp} ${color}${level}${reset} ${component}${operation} ${entry.message}`;
 
@@ -550,7 +554,9 @@ export class StructuredLogger {
       return result;
     } catch (error) {
       const duration = Date.now() - start;
-      this.error(`Operation failed: ${operation}`, error as Error, { duration });
+      this.error(`Operation failed: ${operation}`, error as Error, {
+        duration,
+      });
       throw error;
     }
   }
@@ -558,10 +564,7 @@ export class StructuredLogger {
   /**
    * Log async operation with timing
    */
-  async timeAsync<T>(
-    operation: string,
-    fn: () => Promise<T>,
-  ): Promise<T> {
+  async timeAsync<T>(operation: string, fn: () => Promise<T>): Promise<T> {
     const start = Date.now();
     try {
       const result = await fn();
@@ -570,7 +573,9 @@ export class StructuredLogger {
       return result;
     } catch (error) {
       const duration = Date.now() - start;
-      this.error(`Operation failed: ${operation}`, error as Error, { duration });
+      this.error(`Operation failed: ${operation}`, error as Error, {
+        duration,
+      });
       throw error;
     }
   }
@@ -590,11 +595,19 @@ export class StructuredLogger {
     return {
       end: (data?: Record<string, unknown>) => {
         const duration = Date.now() - start;
-        this.debug(`Operation completed: ${operation}`, { requestId, duration, ...data });
+        this.debug(`Operation completed: ${operation}`, {
+          requestId,
+          duration,
+          ...data,
+        });
       },
       error: (error: Error, data?: Record<string, unknown>) => {
         const duration = Date.now() - start;
-        this.error(`Operation failed: ${operation}`, error, { requestId, duration, ...data });
+        this.error(`Operation failed: ${operation}`, error, {
+          requestId,
+          duration,
+          ...data,
+        });
       },
     };
   }
@@ -643,7 +656,10 @@ class LoggerRegistry {
    */
   get(name: string, config?: Partial<LoggerConfig>): StructuredLogger {
     if (!this.loggers.has(name)) {
-      this.loggers.set(name, new StructuredLogger(name, { ...this.defaultConfig, ...config }));
+      this.loggers.set(
+        name,
+        new StructuredLogger(name, { ...this.defaultConfig, ...config }),
+      );
     }
     return this.loggers.get(name)!;
   }
