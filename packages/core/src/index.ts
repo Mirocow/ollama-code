@@ -806,3 +806,20 @@ export {
   CompressionReportService,
   type CompressionReport,
 } from './services/compressionReportService.js';
+
+// ============================================================================
+// Chat Recording Service
+// ============================================================================
+
+export {
+  ChatRecordingService,
+  type ChatRecord,
+  type ChatCompressionRecordPayload,
+  type SlashCommandRecordPayload,
+  type UiTelemetryRecordPayload,
+  type AtCommandRecordPayload,
+  type ErrorRecordPayload,
+  type LoopDetectedRecordPayload,
+  type ActivityLogRecordPayload,
+  type ActivityType,
+} from './services/chatRecordingService.js';

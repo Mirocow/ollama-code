@@ -61,7 +61,8 @@ export interface ChatRecord {
     | 'ui_telemetry'
     | 'at_command'
     | 'error'
-    | 'loop_detected';
+    | 'loop_detected'
+    | 'activity_log';
   /** Working directory at time of message */
   cwd: string;
   /** CLI version for compatibility tracking */
@@ -101,7 +102,8 @@ export interface ChatRecord {
     | UiTelemetryRecordPayload
     | AtCommandRecordPayload
     | ErrorRecordPayload
-    | LoopDetectedRecordPayload;
+    | LoopDetectedRecordPayload
+    | ActivityLogRecordPayload;
 }
 
 /**
@@ -166,6 +168,46 @@ export interface LoopDetectedRecordPayload {
   requestUuid?: string;
   /** Number of turns before loop was detected */
   turnCount?: number;
+}
+
+/**
+ * Activity types that can be recorded.
+ */
+export type ActivityType =
+  | 'tool_call'
+  | 'file_read'
+  | 'file_write'
+  | 'file_edit'
+  | 'shell_command'
+  | 'model_request'
+  | 'model_response'
+  | 'user_action';
+
+/**
+ * Stored payload for activity log events.
+ * Records significant actions for session memory and resume context.
+ */
+export interface ActivityLogRecordPayload {
+  /** Type of activity */
+  activityType: ActivityType;
+  /** Timestamp when activity occurred */
+  timestamp: number;
+  /** Human-readable description */
+  description: string;
+  /** Tool name if applicable */
+  toolName?: string;
+  /** File path if applicable */
+  filePath?: string;
+  /** Command if shell command */
+  command?: string;
+  /** Success status */
+  success: boolean;
+  /** Error message if failed */
+  error?: string;
+  /** Duration in milliseconds if applicable */
+  durationMs?: number;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -600,6 +642,35 @@ export class ChatRecordingService {
       });
     } catch (error) {
       debugLogger.error('Error saving loop detection record:', error);
+    }
+  }
+
+  /**
+   * Records an activity log event for session memory and resume context.
+   * This tracks significant actions like tool calls, file operations, etc.
+   *
+   * Activity logs are used to:
+   * - Provide context for compression summaries
+   * - Enable better session memory on resume
+   * - Track what work was done in a session
+   */
+  recordActivityLog(payload: ActivityLogRecordPayload): void {
+    try {
+      const record: ChatRecord = {
+        ...this.createBaseRecord('system'),
+        type: 'system',
+        subtype: 'activity_log',
+        systemPayload: payload,
+      };
+
+      this.appendRecord(record);
+      debugLogger.info('Activity logged to session', {
+        activityType: payload.activityType,
+        description: payload.description,
+        success: payload.success,
+      });
+    } catch (error) {
+      debugLogger.error('Error saving activity log record:', error);
     }
   }
 }

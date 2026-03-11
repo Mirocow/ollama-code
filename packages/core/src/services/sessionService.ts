@@ -15,6 +15,7 @@ import type {
   ChatCompressionRecordPayload,
   ChatRecord,
   UiTelemetryRecordPayload,
+  ActivityLogRecordPayload,
 } from './chatRecordingService.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
@@ -780,4 +781,133 @@ export function getResumeTelemetryState(
 
   debugLogger.info('No telemetry state found in session');
   return undefined;
+}
+
+/**
+ * Extracts activity log from a resumed session's conversation.
+ * Collects all activity_log system records to provide context about
+ * what work was done in the session. This helps with:
+ * - Providing context for compression summaries
+ * - Understanding session history on resume
+ * - Generating session summaries
+ *
+ * @param conversation The conversation record from a resumed session
+ * @param limit Maximum number of activities to return (default: 50)
+ * @returns Array of activity log payloads, most recent first
+ */
+export function getSessionActivityLog(
+  conversation: ConversationRecord,
+  limit: number = 50,
+): ActivityLogRecordPayload[] {
+  const activities: ActivityLogRecordPayload[] = [];
+
+  // Search from the end to get most recent activities first
+  for (
+    let i = conversation.messages.length - 1;
+    i >= 0 && activities.length < limit;
+    i--
+  ) {
+    const record = conversation.messages[i];
+    if (record.type === 'system' && record.subtype === 'activity_log') {
+      const payload = record.systemPayload as
+        | ActivityLogRecordPayload
+        | undefined;
+      if (payload) {
+        activities.push(payload);
+      }
+    }
+  }
+
+  debugLogger.info('Extracted activity log from session', {
+    count: activities.length,
+    limit,
+  });
+
+  return activities;
+}
+
+/**
+ * Generates a summary of session activities for use in compression.
+ * Groups activities by type and creates a concise summary suitable for
+ * inclusion in the <state_snapshot> during chat compression.
+ *
+ * @param activities The activity log payloads from a session
+ * @returns A formatted summary string for compression context
+ */
+export function generateActivitySummary(
+  activities: ActivityLogRecordPayload[],
+): string {
+  if (activities.length === 0) {
+    return '';
+  }
+
+  const byType: Record<string, ActivityLogRecordPayload[]> = {};
+  const fileOperations: Set<string> = new Set();
+  const commands: string[] = [];
+  const tools: Record<string, { success: number; fail: number }> = {};
+
+  for (const activity of activities) {
+    // Group by type
+    if (!byType[activity.activityType]) {
+      byType[activity.activityType] = [];
+    }
+    byType[activity.activityType].push(activity);
+
+    // Track file operations
+    if (activity.filePath) {
+      fileOperations.add(activity.filePath);
+    }
+
+    // Track commands
+    if (activity.command) {
+      commands.push(activity.command);
+    }
+
+    // Track tool usage
+    if (activity.toolName) {
+      if (!tools[activity.toolName]) {
+        tools[activity.toolName] = { success: 0, fail: 0 };
+      }
+      if (activity.success) {
+        tools[activity.toolName].success++;
+      } else {
+        tools[activity.toolName].fail++;
+      }
+    }
+  }
+
+  const lines: string[] = [];
+
+  // File operations summary
+  if (fileOperations.size > 0) {
+    lines.push(`Files affected: ${fileOperations.size}`);
+    const recentFiles = Array.from(fileOperations).slice(-10);
+    if (recentFiles.length < fileOperations.size) {
+      lines.push(`  (most recent: ${recentFiles.join(', ')})`);
+    } else {
+      lines.push(`  (${recentFiles.join(', ')})`);
+    }
+  }
+
+  // Tool usage summary
+  const toolNames = Object.keys(tools);
+  if (toolNames.length > 0) {
+    lines.push(`Tools used: ${toolNames.length}`);
+    for (const tool of toolNames.slice(0, 5)) {
+      const stats = tools[tool];
+      lines.push(`  - ${tool}: ${stats.success} success, ${stats.fail} fail`);
+    }
+  }
+
+  // Recent commands
+  if (commands.length > 0) {
+    lines.push(`Commands executed: ${commands.length}`);
+    const recentCommands = commands.slice(-5);
+    for (const cmd of recentCommands) {
+      const truncated = cmd.length > 60 ? cmd.substring(0, 60) + '...' : cmd;
+      lines.push(`  - ${truncated}`);
+    }
+  }
+
+  return lines.join('\n');
 }

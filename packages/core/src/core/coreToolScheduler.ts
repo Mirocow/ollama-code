@@ -17,6 +17,7 @@ import type {
   AnyDeclarativeTool,
   AnyToolInvocation,
   ChatRecordingService,
+  ActivityType,
 } from '../index.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
@@ -651,7 +652,7 @@ export class CoreToolScheduler {
       // The tool name is correct, but the tool isn't registered/enabled
       const registeredTools = this.toolRegistry.getAllToolNames();
       const isExactMatchInRegistry = registeredTools.some(
-        (name) => name.toLowerCase() === unknownToolName.toLowerCase()
+        (name) => name.toLowerCase() === unknownToolName.toLowerCase(),
       );
 
       if (!isExactMatchInRegistry) {
@@ -684,20 +685,25 @@ Available tools with similar functionality: ${this.getToolSuggestion(unknownTool
         // Get registered tool names for suggestions
         const registeredTools = this.toolRegistry.getAllToolNames();
         const similarTools = registeredTools
-          .filter(name => {
+          .filter((name) => {
             const lowerName = name.toLowerCase();
             const lowerUnknown = unknownToolName.toLowerCase();
             // Find tools with similar names
-            return lowerName.includes(lowerUnknown) ||
-                   lowerUnknown.includes(lowerName) ||
-                   lowerName.split('_').some(part => lowerUnknown.includes(part)) ||
-                   lowerUnknown.split('_').some(part => lowerName.includes(part));
+            return (
+              lowerName.includes(lowerUnknown) ||
+              lowerUnknown.includes(lowerName) ||
+              lowerName
+                .split('_')
+                .some((part) => lowerUnknown.includes(part)) ||
+              lowerUnknown.split('_').some((part) => lowerName.includes(part))
+            );
           })
           .slice(0, 3);
 
-        const suggestionText = similarTools.length > 0
-          ? `\n\nSimilar registered tools: ${similarTools.join(', ')}`
-          : '';
+        const suggestionText =
+          similarTools.length > 0
+            ? `\n\nSimilar registered tools: ${similarTools.join(', ')}`
+            : '';
 
         return `Tool "${unknownToolName}" is a valid tool name but is not currently registered.
 
@@ -1384,7 +1390,12 @@ LEARNING TIP: Use the exact tool name "${bestMatch.name}" in future calls.`;
         decision = 'reject';
       }
 
-      uiTelemetryService.recordToolCall(toolName, durationMs, success, decision);
+      uiTelemetryService.recordToolCall(
+        toolName,
+        durationMs,
+        success,
+        decision,
+      );
     }
 
     if (!this.chatRecordingService) return;
@@ -1405,7 +1416,69 @@ LEARNING TIP: Use the exact tool name "${bestMatch.name}" in future calls.`;
         error: call.response.error,
         errorType: call.response.errorType,
       });
+
+      // Record activity log for session memory
+      this.recordActivityLog(call);
     }
+  }
+
+  /**
+   * Records an activity log entry for a completed tool call.
+   * This helps with session memory and resume context.
+   */
+  private recordActivityLog(call: CompletedToolCall): void {
+    if (!this.chatRecordingService) return;
+
+    const toolName = call.request.name;
+    const success = call.status === 'success';
+    const durationMs = call.durationMs ?? 0;
+    const args = call.request.args as Record<string, unknown> | undefined;
+
+    // Determine activity type based on tool name
+    let activityType: ActivityType = 'tool_call';
+    let description = `Called tool: ${toolName}`;
+    let filePath: string | undefined;
+    let command: string | undefined;
+
+    // Map tool names to activity types
+    if (toolName === 'read_file' || toolName === 'read_many_files') {
+      activityType = 'file_read';
+      description = `Read file(s)`;
+      filePath =
+        (args?.['filepath'] as string | undefined) ??
+        (args?.['paths'] as string | undefined);
+    } else if (toolName === 'write_file') {
+      activityType = 'file_write';
+      description = `Wrote file`;
+      filePath = args?.['filepath'] as string | undefined;
+    } else if (toolName === 'edit') {
+      activityType = 'file_edit';
+      description = `Edited file`;
+      filePath = args?.['filepath'] as string | undefined;
+    } else if (toolName === 'run_shell_command') {
+      activityType = 'shell_command';
+      description = `Executed shell command`;
+      command = args?.['command'] as string | undefined;
+    }
+
+    // Add error info if failed
+    const error =
+      call.status === 'error' && call.response.error
+        ? call.response.error.message
+        : undefined;
+
+    this.chatRecordingService.recordActivityLog({
+      activityType,
+      timestamp: Date.now(),
+      description,
+      toolName,
+      filePath,
+      command,
+      success,
+      error,
+      durationMs,
+      metadata: args ? { args } : undefined,
+    });
   }
 
   private notifyToolCallsUpdate(): void {
