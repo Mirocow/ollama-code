@@ -100,9 +100,20 @@ function formatToolDescription(
     // Create tool invocation instance and get description
     const invocation = tool.build(args);
     return invocation.getDescription();
-  } catch {
+  } catch (error) {
+    // Log the error for debugging but don't crash
+    // This can happen if config is not available or validation fails
+    debugLog(`Failed to format tool description: ${error}`);
     return '';
   }
+}
+
+/**
+ * Simple debug logger for resume history utils
+ */
+function debugLog(_message: string): void {
+  // Debug logging disabled in production
+  // In development, use DEBUG=1 to enable logging
 }
 
 /**
