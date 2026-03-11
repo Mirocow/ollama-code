@@ -33,10 +33,10 @@ import type { FunctionDeclaration } from '../../../types/content.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { Storage } from '../../../config/storage.js';
 import { ToolErrorType } from '../../../tools/tool-error.js';
 import { createDebugLogger } from '../../../utils/debugLogger.js';
 import { uiTelemetryService } from '../../../services/uiTelemetryService.js';
+import { getOllamaDir, getProjectStorageDir } from '../../../utils/paths.js';
 
 const debugLogger = createDebugLogger('STORAGE_TOOL');
 
@@ -589,10 +589,10 @@ async function getStorageDir(
   scope: 'global' | 'project' = 'global',
 ): Promise<string> {
   if (scope === 'global') {
-    return path.join(Storage.getGlobalOllamaDir(), STORAGE_DIR);
+    return path.join(getOllamaDir(), STORAGE_DIR);
   }
   const projectRoot = await findProjectRoot();
-  return path.join(projectRoot, '.ollama-code', STORAGE_DIR);
+  return path.join(getProjectStorageDir(projectRoot), STORAGE_DIR);
 }
 
 async function getNamespaceFilePath(
@@ -749,13 +749,10 @@ export async function cleanupExpiredEntries(): Promise<{
 
   // Очистка persistent storage - сканируем все namespace файлы
   try {
-    const globalStorageDir = path.join(
-      Storage.getGlobalOllamaDir(),
-      STORAGE_DIR,
-    );
+    const globalStorageDir = path.join(getOllamaDir(), STORAGE_DIR);
+    const projectRoot = await findProjectRoot();
     const projectStorageDir = path.join(
-      await findProjectRoot(),
-      '.ollama-code',
+      getProjectStorageDir(projectRoot),
       STORAGE_DIR,
     );
 

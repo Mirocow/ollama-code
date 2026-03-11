@@ -14,7 +14,7 @@ import {
   getCurrentOllamaMdFilename,
   loadServerHierarchicalMemory,
   setOllamaMdFilename as setServerOllamaMdFilename,
-  Storage,
+  getOllamaDir,
   InputFormat,
   OutputFormat,
   isToolEnabled,
@@ -628,7 +628,7 @@ export async function loadCliConfig(
 
   // Automatically load output-language.md if it exists
   let outputLanguageFilePath: string | undefined = path.join(
-    Storage.getGlobalOllamaDir(),
+    getOllamaDir(),
     'output-language.md',
   );
   if (fs.existsSync(outputLanguageFilePath)) {
