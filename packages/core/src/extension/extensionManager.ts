@@ -49,7 +49,7 @@ import type {
   ExtensionSetting,
   ResolvedExtensionSetting,
 } from './extensionSettings.js';
-import type { ExtensionOriginSource } from '../config/config.js';
+import type { ExtensionOriginSource } from './extension-types.js';
 
 import { loadSkillsFromDir } from '../skills/skill-load.js';
 import { loadSubagentFromDir } from '../subagents/subagent-manager.js';

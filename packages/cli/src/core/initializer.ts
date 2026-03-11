@@ -14,7 +14,7 @@ import {
   getSelfLearningManager,
 } from '@ollama-code/ollama-code-core';
 import { type LoadedSettings, SettingScope } from '../config/settings.js';
-import { performInitialAuth } from './auth.js';
+import { performInitialAuth } from './authSetup.js';
 import { validateTheme } from './theme.js';
 import { initializeI18n, type SupportedLanguage } from '../i18n/index.js';
 

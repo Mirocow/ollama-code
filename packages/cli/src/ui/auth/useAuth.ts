@@ -201,6 +201,11 @@ export const useAuthCommand = (
     setIsAuthDialogOpen(true);
   }, []);
 
+  const closeAuthDialog = useCallback(() => {
+    setIsAuthDialogOpen(false);
+    setAuthError(null);
+  }, []);
+
   const cancelAuthentication = useCallback(() => {
     // Log authentication cancellation
     if (isAuthenticating) {
@@ -244,6 +249,7 @@ export const useAuthCommand = (
       // Not applicable for Ollama
     },
     openAuthDialog,
+    closeAuthDialog,
     cancelAuthentication,
   };
 };

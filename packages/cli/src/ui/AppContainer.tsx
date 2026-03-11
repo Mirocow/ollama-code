@@ -429,6 +429,7 @@ export const AppContainer = (props: AppContainerProps) => {
     handleAuthSelect,
     handleCodingPlanSubmit,
     openAuthDialog,
+    closeAuthDialog,
     cancelAuthentication,
   } = useAuthCommand(settings, config, historyManager.addItem, refreshStatic);
 
@@ -1094,6 +1095,7 @@ export const AppContainer = (props: AppContainerProps) => {
     isAuthDialogOpen,
     handleAuthSelect,
     pendingAuthType,
+    closeAuthDialog,
     isEditorDialogOpen,
     exitEditorDialog,
     isSettingsDialogOpen,
@@ -1622,6 +1624,8 @@ export const AppContainer = (props: AppContainerProps) => {
       closeFeedbackDialog,
       temporaryCloseFeedbackDialog,
       submitFeedback,
+      // Auth dialog (connection settings)
+      closeAuthDialog,
     }),
     [
       openThemeDialog,
@@ -1664,6 +1668,8 @@ export const AppContainer = (props: AppContainerProps) => {
       closeFeedbackDialog,
       temporaryCloseFeedbackDialog,
       submitFeedback,
+      // Auth dialog
+      closeAuthDialog,
     ],
   );
 

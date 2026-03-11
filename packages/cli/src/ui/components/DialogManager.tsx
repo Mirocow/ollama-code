@@ -33,6 +33,8 @@ import { AgentCreationWizard } from './subagents/create/AgentCreationWizard.js';
 import { AgentsManagerDialog } from './subagents/manage/AgentsManagerDialog.js';
 import { SessionPicker } from './SessionPicker.js';
 import { t } from '../../i18n/index.js';
+import { FirstRunSetup } from './FirstRunSetup.js';
+import { completeSetup, getCurrentConfig } from '../../core/authSetup.js';
 
 interface DialogManagerProps {
   addItem: UseHistoryManagerReturn['addItem'];
@@ -226,6 +228,34 @@ export const DialogManager = ({
   }
   if (uiState.isVisionSwitchDialogOpen) {
     return <ModelSwitchDialog onSelect={uiActions.handleVisionSwitchSelect} />;
+  }
+
+  // Auth dialog for connection settings (uses unified FirstRunSetup in 'settings' mode)
+  if (uiState.isAuthDialogOpen && !uiState.isAuthenticating) {
+    const currentConfig = getCurrentConfig();
+    return (
+      <FirstRunSetup
+        mode="settings"
+        initialConfig={{
+          baseUrl: currentConfig?.baseUrl,
+          model: currentConfig?.model,
+        }}
+        onSubmit={async (config) => {
+          const result = completeSetup(config.baseUrl, config.model);
+          if (result.success) {
+            // Update environment variables for current session
+            process.env['OLLAMA_HOST'] = config.baseUrl;
+            process.env['OLLAMA_MODEL'] = config.model;
+            // Close dialog and trigger auth refresh
+            await uiActions.handleAuthSelect(
+              'USE_OLLAMA' as any,
+              { baseUrl: config.baseUrl, model: config.model },
+            );
+          }
+        }}
+        onCancel={() => uiActions.closeAuthDialog()}
+      />
+    );
   }
 
   // AuthDialog removed - authentication is handled by FirstRunSetup

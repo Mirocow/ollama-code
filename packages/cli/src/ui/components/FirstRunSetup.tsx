@@ -4,16 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * First Run Setup Component.
+ * Unified component for both initial setup and settings configuration.
+ * Uses the centralized authSetup module for all configuration logic.
+ */
+
 import type React from 'react';
 import { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
+import { DEFAULT_OLLAMA_MODEL } from '@ollama-code/ollama-code-core';
+import type { ModelInfo } from '../../acp-integration/schema.js';
 import {
-  DEFAULT_OLLAMA_MODEL,
-  type ModelInfo,
-} from '@ollama-code/ollama-code-core';
-import { theme } from '../semantic-colors.js';
+  theme } from '../semantic-colors.js';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { t } from '../../i18n/index.js';
+import {
+  DEFAULT_BASE_URL,
+  type ConnectionTestResult,
+  testConnection,
+} from '../../core/authSetup.js';
 
 /** Setup mode: firstRun for initial setup, settings for reconfiguration */
 export type AuthSetupMode = 'firstRun' | 'settings';
@@ -25,15 +35,13 @@ interface FirstRunSetupProps {
   mode?: AuthSetupMode;
   /** Initial configuration values (for settings mode) */
   initialConfig?: { baseUrl?: string; model?: string };
-  /** Function to test connection and get available models */
+  /** Function to test connection and get available models (optional - uses default if not provided) */
   onTestConnection?: (
     baseUrl: string,
   ) => Promise<{ success: boolean; models?: ModelInfo[]; error?: string }>;
 }
 
 type InputField = 'baseUrl' | 'model';
-
-const DEFAULT_BASE_URL = 'http://localhost:11434';
 
 export function FirstRunSetup({
   onSubmit,
@@ -76,9 +84,14 @@ export function FirstRunSetup({
     model: setModel,
   };
 
+  // Default connection test function using authSetup module
+  const defaultTestConnection = async (
+    url: string,
+  ): Promise<ConnectionTestResult> => testConnection(url);
+
   // Test connection when baseUrl changes
   useEffect(() => {
-    if (!onTestConnection || !baseUrl.trim()) return;
+    if (!baseUrl.trim()) return;
 
     const testConn = async () => {
       setIsTestingConnection(true);
@@ -86,7 +99,11 @@ export function FirstRunSetup({
       setConnectionError(null);
 
       try {
-        const result = await onTestConnection(baseUrl);
+        // Use provided onTestConnection or default from authSetup module
+        const result = onTestConnection
+          ? await onTestConnection(baseUrl)
+          : await defaultTestConnection(baseUrl);
+
         if (result.success) {
           setConnectionStatus('success');
           setAvailableModels(result.models ?? []);

@@ -14,7 +14,7 @@
 import { createDebugLogger } from '../utils/debugLogger.js';
 import type {
   ExtensionAliasDefinition,
-  ExtensionAliasRegistry as IExtensionAliasRegistry,
+  IExtensionAliasRegistry,
   ExtensionV2,
 } from './extension-types.js';
 

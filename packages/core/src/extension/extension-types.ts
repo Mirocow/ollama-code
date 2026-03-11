@@ -201,9 +201,10 @@ export interface ExtensionAliasDefinition {
 }
 
 /**
- * Registry for extension aliases.
+ * Registry for extension aliases (interface).
+ * Use ExtensionAliasRegistry class from extensionAliasRegistry.js for the implementation.
  */
-export interface ExtensionAliasRegistry {
+export interface IExtensionAliasRegistry {
   /** Register an alias */
   register(alias: ExtensionAliasDefinition): void;
 

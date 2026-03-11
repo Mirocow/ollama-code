@@ -33,6 +33,7 @@ export interface DialogCloseOptions {
     credentials?: OpenAICredentials,
   ) => Promise<void>;
   pendingAuthType: AuthType | undefined;
+  closeAuthDialog: () => void;
 
   // Editor dialog
   isEditorDialogOpen: boolean;
@@ -74,6 +75,12 @@ export function useDialogClose(options: DialogCloseOptions) {
     if (options.isEditorDialogOpen) {
       // Mimic ESC behavior: call onExit() directly
       options.exitEditorDialog();
+      return true;
+    }
+
+    if (options.isAuthDialogOpen) {
+      // Close auth dialog (connection settings)
+      options.closeAuthDialog();
       return true;
     }
 

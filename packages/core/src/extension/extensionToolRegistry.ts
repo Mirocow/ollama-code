@@ -103,7 +103,7 @@ class ExtensionToolInvocation extends BaseToolInvocation<
     return `Execute ${this.tool.definition.displayName}: ${this.tool.definition.description}`;
   }
 
-  toolLocations(): Array<{ path: string; line?: number }> {
+  override toolLocations(): Array<{ path: string; line?: number }> {
     // Extension tools don't have file locations in the traditional sense
     return [];
   }
@@ -154,7 +154,10 @@ class ExtensionToolInvocation extends BaseToolInvocation<
       return {
         llmContent: result.llmContent,
         returnDisplay: result.returnDisplay,
-        error: result.error,
+        error: result.error ? {
+          message: result.error.message,
+          type: result.error.type as ToolErrorType | undefined,
+        } : undefined,
       };
     } catch (error) {
       const errorMessage =
@@ -189,7 +192,7 @@ class ExtensionToolInvocation extends BaseToolInvocation<
       // Dynamic import of handler module
       const handlerModule = await import(handlerPath);
       this.tool.handler = handlerModule.default || handlerModule;
-      return this.tool.handler;
+      return this.tool.handler ?? null;
     } catch (error) {
       debugLogger.error(`Failed to load handler: ${handlerPath}`, error);
       return null;

@@ -79,6 +79,8 @@ export interface UIActions {
   closeFeedbackDialog: () => void;
   temporaryCloseFeedbackDialog: () => void;
   submitFeedback: (rating: number) => void;
+  // Auth dialog (connection settings)
+  closeAuthDialog: () => void;
 }
 
 export const UIActionsContext = createContext<UIActions | null>(null);

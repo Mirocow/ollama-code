@@ -64,9 +64,9 @@ import { initializeLlmOutputLanguage } from './utils/languageUtils.js';
 import { resolvePath } from './utils/resolvePath.js';
 import {
   isFirstRun,
-  saveInitialConfig,
-  setConfigEnv,
-} from './utils/firstRun.js';
+  completeSetup,
+  DEFAULT_BASE_URL,
+} from './core/authSetup.js';
 import { FirstRunSetup } from './ui/components/FirstRunSetup.js';
 
 const debugLogger = createDebugLogger('STARTUP');
@@ -230,10 +230,12 @@ async function runFirstRunSetup(): Promise<{
       baseUrl: string;
       model: string;
     }) => {
-      // Save configuration
-      saveInitialConfig(config.baseUrl, config.model);
-      // Set environment variables
-      setConfigEnv(config.baseUrl, config.model);
+      // Use the unified completeSetup function from authSetup module
+      const result = completeSetup(config.baseUrl, config.model);
+      if (!result.success) {
+        writeStderrLine(`Setup failed: ${result.error}`);
+        return;
+      }
       // Unmount the setup UI before continuing
       if (instance) {
         instance.unmount();
@@ -297,9 +299,7 @@ export async function main() {
     );
   } else if (firstRunResult && !process.stdin.isTTY) {
     // Non-interactive first run: create default settings
-    const defaultBaseUrl = 'http://localhost:11434';
-    saveInitialConfig(defaultBaseUrl, DEFAULT_OLLAMA_MODEL);
-    setConfigEnv(defaultBaseUrl, DEFAULT_OLLAMA_MODEL);
+    completeSetup(DEFAULT_BASE_URL, DEFAULT_OLLAMA_MODEL);
   }
 
   const settings = loadSettings();

@@ -98,6 +98,7 @@ import {
   type RuntimeModelSnapshot,
 } from '../models/index.js';
 import type { ClaudeMarketplaceConfig } from '../extension/claude-converter.js';
+import type { ExtensionOriginSource } from '../extension/extension-types.js';
 
 // Re-export types
 export type { AnyToolInvocation, FileFilteringOptions, MCPOAuthConfig };
@@ -187,8 +188,6 @@ export interface GitCoAuthorSettings {
   name?: string;
   email?: string;
 }
-
-export type ExtensionOriginSource = 'OllamaCode' | 'Claude' | 'Gemini';
 
 export interface ExtensionInstallMetadata {
   source: string;
