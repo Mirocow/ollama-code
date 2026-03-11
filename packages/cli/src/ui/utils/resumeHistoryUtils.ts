@@ -393,6 +393,36 @@ function convertToHistoryItems(
                 : rawStatus === 'cancelled'
                   ? ToolCallStatus.Canceled
                   : ToolCallStatus.Success;
+          } else {
+            // Backfill for old sessions: create tool call from tool_result if not found
+            // This handles the case where old sessions didn't record function calls in assistant message
+            // Extract tool name from functionResponse in message parts
+            let toolName = 'unknown_tool';
+            if (record.message?.parts) {
+              for (const part of record.message.parts as Part[]) {
+                if ('functionResponse' in part && part.functionResponse) {
+                  toolName = part.functionResponse.name || 'unknown_tool';
+                  break;
+                }
+              }
+            }
+            const tool = getTool(config, toolName);
+            const rawStatus = (
+              record.toolCallResult as Record<string, unknown>
+            )['status'] as string | undefined;
+            currentToolGroup.push({
+              callId: callId || `backfill-${currentToolGroup.length}`,
+              name: tool?.displayName || toolName,
+              description: '',
+              resultDisplay: record.toolCallResult.resultDisplay,
+              status:
+                rawStatus === 'error'
+                  ? ToolCallStatus.Error
+                  : rawStatus === 'cancelled'
+                    ? ToolCallStatus.Canceled
+                    : ToolCallStatus.Success,
+              confirmationDetails: undefined,
+            });
           }
           pendingToolCalls.delete(callId || '');
         }
