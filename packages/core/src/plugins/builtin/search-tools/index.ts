@@ -86,6 +86,18 @@ const searchToolsPlugin: PluginDefinition = {
       canonicalName: 'grep_search',
       description: 'Ripgrep search',
     },
+    // Legacy tool name (was ToolNamesMigration)
+    {
+      alias: 'search_file_content',
+      canonicalName: 'grep_search',
+      description: 'Search file contents (legacy name)',
+    },
+    // Legacy display name (was ToolDisplayNamesMigration)
+    {
+      alias: 'SearchFiles',
+      canonicalName: 'grep_search',
+      description: 'Search files (legacy display name)',
+    },
     // ═══════════════════════════════════════════════════════════════════
     // web_search aliases
     // ═══════════════════════════════════════════════════════════════════

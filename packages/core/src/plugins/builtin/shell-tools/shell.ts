@@ -404,10 +404,14 @@ export class ShellToolInvocation extends BaseToolInvocation<
   }
 
   private addCoAuthorToGitCommit(command: string): string {
-    // Check if co-author feature is enabled
+    // Check if config is available and co-author feature is enabled
+    if (!this.config) {
+      return command;
+    }
+
     const gitCoAuthorSettings = this.config.getGitCoAuthor();
 
-    if (!gitCoAuthorSettings.enabled) {
+    if (!gitCoAuthorSettings?.enabled) {
       return command;
     }
 
