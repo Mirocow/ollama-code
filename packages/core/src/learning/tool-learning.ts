@@ -31,7 +31,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { Storage } from '../config/storage.js';
+import { getOllamaDir } from '../utils/paths.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 import { DynamicAliases, type ToolName } from '../tools/tool-names.js';
 
@@ -100,7 +100,7 @@ const AUTO_ALIAS_THRESHOLD = 1;
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function getLearningDir(): string {
-  return path.join(Storage.getGlobalOllamaDir(), LEARNING_DIR);
+  return path.join(getOllamaDir(), LEARNING_DIR);
 }
 
 /**

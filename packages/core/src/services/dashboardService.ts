@@ -9,9 +9,10 @@
  * - Session history
  */
 
-import { Storage } from '../config/storage.js';
+import type { Storage } from '../config/storage.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import { getOllamaDir } from '../utils/paths.js';
 
 export interface DashboardSessionRecord {
   sessionId: string;
@@ -76,10 +77,7 @@ export class DashboardService {
   constructor(_storage: Storage, sessionId: string) {
     this.sessionStart = Date.now();
     this.currentSessionId = sessionId;
-    this.metricsFile = path.join(
-      Storage.getGlobalOllamaDir(),
-      'dashboard-metrics.json',
-    );
+    this.metricsFile = path.join(getOllamaDir(), 'dashboard-metrics.json');
     this.ensureMetricsFile();
   }
 

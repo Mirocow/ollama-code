@@ -4,7 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ToolEditConfirmationDetails, ToolResult } from '../../../../tools/tools.js';
+import type {
+  ToolEditConfirmationDetails,
+  ToolResult,
+} from '../../../../tools/tools.js';
 import {
   BaseDeclarativeTool,
   BaseToolInvocation,
@@ -14,10 +17,9 @@ import {
 import type { FunctionDeclaration } from '../../../../types/content.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { Storage } from '../../../../config/storage.js';
 import * as Diff from 'diff';
 import { DEFAULT_DIFF_OPTIONS } from '../../../../tools/diffOptions.js';
-import { tildeifyPath } from '../../../../utils/paths.js';
+import { tildeifyPath, getOllamaDir } from '../../../../utils/paths.js';
 import type {
   ModifiableDeclarativeTool,
   ModifyContext,
@@ -115,7 +117,7 @@ interface SaveMemoryParams {
 }
 
 function getGlobalMemoryFilePath(): string {
-  return path.join(Storage.getGlobalOllamaDir(), getCurrentOllamaMdFilename());
+  return path.join(getOllamaDir(), getCurrentOllamaMdFilename());
 }
 
 function getProjectMemoryFilePath(): string {

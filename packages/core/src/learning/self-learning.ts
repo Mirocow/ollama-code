@@ -19,7 +19,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { Storage } from '../config/storage.js';
+import { getOllamaDir } from '../utils/paths.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('SELF_LEARNING');
@@ -68,7 +68,7 @@ const ENTRIES_FILE = 'entries.json';
 const STATS_FILE = 'tool_stats.json';
 
 function getLearningDir(): string {
-  return path.join(Storage.getGlobalOllamaDir(), LEARNING_DIR);
+  return path.join(getOllamaDir(), LEARNING_DIR);
 }
 
 /**

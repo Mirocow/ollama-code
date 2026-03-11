@@ -12,7 +12,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { Storage } from '@ollama-code/ollama-code-core';
+import { getOllamaDir } from '@ollama-code/ollama-code-core';
 import {
   detectSystemLanguage,
   getLanguageNameFromLocale,
@@ -58,15 +58,15 @@ export function resolveOutputLanguage(
   if (isAutoLanguage(value)) {
     const detectedLocale = detectSystemLanguage();
     const detectedLanguage = getLanguageNameFromLocale(detectedLocale);
-    
+
     // If system detection returned English, but UI language is different,
     // prefer the UI language as it's more likely the user's preference
     if (detectedLocale === 'en' && uiLanguage) {
       // Resolve 'auto' uiLanguage to actual detected language
-      const resolvedUiLang = isAutoLanguage(uiLanguage) 
-        ? detectSystemLanguage() 
+      const resolvedUiLang = isAutoLanguage(uiLanguage)
+        ? detectSystemLanguage()
         : uiLanguage;
-      
+
       if (resolvedUiLang !== 'en' && resolvedUiLang !== 'auto') {
         const uiLangName = getLanguageNameFromLocale(resolvedUiLang);
         if (uiLangName !== 'English') {
@@ -74,7 +74,7 @@ export function resolveOutputLanguage(
         }
       }
     }
-    
+
     return detectedLanguage;
   }
   return normalizeOutputLanguage(value!);
@@ -84,10 +84,7 @@ export function resolveOutputLanguage(
  * Returns the path to the LLM output language rule file (~/.ollama-code/output-language.md).
  */
 function getOutputLanguageFilePath(): string {
-  return path.join(
-    Storage.getGlobalOllamaDir(),
-    LLM_OUTPUT_LANGUAGE_RULE_FILENAME,
-  );
+  return path.join(getOllamaDir(), LLM_OUTPUT_LANGUAGE_RULE_FILENAME);
 }
 
 /**
@@ -183,7 +180,10 @@ export function writeOutputLanguageFile(language: string): void {
  * Updates the LLM output language rule file based on the setting value.
  * Resolves 'auto' to the detected system language before writing.
  */
-export function updateOutputLanguageFile(settingValue: string, uiLanguage?: string): void {
+export function updateOutputLanguageFile(
+  settingValue: string,
+  uiLanguage?: string,
+): void {
   const resolved = resolveOutputLanguage(settingValue, uiLanguage);
   writeOutputLanguageFile(resolved);
 }
@@ -192,16 +192,19 @@ export function updateOutputLanguageFile(settingValue: string, uiLanguage?: stri
  * Initializes the LLM output language rule file on application startup.
  * Creates file with detected language if it doesn't exist.
  */
-export function initializeLlmOutputLanguage(outputLanguage?: string, uiLanguage?: string): void {
+export function initializeLlmOutputLanguage(
+  outputLanguage?: string,
+  uiLanguage?: string,
+): void {
   const currentFileLanguage = readOutputLanguageFromFile();
-  
+
   // Preserve existing file if no explicit setting
   if (outputLanguage === undefined && currentFileLanguage !== null) {
     return;
   }
-  
+
   const resolved = resolveOutputLanguage(outputLanguage ?? 'auto', uiLanguage);
-  
+
   if (currentFileLanguage !== resolved) {
     writeOutputLanguageFile(resolved);
   }

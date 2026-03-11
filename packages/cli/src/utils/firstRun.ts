@@ -5,7 +5,8 @@
  */
 
 import * as fs from 'node:fs';
-import { Storage } from '@ollama-code/ollama-code-core';
+import * as path from 'node:path';
+import { getOllamaDir } from '@ollama-code/ollama-code-core';
 
 /**
  * Check if this is the first run.
@@ -18,7 +19,7 @@ import { Storage } from '@ollama-code/ollama-code-core';
  * @returns true if this is the first run (no complete configuration exists)
  */
 export function isFirstRun(): boolean {
-  const globalOllamaDir = Storage.getGlobalOllamaDir();
+  const globalOllamaDir = getOllamaDir();
 
   // Check if directory exists
   if (!fs.existsSync(globalOllamaDir)) {
@@ -26,7 +27,7 @@ export function isFirstRun(): boolean {
   }
 
   // Check if settings.json exists
-  const settingsPath = Storage.getGlobalSettingsPath();
+  const settingsPath = path.join(globalOllamaDir, 'settings.json');
   if (!fs.existsSync(settingsPath)) {
     return true;
   }
@@ -77,7 +78,7 @@ export function isFirstRun(): boolean {
  * Create the global configuration directory
  */
 export function createGlobalConfigDir(): void {
-  const globalOllamaDir = Storage.getGlobalOllamaDir();
+  const globalOllamaDir = getOllamaDir();
   if (!fs.existsSync(globalOllamaDir)) {
     fs.mkdirSync(globalOllamaDir, { recursive: true });
   }
@@ -100,7 +101,8 @@ function normalizeBaseUrl(url: string): string {
 export function saveInitialConfig(baseUrl: string, model: string): void {
   createGlobalConfigDir();
 
-  const settingsPath = Storage.getGlobalSettingsPath();
+  const globalOllamaDir = getOllamaDir();
+  const settingsPath = path.join(globalOllamaDir, 'settings.json');
 
   // Normalize the base URL
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl);

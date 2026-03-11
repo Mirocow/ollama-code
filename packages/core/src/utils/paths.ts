@@ -38,12 +38,12 @@ export function getProjectsDir(): string {
 }
 
 /**
- * Get project-specific directory (~/.ollama-code/projects/<project-hash>/storage/)
+ * Get project-specific directory (~/.ollama-code/projects/<project-hash>/)
  * Used for project-specific data storage
  */
 export function getProjectStorageDir(projectRoot: string): string {
   const projectHash = getProjectHash(projectRoot);
-  return path.join(getProjectsDir(), projectHash, 'storage');
+  return path.join(getProjectsDir(), projectHash);
 }
 
 /**

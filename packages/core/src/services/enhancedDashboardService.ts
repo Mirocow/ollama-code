@@ -15,9 +15,10 @@
  * - Session history with detailed metrics
  */
 
-import { Storage } from '../config/storage.js';
+import type { Storage } from '../config/storage.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import { getOllamaDir } from '../utils/paths.js';
 import { createLogger } from './structuredLogger.js';
 
 const logger = createLogger('performance-dashboard');
@@ -207,7 +208,7 @@ export class EnhancedDashboardService {
     this.sessionStart = Date.now();
     this.currentSessionId = sessionId;
     this.metricsFile = path.join(
-      Storage.getGlobalOllamaDir(),
+      getOllamaDir(),
       'enhanced-dashboard-metrics.json',
     );
     this.ensureMetricsFile();

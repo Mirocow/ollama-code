@@ -506,8 +506,8 @@ export class Storage {
 
   /**
    * Get the centralized project storage directory
-   * Returns ~/.ollama-code/projects/<project-hash>/storage/
-   * This is the new recommended location for project-specific data
+   * Returns ~/.ollama-code/projects/<project-hash>/
+   * This is the recommended location for project-specific data
    */
   getProjectDir(): string {
     return getProjectStorageDir(this.getProjectRoot());
@@ -515,7 +515,7 @@ export class Storage {
 
   /**
    * Get the project-specific storage directory (alias for getProjectDir)
-   * Returns ~/.ollama-code/projects/<project-hash>/storage/
+   * Returns ~/.ollama-code/projects/<project-hash>/
    */
   getProjectStorageDir(): string {
     return getProjectStorageDir(this.getProjectRoot());
