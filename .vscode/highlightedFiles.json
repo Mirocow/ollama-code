@@ -1,0 +1,86 @@
+{
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services": {
+    "color": "blue"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/__tests__": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/__tests__/chatRecordingService.test.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/auditLogService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/chatCompressionService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/chatRecordingService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/compressionReportService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/configSchemaService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/dashboardService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/enhancedDashboardService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/fileDiscoveryService.test.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/fileDiscoveryService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/fileSystemService.test.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/fileSystemService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/gitService.test.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/gitService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/keyBindingsService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/loopDetectionService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/memorySummaryService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/notificationService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/permissionService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/sessionService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/shellExecutionService.test.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/shellExecutionService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/structuredLogger.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/tokenGraphService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/uiTelemetryService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  },
+  "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services/workspaceService.ts": {
+    "parent": "/Volumes/Storage/Projects/Dockers/AI Projects/ollama-code-plugins-v1/packages/core/src/services"
+  }
+}

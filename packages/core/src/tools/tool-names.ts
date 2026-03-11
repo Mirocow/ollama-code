@@ -73,7 +73,11 @@ export const DynamicAliases: Record<string, string> = {};
  */
 export function registerPluginAliases(
   pluginId: string,
-  aliases: Array<{ alias: string; canonicalName: string; description?: string }>
+  aliases: Array<{
+    alias: string;
+    canonicalName: string;
+    description?: string;
+  }>,
 ): number {
   let registered = 0;
   let skipped = 0;
@@ -94,7 +98,7 @@ export function registerPluginAliases(
       // If it maps to a different canonical name, it's a conflict - warn
       debugLogger.warn(
         `Alias "${alias}" conflict: already maps to "${existingCanonical}", ` +
-        `cannot remap to "${canonicalName}" (plugin: ${pluginId})`
+          `cannot remap to "${canonicalName}" (plugin: ${pluginId})`,
       );
       skipped++;
       continue;
@@ -107,7 +111,7 @@ export function registerPluginAliases(
   if (registered > 0 || skipped > 0) {
     debugLogger.info(
       `Registered ${registered} aliases from plugin "${pluginId}"` +
-      (skipped > 0 ? ` (skipped ${skipped} duplicates)` : '')
+        (skipped > 0 ? ` (skipped ${skipped} duplicates)` : ''),
     );
   }
   return registered;
