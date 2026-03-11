@@ -6,10 +6,13 @@
 
 // UI Telemetry - local session statistics (no external telemetry)
 
-import { tokenGraphService } from './tokenGraphService.js';
+import { getTokenGraphService } from './tokenGraphService.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('TELEMETRY');
+
+// Get token graph service instance
+const tokenGraphService = getTokenGraphService();
 
 export interface ToolCallStats {
   toolName: string;

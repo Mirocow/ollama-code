@@ -712,8 +712,9 @@ export {
 // ============================================================================
 
 export {
-  permissionService,
   PermissionService,
+  getPermissionService,
+  resetPermissionService,
   DEFAULT_PERMISSION_CONFIG,
   DEFAULT_PERMISSION_RULES,
   type PermissionLevel,
@@ -724,7 +725,6 @@ export {
 } from './services/permissionService.js';
 
 // ============================================================================
-
 // Audit Logging
 // ============================================================================
 
@@ -763,7 +763,8 @@ export {
 
 export {
   TokenGraphService,
-  tokenGraphService,
+  getTokenGraphService,
+  resetTokenGraphService,
   DEFAULT_TOKEN_GRAPH_CONFIG,
   type TokenUsageRecord,
   type TokenGraphConfig,
@@ -783,20 +784,6 @@ export {
   type EnhancedSessionRecord,
   type EnhancedDashboardStats,
 } from './services/enhancedDashboardService.js';
-
-// ============================================================================
-// Workspace Management
-// ============================================================================
-
-export {
-  WorkspaceService,
-  getWorkspaceService,
-  resetWorkspaceService,
-  type WorkspaceConfig,
-  type WorkspaceSession,
-  type WorkspaceStats,
-  type WorkspaceServiceConfig,
-} from './services/workspaceService.js';
 
 // ============================================================================
 // Compression Report Service

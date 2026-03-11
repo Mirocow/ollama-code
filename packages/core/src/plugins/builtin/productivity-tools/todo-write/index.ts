@@ -10,7 +10,6 @@ import type { FunctionDeclaration } from '../../../../types/content.js';
 import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
 import * as path from 'path';
-import * as process from 'process';
 
 import { OLLAMA_DIR } from '../../../../utils/paths.js';
 import type { Config } from '../../../../config/config.js';
@@ -245,10 +244,8 @@ When in doubt, use this tool. Being proactive with task management demonstrates 
 
 const TODO_SUBDIR = 'todos';
 
-function getTodoFilePath(sessionId?: string): string {
-  const homeDir =
-    process.env['HOME'] || process.env['USERPROFILE'] || process.cwd();
-  const todoDir = path.join(homeDir, OLLAMA_DIR, TODO_SUBDIR);
+function getTodoFilePath(projectDir: string, sessionId?: string): string {
+  const todoDir = path.join(projectDir, OLLAMA_DIR, TODO_SUBDIR);
 
   // Use sessionId if provided, otherwise fall back to 'default'
   const filename = `${sessionId || 'default'}.json`;
@@ -258,9 +255,9 @@ function getTodoFilePath(sessionId?: string): string {
 /**
  * Reads the current todos from the file system
  */
-async function readTodosFromFile(sessionId?: string): Promise<TodoItem[]> {
+async function readTodosFromFile(projectDir: string, sessionId?: string): Promise<TodoItem[]> {
   try {
-    const todoFilePath = getTodoFilePath(sessionId);
+    const todoFilePath = getTodoFilePath(projectDir, sessionId);
     const content = await fs.readFile(todoFilePath, 'utf-8');
     const data = JSON.parse(content);
     return Array.isArray(data.todos) ? data.todos : [];
@@ -278,9 +275,10 @@ async function readTodosFromFile(sessionId?: string): Promise<TodoItem[]> {
  */
 async function writeTodosToFile(
   todos: TodoItem[],
+  projectDir: string,
   sessionId?: string,
 ): Promise<void> {
-  const todoFilePath = getTodoFilePath(sessionId);
+  const todoFilePath = getTodoFilePath(projectDir, sessionId);
   const todoDir = path.dirname(todoFilePath);
 
   await fs.mkdir(todoDir, { recursive: true });
@@ -322,6 +320,7 @@ class TodoWriteToolInvocation extends BaseToolInvocation<
   async execute(_signal: AbortSignal): Promise<ToolResult> {
     const { todos, modified_by_user, modified_content } = this.params;
     const sessionId = this.config.getSessionId();
+    const projectDir = this.config.getProjectRoot();
 
     try {
       let finalTodos: TodoItem[];
@@ -335,7 +334,7 @@ class TodoWriteToolInvocation extends BaseToolInvocation<
         finalTodos = todos;
       }
 
-      await writeTodosToFile(finalTodos, sessionId);
+      await writeTodosToFile(finalTodos, projectDir, sessionId);
 
       // Create structured display object for rich UI rendering
       const todoResultDisplay = {
@@ -395,19 +394,18 @@ Todo list modification failed with error: ${errorMessage}. You may need to retry
  * Utility function to read todos for a specific session (useful for session recovery)
  */
 export async function readTodosForSession(
+  projectDir: string,
   sessionId?: string,
 ): Promise<TodoItem[]> {
-  return readTodosFromFile(sessionId);
+  return readTodosFromFile(projectDir, sessionId);
 }
 
 /**
  * Utility function to list all todo files in the todos directory
  */
-export async function listTodoSessions(): Promise<string[]> {
+export async function listTodoSessions(projectDir: string): Promise<string[]> {
   try {
-    const homeDir =
-      process.env['HOME'] || process.env['USERPROFILE'] || process.cwd();
-    const todoDir = path.join(homeDir, OLLAMA_DIR, TODO_SUBDIR);
+    const todoDir = path.join(projectDir, OLLAMA_DIR, TODO_SUBDIR);
     const files = await fs.readdir(todoDir);
     return files
       .filter((file: string) => file.endsWith('.json'))
@@ -473,7 +471,8 @@ export class TodoWriteTool extends BaseDeclarativeTool<
   protected createInvocation(params: TodoWriteParams) {
     // Determine if this is a create or update operation by checking if todos file exists
     const sessionId = this.config.getSessionId();
-    const todoFilePath = getTodoFilePath(sessionId);
+    const projectDir = this.config.getProjectRoot();
+    const todoFilePath = getTodoFilePath(projectDir, sessionId);
     const operationType = fsSync.existsSync(todoFilePath) ? 'update' : 'create';
 
     return new TodoWriteToolInvocation(this.config, params, operationType);

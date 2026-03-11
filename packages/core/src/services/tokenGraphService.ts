@@ -13,7 +13,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as os from 'node:os';
+import type { Config } from '../config/config.js';
 
 /**
  * Token usage record for a single message
@@ -66,17 +66,29 @@ const SPARKLINE_BLOCKS = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', 
  * Token Graph Service
  *
  * Manages token usage history and generates visual sparkline graphs.
+ * Stores data in project directory for persistence.
  */
 export class TokenGraphService {
   private history: TokenUsageRecord[] = [];
   private config: TokenGraphConfig;
-  private savePath: string;
+  private savePath: string | null = null;
   private saveInterval: ReturnType<typeof setInterval> | null = null;
   private currentMessageIndex = 0;
 
   constructor(config: Partial<TokenGraphConfig> = {}) {
     this.config = { ...DEFAULT_TOKEN_GRAPH_CONFIG, ...config };
-    this.savePath = path.join(os.homedir(), '.ollama-code', 'token-history.json');
+    // savePath will be set when setConfig is called
+  }
+
+  /**
+   * Set the Config instance for project directory access
+   */
+  setConfig(appConfig: Config): void {
+    this.savePath = path.join(
+      appConfig.getProjectRoot(),
+      '.ollama-code',
+      'token-history.json',
+    );
     this.loadFromDisk();
     this.startAutoSave();
   }
@@ -367,6 +379,8 @@ export class TokenGraphService {
    * Load history from disk
    */
   private loadFromDisk(): void {
+    if (!this.savePath) return;
+    
     try {
       if (fs.existsSync(this.savePath)) {
         const content = fs.readFileSync(this.savePath, 'utf-8');
@@ -383,6 +397,8 @@ export class TokenGraphService {
    * Save history to disk
    */
   saveToDisk(): void {
+    if (!this.savePath) return;
+    
     try {
       const dir = path.dirname(this.savePath);
       if (!fs.existsSync(dir)) {
@@ -474,4 +490,27 @@ export class TokenGraphService {
 /**
  * Singleton instance
  */
-export const tokenGraphService = new TokenGraphService();
+let tokenGraphServiceInstance: TokenGraphService | null = null;
+
+/**
+ * Get or create the TokenGraphService instance
+ */
+export function getTokenGraphService(config?: Config): TokenGraphService {
+  if (!tokenGraphServiceInstance) {
+    tokenGraphServiceInstance = new TokenGraphService();
+  }
+  if (config) {
+    tokenGraphServiceInstance.setConfig(config);
+  }
+  return tokenGraphServiceInstance;
+}
+
+/**
+ * Reset the singleton instance (useful for testing)
+ */
+export function resetTokenGraphService(): void {
+  if (tokenGraphServiceInstance) {
+    tokenGraphServiceInstance.stopAutoSave();
+  }
+  tokenGraphServiceInstance = null;
+}

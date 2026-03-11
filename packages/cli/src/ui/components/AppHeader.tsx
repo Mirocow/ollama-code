@@ -12,8 +12,9 @@ import { useSettings } from '../contexts/SettingsContext.js';
 import { useConfig } from '../contexts/ConfigContext.js';
 import { useUIState } from '../contexts/UIStateContext.js';
 import { useSessionStats } from '../contexts/SessionContext.js';
-import { tokenGraphService, getWorkspaceService } from '@ollama-code/ollama-code-core';
+import { tokenGraphService } from '@ollama-code/ollama-code-core';
 import { execSync } from 'node:child_process';
+import path from 'node:path';
 
 interface AppHeaderProps {
   version: string;
@@ -101,15 +102,8 @@ const AppHeaderComponent = ({ version }: AppHeaderProps) => {
       const stats = tokenGraphService.getStatistics();
       const peak = stats.maxPrompt + stats.maxGenerated;
 
-      // Get workspace info
-      let wsName: string | undefined;
-      try {
-        const workspaceService = getWorkspaceService();
-        const currentWs = workspaceService.getCurrentWorkspace();
-        wsName = currentWs?.name;
-      } catch {
-        // Workspace service not available
-      }
+      // Get workspace name from project root directory name
+      const wsName = path.basename(targetDir);
 
       // Get git branch
       let branch: string | undefined;

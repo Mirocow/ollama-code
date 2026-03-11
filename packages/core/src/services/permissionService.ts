@@ -3,12 +3,13 @@
  *
  * Manages tool execution permissions, approval policies, and security settings.
  * Provides fine-grained control over which tools can execute without confirmation.
+ * Stores configuration in project directory.
  */
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as os from 'node:os';
 import { createDebugLogger } from '../utils/debugLogger.js';
+import type { Config } from '../config/config.js';
 
 const debugLogger = createDebugLogger('PERMISSION_SERVICE');
 
@@ -275,16 +276,28 @@ export class PermissionService {
   private config: PermissionConfig;
   private rules: Map<string, PermissionRule> = new Map();
   private sessionAllowlist: Map<string, SessionAllowlistEntry> = new Map();
-  private configPath: string;
+  private appConfig: Config | null = null;
+  private configPath: string | null = null;
   private listeners: Set<() => void> = new Set();
 
   constructor() {
+    this.config = { ...DEFAULT_PERMISSION_CONFIG };
+    // Initialize with default rules
+    for (const rule of DEFAULT_PERMISSION_RULES) {
+      this.rules.set(rule.tool, { ...rule });
+    }
+  }
+
+  /**
+   * Set the Config instance for project directory access
+   */
+  setConfig(appConfig: Config): void {
+    this.appConfig = appConfig;
     this.configPath = path.join(
-      os.homedir(),
+      appConfig.getProjectRoot(),
       '.ollama-code',
       'permissions.json',
     );
-    this.config = { ...DEFAULT_PERMISSION_CONFIG };
     this.loadPermissions();
   }
 
@@ -292,6 +305,8 @@ export class PermissionService {
    * Load permissions from file
    */
   private loadPermissions(): void {
+    if (!this.configPath) return;
+    
     try {
       if (fs.existsSync(this.configPath)) {
         const content = fs.readFileSync(this.configPath, 'utf-8');
@@ -338,6 +353,8 @@ export class PermissionService {
    * Save permissions to file
    */
   private savePermissions(): void {
+    if (!this.configPath) return;
+    
     try {
       const dir = path.dirname(this.configPath);
       if (!fs.existsSync(dir)) {
@@ -503,7 +520,8 @@ export class PermissionService {
     ) {
       const filePath = (params?.['path'] as string) || '';
       for (const protectedPath of this.config.protectedPaths) {
-        const expanded = protectedPath.replace('~', os.homedir());
+        const homeDir = this.appConfig?.getProjectRoot() || process.cwd();
+        const expanded = protectedPath.replace('~', homeDir);
         if (filePath.startsWith(expanded)) {
           return true;
         }
@@ -737,4 +755,24 @@ export class PermissionService {
 }
 
 // Export singleton instance
-export const permissionService = new PermissionService();
+let permissionServiceInstance: PermissionService | null = null;
+
+/**
+ * Get or create the PermissionService instance
+ */
+export function getPermissionService(config?: Config): PermissionService {
+  if (!permissionServiceInstance) {
+    permissionServiceInstance = new PermissionService();
+  }
+  if (config) {
+    permissionServiceInstance.setConfig(config);
+  }
+  return permissionServiceInstance;
+}
+
+/**
+ * Reset the singleton instance
+ */
+export function resetPermissionService(): void {
+  permissionServiceInstance = null;
+}
