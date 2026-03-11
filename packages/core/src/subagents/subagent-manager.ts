@@ -29,10 +29,10 @@ import { SubagentValidator } from './validation.js';
 import { SubAgentScope } from './subagent.js';
 import type { Config } from '../config/config.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
+import { resolveToolAlias } from '../tools/tool-names.js';
+import { BuiltinAgentRegistry } from './builtin-agents.js';
 
 const debugLogger = createDebugLogger('SUBAGENT_MANAGER');
-import { BuiltinAgentRegistry } from './builtin-agents.js';
-import { ToolDisplayNamesMigration } from '../tools/tool-names.js';
 
 const OLLAMA_CODE_CONFIG_DIR = '.ollama-code';
 const AGENT_CONFIG_DIR = 'agents';
@@ -676,9 +676,12 @@ export class SubagentManager {
 
     const result: string[] = [];
     for (const toolIdentifier of tools) {
-      // First, try to find an exact match by tool name (highest priority)
+      // First, resolve any aliases (including legacy names registered via plugins)
+      const resolvedName = resolveToolAlias(toolIdentifier);
+
+      // Try to find an exact match by tool name (highest priority)
       const exactNameMatch = allTools.find(
-        (tool) => tool.name === toolIdentifier,
+        (tool) => tool.name === resolvedName || tool.name === toolIdentifier,
       );
       if (exactNameMatch) {
         result.push(exactNameMatch.name);
@@ -689,10 +692,7 @@ export class SubagentManager {
       const displayNameMatch = allTools.find(
         (tool) =>
           tool.displayName === toolIdentifier ||
-          tool.displayName ===
-            (ToolDisplayNamesMigration[
-              toolIdentifier as keyof typeof ToolDisplayNamesMigration
-            ] as string | undefined),
+          tool.displayName === resolvedName,
       );
       if (displayNameMatch) {
         result.push(displayNameMatch.name);

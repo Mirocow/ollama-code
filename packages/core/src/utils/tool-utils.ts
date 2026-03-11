@@ -7,8 +7,6 @@
 import type { AnyDeclarativeTool, AnyToolInvocation } from '../index.js';
 import { isTool } from '../index.js';
 import {
-  ToolNamesMigration,
-  ToolDisplayNamesMigration,
   ToolAliases,
   DynamicAliases,
   type ToolName,
@@ -24,44 +22,28 @@ const normalizeIdentifier = (identifier: string): string =>
  * Gets all known aliases for a tool name.
  * This includes:
  * - The canonical name itself
- * - Legacy names from ToolNamesMigration
- * - Legacy display names from ToolDisplayNamesMigration
- * - Aliases from ToolAliases and DynamicAliases
+ * - Aliases from ToolAliases and DynamicAliases (including legacy names now registered via plugins)
  */
 function getAliasesForToolName(toolName: string): Set<string> {
   const aliases = new Set<string>();
-  
+
   // Add the canonical name
   aliases.add(normalizeIdentifier(toolName));
-  
-  // Add legacy names that map to this tool
-  for (const [legacyName, mappedName] of Object.entries(ToolNamesMigration)) {
-    if (mappedName === toolName) {
-      aliases.add(normalizeIdentifier(legacyName));
-    }
-  }
-  
-  // Add legacy display names that map to this tool
-  for (const legacyDisplay of Object.keys(ToolDisplayNamesMigration)) {
-    // Note: ToolDisplayNamesMigration maps display names, not tool names
-    // We include them as potential aliases
-    aliases.add(normalizeIdentifier(legacyDisplay));
-  }
-  
+
   // Add static aliases that map to this tool
   for (const [aliasName, mappedName] of Object.entries(ToolAliases)) {
     if (mappedName === toolName) {
       aliases.add(normalizeIdentifier(aliasName));
     }
   }
-  
-  // Add dynamic aliases that map to this tool
+
+  // Add dynamic aliases that map to this tool (includes legacy names from plugins)
   for (const [aliasName, mappedName] of Object.entries(DynamicAliases)) {
     if (mappedName === toolName) {
       aliases.add(normalizeIdentifier(aliasName));
     }
   }
-  
+
   return aliases;
 }
 

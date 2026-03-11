@@ -240,6 +240,12 @@ export function createFileToolsPlugin(): PluginDefinition {
         canonicalName: 'list_directory',
         description: 'List directory',
       },
+      // Legacy display name (was ToolDisplayNamesMigration)
+      {
+        alias: 'ReadFolder',
+        canonicalName: 'list_directory',
+        description: 'Read folder (legacy display name)',
+      },
       // ═══════════════════════════════════════════════════════════════════
       // glob aliases
       // ═══════════════════════════════════════════════════════════════════
@@ -267,6 +273,12 @@ export function createFileToolsPlugin(): PluginDefinition {
         alias: 'pattern',
         canonicalName: 'glob',
         description: 'Search files by pattern',
+      },
+      // Legacy display name (was ToolDisplayNamesMigration)
+      {
+        alias: 'FindFiles',
+        canonicalName: 'glob',
+        description: 'Find files (legacy display name)',
       },
       // ═══════════════════════════════════════════════════════════════════
       // read_many_files aliases

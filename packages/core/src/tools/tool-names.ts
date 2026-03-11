@@ -14,7 +14,10 @@
  *
  * This file only manages:
  * - Dynamic aliases (learned from model mistakes)
- * - Legacy name migrations
+ *
+ * Legacy name migrations have been moved to plugin aliases.
+ * See: packages/core/src/plugins/builtin/file-tools/index.ts
+ * See: packages/core/src/plugins/builtin/search-tools/index.ts
  *
  * @see packages/core/src/plugins/pluginRegistry.ts - Plugin tool registration
  * @see packages/core/src/tools/tool-registry.ts - Dynamic tool registry
@@ -30,22 +33,6 @@ const debugLogger = createDebugLogger('PLUGIN_ALIASES');
  */
 export type ToolName = string;
 
-// Migration from old tool names to new tool names
-// These legacy tool names were used in earlier versions and need to be supported
-// for backward compatibility with existing user configurations
-export const ToolNamesMigration = {
-  search_file_content: 'grep_search', // Legacy name from grep tool
-  replace: 'edit', // Legacy name from edit tool
-} as const;
-
-// Migration from old tool display names to new tool display names
-// These legacy display names were used before the tool naming standardization
-export const ToolDisplayNamesMigration = {
-  SearchFiles: 'Grep', // Old display name for Grep
-  FindFiles: 'Glob', // Old display name for Glob
-  ReadFolder: 'ListFiles', // Old display name for ListFiles
-} as const;
-
 /**
  * Static tool aliases (empty - all aliases come from plugins).
  * Kept for backward compatibility.
@@ -54,7 +41,8 @@ export const ToolDisplayNamesMigration = {
  */
 export const ToolAliases: Record<string, string> = {
   // All aliases have been moved to plugins
-  // See: packages/core/src/plugins/builtin/*/index.ts
+  // See: packages/core/src/plugins/builtin/file-tools/index.ts
+  // See: packages/core/src/plugins/builtin/search-tools/index.ts
   // Aliases are registered dynamically via registerPluginAliases()
 };
 
@@ -73,7 +61,11 @@ export const DynamicAliases: Record<string, string> = {};
  */
 export function registerPluginAliases(
   pluginId: string,
-  aliases: Array<{ alias: string; canonicalName: string; description?: string }>
+  aliases: Array<{
+    alias: string;
+    canonicalName: string;
+    description?: string;
+  }>,
 ): number {
   let registered = 0;
   let skipped = 0;
@@ -94,7 +86,7 @@ export function registerPluginAliases(
       // If it maps to a different canonical name, it's a conflict - warn
       debugLogger.warn(
         `Alias "${alias}" conflict: already maps to "${existingCanonical}", ` +
-        `cannot remap to "${canonicalName}" (plugin: ${pluginId})`
+          `cannot remap to "${canonicalName}" (plugin: ${pluginId})`,
       );
       skipped++;
       continue;
@@ -107,7 +99,7 @@ export function registerPluginAliases(
   if (registered > 0 || skipped > 0) {
     debugLogger.info(
       `Registered ${registered} aliases from plugin "${pluginId}"` +
-      (skipped > 0 ? ` (skipped ${skipped} duplicates)` : '')
+        (skipped > 0 ? ` (skipped ${skipped} duplicates)` : ''),
     );
   }
   return registered;
@@ -158,11 +150,6 @@ export function resolveToolAlias(name: string): string {
   // Check if it's a direct alias (static - from tool-names.ts)
   if (normalizedName in ToolAliases) {
     return ToolAliases[normalizedName];
-  }
-
-  // Check legacy migrations
-  if (normalizedName in ToolNamesMigration) {
-    return ToolNamesMigration[normalizedName as keyof typeof ToolNamesMigration];
   }
 
   // Return original name if no alias found
