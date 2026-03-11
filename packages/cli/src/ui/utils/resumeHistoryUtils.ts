@@ -343,20 +343,16 @@ function convertToHistoryItems(
         }
 
         // Track function calls for pairing with results
-        // Flush existing tool group before adding new function calls from a new turn
+        // Always flush existing tool group before adding new function calls from a new turn
         // This prevents tool calls from different assistant turns from being merged
         if (functionCalls.length > 0 && currentToolGroup.length > 0) {
-          // Check if existing tool calls have results (completed turn)
-          const allHaveResults = currentToolGroup.every(
-            (tc) => tc.resultDisplay !== undefined,
-          );
-          if (allHaveResults) {
-            items.push({
-              type: 'tool_group',
-              tools: [...currentToolGroup],
-            });
-            currentToolGroup = [];
-          }
+          // Flush the previous tool group regardless of result status
+          // Each assistant turn starts a fresh tool group
+          items.push({
+            type: 'tool_group',
+            tools: [...currentToolGroup],
+          });
+          currentToolGroup = [];
         }
 
         for (const fc of functionCalls) {
