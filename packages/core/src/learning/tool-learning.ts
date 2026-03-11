@@ -33,11 +33,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { Storage } from '../config/storage.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
-import {
-  ToolAliases,
-  DynamicAliases,
-  type ToolName,
-} from '../tools/tool-names.js';
+import { DynamicAliases, type ToolName } from '../tools/tool-names.js';
 
 const debugLogger = createDebugLogger('TOOL_LEARNING');
 
@@ -251,7 +247,7 @@ function generateExplanation(wrongName: string, correctName: string): string {
 
 Try restarting the application or check the plugin configuration.`;
     }
-    
+
     return (
       explanations[correctName] ||
       `Tool "${wrongName}" is a valid tool name but is not currently registered. The tool may need to be enabled in plugin configuration or the plugin may not be loaded. `
@@ -411,10 +407,7 @@ export class ToolLearningManager {
    */
   private applyDynamicAliases(): void {
     for (const [alias, dynamicAlias] of this.dynamicAliases) {
-      // Don't overwrite existing static aliases
-      if (!(alias in ToolAliases)) {
-        DynamicAliases[alias] = dynamicAlias.canonicalName;
-      }
+      DynamicAliases[alias] = dynamicAlias.canonicalName;
     }
     debugLogger.debug(`Applied ${this.dynamicAliases.size} dynamic aliases`);
   }
@@ -489,7 +482,6 @@ export class ToolLearningManager {
 
     // Don't create alias if already exists (either static or dynamic)
     const normalizedWrong = wrongName.toLowerCase().trim();
-    if (normalizedWrong in ToolAliases) return;
     if (this.dynamicAliases.has(normalizedWrong)) return;
 
     // Create dynamic alias if threshold is reached
@@ -511,12 +503,6 @@ export class ToolLearningManager {
     source: DynamicAlias['source'] = 'manual',
   ): boolean {
     const normalizedAlias = alias.toLowerCase().trim();
-
-    // Don't overwrite existing static aliases
-    if (normalizedAlias in ToolAliases) {
-      debugLogger.warn(`Alias "${alias}" already exists as static alias`);
-      return false;
-    }
 
     const dynamicAlias: DynamicAlias = {
       alias: normalizedAlias,
@@ -556,11 +542,13 @@ export class ToolLearningManager {
   }
 
   /**
- * Finds the best matching tool for a potentially incorrect tool name.
- * Returns null if the name is a valid canonical name but the tool is not registered
- * (to avoid confusing "did you mean X?" when X is exactly what was requested).
- */
-  findBestMatch(toolName: string): { name: string; confidence: number; isRegistered: boolean } | null {
+   * Finds the best matching tool for a potentially incorrect tool name.
+   * Returns null if the name is a valid canonical name but the tool is not registered
+   * (to avoid confusing "did you mean X?" when X is exactly what was requested).
+   */
+  findBestMatch(
+    toolName: string,
+  ): { name: string; confidence: number; isRegistered: boolean } | null {
     const normalized = toolName.toLowerCase().trim();
 
     // Check if it's already a valid tool name (canonical name)
@@ -592,32 +580,39 @@ export class ToolLearningManager {
       'typescript_dev',
     ];
     const canonicalMatch = validTools.find(
-      (name) => name.toLowerCase() === normalized
+      (name) => name.toLowerCase() === normalized,
     );
-    
+
     // If it's a valid canonical name, return it but mark as potentially unregistered
     if (canonicalMatch) {
       return { name: canonicalMatch, confidence: 1, isRegistered: false };
     }
 
-    // Check static aliases
-    if (normalized in ToolAliases) {
-      return { name: ToolAliases[normalized], confidence: 1, isRegistered: true };
-    }
-
     // Check dynamic aliases
     if (this.dynamicAliases.has(normalized)) {
       const alias = this.dynamicAliases.get(normalized)!;
-      return { name: alias.canonicalName, confidence: 0.95, isRegistered: true };
+      return {
+        name: alias.canonicalName,
+        confidence: 0.95,
+        isRegistered: true,
+      };
     }
 
     // Check known patterns
     if (normalized in TOOL_PATTERNS) {
-      return { name: TOOL_PATTERNS[normalized], confidence: 0.9, isRegistered: true };
+      return {
+        name: TOOL_PATTERNS[normalized],
+        confidence: 0.9,
+        isRegistered: true,
+      };
     }
 
     // Use fuzzy matching on all available tool names
-    let bestMatch: { name: string; confidence: number; isRegistered: boolean } | null = null;
+    let bestMatch: {
+      name: string;
+      confidence: number;
+      isRegistered: boolean;
+    } | null = null;
 
     for (const validName of validTools) {
       const similarity = calculateSimilarity(normalized, validName);
@@ -625,18 +620,11 @@ export class ToolLearningManager {
         similarity > 0.5 &&
         (!bestMatch || similarity > bestMatch.confidence)
       ) {
-        bestMatch = { name: validName, confidence: similarity, isRegistered: true };
-      }
-    }
-
-    // Also check static aliases
-    for (const [alias, canonical] of Object.entries(ToolAliases)) {
-      const similarity = calculateSimilarity(normalized, alias);
-      if (
-        similarity > 0.6 &&
-        (!bestMatch || similarity > bestMatch.confidence)
-      ) {
-        bestMatch = { name: canonical, confidence: similarity, isRegistered: true };
+        bestMatch = {
+          name: validName,
+          confidence: similarity,
+          isRegistered: true,
+        };
       }
     }
 
@@ -700,12 +688,7 @@ export class ToolLearningManager {
     // Available tools reminder
     lines.push('\n## Available Tools (use EXACT names)');
     const toolCategories: Record<string, string[]> = {
-      'File Operations': [
-        'read_file',
-        'read_many_files',
-        'write_file',
-        'edit',
-      ],
+      'File Operations': ['read_file', 'read_many_files', 'write_file', 'edit'],
       'Search & Discovery': ['grep_search', 'glob', 'list_directory'],
       'Shell & Commands': ['run_shell_command'],
       'Development Tools': [
@@ -720,11 +703,7 @@ export class ToolLearningManager {
         'typescript_dev',
       ],
       'Web & Network': ['web_fetch', 'web_search'],
-      'Task Management': [
-        'todo_write',
-        'task',
-        'skill',
-      ],
+      'Task Management': ['todo_write', 'task', 'skill'],
       'Memory & State': ['save_memory', 'exit_plan_mode'],
     };
 

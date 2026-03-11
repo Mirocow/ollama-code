@@ -64,10 +64,6 @@ vi.mock('../tools/tool-names.js', () => ({
     MEMORY: 'memory',
     EXIT_PLAN_MODE: 'exit_plan_mode',
   },
-  ToolAliases: {
-    bash: 'run_shell_command',
-    shell: 'run_shell_command',
-  },
   DynamicAliases: {},
 }));
 
@@ -78,7 +74,9 @@ describe('ToolLearningManager', () => {
     // Reset singleton for each test
     vi.clearAllMocks();
     // Access private static instance to reset it
-    (ToolLearningManager as unknown as { instance: ToolLearningManager | null }).instance = null;
+    (
+      ToolLearningManager as unknown as { instance: ToolLearningManager | null }
+    ).instance = null;
     manager = ToolLearningManager.getInstance();
   });
 
@@ -170,7 +168,11 @@ describe('ToolLearningManager', () => {
 
   describe('resolveError', () => {
     it('should mark error as resolved', () => {
-      const error = manager.recordToolError('git_dev', 'run_shell_command', 0.9);
+      const error = manager.recordToolError(
+        'git_dev',
+        'run_shell_command',
+        0.9,
+      );
 
       manager.resolveError(error.id);
 

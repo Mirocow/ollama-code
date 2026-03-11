@@ -6,11 +6,7 @@
 
 import type { AnyDeclarativeTool, AnyToolInvocation } from '../index.js';
 import { isTool } from '../index.js';
-import {
-  ToolAliases,
-  DynamicAliases,
-  type ToolName,
-} from '../tools/tool-names.js';
+import { DynamicAliases, type ToolName } from '../tools/tool-names.js';
 
 // Re-export ToolName for backward compatibility
 export type { ToolName };
@@ -22,20 +18,13 @@ const normalizeIdentifier = (identifier: string): string =>
  * Gets all known aliases for a tool name.
  * This includes:
  * - The canonical name itself
- * - Aliases from ToolAliases and DynamicAliases (including legacy names now registered via plugins)
+ * - Aliases DynamicAliases (including legacy names now registered via plugins)
  */
 function getAliasesForToolName(toolName: string): Set<string> {
   const aliases = new Set<string>();
 
   // Add the canonical name
   aliases.add(normalizeIdentifier(toolName));
-
-  // Add static aliases that map to this tool
-  for (const [aliasName, mappedName] of Object.entries(ToolAliases)) {
-    if (mappedName === toolName) {
-      aliases.add(normalizeIdentifier(aliasName));
-    }
-  }
 
   // Add dynamic aliases that map to this tool (includes legacy names from plugins)
   for (const [aliasName, mappedName] of Object.entries(DynamicAliases)) {

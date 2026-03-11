@@ -34,26 +34,13 @@ const debugLogger = createDebugLogger('PLUGIN_ALIASES');
 export type ToolName = string;
 
 /**
- * Static tool aliases (empty - all aliases come from plugins).
- * Kept for backward compatibility.
- *
- * @deprecated Use DynamicAliases or plugin-defined aliases instead.
- */
-export const ToolAliases: Record<string, string> = {
-  // All aliases have been moved to plugins
-  // See: packages/core/src/plugins/builtin/file-tools/index.ts
-  // See: packages/core/src/plugins/builtin/search-tools/index.ts
-  // Aliases are registered dynamically via registerPluginAliases()
-};
-
-/**
  * Dynamic aliases learned from model mistakes or added at runtime.
  */
 export const DynamicAliases: Record<string, string> = {};
 
 /**
  * Register aliases from a plugin.
- * These are added to DynamicAliases and take priority over ToolAliases.
+ * These are added to DynamicAliases.
  *
  * @param pluginId - The plugin ID (for logging)
  * @param aliases - Array of ToolAlias objects from the plugin
@@ -145,11 +132,6 @@ export function resolveToolAlias(name: string): string {
   // Check dynamic aliases first (higher priority - from plugins)
   if (normalizedName in DynamicAliases) {
     return DynamicAliases[normalizedName];
-  }
-
-  // Check if it's a direct alias (static - from tool-names.ts)
-  if (normalizedName in ToolAliases) {
-    return ToolAliases[normalizedName];
   }
 
   // Return original name if no alias found
