@@ -13,6 +13,7 @@ import {
   parse as parseYaml,
   stringify as stringifyYaml,
 } from '../utils/yaml-parser.js';
+import { getOllamaDir, OLLAMA_DIR } from '../utils/paths.js';
 import type {
   SubagentConfig,
   SubagentRuntimeConfig,
@@ -34,7 +35,6 @@ import { BuiltinAgentRegistry } from './builtin-agents.js';
 
 const debugLogger = createDebugLogger('SUBAGENT_MANAGER');
 
-const OLLAMA_CODE_CONFIG_DIR = '.ollama-code';
 const AGENT_CONFIG_DIR = 'agents';
 
 /**
@@ -753,12 +753,8 @@ export class SubagentManager {
 
     const baseDir =
       level === 'project'
-        ? path.join(
-            this.config.getProjectRoot(),
-            OLLAMA_CODE_CONFIG_DIR,
-            AGENT_CONFIG_DIR,
-          )
-        : path.join(os.homedir(), OLLAMA_CODE_CONFIG_DIR, AGENT_CONFIG_DIR);
+        ? path.join(this.config.getProjectRoot(), OLLAMA_DIR, AGENT_CONFIG_DIR)
+        : path.join(getOllamaDir(), AGENT_CONFIG_DIR);
 
     return path.join(baseDir, `${name}.md`);
   }
@@ -784,8 +780,9 @@ export class SubagentManager {
     }
 
     const projectRoot = this.config.getProjectRoot();
-    const homeDir = os.homedir();
-    const isHomeDirectory = path.resolve(projectRoot) === path.resolve(homeDir);
+    const homeDir = getOllamaDir();
+    const isHomeDirectory =
+      path.resolve(projectRoot) === path.resolve(os.homedir());
 
     // If project level is requested but project root is same as home directory,
     // return empty array to avoid conflicts between project and global agents
@@ -793,8 +790,10 @@ export class SubagentManager {
       return [];
     }
 
-    let baseDir = level === 'project' ? projectRoot : homeDir;
-    baseDir = path.join(baseDir, OLLAMA_CODE_CONFIG_DIR, AGENT_CONFIG_DIR);
+    const baseDir =
+      level === 'project'
+        ? path.join(projectRoot, OLLAMA_DIR, AGENT_CONFIG_DIR)
+        : path.join(homeDir, AGENT_CONFIG_DIR);
 
     try {
       const files = await fs.readdir(baseDir);

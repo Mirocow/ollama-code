@@ -9,6 +9,7 @@ import * as fs from 'node:fs';
 import {
   getProjectHash,
   getOllamaDir,
+  getProjectDir,
   getProjectStorageDir,
 } from '../utils/paths.js';
 
@@ -505,17 +506,17 @@ export class Storage {
   }
 
   /**
-   * Get the centralized project storage directory
+   * Get the centralized project directory
    * Returns ~/.ollama-code/projects/<project-hash>/
    * This is the recommended location for project-specific data
    */
   getProjectDir(): string {
-    return getProjectStorageDir(this.getProjectRoot());
+    return getProjectDir(this.getProjectRoot());
   }
 
   /**
-   * Get the project-specific storage directory (alias for getProjectDir)
-   * Returns ~/.ollama-code/projects/<project-hash>/
+   * Get the project-specific storage directory
+   * Returns ~/.ollama-code/projects/<project-hash>/storage/
    */
   getProjectStorageDir(): string {
     return getProjectStorageDir(this.getProjectRoot());

@@ -1811,10 +1811,7 @@ async function initializeStorageMetrics(): Promise<void> {
     const keys: string[] = [];
 
     // Scan global storage
-    const globalStorageDir = path.join(
-      Storage.getGlobalOllamaDir(),
-      STORAGE_DIR,
-    );
+    const globalStorageDir = path.join(getOllamaDir(), STORAGE_DIR);
 
     try {
       const files = await fs.readdir(globalStorageDir);

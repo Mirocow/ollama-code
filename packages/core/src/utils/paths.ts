@@ -13,7 +13,6 @@ import { isNodeError } from './errors.js';
 
 /**
  * Ollama Code directory name
- * @deprecated Use getOllamaDir() instead
  */
 export const OLLAMA_DIR = '.ollama-code';
 
