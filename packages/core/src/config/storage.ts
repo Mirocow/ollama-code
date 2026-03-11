@@ -577,7 +577,7 @@ export class Storage {
         const content = fs.readFileSync(filePath, 'utf-8');
         return JSON.parse(content) as SSHCredentialsStore;
       }
-    } catch (error) {
+    } catch (_error) {
       // Return empty store if file doesn't exist or is corrupted
     }
     return { hosts: {} };

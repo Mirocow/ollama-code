@@ -799,19 +799,6 @@ export {
 } from './services/workspaceService.js';
 
 // ============================================================================
-// Memory Summary Service
-// ============================================================================
-
-export {
-  MemorySummaryService,
-  memorySummaryService,
-  DEFAULT_MEMORY_SUMMARY_CONFIG,
-  type MemorySummaryConfig,
-  type ActivityRecord,
-  type MemoryState,
-} from './services/memorySummaryService.js';
-
-// ============================================================================
 // Compression Report Service
 // ============================================================================
 

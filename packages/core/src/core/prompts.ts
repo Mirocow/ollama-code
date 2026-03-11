@@ -20,39 +20,7 @@ import {
   fillTemplatePlaceholders,
   type TemplatePlaceholders,
 } from '../prompts/index.js';
-import { memorySummaryService } from '../services/memorySummaryService.js';
-
 const debugLogger = createDebugLogger('PROMPTS');
-
-/**
- * Gets the memory summary context to include in system prompts.
- * This helps remind the model what it was doing in previous sessions.
- */
-function getMemorySummaryContext(): string {
-  try {
-    const memoryContext = memorySummaryService.getMemoryContext();
-    if (!memoryContext || memoryContext.trim().length === 0) {
-      return '';
-    }
-
-    const lines: string[] = [
-      '',
-      '# Session Context',
-      '',
-      'This is a continuation of a previous session. Here is the context of what was being worked on:',
-      '',
-    ];
-
-    lines.push(memoryContext);
-    lines.push('');
-    lines.push('---');
-    lines.push('');
-
-    return lines.join('\n');
-  } catch {
-    return '';
-  }
-}
 
 /**
  * Gets the tool learning context to include in system prompts.
@@ -222,7 +190,7 @@ function getEnvironmentInfo(): string {
   envLines.push('');
   envLines.push('### Debug Settings');
   envLines.push(`- **DEBUG Mode**: ${debugMode}`);
-  
+
   // Add relevant environment variables for the model
   envLines.push('');
   envLines.push('### Environment Variables');
@@ -251,12 +219,13 @@ function getEnvironmentInfo(): string {
     'HTTPS_PROXY',
     'NO_PROXY',
   ];
-  
+
   for (const envVar of relevantEnvVars) {
     const value = process.env[envVar];
     if (value !== undefined) {
       // Truncate very long values like PATH
-      const displayValue = value.length > 200 ? value.substring(0, 200) + '...' : value;
+      const displayValue =
+        value.length > 200 ? value.substring(0, 200) + '...' : value;
       envLines.push(`- **${envVar}**: ${displayValue}`);
     }
   }
@@ -340,16 +309,13 @@ function getCoreSystemPromptFromTemplate(
   // Fill template
   const prompt = fillTemplatePlaceholders(template, placeholders);
 
-  // Get memory summary context from previous sessions
-  const memorySummaryContext = getMemorySummaryContext();
-
   // Append user memory
   const memorySuffix =
     userMemory && userMemory.trim().length > 0
       ? `\n\n---\n\n${userMemory.trim()}`
       : '';
 
-  return `${memorySummaryContext}${prompt}${memorySuffix}`;
+  return `${prompt}${memorySuffix}`;
 }
 
 export function resolvePathFromEnv(envVar?: string): {
@@ -451,12 +417,12 @@ export function getCoreSystemPrompt(
   // Check if we should use the new template-based system
   // Default to templates unless OLLAMA_CODE_USE_TEMPLATES=false
   const useTemplates = shouldUseTemplates();
-  
+
   if (useTemplates) {
     // Use template-based prompt
     return getCoreSystemPromptFromTemplate(userMemory, model);
   }
-  
+
   // Legacy prompt (original implementation below)
   // if OLLAMA_CODE_SYSTEM_MD is set (and not 0|false), override system prompt from file
   // default path is .ollama-code/system.md but can be modified via custom path in OLLAMA_CODE_SYSTEM_MD
