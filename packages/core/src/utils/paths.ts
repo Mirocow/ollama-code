@@ -11,7 +11,40 @@ import * as crypto from 'node:crypto';
 import type { Config } from '../config/config.js';
 import { isNodeError } from './errors.js';
 
+/**
+ * Ollama Code directory name
+ * @deprecated Use config.getOllamaDir() or Storage.getOllamaDir() instead
+ */
 export const OLLAMA_DIR = '.ollama-code';
+
+/**
+ * Get the global Ollama Code directory (~/.ollama-code/)
+ * This is the central location for all Ollama Code data
+ */
+export function getOllamaDir(): string {
+  const homeDir = os.homedir();
+  if (!homeDir) {
+    return path.join(os.tmpdir(), '.ollama-code');
+  }
+  return path.join(homeDir, '.ollama-code');
+}
+
+/**
+ * Get the projects directory (~/.ollama-code/projects/)
+ * Each project has its own subdirectory here
+ */
+export function getProjectsDir(): string {
+  return path.join(getOllamaDir(), 'projects');
+}
+
+/**
+ * Get project-specific directory (~/.ollama-code/projects/<project-hash>/storage/)
+ * Used for project-specific data storage
+ */
+export function getProjectStorageDir(projectRoot: string): string {
+  const projectHash = getProjectHash(projectRoot);
+  return path.join(getProjectsDir(), projectHash, 'storage');
+}
 
 /**
  * Special characters that need to be escaped in file paths for shell compatibility.

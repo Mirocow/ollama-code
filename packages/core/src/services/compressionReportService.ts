@@ -29,7 +29,7 @@ export interface CompressionReport {
 
 /**
  * Service for generating compression reports.
- * Stores reports in project directory.
+ * Stores reports in centralized project storage directory.
  */
 export class CompressionReportService {
   private reportsDir: string;
@@ -37,9 +37,9 @@ export class CompressionReportService {
 
   constructor(appConfig: Config, sessionId?: string) {
     this.sessionId = sessionId || appConfig.getSessionId();
+    // Use centralized project storage directory
     this.reportsDir = path.join(
-      appConfig.getProjectRoot(),
-      '.ollama-code',
+      appConfig.storage.getProjectStorageDir(),
       'compression-reports',
     );
   }

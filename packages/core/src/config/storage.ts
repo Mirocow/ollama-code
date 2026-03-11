@@ -5,19 +5,21 @@
  */
 
 import * as path from 'node:path';
-import * as os from 'node:os';
 import * as fs from 'node:fs';
-import { getProjectHash, OLLAMA_DIR } from '../utils/paths.js';
+import {
+  getProjectHash,
+  getOllamaDir,
+  getProjectStorageDir,
+} from '../utils/paths.js';
 
-// Re-export OLLAMA_DIR for other modules
-export { OLLAMA_DIR };
+// Re-export getOllamaDir for other modules (replaces getGlobalOllamaDir)
+export { getOllamaDir };
 
 export const GOOGLE_ACCOUNTS_FILENAME = 'google_accounts.json';
 export const OAUTH_FILE = 'oauth_creds.json';
 export const SSH_CREDENTIALS_FILE = 'ssh_credentials.json';
 const TMP_DIR_NAME = 'tmp';
 const BIN_DIR_NAME = 'bin';
-const PROJECT_DIR_NAME = 'projects';
 const IDE_DIR_NAME = 'ide';
 const DEBUG_DIR_NAME = 'debug';
 
@@ -441,44 +443,44 @@ export class Storage {
     this.targetDir = targetDir;
   }
 
+  /**
+   * Get the global Ollama Code directory (~/.ollama-code/)
+   * @deprecated Use getOllamaDir() from paths.ts instead
+   */
   static getGlobalOllamaDir(): string {
-    const homeDir = os.homedir();
-    if (!homeDir) {
-      return path.join(os.tmpdir(), '.ollama-code');
-    }
-    return path.join(homeDir, OLLAMA_DIR);
+    return getOllamaDir();
   }
 
   static getMcpOAuthTokensPath(): string {
-    return path.join(Storage.getGlobalOllamaDir(), 'mcp-oauth-tokens.json');
+    return path.join(getOllamaDir(), 'mcp-oauth-tokens.json');
   }
 
   static getGlobalSettingsPath(): string {
-    return path.join(Storage.getGlobalOllamaDir(), 'settings.json');
+    return path.join(getOllamaDir(), 'settings.json');
   }
 
   static getInstallationIdPath(): string {
-    return path.join(Storage.getGlobalOllamaDir(), 'installation_id');
+    return path.join(getOllamaDir(), 'installation_id');
   }
 
   static getGoogleAccountsPath(): string {
-    return path.join(Storage.getGlobalOllamaDir(), GOOGLE_ACCOUNTS_FILENAME);
+    return path.join(getOllamaDir(), GOOGLE_ACCOUNTS_FILENAME);
   }
 
   static getUserCommandsDir(): string {
-    return path.join(Storage.getGlobalOllamaDir(), 'commands');
+    return path.join(getOllamaDir(), 'commands');
   }
 
   static getGlobalMemoryFilePath(): string {
-    return path.join(Storage.getGlobalOllamaDir(), 'memory.md');
+    return path.join(getOllamaDir(), 'memory.md');
   }
 
   static getGlobalTempDir(): string {
-    return path.join(Storage.getGlobalOllamaDir(), TMP_DIR_NAME);
+    return path.join(getOllamaDir(), TMP_DIR_NAME);
   }
 
   static getGlobalDebugDir(): string {
-    return path.join(Storage.getGlobalOllamaDir(), DEBUG_DIR_NAME);
+    return path.join(getOllamaDir(), DEBUG_DIR_NAME);
   }
 
   static getDebugLogPath(sessionId: string): string {
@@ -486,24 +488,37 @@ export class Storage {
   }
 
   static getGlobalIdeDir(): string {
-    return path.join(Storage.getGlobalOllamaDir(), IDE_DIR_NAME);
+    return path.join(getOllamaDir(), IDE_DIR_NAME);
   }
 
   static getGlobalBinDir(): string {
-    return path.join(Storage.getGlobalOllamaDir(), BIN_DIR_NAME);
+    return path.join(getOllamaDir(), BIN_DIR_NAME);
   }
 
+  /**
+   * Get the project-specific Ollama Code directory within the project
+   * This returns <project>/.ollama-code/ for project-local settings
+   * @deprecated Use getProjectStorageDir() for centralized storage
+   */
   getOllamaDir(): string {
-    return path.join(this.targetDir, OLLAMA_DIR);
+    return path.join(this.targetDir, '.ollama-code');
   }
 
+  /**
+   * Get the centralized project storage directory
+   * Returns ~/.ollama-code/projects/<project-hash>/storage/
+   * This is the new recommended location for project-specific data
+   */
   getProjectDir(): string {
-    const projectId = this.sanitizeCwd(this.getProjectRoot());
-    const projectsDir = path.join(
-      Storage.getGlobalOllamaDir(),
-      PROJECT_DIR_NAME,
-    );
-    return path.join(projectsDir, projectId);
+    return getProjectStorageDir(this.getProjectRoot());
+  }
+
+  /**
+   * Get the project-specific storage directory (alias for getProjectDir)
+   * Returns ~/.ollama-code/projects/<project-hash>/storage/
+   */
+  getProjectStorageDir(): string {
+    return getProjectStorageDir(this.getProjectRoot());
   }
 
   getProjectTempDir(): string {
@@ -514,7 +529,7 @@ export class Storage {
   }
 
   static getOAuthCredsPath(): string {
-    return path.join(Storage.getGlobalOllamaDir(), OAUTH_FILE);
+    return path.join(getOllamaDir(), OAUTH_FILE);
   }
 
   getProjectRoot(): string {
@@ -523,7 +538,7 @@ export class Storage {
 
   getHistoryDir(): string {
     const hash = getProjectHash(this.getProjectRoot());
-    const historyDir = path.join(Storage.getGlobalOllamaDir(), 'history');
+    const historyDir = path.join(getOllamaDir(), 'history');
     const targetDir = path.join(historyDir, hash);
     return targetDir;
   }
@@ -549,7 +564,7 @@ export class Storage {
   }
 
   getUserSkillsDir(): string {
-    return path.join(Storage.getGlobalOllamaDir(), 'skills');
+    return path.join(getOllamaDir(), 'skills');
   }
 
   getHistoryFilePath(): string {
@@ -564,7 +579,7 @@ export class Storage {
    * Get the path to SSH credentials file
    */
   static getSSHCredentialsPath(): string {
-    return path.join(Storage.getGlobalOllamaDir(), SSH_CREDENTIALS_FILE);
+    return path.join(getOllamaDir(), SSH_CREDENTIALS_FILE);
   }
 
   /**
@@ -635,11 +650,5 @@ export class Storage {
   static listSSHHosts(): Record<string, SSHHostConfig> {
     const store = Storage.loadSSHCredentials();
     return store.hosts;
-  }
-
-  private sanitizeCwd(cwd: string): string {
-    // On Windows, normalize to lowercase for case-insensitive matching
-    const normalizedCwd = os.platform() === 'win32' ? cwd.toLowerCase() : cwd;
-    return normalizedCwd.replace(/[^a-zA-Z0-9]/g, '-');
   }
 }

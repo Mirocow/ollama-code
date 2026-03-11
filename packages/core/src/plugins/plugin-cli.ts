@@ -7,7 +7,7 @@
 
 /**
  * Plugin Development CLI
- * 
+ *
  * Commands:
  * - create <name>     Create a new plugin from template
  * - validate <path>   Validate a plugin manifest
@@ -17,16 +17,18 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import * as os from 'node:os';
+import { getOllamaDir } from '../utils/paths.js';
 
-const PLUGINS_DIR = path.join(os.homedir(), '.ollama-code', 'plugins');
+// Use centralized Ollama directory for plugins
+const getPluginsDir = () => path.join(getOllamaDir(), 'plugins');
 
 /**
  * Create a new plugin from template
  */
 async function createPlugin(name: string): Promise<void> {
-  const pluginDir = path.join(PLUGINS_DIR, name);
-  
+  const pluginsDir = getPluginsDir();
+  const pluginDir = path.join(pluginsDir, name);
+
   // Check if plugin already exists
   try {
     await fs.access(pluginDir);
@@ -35,16 +37,19 @@ async function createPlugin(name: string): Promise<void> {
   } catch {
     // Directory doesn't exist, proceed
   }
-  
+
   // Create plugin directory
   await fs.mkdir(pluginDir, { recursive: true });
-  
+
   // Create plugin.json
   const manifest = {
     entry: 'index.js',
     metadata: {
       id: name,
-      name: name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+      name: name
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' '),
       version: '1.0.0',
       description: 'A custom plugin for Ollama Code',
       author: 'Your Name',
@@ -52,12 +57,12 @@ async function createPlugin(name: string): Promise<void> {
       enabledByDefault: true,
     },
   };
-  
+
   await fs.writeFile(
     path.join(pluginDir, 'plugin.json'),
-    JSON.stringify(manifest, null, 2)
+    JSON.stringify(manifest, null, 2),
   );
-  
+
   // Create index.ts template
   const indexTemplate = `/**
  * ${manifest.metadata.name}
@@ -121,9 +126,9 @@ const plugin: PluginDefinition = {
 
 export default plugin;
 `;
-  
+
   await fs.writeFile(path.join(pluginDir, 'index.ts'), indexTemplate);
-  
+
   // Create README.md
   const readme = `# ${manifest.metadata.name}
 
@@ -152,9 +157,9 @@ An example tool that processes input.
 
 MIT
 `;
-  
+
   await fs.writeFile(path.join(pluginDir, 'README.md'), readme);
-  
+
   console.log(`✅ Created plugin '${name}' at ${pluginDir}`);
   console.log('');
   console.log('Files created:');
@@ -164,7 +169,9 @@ MIT
   console.log('');
   console.log('Next steps:');
   console.log('  1. Edit index.ts to add your tools');
-  console.log('  2. Compile: tsc index.ts --esModuleInterop --moduleResolution node --outDir .');
+  console.log(
+    '  2. Compile: tsc index.ts --esModuleInterop --moduleResolution node --outDir .',
+  );
   console.log('  3. Restart Ollama Code to load the plugin');
 }
 
@@ -173,19 +180,20 @@ MIT
  */
 async function validatePlugin(pluginPath: string): Promise<void> {
   const manifestPath = path.join(pluginPath, 'plugin.json');
-  
+
   try {
     const content = await fs.readFile(manifestPath, 'utf8');
     const manifest = JSON.parse(content);
-    
+
     const errors: string[] = [];
-    
+
     // Validate required fields
     if (!manifest.entry) errors.push('Missing "entry" field');
     if (!manifest.metadata?.id) errors.push('Missing "metadata.id" field');
     if (!manifest.metadata?.name) errors.push('Missing "metadata.name" field');
-    if (!manifest.metadata?.version) errors.push('Missing "metadata.version" field');
-    
+    if (!manifest.metadata?.version)
+      errors.push('Missing "metadata.version" field');
+
     // Validate entry file exists
     const entryPath = path.join(pluginPath, manifest.entry || 'index.js');
     try {
@@ -193,13 +201,13 @@ async function validatePlugin(pluginPath: string): Promise<void> {
     } catch {
       errors.push(`Entry file "${manifest.entry}" not found`);
     }
-    
+
     if (errors.length > 0) {
       console.log('❌ Validation failed:\n');
-      errors.forEach(e => console.log(`  - ${e}`));
+      errors.forEach((e) => console.log(`  - ${e}`));
       process.exit(1);
     }
-    
+
     console.log('✅ Plugin manifest is valid');
     console.log('');
     console.log('Plugin info:');
@@ -208,7 +216,7 @@ async function validatePlugin(pluginPath: string): Promise<void> {
     console.log(`  Version:     ${manifest.metadata.version}`);
     console.log(`  Description: ${manifest.metadata.description || '(none)'}`);
     console.log(`  Author:      ${manifest.metadata.author || '(unknown)'}`);
-    
+
     if (manifest.metadata.tools) {
       console.log(`  Tools:       ${manifest.metadata.tools.join(', ')}`);
     }
@@ -223,18 +231,19 @@ async function validatePlugin(pluginPath: string): Promise<void> {
  */
 async function listPlugins(): Promise<void> {
   console.log('Installed plugins:\n');
-  
+  const pluginsDir = getPluginsDir();
+
   // List user plugins
   try {
-    const userPlugins = await fs.readdir(PLUGINS_DIR);
+    const userPlugins = await fs.readdir(pluginsDir);
     for (const plugin of userPlugins) {
-      const manifestPath = path.join(PLUGINS_DIR, plugin, 'plugin.json');
+      const manifestPath = path.join(pluginsDir, plugin, 'plugin.json');
       try {
         const content = await fs.readFile(manifestPath, 'utf8');
         const manifest = JSON.parse(content);
         console.log(`  📦 ${manifest.metadata.name} (${manifest.metadata.id})`);
         console.log(`     Version: ${manifest.metadata.version}`);
-        console.log(`     Path: ${path.join(PLUGINS_DIR, plugin)}`);
+        console.log(`     Path: ${path.join(pluginsDir, plugin)}`);
         console.log('');
       } catch {
         console.log(`  ⚠️  ${plugin} (invalid manifest)`);
@@ -242,7 +251,7 @@ async function listPlugins(): Promise<void> {
     }
   } catch {
     console.log('  No user plugins installed');
-    console.log(`  Plugin directory: ${PLUGINS_DIR}`);
+    console.log(`  Plugin directory: ${pluginsDir}`);
   }
 }
 
@@ -251,13 +260,14 @@ async function listPlugins(): Promise<void> {
  */
 async function showPluginInfo(pluginId: string): Promise<void> {
   // Search in user plugins
-  const userPluginPath = path.join(PLUGINS_DIR, pluginId);
-  
+  const pluginsDir = getPluginsDir();
+  const userPluginPath = path.join(pluginsDir, pluginId);
+
   try {
     const manifestPath = path.join(userPluginPath, 'plugin.json');
     const content = await fs.readFile(manifestPath, 'utf8');
     const manifest = JSON.parse(content);
-    
+
     console.log(`\n📦 ${manifest.metadata.name}`);
     console.log('━'.repeat(40));
     console.log(`ID:          ${manifest.metadata.id}`);
@@ -266,18 +276,22 @@ async function showPluginInfo(pluginId: string): Promise<void> {
     console.log(`Author:      ${manifest.metadata.author || '(unknown)'}`);
     console.log(`Path:        ${userPluginPath}`);
     console.log(`Entry:       ${manifest.entry}`);
-    
+
     if (manifest.metadata.tags) {
       console.log(`Tags:        ${manifest.metadata.tags.join(', ')}`);
     }
-    
+
     if (manifest.metadata.dependencies) {
       console.log('\nDependencies:');
-      manifest.metadata.dependencies.forEach((dep: {pluginId: string; optional?: boolean}) => {
-        console.log(`  - ${dep.pluginId}${dep.optional ? ' (optional)' : ''}`);
-      });
+      manifest.metadata.dependencies.forEach(
+        (dep: { pluginId: string; optional?: boolean }) => {
+          console.log(
+            `  - ${dep.pluginId}${dep.optional ? ' (optional)' : ''}`,
+          );
+        },
+      );
     }
-    
+
     // Check if entry file exists
     const entryPath = path.join(userPluginPath, manifest.entry);
     try {
@@ -298,7 +312,7 @@ async function showPluginInfo(pluginId: string): Promise<void> {
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0];
-  
+
   switch (command) {
     case 'create':
       if (!args[1]) {
@@ -307,7 +321,7 @@ async function main(): Promise<void> {
       }
       await createPlugin(args[1]);
       break;
-      
+
     case 'validate':
       if (!args[1]) {
         console.error('Usage: plugin-cli validate <path>');
@@ -315,12 +329,12 @@ async function main(): Promise<void> {
       }
       await validatePlugin(args[1]);
       break;
-      
+
     case 'list':
     case 'ls':
       await listPlugins();
       break;
-      
+
     case 'info':
       if (!args[1]) {
         console.error('Usage: plugin-cli info <id>');
@@ -328,7 +342,7 @@ async function main(): Promise<void> {
       }
       await showPluginInfo(args[1]);
       break;
-      
+
     case 'help':
     case '--help':
     case '-h':
@@ -351,7 +365,7 @@ Examples:
   plugin-cli info my-plugin
 `);
       break;
-      
+
     default:
       console.error(`Unknown command: ${command}`);
       console.error('Run "plugin-cli help" for usage');

@@ -6,12 +6,19 @@
 
 import { type VariableSchema, VARIABLE_SCHEMA } from './variableSchema.js';
 import path from 'node:path';
-import { OLLAMA_DIR } from '../config/storage.js';
+import { getOllamaDir } from '../config/storage.js';
 
-export const EXTENSIONS_DIRECTORY_NAME = path.join(OLLAMA_DIR, 'extensions');
+export const EXTENSIONS_DIRECTORY_NAME = '.ollama-code/extensions';
 export const EXTENSIONS_CONFIG_FILENAME = 'ollama-extension.json';
 export const INSTALL_METADATA_FILENAME = '.ollama-code-extension-install.json';
 export const EXTENSION_SETTINGS_FILENAME = '.env';
+
+/**
+ * Get the extensions directory path
+ */
+export function getExtensionsDirectory(): string {
+  return path.join(getOllamaDir(), 'extensions');
+}
 
 export type JsonObject = { [key: string]: JsonValue };
 export type JsonArray = JsonValue[];

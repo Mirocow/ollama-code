@@ -5,13 +5,17 @@
  */
 
 import type { ToolResult } from '../../../../tools/tools.js';
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from '../../../../tools/tools.js';
+import {
+  BaseDeclarativeTool,
+  BaseToolInvocation,
+  Kind,
+} from '../../../../tools/tools.js';
 import type { FunctionDeclaration } from '../../../../types/content.js';
 import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
 import * as path from 'path';
 
-import { OLLAMA_DIR } from '../../../../utils/paths.js';
+import { getProjectStorageDir } from '../../../../utils/paths.js';
 import type { Config } from '../../../../config/config.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
 
@@ -244,8 +248,13 @@ When in doubt, use this tool. Being proactive with task management demonstrates 
 
 const TODO_SUBDIR = 'todos';
 
+/**
+ * Get the todo file path using centralized project storage
+ */
 function getTodoFilePath(projectDir: string, sessionId?: string): string {
-  const todoDir = path.join(projectDir, OLLAMA_DIR, TODO_SUBDIR);
+  // Use centralized project storage directory
+  const storageDir = getProjectStorageDir(projectDir);
+  const todoDir = path.join(storageDir, TODO_SUBDIR);
 
   // Use sessionId if provided, otherwise fall back to 'default'
   const filename = `${sessionId || 'default'}.json`;
@@ -255,7 +264,10 @@ function getTodoFilePath(projectDir: string, sessionId?: string): string {
 /**
  * Reads the current todos from the file system
  */
-async function readTodosFromFile(projectDir: string, sessionId?: string): Promise<TodoItem[]> {
+async function readTodosFromFile(
+  projectDir: string,
+  sessionId?: string,
+): Promise<TodoItem[]> {
   try {
     const todoFilePath = getTodoFilePath(projectDir, sessionId);
     const content = await fs.readFile(todoFilePath, 'utf-8');
@@ -405,7 +417,9 @@ export async function readTodosForSession(
  */
 export async function listTodoSessions(projectDir: string): Promise<string[]> {
   try {
-    const todoDir = path.join(projectDir, OLLAMA_DIR, TODO_SUBDIR);
+    // Use centralized project storage directory
+    const storageDir = getProjectStorageDir(projectDir);
+    const todoDir = path.join(storageDir, TODO_SUBDIR);
     const files = await fs.readdir(todoDir);
     return files
       .filter((file: string) => file.endsWith('.json'))

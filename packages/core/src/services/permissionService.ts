@@ -293,9 +293,9 @@ export class PermissionService {
    */
   setConfig(appConfig: Config): void {
     this.appConfig = appConfig;
+    // Use centralized project storage directory
     this.configPath = path.join(
-      appConfig.getProjectRoot(),
-      '.ollama-code',
+      appConfig.storage.getProjectStorageDir(),
       'permissions.json',
     );
     this.loadPermissions();
@@ -306,7 +306,7 @@ export class PermissionService {
    */
   private loadPermissions(): void {
     if (!this.configPath) return;
-    
+
     try {
       if (fs.existsSync(this.configPath)) {
         const content = fs.readFileSync(this.configPath, 'utf-8');
@@ -354,7 +354,7 @@ export class PermissionService {
    */
   private savePermissions(): void {
     if (!this.configPath) return;
-    
+
     try {
       const dir = path.dirname(this.configPath);
       if (!fs.existsSync(dir)) {

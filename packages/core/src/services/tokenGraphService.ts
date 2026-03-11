@@ -84,9 +84,9 @@ export class TokenGraphService {
    * Set the Config instance for project directory access
    */
   setConfig(appConfig: Config): void {
+    // Use centralized project storage directory
     this.savePath = path.join(
-      appConfig.getProjectRoot(),
-      '.ollama-code',
+      appConfig.storage.getProjectStorageDir(),
       'token-history.json',
     );
     this.loadFromDisk();
@@ -136,7 +136,7 @@ export class TokenGraphService {
    */
   importHistory(history: TokenUsageRecord[]): void {
     if (history && history.length > 0) {
-      this.history = history.map(record => ({
+      this.history = history.map((record) => ({
         ...record,
         // Ensure all required fields exist
         timestamp: record.timestamp || Date.now(),
@@ -148,7 +148,7 @@ export class TokenGraphService {
       }));
       // Update message index to continue from where we left off
       if (this.history.length > 0) {
-        const maxIndex = Math.max(...this.history.map(r => r.messageIndex));
+        const maxIndex = Math.max(...this.history.map((r) => r.messageIndex));
         this.currentMessageIndex = maxIndex;
       }
       this.saveToDisk();
@@ -172,7 +172,7 @@ export class TokenGraphService {
     // Calculate min and max
     const actualMax = Math.max(...values);
     const actualMin = Math.min(...values);
-    
+
     // If all values are the same (including all zeros), show uniform minimum bars
     if (actualMax === actualMin) {
       // Use minimum block (▁) for uniform values - still shows activity
@@ -204,7 +204,11 @@ export class TokenGraphService {
   /**
    * Generate dual sparkline showing prompt and generated tokens
    */
-  generateDualSparkline(width?: number): { prompt: string; generated: string; cached: string } {
+  generateDualSparkline(width?: number): {
+    prompt: string;
+    generated: string;
+    cached: string;
+  } {
     const w = width || this.config.sparklineWidth;
     const promptValues = this.history.map((r) => r.promptTokens);
     const generatedValues = this.history.map((r) => r.generatedTokens);
@@ -222,7 +226,9 @@ export class TokenGraphService {
    */
   generateCombinedSparkline(width?: number): string {
     const w = width || this.config.sparklineWidth;
-    const totalValues = this.history.map((r) => r.promptTokens + r.generatedTokens);
+    const totalValues = this.history.map(
+      (r) => r.promptTokens + r.generatedTokens,
+    );
     return this.generateSparkline(totalValues, w);
   }
 
@@ -267,16 +273,27 @@ export class TokenGraphService {
       };
     }
 
-    const totalPrompt = this.history.reduce((sum, r) => sum + r.promptTokens, 0);
-    const totalGenerated = this.history.reduce((sum, r) => sum + r.generatedTokens, 0);
-    const totalCached = this.history.reduce((sum, r) => sum + r.cachedTokens, 0);
+    const totalPrompt = this.history.reduce(
+      (sum, r) => sum + r.promptTokens,
+      0,
+    );
+    const totalGenerated = this.history.reduce(
+      (sum, r) => sum + r.generatedTokens,
+      0,
+    );
+    const totalCached = this.history.reduce(
+      (sum, r) => sum + r.cachedTokens,
+      0,
+    );
 
     const avgPrompt = totalPrompt / this.history.length;
     const avgGenerated = totalGenerated / this.history.length;
     const avgRate = totalPrompt > 0 ? totalGenerated / totalPrompt : 0;
 
     const maxPrompt = Math.max(...this.history.map((r) => r.promptTokens));
-    const maxGenerated = Math.max(...this.history.map((r) => r.generatedTokens));
+    const maxGenerated = Math.max(
+      ...this.history.map((r) => r.generatedTokens),
+    );
 
     const rates = this.history.map((r) =>
       r.promptTokens > 0 ? r.generatedTokens / r.promptTokens : 0,
@@ -316,19 +333,29 @@ export class TokenGraphService {
 
     // Generated sparkline
     lines.push(`║ Generated:  ${sparklines.generated} ║`);
-    lines.push(`║             ${this.formatSparklineScale(stats.maxGenerated)} ║`);
+    lines.push(
+      `║             ${this.formatSparklineScale(stats.maxGenerated)} ║`,
+    );
 
     // Cached sparkline
     if (stats.totalCached > 0) {
       lines.push(`║ Cached:     ${sparklines.cached} ║`);
     }
 
-    lines.push('╠══════════════════════════════════════════════════════════════╣');
+    lines.push(
+      '╠══════════════════════════════════════════════════════════════╣',
+    );
 
     // Statistics
-    lines.push(`║ Messages: ${stats.messageCount.toString().padEnd(10)} Total: ${this.formatTokens(stats.totalPrompt + stats.totalGenerated).padEnd(20)} ║`);
-    lines.push(`║ Avg Rate: ${stats.avgRate.toFixed(2).padEnd(9)} Peak: ${stats.peakRate.toFixed(2).padEnd(23)} ║`);
-    lines.push('╚══════════════════════════════════════════════════════════════╝');
+    lines.push(
+      `║ Messages: ${stats.messageCount.toString().padEnd(10)} Total: ${this.formatTokens(stats.totalPrompt + stats.totalGenerated).padEnd(20)} ║`,
+    );
+    lines.push(
+      `║ Avg Rate: ${stats.avgRate.toFixed(2).padEnd(9)} Peak: ${stats.peakRate.toFixed(2).padEnd(23)} ║`,
+    );
+    lines.push(
+      '╚══════════════════════════════════════════════════════════════╝',
+    );
 
     // Legend
     lines.push('');
@@ -380,7 +407,7 @@ export class TokenGraphService {
    */
   private loadFromDisk(): void {
     if (!this.savePath) return;
-    
+
     try {
       if (fs.existsSync(this.savePath)) {
         const content = fs.readFileSync(this.savePath, 'utf-8');
@@ -398,7 +425,7 @@ export class TokenGraphService {
    */
   saveToDisk(): void {
     if (!this.savePath) return;
-    
+
     try {
       const dir = path.dirname(this.savePath);
       if (!fs.existsSync(dir)) {
@@ -461,9 +488,23 @@ export class TokenGraphService {
    * Export history as CSV
    */
   exportCsv(): string {
-    const headers = ['timestamp', 'messageIndex', 'promptTokens', 'generatedTokens', 'cachedTokens', 'model'];
+    const headers = [
+      'timestamp',
+      'messageIndex',
+      'promptTokens',
+      'generatedTokens',
+      'cachedTokens',
+      'model',
+    ];
     const rows = this.history.map((r) =>
-      [r.timestamp, r.messageIndex, r.promptTokens, r.generatedTokens, r.cachedTokens, r.model].join(','),
+      [
+        r.timestamp,
+        r.messageIndex,
+        r.promptTokens,
+        r.generatedTokens,
+        r.cachedTokens,
+        r.model,
+      ].join(','),
     );
     return [headers.join(','), ...rows].join('\n');
   }
@@ -471,12 +512,22 @@ export class TokenGraphService {
   /**
    * Get usage by model
    */
-  getByModel(): Record<string, { count: number; promptTokens: number; generatedTokens: number }> {
-    const byModel: Record<string, { count: number; promptTokens: number; generatedTokens: number }> = {};
+  getByModel(): Record<
+    string,
+    { count: number; promptTokens: number; generatedTokens: number }
+  > {
+    const byModel: Record<
+      string,
+      { count: number; promptTokens: number; generatedTokens: number }
+    > = {};
 
     for (const record of this.history) {
       if (!byModel[record.model]) {
-        byModel[record.model] = { count: 0, promptTokens: 0, generatedTokens: 0 };
+        byModel[record.model] = {
+          count: 0,
+          promptTokens: 0,
+          generatedTokens: 0,
+        };
       }
       byModel[record.model].count++;
       byModel[record.model].promptTokens += record.promptTokens;

@@ -14,8 +14,8 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import * as os from 'node:os';
 import { createDebugLogger } from '../utils/debugLogger.js';
+import { getOllamaDir, getProjectStorageDir } from '../utils/paths.js';
 
 const debugLogger = createDebugLogger('KEYBINDINGS');
 
@@ -303,12 +303,8 @@ export class KeyBindingsService {
   private userConfig: UserKeyBindingsConfig | null = null;
 
   private constructor() {
-    const homeDir = os.homedir();
-    this.globalConfigPath = path.join(
-      homeDir,
-      '.ollama-code',
-      'keybindings.json',
-    );
+    // Use centralized Ollama directory for global config
+    this.globalConfigPath = path.join(getOllamaDir(), 'keybindings.json');
   }
 
   /**
@@ -323,11 +319,11 @@ export class KeyBindingsService {
 
   /**
    * Set project root for project-specific keybindings
+   * Uses centralized project storage directory
    */
   setProjectRoot(projectRoot: string): void {
     this.projectConfigPath = path.join(
-      projectRoot,
-      '.ollama-code',
+      getProjectStorageDir(projectRoot),
       'keybindings.json',
     );
   }
