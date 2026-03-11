@@ -7,7 +7,7 @@
       "request": "launch",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["--inspect-brk", "scripts/start.js"],
+      "runtimeArgs": ["--inspect-brk", "scripts/launch.js"],
       "console": "integratedTerminal",
       "sourceMaps": true,
       "resolveSourceMapLocations": [
@@ -32,7 +32,7 @@
       "request": "launch",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["--inspect-brk", "scripts/start.js", "--resume"],
+      "runtimeArgs": ["--inspect-brk", "scripts/launch.js", "--resume"],
       "console": "integratedTerminal",
       "sourceMaps": true,
       "resolveSourceMapLocations": [
@@ -58,7 +58,7 @@
       "runtimeExecutable": "node",
       "runtimeArgs": [
         "--inspect-brk",
-        "scripts/start.js",
+        "scripts/launch.js",
         "--debug",
         "--resume",
         "${input:sessionId}"

@@ -9,12 +9,12 @@ import type { SlashCommand } from '../ui/commands/types.js';
 import type { Config } from '@ollama-code/ollama-code-core';
 import { agentsCommand } from '../ui/commands/agentsCommand.js';
 import { approvalModeCommand } from '../ui/commands/approvalModeCommand.js';
-import { authCommand } from '../ui/commands/authCommand.js';
+//import { authCommand } from '../ui/commands/authCommand.js';
 import { clearCommand } from '../ui/commands/clearCommand.js';
 import { compressCommand } from '../ui/commands/compressCommand.js';
-import { copyCommand } from '../ui/commands/copyCommand.js';
+//import { copyCommand } from '../ui/commands/copyCommand.js';
 import { directoryCommand } from '../ui/commands/directoryCommand.js';
-import { editorCommand } from '../ui/commands/editorCommand.js';
+//import { editorCommand } from '../ui/commands/editorCommand.js';
 import { exportCommand } from '../ui/commands/exportCommand.js';
 import { extensionsCommand } from '../ui/commands/extensionsCommand.js';
 import { ideCommand } from '../ui/commands/ideCommand.js';
@@ -25,17 +25,18 @@ import { mcpCommand } from '../ui/commands/mcpCommand.js';
 import { memoryCommand } from '../ui/commands/memoryCommand.js';
 import { modelCommand } from '../ui/commands/modelCommand.js';
 import { permissionsCommand } from '../ui/commands/permissionsCommand.js';
+import { pluginsCommand } from '../ui/commands/pluginsCommand.js';
 import { quitCommand } from '../ui/commands/quitCommand.js';
 import { restoreCommand } from '../ui/commands/restoreCommand.js';
-import { resumeCommand } from '../ui/commands/resumeCommand.js';
+//import { resumeCommand } from '../ui/commands/resumeCommand.js';
 import { settingsCommand } from '../ui/commands/settingsCommand.js';
 import { skillsCommand } from '../ui/commands/skillsCommand.js';
-import { storageCommand } from '../ui/commands/storageCommand.js';
+//import { storageCommand } from '../ui/commands/storageCommand.js';
 import { summaryCommand } from '../ui/commands/summaryCommand.js';
-import { terminalSetupCommand } from '../ui/commands/terminalSetupCommand.js';
+//import { terminalSetupCommand } from '../ui/commands/terminalSetupCommand.js';
 import { themeCommand } from '../ui/commands/themeCommand.js';
 import { toolsCommand } from '../ui/commands/toolsCommand.js';
-import { vimCommand } from '../ui/commands/vimCommand.js';
+//import { vimCommand } from '../ui/commands/vimCommand.js';
 
 /**
  * Loads the core, hard-coded slash commands that are an integral part
@@ -55,12 +56,12 @@ export class BuiltinCommandLoader implements ICommandLoader {
     const allDefinitions: Array<SlashCommand | null> = [
       agentsCommand,
       approvalModeCommand,
-      authCommand,
+      // authCommand,
       clearCommand,
       compressCommand,
-      copyCommand,
+      // copyCommand,
       directoryCommand,
-      editorCommand,
+      // editorCommand,
       exportCommand,
       extensionsCommand,
       await ideCommand(),
@@ -71,17 +72,18 @@ export class BuiltinCommandLoader implements ICommandLoader {
       memoryCommand,
       modelCommand,
       ...(this.config?.getFolderTrust() ? [permissionsCommand] : []),
+      pluginsCommand,
       quitCommand,
       restoreCommand(this.config),
-      resumeCommand,
+      // resumeCommand,
       skillsCommand,
-      storageCommand,
+      // storageCommand,
       summaryCommand,
       themeCommand,
       toolsCommand,
       settingsCommand,
-      vimCommand,
-      terminalSetupCommand,
+      // vimCommand,
+      // terminalSetupCommand,
     ];
 
     return allDefinitions.filter((cmd): cmd is SlashCommand => cmd !== null);
