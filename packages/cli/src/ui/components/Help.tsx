@@ -61,8 +61,9 @@ export const Help: React.FC<Help> = ({ commands, width }) => (
     <Text bold color={theme.text.primary}>
       {t('Commands:')}
     </Text>
-    {commands
+    {[...commands]
       .filter((command) => command.description && !command.hidden)
+      .sort((a, b) => a.name.localeCompare(b.name))
       .map((command: SlashCommand) => (
         <Box key={command.name} flexDirection="column">
           <Text color={theme.text.primary}>
@@ -76,8 +77,9 @@ export const Help: React.FC<Help> = ({ commands, width }) => (
             {command.description && ' - ' + command.description}
           </Text>
           {command.subCommands &&
-            command.subCommands
+            [...command.subCommands]
               .filter((subCommand) => !subCommand.hidden)
+              .sort((a, b) => a.name.localeCompare(b.name))
               .map((subCommand) => (
                 <Text key={subCommand.name} color={theme.text.primary}>
                   <Text bold color={theme.text.accent}>

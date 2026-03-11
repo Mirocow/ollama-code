@@ -44,6 +44,10 @@ export interface Session {
   updatedAt: number;
   /** Context for KV-cache reuse */
   context?: number[];
+  /** Working directory */
+  cwd?: string;
+  /** Git branch */
+  gitBranch?: string;
 }
 
 /**
@@ -54,6 +58,16 @@ export interface StreamingState {
   currentContent: string;
   thinkingContent?: string;
   abortController?: AbortController;
+}
+
+/**
+ * Todo item
+ */
+export interface TodoItem {
+  id: string;
+  content: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  priority: 'high' | 'medium' | 'low';
 }
 
 /**
@@ -73,6 +87,9 @@ interface WebSessionState {
 
   // Selected model
   selectedModel: string;
+
+  // Todos
+  todos: TodoItem[];
 
   // Actions
   createSession: (model: string) => string;
@@ -103,6 +120,12 @@ interface WebSessionState {
 
   // Context caching
   setSessionContext: (sessionId: string, context: number[]) => void;
+
+  // Todo actions
+  setTodos: (todos: TodoItem[]) => void;
+  updateTodo: (id: string, updates: Partial<TodoItem>) => void;
+  addTodo: (todo: Omit<TodoItem, 'id'>) => void;
+  removeTodo: (id: string) => void;
 }
 
 /**
@@ -126,8 +149,9 @@ export const useWebSessionStore = create<WebSessionState>()(
         currentContent: '',
       },
       sidebarOpen: true,
-      theme: 'system',
+      theme: 'dark',
       selectedModel: 'llama3.2',
+      todos: [],
 
       // Session actions
       createSession: (model) => {
@@ -306,6 +330,29 @@ export const useWebSessionStore = create<WebSessionState>()(
           return { sessions };
         });
       },
+
+      // Todo actions
+      setTodos: (todos) => {
+        set({ todos });
+      },
+
+      updateTodo: (id, updates) => {
+        set((state) => ({
+          todos: state.todos.map((t) => t.id === id ? { ...t, ...updates } : t),
+        }));
+      },
+
+      addTodo: (todo) => {
+        set((state) => ({
+          todos: [...state.todos, { ...todo, id: generateId() }],
+        }));
+      },
+
+      removeTodo: (id) => {
+        set((state) => ({
+          todos: state.todos.filter((t) => t.id !== id),
+        }));
+      },
     }),
     {
       name: 'ollama-code-web-sessions',
@@ -315,6 +362,7 @@ export const useWebSessionStore = create<WebSessionState>()(
         activeSessionId: state.activeSessionId,
         theme: state.theme,
         selectedModel: state.selectedModel,
+        todos: state.todos,
       }),
       onRehydrateStorage: () => (state) => {
         if (
