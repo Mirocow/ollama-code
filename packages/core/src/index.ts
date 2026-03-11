@@ -347,9 +347,6 @@ export * from './skills/index.js';
 // Export learning system
 export * from './learning/index.js';
 
-// Export extension
-export * from './extension/index.js';
-
 /**
  * Plugin system with sandboxing and marketplace.
  *
