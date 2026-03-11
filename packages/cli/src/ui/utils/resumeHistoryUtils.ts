@@ -5,7 +5,9 @@
  */
 
 import * as path from 'node:path';
-import type { Part, FunctionCall ,
+import type {
+  Part,
+  FunctionCall,
   ResumedSessionData,
   ConversationRecord,
   Config,
@@ -320,7 +322,11 @@ function convertToHistoryItems(
             });
             currentToolGroup = [];
           }
-          items.push({ type: 'ollama_thought', text: thoughtText, uuid: record.uuid });
+          items.push({
+            type: 'ollama_thought',
+            text: thoughtText,
+            uuid: record.uuid,
+          });
         }
 
         // If there's text content, add it as a gemini message
@@ -337,6 +343,22 @@ function convertToHistoryItems(
         }
 
         // Track function calls for pairing with results
+        // Flush existing tool group before adding new function calls from a new turn
+        // This prevents tool calls from different assistant turns from being merged
+        if (functionCalls.length > 0 && currentToolGroup.length > 0) {
+          // Check if existing tool calls have results (completed turn)
+          const allHaveResults = currentToolGroup.every(
+            (tc) => tc.resultDisplay !== undefined,
+          );
+          if (allHaveResults) {
+            items.push({
+              type: 'tool_group',
+              tools: [...currentToolGroup],
+            });
+            currentToolGroup = [];
+          }
+        }
+
         for (const fc of functionCalls) {
           const tool = getTool(config, fc.name);
 
@@ -368,10 +390,13 @@ function convertToHistoryItems(
             const rawStatus = (
               record.toolCallResult as Record<string, unknown>
             )['status'] as string | undefined;
+            // Map the recorded status to UI ToolCallStatus
             toolCall.status =
               rawStatus === 'error'
                 ? ToolCallStatus.Error
-                : ToolCallStatus.Success;
+                : rawStatus === 'cancelled'
+                  ? ToolCallStatus.Canceled
+                  : ToolCallStatus.Success;
           }
           pendingToolCalls.delete(callId || '');
         }

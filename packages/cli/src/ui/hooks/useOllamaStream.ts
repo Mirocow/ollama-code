@@ -924,6 +924,7 @@ export const useOllamaStream = (
       userMessageTimestamp: number,
       assistantContent: string,
       userUuid?: string,
+      toolCallRequests?: ToolCallRequestInfo[],
     ) => {
       const finishReason = event.value.reason;
 
@@ -1051,11 +1052,37 @@ export const useOllamaStream = (
           uuid,
         });
 
-        if (chatRecordingService && (hasValidContent || hasValidThought)) {
-          // Use full content from accumulator, not UI buffer
+        if (
+          chatRecordingService &&
+          (hasValidContent ||
+            hasValidThought ||
+            (toolCallRequests && toolCallRequests.length > 0))
+        ) {
+          // Build message parts array with text content AND function calls
+          // This ensures tool calls are properly recorded for --resume
+          const messageParts: Part[] = [];
+
+          // Add text content if present
+          if (hasValidContent) {
+            messageParts.push({ text: fullContent });
+          }
+
+          // Add function calls if present
+          if (toolCallRequests && toolCallRequests.length > 0) {
+            for (const tc of toolCallRequests) {
+              messageParts.push({
+                functionCall: {
+                  name: tc.name,
+                  args: tc.args,
+                  id: tc.callId,
+                },
+              });
+            }
+          }
+
           chatRecordingService.recordAssistantTurn({
             model,
-            message: [{ text: fullContent }],
+            message: messageParts,
             tokens: usageMetadata,
             uuid,
             requestUuid: userUuid,
@@ -1063,6 +1090,7 @@ export const useOllamaStream = (
           debugLogger.info('Recorded assistant turn to storage', {
             contentLength: fullContent.length,
             thoughtLength: fullThought.length,
+            toolCallCount: toolCallRequests?.length ?? 0,
             model,
             uuid,
             requestUuid: userUuid,
@@ -1234,7 +1262,7 @@ export const useOllamaStream = (
       let eventCount = 0;
       for await (const event of stream) {
         eventCount++;
-        debugLogger.info(`Event #${eventCount} received`, { 
+        debugLogger.info(`Event #${eventCount} received`, {
           type: event.type,
           expectedFinished: ServerOllamaEventType.Finished,
           isFinished: event.type === ServerOllamaEventType.Finished,
@@ -1283,12 +1311,15 @@ export const useOllamaStream = (
             handleSessionTokenLimitExceededEvent(event.value);
             break;
           case ServerOllamaEventType.Finished:
-            debugLogger.info('Finished event matched in switch, calling handleFinishedEvent');
+            debugLogger.info(
+              'Finished event matched in switch, calling handleFinishedEvent',
+            );
             handleFinishedEvent(
               event as ServerOllamaFinishedEvent,
               userMessageTimestamp,
               ollamaMessageBuffer,
               userUuid,
+              toolCallRequests,
             );
             break;
           case ServerOllamaEventType.Citation:
