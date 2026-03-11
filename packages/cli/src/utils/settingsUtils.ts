@@ -250,79 +250,24 @@ export function getDialogSettingsByType(
 }
 
 /**
- * Explicit display order for settings shown in the Settings Dialog.
- * Settings are ordered by importance and logical grouping:
- * 1. Workflow control (most impactful)
- * 2. Localization
- * 3. Editor/Shell experience
- * 4. Display preferences
- * 5. Git behavior
- * 6. File filtering
- * 7. System settings (rarely changed)
- *
- * New settings with showInDialog: true that are not listed here
- * will appear at the end of the list.
- */
-const SETTINGS_DIALOG_ORDER: readonly string[] = [
-  // Workflow Control - most impactful setting
-  'tools.approvalMode',
-
-  // Localization - users often set this first
-  'general.language',
-  'general.outputLanguage',
-
-  // Theme
-  'ui.theme',
-
-  // Editor/Shell Experience
-  'general.vimMode',
-  'tools.shell.enableInteractiveShell',
-
-  // Display Preferences
-  'general.preferredEditor',
-  'ide.enabled',
-  'ui.showLineNumbers',
-  'ui.hideTips',
-  'general.terminalBell',
-  'ui.enableWelcomeBack',
-
-  // Git Behavior
-  'general.gitCoAuthor',
-
-  // File Filtering
-  'context.fileFiltering.respectGitIgnore',
-  'context.fileFiltering.respectOllamaCodeIgnore',
-
-  // System Settings - rarely changed
-  'general.disableAutoUpdate',
-
-  // Privacy
-  'privacy.usageStatisticsEnabled',
-] as const;
-
-/**
- * Get all setting keys that should be shown in the dialog, sorted by display order
+ * Get all setting keys that should be shown in the dialog, sorted alphabetically by label
  */
 export function getDialogSettingKeys(): string[] {
-  const dialogSettings = Object.values(getFlattenedSchema())
-    .filter((definition) => definition.showInDialog === true)
-    .map((definition) => definition.key);
+  const schema = getFlattenedSchema();
+  const dialogSettings = Object.values(schema).filter(
+    (definition) => definition.showInDialog === true,
+  );
 
-  // Sort by explicit order; settings not in the order array appear at the end
-  return dialogSettings.sort((a, b) => {
-    const indexA = SETTINGS_DIALOG_ORDER.indexOf(a);
-    const indexB = SETTINGS_DIALOG_ORDER.indexOf(b);
-
-    // If both are in the order array, sort by their position
-    if (indexA !== -1 && indexB !== -1) {
-      return indexA - indexB;
-    }
-    // If only one is in the array, prioritize the one in the array
-    if (indexA !== -1) return -1;
-    if (indexB !== -1) return 1;
-    // If neither is in the array, maintain original order
-    return 0;
-  });
+  // Sort alphabetically by label (using translated label if available)
+  return dialogSettings
+    .map((definition) => ({
+      key: definition.key,
+      label: definition.label
+        ? t(definition.label) || definition.label
+        : definition.key,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .map((item) => item.key);
 }
 
 // ============================================================================
