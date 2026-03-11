@@ -5,16 +5,30 @@
  */
 
 import type React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
-import { DEFAULT_OLLAMA_MODEL } from '@ollama-code/ollama-code-core';
+import {
+  DEFAULT_OLLAMA_MODEL,
+  type ModelInfo,
+} from '@ollama-code/ollama-code-core';
 import { theme } from '../semantic-colors.js';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { t } from '../../i18n/index.js';
 
+/** Setup mode: firstRun for initial setup, settings for reconfiguration */
+export type AuthSetupMode = 'firstRun' | 'settings';
+
 interface FirstRunSetupProps {
   onSubmit: (config: { baseUrl: string; model: string }) => Promise<void>;
   onCancel: () => void;
+  /** Mode: firstRun (welcome message) or settings (reconfiguration) */
+  mode?: AuthSetupMode;
+  /** Initial configuration values (for settings mode) */
+  initialConfig?: { baseUrl?: string; model?: string };
+  /** Function to test connection and get available models */
+  onTestConnection?: (
+    baseUrl: string,
+  ) => Promise<{ success: boolean; models?: ModelInfo[]; error?: string }>;
 }
 
 type InputField = 'baseUrl' | 'model';
@@ -24,14 +38,33 @@ const DEFAULT_BASE_URL = 'http://localhost:11434';
 export function FirstRunSetup({
   onSubmit,
   onCancel,
+  mode = 'firstRun',
+  initialConfig,
+  onTestConnection,
 }: FirstRunSetupProps): React.JSX.Element {
-  const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL);
-  const [model, setModel] = useState(DEFAULT_OLLAMA_MODEL);
+  const [baseUrl, setBaseUrl] = useState(
+    initialConfig?.baseUrl ?? DEFAULT_BASE_URL,
+  );
+  const [model, setModel] = useState(
+    initialConfig?.model ?? DEFAULT_OLLAMA_MODEL,
+  );
   const [currentField, setCurrentField] = useState<InputField>('baseUrl');
-  const [currentValue, setCurrentValue] = useState(baseUrl);
-  const [cursorPos, setCursorPos] = useState(baseUrl.length);
+  const [currentValue, setCurrentValue] = useState(
+    initialConfig?.baseUrl ?? DEFAULT_BASE_URL,
+  );
+  const [cursorPos, setCursorPos] = useState(
+    (initialConfig?.baseUrl ?? DEFAULT_BASE_URL).length,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Connection testing state
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<
+    'none' | 'testing' | 'success' | 'error'
+  >('none');
+  const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const fields: InputField[] = ['baseUrl', 'model'];
   const fieldValues: Record<InputField, string> = {
@@ -42,6 +75,36 @@ export function FirstRunSetup({
     baseUrl: setBaseUrl,
     model: setModel,
   };
+
+  // Test connection when baseUrl changes
+  useEffect(() => {
+    if (!onTestConnection || !baseUrl.trim()) return;
+
+    const testConn = async () => {
+      setIsTestingConnection(true);
+      setConnectionStatus('testing');
+      setConnectionError(null);
+
+      try {
+        const result = await onTestConnection(baseUrl);
+        if (result.success) {
+          setConnectionStatus('success');
+          setAvailableModels(result.models ?? []);
+        } else {
+          setConnectionStatus('error');
+          setConnectionError(result.error ?? 'Connection failed');
+        }
+      } catch (err) {
+        setConnectionStatus('error');
+        setConnectionError(String(err));
+      } finally {
+        setIsTestingConnection(false);
+      }
+    };
+
+    const timeoutId = setTimeout(testConn, 500);
+    return () => clearTimeout(timeoutId);
+  }, [baseUrl, onTestConnection]);
 
   useKeypress(
     (key) => {
@@ -167,7 +230,7 @@ export function FirstRunSetup({
         setCursorPos(cursorPos + 1);
       }
     },
-    { isActive: !isSubmitting },
+    { isActive: !isSubmitting && !isTestingConnection },
   );
 
   const handleSubmit = async () => {
@@ -243,19 +306,68 @@ export function FirstRunSetup({
     );
   };
 
-  return (
-    <Box flexDirection="column" paddingX={2} paddingY={1}>
+  // Render connection status
+  const renderConnectionStatus = () => {
+    if (connectionStatus === 'testing') {
+      return (
+        <Box marginTop={1}>
+          <Text color={theme.text.accent}>{t('Testing connection...')}</Text>
+        </Box>
+      );
+    }
+    if (connectionStatus === 'success') {
+      return (
+        <Box marginTop={1}>
+          <Text color={theme.status.success}>✓ {t('Connected')}</Text>
+          {availableModels.length > 0 && (
+            <Text color={theme.text.secondary}>
+              {' '}
+              ({availableModels.length} {t('models')})
+            </Text>
+          )}
+        </Box>
+      );
+    }
+    if (connectionStatus === 'error' && connectionError) {
+      return (
+        <Box marginTop={1}>
+          <Text color={theme.status.error}>✗ {connectionError}</Text>
+        </Box>
+      );
+    }
+    return null;
+  };
+
+  // Header based on mode
+  const renderHeader = () => {
+    if (mode === 'firstRun') {
+      return (
+        <>
+          <Box marginBottom={1}>
+            <Text bold color={theme.text.accent}>
+              {t('Welcome to Ollama Code!')}
+            </Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text color={theme.text.secondary}>
+              {t('First-time setup: Configure your Ollama connection')}
+            </Text>
+          </Box>
+        </>
+      );
+    }
+    return (
       <Box marginBottom={1}>
         <Text bold color={theme.text.accent}>
-          {t('Welcome to Ollama Code!')}
+          {t('Connection Settings')}
         </Text>
       </Box>
+    );
+  };
 
-      <Box marginBottom={1}>
-        <Text color={theme.text.secondary}>
-          {t('First-time setup: Configure your Ollama connection')}
-        </Text>
-      </Box>
+  return (
+    <Box flexDirection="column" paddingX={2} paddingY={1}>
+      {renderHeader()}
 
       <Box
         flexDirection="column"
@@ -276,6 +388,7 @@ export function FirstRunSetup({
           DEFAULT_BASE_URL,
           currentField === 'baseUrl' ? cursorPos : baseUrl.length,
         )}
+        {renderConnectionStatus()}
 
         {renderField(
           'model',
@@ -309,13 +422,15 @@ export function FirstRunSetup({
         )}
       </Box>
 
-      <Box marginTop={1}>
-        <Text color={theme.text.secondary} dimColor>
-          {t(
-            'Make sure Ollama is installed and running. Visit: https://ollama.ai',
-          )}
-        </Text>
-      </Box>
+      {mode === 'firstRun' && (
+        <Box marginTop={1}>
+          <Text color={theme.text.secondary} dimColor>
+            {t(
+              'Make sure Ollama is installed and running. Visit: https://ollama.ai',
+            )}
+          </Text>
+        </Box>
+      )}
     </Box>
   );
 }

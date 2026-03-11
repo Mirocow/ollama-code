@@ -1,10 +1,107 @@
 # Рефакторинг ollama-code для работы с Ollama API
 
-## Статус: ЗАВЕРШЕНО ✅
+## Статус: ВЫПОЛНЯЕТСЯ 🔄 (Фаза 4: Extension System)
 
 ## Цель
 
-Рефакторинг проекта для работы **только** с Ollama API.
+Рефакторинг проекта для работы **только** с Ollama API и расширение системы расширений.
+
+---
+
+## Фаза 4: Extension System Refactoring (Текущая)
+
+### Обзор изменений
+
+Рефакторинг системы расширений для поддержки:
+
+- **Tools в Extensions** — расширения могут предоставлять собственные инструменты
+- **Aliases** — поддержка алиасов для инструментов и команд
+- **Lifecycle Hooks** — хуки жизненного цикла расширений
+- **Structured Logging** — структурированное логирование
+- **Unified FirstRunSetup** — унифицированный UI для первого входа и меню настроек
+
+### Новые файлы (packages/core/src/extension/)
+
+| Файл                        | Описание                       |
+| --------------------------- | ------------------------------ |
+| `extension-types.ts`        | Новые типы и интерфейсы        |
+| `extensionToolRegistry.ts`  | Реестр инструментов расширений |
+| `extensionAliasRegistry.ts` | Реестр алиасов                 |
+| `extensionLogger.ts`        | Система логирования            |
+| `extensionLifecycle.ts`     | Управление жизненным циклом    |
+
+### Измененные файлы
+
+| Файл                                               | Изменения                                                  |
+| -------------------------------------------------- | ---------------------------------------------------------- |
+| `packages/cli/src/ui/components/FirstRunSetup.tsx` | Добавлен режим `mode='settings'`, тестирование подключения |
+| `packages/cli/src/utils/firstRun.ts`               | Без изменений (обратная совместимость)                     |
+
+### Пример расширения
+
+Расположение: `examples/sample-extension/`
+
+```
+sample-extension/
+├── ollama-extension.json   # Манифест расширения
+├── CONTEXT.md              # Контекстный файл
+├── tools/                  # Инструменты расширения
+│   ├── sample-tool.js
+│   └── data-processor.js
+├── commands/               # Slash-команды
+├── skills/                 # Навыки
+├── agents/                 # Агенты
+└── lifecycle/              # Хуки жизненного цикла
+    ├── activate.js
+    ├── deactivate.js
+    ├── install.js
+    └── uninstall.js
+```
+
+### Выполненные работы
+
+1. ✅ Созданы типы `ExtensionToolDefinition`, `ExtensionAliasDefinition`, `ExtensionLifecycleDefinition`
+2. ✅ Реализован `ExtensionToolRegistry` для управления инструментами
+3. ✅ Реализован `ExtensionAliasRegistry` для управления алиасами
+4. ✅ Реализован `ExtensionLogger` для структурированного логирования
+5. ✅ Реализован `ExtensionLifecycleManager` для хуков
+6. ✅ Создан пример расширения `sample-extension`
+7. ✅ Написаны тесты для новых модулей
+8. ✅ FirstRunSetup поддерживает оба режима: первый запуск и настройка
+9. ⏳ Интеграция с существующим `ExtensionManager`
+
+---
+
+## FirstRunSetup — унифицированный компонент
+
+### Режимы работы
+
+```tsx
+import { FirstRunSetup, type AuthSetupMode } from './ui/components/FirstRunSetup.js';
+
+// Первый запуск
+<FirstRunSetup
+  mode="firstRun"
+  onSubmit={handleConfigSubmit}
+  onCancel={handleCancel}
+/>
+
+// Настройка подключения
+<FirstRunSetup
+  mode="settings"
+  initialConfig={{ baseUrl: currentUrl, model: currentModel }}
+  onSubmit={handleConfigUpdate}
+  onCancel={handleCancel}
+  onTestConnection={testConnection}
+/>
+```
+
+### Функции
+
+- `mode='firstRun'` — показывает приветствие и инструкции
+- `mode='settings'` — показывает только форму настройки
+- `initialConfig` — предзаполненные значения
+- `onTestConnection` — тестирование подключения к серверу
 
 ---
 

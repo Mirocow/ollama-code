@@ -1,0 +1,136 @@
+{
+  "name": "sample-extension",
+  "version": "1.0.0",
+  "type": "user",
+  "displayName": "Sample Extension",
+  "description": "A comprehensive example extension demonstrating all Ollama Code extension features",
+  "author": "Ollama Code Team",
+  "license": "Apache-2.0",
+  "keywords": ["sample", "example", "demo", "extension"],
+  "ollamaCodeVersion": ">=0.17.0",
+
+  "contextFileName": ["CONTEXT.md"],
+
+  "tools": [
+    {
+      "name": "sample_tool",
+      "displayName": "Sample Tool",
+      "description": "A sample tool that demonstrates the extension tool system. It takes a message and returns it with additional context.",
+      "kind": "other",
+      "parameterSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "The message to process"
+          },
+          "uppercase": {
+            "type": "boolean",
+            "description": "Whether to convert the message to uppercase"
+          },
+          "repeat": {
+            "type": "integer",
+            "description": "Number of times to repeat the message",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 10
+          }
+        },
+        "required": ["message"]
+      },
+      "handler": "./tools/sample-tool.js",
+      "isOutputMarkdown": true,
+      "requiresConfirmation": false,
+      "timeout": 30000
+    },
+    {
+      "name": "data_processor",
+      "displayName": "Data Processor",
+      "description": "Processes data files and returns statistics",
+      "kind": "read",
+      "parameterSchema": {
+        "type": "object",
+        "properties": {
+          "filePath": {
+            "type": "string",
+            "description": "Path to the data file to process"
+          },
+          "operation": {
+            "type": "string",
+            "enum": ["count", "sum", "average", "analyze"],
+            "description": "The operation to perform on the data"
+          }
+        },
+        "required": ["filePath", "operation"]
+      },
+      "handler": "./tools/data-processor.js",
+      "isOutputMarkdown": true
+    }
+  ],
+
+  "aliases": [
+    {
+      "name": "st",
+      "target": "sample_extension_sample_tool",
+      "description": "Shortcut for sample tool"
+    },
+    {
+      "name": "dp",
+      "target": "sample_extension_data_processor",
+      "description": "Shortcut for data processor"
+    },
+    {
+      "name": "sc",
+      "target": "sample-command",
+      "type": "command",
+      "description": "Shortcut for sample command"
+    }
+  ],
+
+  "lifecycle": {
+    "onActivate": "./lifecycle/activate.js",
+    "onDeactivate": "./lifecycle/deactivate.js",
+    "onInstall": "./lifecycle/install.js",
+    "onUninstall": "./lifecycle/uninstall.js"
+  },
+
+  "mcpServers": {
+    "sample-mcp": {
+      "command": "node",
+      "args": ["./mcp/server.js"],
+      "env": {
+        "SAMPLE_MODE": "production"
+      }
+    }
+  },
+
+  "commands": ["commands"],
+
+  "skills": ["skills"],
+
+  "agents": ["agents"],
+
+  "settings": [
+    {
+      "name": "api_key",
+      "type": "string",
+      "description": "API key for the sample service",
+      "required": true,
+      "sensitive": true
+    },
+    {
+      "name": "max_retries",
+      "type": "number",
+      "description": "Maximum number of retries for API calls",
+      "default": 3,
+      "required": false
+    },
+    {
+      "name": "debug_mode",
+      "type": "boolean",
+      "description": "Enable debug mode for verbose logging",
+      "default": false,
+      "required": false
+    }
+  ]
+}
