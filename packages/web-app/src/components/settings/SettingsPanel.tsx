@@ -19,13 +19,8 @@ function applyTheme(theme: 'light' | 'dark' | 'system') {
     (theme === 'system' &&
       window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-  if (isDark) {
-    root.classList.add('dark');
-    root.classList.remove('light');
-  } else {
-    root.classList.add('light');
-    root.classList.remove('dark');
-  }
+  // Only need to toggle dark class - light theme uses :root CSS variables
+  root.classList.toggle('dark', isDark);
 }
 
 /**

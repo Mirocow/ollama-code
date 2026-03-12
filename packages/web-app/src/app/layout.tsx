@@ -36,14 +36,13 @@ export default function RootLayout({
                   }
                   var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
                   document.documentElement.classList.toggle('dark', isDark);
-                  document.documentElement.classList.toggle('light', !isDark);
                 } catch (e) {}
               })();
             `,
           }}
         />
       </head>
-      <body className="antialiased dark">{children}</body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
