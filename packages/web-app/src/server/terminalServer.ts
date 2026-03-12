@@ -13,7 +13,7 @@
  */
 
 import { WebSocketServer, WebSocket } from 'ws';
-import * as pty from '@lydell/node-pty';
+import * as pty from 'node-pty';
 import type { Server as HttpServer } from 'http';
 
 type IPty = pty.IPty;
@@ -78,7 +78,9 @@ export class TerminalServer {
   private wss: WebSocketServer;
   private sessions: Map<string, TerminalSession> = new Map();
   private ipSessions: Map<string, number> = new Map();
-  private config: Required<Omit<TerminalServerConfig, 'server'>> & { server: HttpServer };
+  private config: Required<Omit<TerminalServerConfig, 'server'>> & {
+    server: HttpServer;
+  };
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(config: TerminalServerConfig) {
@@ -94,7 +96,10 @@ export class TerminalServer {
       sessionTimeout: config.sessionTimeout || 30 * 60 * 1000, // 30 minutes
     };
 
-    this.wss = new WebSocketServer({ server: this.config.server, path: this.config.path });
+    this.wss = new WebSocketServer({
+      server: this.config.server,
+      path: this.config.path,
+    });
     this.setupHandlers();
     this.startCleanup();
   }
@@ -260,7 +265,10 @@ export class TerminalServer {
   /**
    * Get client IP from request
    */
-  private getClientIp(request: { headers: Record<string, string | string[] | undefined>; socket: { remoteAddress?: string } }): string {
+  private getClientIp(request: {
+    headers: Record<string, string | string[] | undefined>;
+    socket: { remoteAddress?: string };
+  }): string {
     const forwarded = request.headers['x-forwarded-for'];
     if (forwarded) {
       return Array.isArray(forwarded) ? forwarded[0] : forwarded.split(',')[0];
@@ -287,7 +295,10 @@ export class TerminalServer {
   /**
    * Get server statistics
    */
-  getStats(): { activeSessions: number; sessions: Array<{ id: string; createdAt: Date; lastActivity: Date }> } {
+  getStats(): {
+    activeSessions: number;
+    sessions: Array<{ id: string; createdAt: Date; lastActivity: Date }>;
+  } {
     return {
       activeSessions: this.sessions.size,
       sessions: Array.from(this.sessions.entries()).map(([id, session]) => ({
@@ -317,6 +328,8 @@ export class TerminalServer {
 /**
  * Create terminal server instance
  */
-export function createTerminalServer(config: TerminalServerConfig): TerminalServer {
+export function createTerminalServer(
+  config: TerminalServerConfig,
+): TerminalServer {
   return new TerminalServer(config);
 }

@@ -6,17 +6,18 @@
 
 /**
  * Settings API Route
+ *
+ * Reads settings from ~/.ollama-code/settings.json (global settings)
+ * This is the same location used by the CLI and core packages.
  */
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { readFile, writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { existsSync } from 'fs';
+import { getOllamaDir, getSettingsPath, type Settings } from '@/lib/settings';
 
-const SETTINGS_FILE = join(process.cwd(), '.ollama-code', 'settings.json');
-
-interface Settings {
+interface FullSettings extends Settings {
   ollamaUrl: string;
   defaultModel: string;
   theme: string;
@@ -30,7 +31,7 @@ interface Settings {
   trustedFolders: string[];
 }
 
-const defaultSettings: Settings = {
+const defaultSettings: FullSettings = {
   ollamaUrl: process.env.OLLAMA_URL || 'http://localhost:11434',
   defaultModel: 'llama3.2',
   theme: 'dark',
@@ -45,7 +46,7 @@ const defaultSettings: Settings = {
 };
 
 async function ensureSettingsDir() {
-  const dir = join(process.cwd(), '.ollama-code');
+  const dir = getOllamaDir();
   if (!existsSync(dir)) {
     await mkdir(dir, { recursive: true });
   }
@@ -56,9 +57,10 @@ async function ensureSettingsDir() {
  * Get current settings
  */
 export async function GET() {
+  const settingsPath = getSettingsPath();
   try {
-    if (existsSync(SETTINGS_FILE)) {
-      const content = await readFile(SETTINGS_FILE, 'utf-8');
+    if (existsSync(settingsPath)) {
+      const content = await readFile(settingsPath, 'utf-8');
       const settings = JSON.parse(content);
       return NextResponse.json({ ...defaultSettings, ...settings });
     }
@@ -74,16 +76,17 @@ export async function GET() {
  * Update settings
  */
 export async function PUT(request: NextRequest) {
+  const settingsPath = getSettingsPath();
   try {
     const newSettings = await request.json();
     await ensureSettingsDir();
-    await writeFile(SETTINGS_FILE, JSON.stringify(newSettings, null, 2));
+    await writeFile(settingsPath, JSON.stringify(newSettings, null, 2));
     return NextResponse.json({ success: true, settings: newSettings });
   } catch (error) {
     console.error('Failed to save settings:', error);
     return NextResponse.json(
       { error: 'Failed to save settings' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

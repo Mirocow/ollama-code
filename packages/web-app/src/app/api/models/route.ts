@@ -8,32 +8,11 @@
  * Models API Route
  *
  * Fetches available models from Ollama server.
+ * Reads settings from ~/.ollama-code/settings.json
  */
 
 import { NextResponse } from 'next/server';
-import { readFile, existsSync } from 'fs';
-import { join } from 'path';
-import { promisify } from 'util';
-
-const readFileAsync = promisify(readFile);
-const SETTINGS_FILE = join(process.cwd(), '.ollama-code', 'settings.json');
-
-async function getOllamaUrl(): Promise<string> {
-  // First try settings file
-  try {
-    if (existsSync(SETTINGS_FILE)) {
-      const content = await readFileAsync(SETTINGS_FILE, 'utf-8');
-      const settings = JSON.parse(content);
-      if (settings.ollamaUrl) {
-        return settings.ollamaUrl;
-      }
-    }
-  } catch (error) {
-    console.error('Failed to read settings:', error);
-  }
-  // Fall back to environment variable
-  return process.env.OLLAMA_URL || 'http://localhost:11434';
-}
+import { getOllamaUrl } from '@/lib/settings';
 
 /**
  * GET /api/models

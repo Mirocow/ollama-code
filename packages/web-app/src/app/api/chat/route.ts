@@ -8,31 +8,12 @@
  * Chat API Route
  *
  * Handles chat requests with streaming support.
+ * Reads settings from ~/.ollama-code/settings.json
  */
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { readFile, existsSync } from 'fs';
-import { join } from 'path';
-import { promisify } from 'util';
-
-const readFileAsync = promisify(readFile);
-const SETTINGS_FILE = join(process.cwd(), '.ollama-code', 'settings.json');
-
-async function getOllamaUrl(): Promise<string> {
-  try {
-    if (existsSync(SETTINGS_FILE)) {
-      const content = await readFileAsync(SETTINGS_FILE, 'utf-8');
-      const settings = JSON.parse(content);
-      if (settings.ollamaUrl) {
-        return settings.ollamaUrl;
-      }
-    }
-  } catch (error) {
-    console.error('Failed to read settings:', error);
-  }
-  return process.env.OLLAMA_URL || 'http://localhost:11434';
-}
+import { getOllamaUrl } from '@/lib/settings';
 
 /**
  * Chat message type

@@ -16,11 +16,14 @@ interface ToolDefinition {
   description: string;
   inputSchema: {
     type: string;
-    properties: Record<string, {
-      type: string;
-      description: string;
-      enum?: string[];
-    }>;
+    properties: Record<
+      string,
+      {
+        type: string;
+        description: string;
+        enum?: string[];
+      }
+    >;
     required?: string[];
   };
   category: string;
@@ -45,9 +48,11 @@ interface ToolExecution {
  */
 export function ToolsPanel() {
   const [tools, setTools] = useState<ToolDefinition[]>([]);
-  const [executions, setExecutions] = useState<ToolExecution[]>([]);
+  const [_executions, _setExecutions] = useState<ToolExecution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'available' | 'history'>('available');
+  const [activeTab, setActiveTab] = useState<'available' | 'history'>(
+    'available',
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -64,18 +69,141 @@ export function ToolsPanel() {
         console.error('Failed to load tools:', error);
         // Set demo tools for preview
         setTools([
-          { name: 'read_file', description: 'Read contents of a file', inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'File path' } } }, category: 'file', enabled: true },
-          { name: 'write_file', description: 'Write content to a file', inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'File path' }, content: { type: 'string', description: 'Content to write' } } }, category: 'file', enabled: true },
-          { name: 'edit_file', description: 'Edit a file with diff', inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'File path' } } }, category: 'file', enabled: true },
-          { name: 'list_directory', description: 'List directory contents', inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'Directory path' } } }, category: 'file', enabled: true },
-          { name: 'execute_shell', description: 'Execute a shell command', inputSchema: { type: 'object', properties: { command: { type: 'string', description: 'Command to execute' } } }, category: 'shell', enabled: true },
-          { name: 'web_search', description: 'Search the web', inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Search query' } } }, category: 'web', enabled: true },
-          { name: 'web_fetch', description: 'Fetch content from URL', inputSchema: { type: 'object', properties: { url: { type: 'string', description: 'URL to fetch' } } }, category: 'web', enabled: true },
-          { name: 'grep', description: 'Search files with pattern', inputSchema: { type: 'object', properties: { pattern: { type: 'string', description: 'Search pattern' } } }, category: 'search', enabled: true },
-          { name: 'glob', description: 'Find files by pattern', inputSchema: { type: 'object', properties: { pattern: { type: 'string', description: 'Glob pattern' } } }, category: 'search', enabled: true },
-          { name: 'git_status', description: 'Get git repository status', inputSchema: { type: 'object', properties: {} }, category: 'git', enabled: true },
-          { name: 'git_diff', description: 'Get git diff', inputSchema: { type: 'object', properties: {} }, category: 'git', enabled: true },
-          { name: 'save_memory', description: 'Save information to memory', inputSchema: { type: 'object', properties: { content: { type: 'string', description: 'Content to remember' } } }, category: 'memory', enabled: true },
+          {
+            name: 'read_file',
+            description: 'Read contents of a file',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                path: { type: 'string', description: 'File path' },
+              },
+            },
+            category: 'file',
+            enabled: true,
+          },
+          {
+            name: 'write_file',
+            description: 'Write content to a file',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                path: { type: 'string', description: 'File path' },
+                content: { type: 'string', description: 'Content to write' },
+              },
+            },
+            category: 'file',
+            enabled: true,
+          },
+          {
+            name: 'edit_file',
+            description: 'Edit a file with diff',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                path: { type: 'string', description: 'File path' },
+              },
+            },
+            category: 'file',
+            enabled: true,
+          },
+          {
+            name: 'list_directory',
+            description: 'List directory contents',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                path: { type: 'string', description: 'Directory path' },
+              },
+            },
+            category: 'file',
+            enabled: true,
+          },
+          {
+            name: 'execute_shell',
+            description: 'Execute a shell command',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                command: { type: 'string', description: 'Command to execute' },
+              },
+            },
+            category: 'shell',
+            enabled: true,
+          },
+          {
+            name: 'web_search',
+            description: 'Search the web',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                query: { type: 'string', description: 'Search query' },
+              },
+            },
+            category: 'web',
+            enabled: true,
+          },
+          {
+            name: 'web_fetch',
+            description: 'Fetch content from URL',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                url: { type: 'string', description: 'URL to fetch' },
+              },
+            },
+            category: 'web',
+            enabled: true,
+          },
+          {
+            name: 'grep',
+            description: 'Search files with pattern',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                pattern: { type: 'string', description: 'Search pattern' },
+              },
+            },
+            category: 'search',
+            enabled: true,
+          },
+          {
+            name: 'glob',
+            description: 'Find files by pattern',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                pattern: { type: 'string', description: 'Glob pattern' },
+              },
+            },
+            category: 'search',
+            enabled: true,
+          },
+          {
+            name: 'git_status',
+            description: 'Get git repository status',
+            inputSchema: { type: 'object', properties: {} },
+            category: 'git',
+            enabled: true,
+          },
+          {
+            name: 'git_diff',
+            description: 'Get git diff',
+            inputSchema: { type: 'object', properties: {} },
+            category: 'git',
+            enabled: true,
+          },
+          {
+            name: 'save_memory',
+            description: 'Save information to memory',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                content: { type: 'string', description: 'Content to remember' },
+              },
+            },
+            category: 'memory',
+            enabled: true,
+          },
         ]);
       } finally {
         setIsLoading(false);
@@ -89,8 +217,10 @@ export function ToolsPanel() {
 
   // Filter tools
   const filteredTools = tools.filter((tool) => {
-    const matchesCategory = selectedCategory === 'all' || tool.category === selectedCategory;
-    const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesCategory =
+      selectedCategory === 'all' || tool.category === selectedCategory;
+    const matchesSearch =
+      tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tool.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
@@ -103,14 +233,18 @@ export function ToolsPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled }),
       });
-      setTools(tools.map((t) => t.name === name ? { ...t, enabled } : t));
+      setTools(tools.map((t) => (t.name === name ? { ...t, enabled } : t)));
     } catch (error) {
       console.error('Failed to toggle tool:', error);
     }
   };
 
   if (isLoading) {
-    return <div className="flex h-full items-center justify-center">Loading tools...</div>;
+    return (
+      <div className="flex h-full items-center justify-center">
+        Loading tools...
+      </div>
+    );
   }
 
   return (
@@ -141,7 +275,9 @@ export function ToolsPanel() {
           <button
             onClick={() => setActiveTab('available')}
             className={`px-4 py-2 rounded-md ${
-              activeTab === 'available' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+              activeTab === 'available'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted hover:bg-muted/80'
             }`}
           >
             Available ({tools.length})
@@ -149,10 +285,12 @@ export function ToolsPanel() {
           <button
             onClick={() => setActiveTab('history')}
             className={`px-4 py-2 rounded-md ${
-              activeTab === 'history' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+              activeTab === 'history'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted hover:bg-muted/80'
             }`}
           >
-            History ({executions.length})
+            History ({_executions.length})
           </button>
         </div>
       </div>
@@ -168,12 +306,21 @@ export function ToolsPanel() {
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-mono text-sm font-semibold">{tool.name}</h3>
-                    <span className="text-xs px-2 py-0.5 bg-muted rounded">{tool.category}</span>
+                    <h3 className="font-mono text-sm font-semibold">
+                      {tool.name}
+                    </h3>
+                    <span className="text-xs px-2 py-0.5 bg-muted rounded">
+                      {tool.category}
+                    </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">{tool.description}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {tool.description}
+                  </p>
                   <div className="mt-2 text-xs text-muted-foreground">
-                    Parameters: {Object.keys(tool.inputSchema.properties || {}).join(', ') || 'None'}
+                    Parameters:{' '}
+                    {Object.keys(tool.inputSchema.properties || {}).join(
+                      ', ',
+                    ) || 'None'}
                   </div>
                 </div>
                 <button
@@ -182,33 +329,47 @@ export function ToolsPanel() {
                     tool.enabled ? 'bg-primary' : 'bg-muted'
                   }`}
                 >
-                  <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                    tool.enabled ? 'translate-x-6' : 'translate-x-0.5'
-                  }`} />
+                  <div
+                    className={`w-5 h-5 bg-white rounded-full transition-transform ${
+                      tool.enabled ? 'translate-x-6' : 'translate-x-0.5'
+                    }`}
+                  />
                 </button>
               </div>
             ))}
             {filteredTools.length === 0 && (
-              <div className="text-center text-muted-foreground py-8">No tools found</div>
+              <div className="text-center text-muted-foreground py-8">
+                No tools found
+              </div>
             )}
           </div>
         )}
 
         {activeTab === 'history' && (
           <div className="space-y-3">
-            {executions.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">No tool executions yet</div>
+            {_executions.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                No tool executions yet
+              </div>
             ) : (
-              executions.map((exec) => (
-                <div key={exec.id} className="p-4 border border-border rounded-lg bg-card">
+              _executions.map((exec) => (
+                <div
+                  key={exec.id}
+                  className="p-4 border border-border rounded-lg bg-card"
+                >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-sm">{exec.tool}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      exec.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      exec.status === 'running' ? 'bg-blue-100 text-blue-800' :
-                      exec.status === 'error' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        exec.status === 'completed'
+                          ? 'bg-green-100 text-green-800'
+                          : exec.status === 'running'
+                            ? 'bg-blue-100 text-blue-800'
+                            : exec.status === 'error'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
                       {exec.status}
                     </span>
                   </div>
@@ -217,11 +378,17 @@ export function ToolsPanel() {
                   </pre>
                   {exec.output !== undefined && (
                     <pre className="text-xs mt-2 p-2 bg-muted rounded overflow-auto max-h-32">
-                      {String(typeof exec.output === 'string' ? exec.output : JSON.stringify(exec.output, null, 2))}
+                      {String(
+                        typeof exec.output === 'string'
+                          ? exec.output
+                          : JSON.stringify(exec.output, null, 2),
+                      )}
                     </pre>
                   )}
                   {exec.error && (
-                    <p className="text-xs text-destructive mt-2">{exec.error}</p>
+                    <p className="text-xs text-destructive mt-2">
+                      {exec.error}
+                    </p>
                   )}
                 </div>
               ))

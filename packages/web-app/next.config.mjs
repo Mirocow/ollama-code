@@ -29,6 +29,9 @@ const nextConfig = {
 
   // Enable Turbopack (Next.js 16 default)
   turbopack: {},
+
+  // Allow cross-origin requests in development
+  allowedDevOrigins: ['localhost', '.z.ai', 'chat.z.ai'],
 };
 
 export default nextConfig;

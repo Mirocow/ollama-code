@@ -92,7 +92,9 @@ function LoadingPlaceholder() {
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('chat');
   const [inputValue, setInputValue] = useState('');
-  const [models, setModels] = useState<Array<{ name: string; size: number }>>([]);
+  const [models, setModels] = useState<Array<{ name: string; size: number }>>(
+    [],
+  );
   const [_isLoadingModels, setIsLoadingModels] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [ollamaConnected, setOllamaConnected] = useState<boolean | null>(null); // null = checking, true = connected, false = disconnected
@@ -132,20 +134,24 @@ export default function Home() {
     }));
   })();
 
-  // Fetch settings (including Ollama URL)
+  // Fetch settings (including Ollama URL and default model)
   useEffect(() => {
     async function fetchSettings() {
       try {
         const response = await fetch('/api/settings');
         const data = await response.json();
         setOllamaUrl(data.ollamaUrl || 'http://localhost:11434');
+        // Sync defaultModel from settings with selectedModel in store
+        if (data.defaultModel && data.defaultModel !== selectedModel) {
+          setSelectedModel(data.defaultModel);
+        }
       } catch (error) {
         console.error('Failed to fetch settings:', error);
         setOllamaUrl('http://localhost:11434');
       }
     }
     fetchSettings();
-  }, []);
+  }, [selectedModel, setSelectedModel]);
 
   // Fetch available models and check connection
   useEffect(() => {
@@ -281,6 +287,24 @@ export default function Home() {
     finishStreaming,
   ]);
 
+  // Handle model change - also save to settings
+  const handleModelChange = useCallback(
+    async (newModel: string) => {
+      setSelectedModel(newModel);
+      // Save to settings
+      try {
+        await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ defaultModel: newModel }),
+        });
+      } catch (error) {
+        console.error('Failed to save default model:', error);
+      }
+    },
+    [setSelectedModel],
+  );
+
   // Handle keyboard shortcut
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -382,7 +406,7 @@ export default function Home() {
 
           <select
             value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
+            onChange={(e) => handleModelChange(e.target.value)}
             className="px-3 py-1.5 bg-background border border-border rounded-md text-sm"
             disabled={!ollamaConnected || models.length === 0}
           >
