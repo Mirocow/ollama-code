@@ -107,6 +107,7 @@ export default function Home() {
     streaming,
     selectedModel,
     createSession,
+    deleteSession,
     setActiveSession,
     addMessage,
     startStreaming,
@@ -194,13 +195,6 @@ export default function Home() {
     const interval = setInterval(fetchSettingsAndModels, 60000);
     return () => clearInterval(interval);
   }, []); // Remove dependencies to prevent re-runs
-
-  // Create initial session
-  useEffect(() => {
-    if (sessions.size === 0) {
-      createSession(selectedModel);
-    }
-  }, [sessions.size, createSession, selectedModel]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -456,17 +450,37 @@ export default function Home() {
                 <div className="flex-1 overflow-auto p-2">
                   <div className="space-y-1">
                     {Array.from(sessions.values()).map((session) => (
-                      <button
+                      <div
                         key={session.id}
-                        onClick={() => setActiveSession(session.id)}
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm truncate transition-colors ${
+                        className={`group flex items-center gap-1 rounded-md ${
                           session.id === activeSessionId
                             ? 'bg-primary text-primary-foreground'
                             : 'hover:bg-muted'
                         }`}
                       >
-                        {session.title || 'New Chat'}
-                      </button>
+                        <button
+                          onClick={() => setActiveSession(session.id)}
+                          className="flex-1 text-left px-3 py-2 text-sm truncate"
+                        >
+                          {session.title || 'New Chat'}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('Delete this chat?')) {
+                              deleteSession(session.id);
+                            }
+                          }}
+                          className={`px-2 py-1 text-xs opacity-0 group-hover:opacity-100 hover:bg-destructive/20 rounded transition-opacity ${
+                            session.id === activeSessionId
+                              ? 'text-primary-foreground'
+                              : 'text-muted-foreground'
+                          }`}
+                          title="Delete chat"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -484,63 +498,85 @@ export default function Home() {
                   ☰
                 </button>
                 <span className="text-sm font-medium">
-                  {activeSession?.title || 'New Chat'}
+                  {activeSession?.title ||
+                    (sessions.size === 0 ? 'Welcome' : 'Select a chat')}
                 </span>
               </div>
 
-              {/* Messages */}
+              {/* Messages or Welcome screen */}
               <div className="flex-1 overflow-auto">
-                <ChatViewer
-                  messages={[
-                    ...chatMessages,
-                    ...(streaming.isStreaming && streaming.currentContent
-                      ? [
-                          {
-                            uuid: 'streaming',
-                            timestamp: new Date().toISOString(),
-                            type: 'assistant' as const,
-                            message: {
-                              role: 'assistant' as const,
-                              parts: [{ text: streaming.currentContent }],
+                {activeSessionId ? (
+                  <ChatViewer
+                    messages={[
+                      ...chatMessages,
+                      ...(streaming.isStreaming && streaming.currentContent
+                        ? [
+                            {
+                              uuid: 'streaming',
+                              timestamp: new Date().toISOString(),
+                              type: 'assistant' as const,
+                              message: {
+                                role: 'assistant' as const,
+                                parts: [{ text: streaming.currentContent }],
+                              },
                             },
-                          },
-                        ]
-                      : []),
-                  ]}
-                  emptyMessage="Start a conversation with Ollama..."
-                />
+                          ]
+                        : []),
+                    ]}
+                    emptyMessage="Start a conversation with Ollama..."
+                  />
+                ) : (
+                  <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+                    <div className="text-4xl">💬</div>
+                    <h2 className="text-xl font-semibold">
+                      Welcome to Ollama Code
+                    </h2>
+                    <p className="text-muted-foreground text-center max-w-md">
+                      Your AI-powered coding assistant. Create a new chat to get
+                      started.
+                    </p>
+                    <button
+                      onClick={() => createSession(selectedModel)}
+                      className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                    >
+                      + New Chat
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Input */}
-              <div className="border-t border-border p-4">
-                <div className="flex gap-2">
-                  <textarea
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Send a message... (Enter to send, Shift+Enter for new line)"
-                    className="flex-1 px-4 py-2 bg-background border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                    rows={1}
-                    disabled={isSending || streaming.isStreaming}
-                  />
-                  {streaming.isStreaming ? (
-                    <button
-                      onClick={cancelStreaming}
-                      className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
-                    >
-                      Stop
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleSend}
-                      disabled={!inputValue.trim() || isSending}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Send
-                    </button>
-                  )}
+              {/* Input - only show when there's an active session */}
+              {activeSessionId && (
+                <div className="border-t border-border p-4">
+                  <div className="flex gap-2">
+                    <textarea
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Send a message... (Enter to send, Shift+Enter for new line)"
+                      className="flex-1 px-4 py-2 bg-background border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                      rows={1}
+                      disabled={isSending || streaming.isStreaming}
+                    />
+                    {streaming.isStreaming ? (
+                      <button
+                        onClick={cancelStreaming}
+                        className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
+                      >
+                        Stop
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSend}
+                        disabled={!inputValue.trim() || isSending}
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Send
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}
