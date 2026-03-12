@@ -1,66 +1,90 @@
-# Makefile for qwen-code
+# Makefile for Ollama Code
 
-.PHONY: help install build build-sandbox build-all test lint format preflight clean start debug debug-attach release run-npx create-alias
+.PHONY: help install build build-all test lint format preflight clean start debug debug-attach web web-build web-start cli
 
 help:
-	@echo "Makefile for qwen-code"
+	@echo "Makefile for Ollama Code"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make install          - Install npm dependencies"
-	@echo "  make build            - Build the main project"
-	@echo "  make build-all        - Build the main project and sandbox"
+	@echo "  make install          - Install pnpm dependencies"
+	@echo "  make build            - Build all packages"
+	@echo "  make build-all        - Build all packages and sandbox"
 	@echo "  make test             - Run the test suite"
 	@echo "  make lint             - Lint the code"
 	@echo "  make format           - Format the code"
 	@echo "  make preflight        - Run formatting, linting, and tests"
 	@echo "  make clean            - Remove generated files"
-	@echo "  make start            - Start the Qwen Code CLI"
-	@echo "  make start ARGS='...' - Start with args: make start ARGS='--resume <id>'"
-	@echo "  make debug            - Start in debug mode"
-	@echo "  make debug-attach     - Start with inspector for VS Code attach"
+	@echo ""
+	@echo "CLI (Terminal Interface):"
+	@echo "  make cli              - Start Ollama Code CLI"
+	@echo "  make cli ARGS='...'   - Start CLI with args: make cli ARGS='--resume <id>'"
+	@echo "  make debug            - Start CLI in debug mode"
+	@echo "  make debug-attach     - Start CLI with inspector for VS Code attach"
+	@echo ""
+	@echo "Web UI (Next.js Application):"
+	@echo "  make web              - Start Web UI in development mode (port 3000)"
+	@echo "  make web-build        - Build Web UI for production"
+	@echo "  make web-start        - Start Web UI in production mode"
+	@echo ""
+	@echo "WebUI Components (Storybook):"
+	@echo "  make webui-build      - Build webui component library"
+	@echo "  make webui-storybook  - Start Storybook for webui components"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make start ARGS='--resume'"
+	@echo "  make cli ARGS='--resume'"
 	@echo "  make debug ARGS='--resume deb246aa...'"
-	@echo ""
-	@echo "  make run-npx          - Run the CLI using npx"
-	@echo "  make create-alias     - Create a 'qwen' alias"
+	@echo "  make web              # Open http://localhost:3000"
 
 install:
-	npm install
+	npx pnpm install
 
 build:
-	npm run build
+	npx pnpm run build
 
 build-all:
-	npm run build:all
+	npx pnpm run build:all
 
 test:
-	npm run test
+	npx pnpm run test
 
 lint:
-	npm run lint
+	npx pnpm run lint
 
 format:
-	npm run format
+	npx pnpm run format
 
 preflight:
-	npm run preflight
+	npx pnpm run preflight
 
 clean:
-	npm run clean
+	npx pnpm run clean
+
+# CLI commands
+cli:
+	npx pnpm run cli -- $(ARGS)
 
 start:
-	npm run start -- $(ARGS)
+	npx pnpm run cli -- $(ARGS)
 
 debug:
-	npm run debug -- $(ARGS)
+	npx pnpm run cli:debug -- $(ARGS)
 
 debug-attach:
-	npm run debug:attach -- $(ARGS)
+	npx pnpm run debug:attach -- $(ARGS)
 
-run-npx:
-	npx https://github.com/QwenLM/qwen-code
+# Web UI commands
+web:
+	npx pnpm run web
 
-create-alias:
-	scripts/create_alias.sh
+web-build:
+	npx pnpm run web:build
+
+web-start:
+	npx pnpm run web:start
+
+# WebUI Components commands
+webui-build:
+	npx pnpm run webui:build
+
+webui-storybook:
+	npx pnpm run webui:storybook
