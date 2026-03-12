@@ -6,52 +6,171 @@
 
 /**
  * Extensions API Route
+ *
+ * Manage extensions (similar to CLI ExtensionManager)
  */
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { readFile, writeFile, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
+import { join } from 'path';
+import { getOllamaDir } from '@/lib/settings';
 
-interface Extension {
+/**
+ * Extension configuration
+ */
+export interface ExtensionConfig {
   id: string;
   name: string;
   version: string;
   description: string;
   enabled: boolean;
   installed: boolean;
-  author: string;
+  author?: string;
+  homepage?: string;
+  commands?: string[];
+  tools?: string[];
 }
 
-// Demo extensions - in production these would come from the extension manager
-const extensions: Extension[] = [
-  { id: 'git-tools', name: 'Git Tools', version: '1.0.0', description: 'Git integration tools', enabled: true, installed: true, author: 'Ollama Code' },
-  { id: 'web-search', name: 'Web Search', version: '1.2.0', description: 'Search the web for information', enabled: true, installed: true, author: 'Ollama Code' },
-  { id: 'lsp-tools', name: 'LSP Tools', version: '0.9.0', description: 'Language Server Protocol integration', enabled: false, installed: true, author: 'Ollama Code' },
-  { id: 'docker-tools', name: 'Docker Tools', version: '1.1.0', description: 'Docker container management', enabled: false, installed: false, author: 'Community' },
-  { id: 'aws-tools', name: 'AWS Tools', version: '0.5.0', description: 'AWS cloud integration', enabled: false, installed: false, author: 'Community' },
-  { id: 'database-tools', name: 'Database Tools', version: '1.0.0', description: 'Database connectivity and queries', enabled: false, installed: false, author: 'Community' },
-];
+/**
+ * Extensions config file path
+ */
+async function getExtensionsConfigPath(): Promise<string> {
+  const dir = getOllamaDir();
+  if (!existsSync(dir)) {
+    await mkdir(dir, { recursive: true });
+  }
+  return join(dir, 'extensions.json');
+}
+
+/**
+ * Load extensions from config
+ */
+export async function loadExtensions(): Promise<ExtensionConfig[]> {
+  try {
+    const configPath = await getExtensionsConfigPath();
+    if (existsSync(configPath)) {
+      const content = await readFile(configPath, 'utf-8');
+      const config = JSON.parse(content);
+      return config.extensions || [];
+    }
+  } catch {
+    // Ignore errors - return default extensions
+  }
+
+  // Return default built-in extensions
+  return [
+    {
+      id: 'builtin-tools',
+      name: 'Built-in Tools',
+      version: '1.0.0',
+      description: 'Core file, shell, and web tools',
+      enabled: true,
+      installed: true,
+      author: 'Ollama Code',
+      tools: [
+        'read_file',
+        'write_file',
+        'edit_file',
+        'execute_shell',
+        'web_search',
+        'web_fetch',
+      ],
+    },
+    {
+      id: 'git-tools',
+      name: 'Git Tools',
+      version: '1.0.0',
+      description: 'Git integration tools for version control operations',
+      enabled: true,
+      installed: true,
+      author: 'Ollama Code',
+      tools: ['git_status', 'git_diff', 'git_log', 'git_commit'],
+    },
+    {
+      id: 'memory-tools',
+      name: 'Memory Tools',
+      version: '1.0.0',
+      description: 'Persistent memory for context across sessions',
+      enabled: true,
+      installed: true,
+      author: 'Ollama Code',
+      tools: ['save_memory', 'load_memory'],
+    },
+    {
+      id: 'search-tools',
+      name: 'Search Tools',
+      version: '1.0.0',
+      description: 'File and code search capabilities',
+      enabled: true,
+      installed: true,
+      author: 'Ollama Code',
+      tools: ['grep', 'glob', 'search_in_files'],
+    },
+  ];
+}
+
+/**
+ * Save extensions to config
+ */
+export async function saveExtensions(
+  extensions: ExtensionConfig[],
+): Promise<void> {
+  const configPath = await getExtensionsConfigPath();
+  await writeFile(configPath, JSON.stringify({ extensions }, null, 2), 'utf-8');
+}
 
 /**
  * GET /api/extensions
+ *
  * List all extensions
  */
 export async function GET() {
+  const extensions = await loadExtensions();
   return NextResponse.json({ extensions });
 }
 
 /**
  * POST /api/extensions
- * Install an extension
+ *
+ * Install a new extension
  */
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { extensionId } = body;
+  try {
+    const body = await request.json();
+    const extensions = await loadExtensions();
 
-  const extIndex = extensions.findIndex((e) => e.id === extensionId);
-  if (extIndex >= 0) {
-    extensions[extIndex].installed = true;
-    extensions[extIndex].enabled = true;
+    // Check if extension already exists
+    const existing = extensions.find((e) => e.id === body.id);
+    if (existing) {
+      return NextResponse.json(
+        { error: 'Extension already installed' },
+        { status: 400 },
+      );
+    }
+
+    const newExtension: ExtensionConfig = {
+      id: body.id || Date.now().toString(),
+      name: body.name,
+      version: body.version || '1.0.0',
+      description: body.description || '',
+      enabled: true,
+      installed: true,
+      author: body.author,
+      homepage: body.homepage,
+      commands: body.commands || [],
+      tools: body.tools || [],
+    };
+
+    extensions.push(newExtension);
+    await saveExtensions(extensions);
+
+    return NextResponse.json({ success: true, extension: newExtension });
+  } catch {
+    return NextResponse.json(
+      { error: 'Failed to install extension' },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json({ success: true, extension: extensions[extIndex] });
 }
