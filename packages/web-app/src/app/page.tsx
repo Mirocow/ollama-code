@@ -134,56 +134,66 @@ export default function Home() {
     }));
   })();
 
-  // Fetch settings (including Ollama URL and default model)
+  // Fetch settings and models together for proper synchronization
   useEffect(() => {
-    async function fetchSettings() {
+    async function fetchSettingsAndModels() {
       try {
-        const response = await fetch('/api/settings');
-        const data = await response.json();
-        setOllamaUrl(data.ollamaUrl || 'http://localhost:11434');
-        // Sync defaultModel from settings with selectedModel in store
-        if (data.defaultModel && data.defaultModel !== selectedModel) {
-          setSelectedModel(data.defaultModel);
-        }
-      } catch (error) {
-        console.error('Failed to fetch settings:', error);
-        setOllamaUrl('http://localhost:11434');
-      }
-    }
-    fetchSettings();
-  }, [selectedModel, setSelectedModel]);
+        // First fetch settings to get Ollama URL and default model
+        const settingsResponse = await fetch('/api/settings');
+        const settingsData = await settingsResponse.json();
+        setOllamaUrl(settingsData.ollamaUrl || 'http://localhost:11434');
 
-  // Fetch available models and check connection
-  useEffect(() => {
-    async function fetchModels() {
-      try {
-        const response = await fetch('/api/models');
-        const data = await response.json();
+        // Then fetch models from Ollama server
+        const modelsResponse = await fetch('/api/models');
+        const modelsData = await modelsResponse.json();
 
-        if (data.error) {
+        if (modelsData.error) {
           setOllamaConnected(false);
           setModels([]);
+          // If Ollama is not connected, still use defaultModel from settings
+          if (settingsData.defaultModel) {
+            setSelectedModel(settingsData.defaultModel);
+          }
         } else {
           setOllamaConnected(true);
-          setModels(data.models || []);
-          if (data.models?.length > 0 && !selectedModel) {
-            setSelectedModel(data.models[0].name);
+          const loadedModels = modelsData.models || [];
+          setModels(loadedModels);
+
+          if (loadedModels.length > 0) {
+            // Check if defaultModel from settings exists in the models list
+            const defaultModel = settingsData.defaultModel;
+            const modelExists =
+              defaultModel &&
+              loadedModels.some(
+                (m: { name: string }) =>
+                  m.name === defaultModel ||
+                  m.name.startsWith(defaultModel + ':'),
+              );
+
+            if (modelExists) {
+              // Use defaultModel from settings if it exists
+              setSelectedModel(defaultModel);
+            } else if (!selectedModel) {
+              // Fall back to first model if no model is selected
+              setSelectedModel(loadedModels[0].name);
+            }
           }
         }
       } catch (error) {
-        console.error('Failed to fetch models:', error);
+        console.error('Failed to fetch settings/models:', error);
         setOllamaConnected(false);
         setModels([]);
+        setOllamaUrl('http://localhost:11434');
       } finally {
         setIsLoadingModels(false);
       }
     }
 
-    fetchModels();
+    fetchSettingsAndModels();
     // Poll every 30 seconds to check connection
-    const interval = setInterval(fetchModels, 30000);
+    const interval = setInterval(fetchSettingsAndModels, 30000);
     return () => clearInterval(interval);
-  }, [selectedModel, setSelectedModel]);
+  }, []); // Remove dependencies to prevent re-runs
 
   // Create initial session
   useEffect(() => {
