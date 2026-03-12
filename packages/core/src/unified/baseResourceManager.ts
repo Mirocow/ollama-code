@@ -209,8 +209,8 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
           resourceConfig.name,
           this.resourceType,
         );
-      } catch (_error) {
-        if (error instanceof ResourceError) throw error;
+      } catch (caughtError) {
+        if (caughtError instanceof ResourceError) throw caughtError;
         // File doesn't exist, which is what we want
       }
     }
@@ -238,9 +238,9 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
         source: 'user',
       });
       this.logger.info(`Created ${this.resourceType}: ${resourceConfig.name}`);
-    } catch (_error) {
+    } catch (caughtError) {
       throw new ResourceError(
-        `Failed to write ${this.resourceType} file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to write ${this.resourceType} file: ${caughtError instanceof Error ? caughtError.message : 'Unknown error'}`,
         ResourceErrorCode.FILE_ERROR,
         resourceConfig.name,
         this.resourceType,
@@ -322,9 +322,9 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
         source: 'user',
       });
       this.logger.info(`Updated ${this.resourceType}: ${name}`);
-    } catch (_error) {
+    } catch (caughtError) {
       throw new ResourceError(
-        `Failed to update ${this.resourceType} file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to update ${this.resourceType} file: ${caughtError instanceof Error ? caughtError.message : 'Unknown error'}`,
         ResourceErrorCode.FILE_ERROR,
         name,
         this.resourceType,
@@ -370,10 +370,10 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
     if (existing.filePath) {
       try {
         await fs.unlink(existing.filePath);
-      } catch (_error) {
+      } catch (caughtError) {
         // File might not exist or be inaccessible
         this.logger.warn(`Failed to delete file: ${existing.filePath}`, {
-          error,
+          error: caughtError,
         });
       }
     }
