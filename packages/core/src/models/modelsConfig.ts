@@ -201,8 +201,7 @@ export class ModelsConfig {
     this._generationConfig = snapshot.generationConfig;
     this.generationConfigSources = snapshot.generationConfigSources;
     this.strictModelProviderSelection = snapshot.strictModelProviderSelection;
-    this.requireCachedCredentialsOnce =
-      snapshot.requireCachedCredentialsOnce;
+    this.requireCachedCredentialsOnce = snapshot.requireCachedCredentialsOnce;
     this.hasManualCredentials = snapshot.hasManualCredentials;
     this.activeRuntimeModelSnapshotId = snapshot.activeRuntimeModelSnapshotId;
   }
@@ -650,6 +649,16 @@ export class ModelsConfig {
    */
   private applyResolvedModelDefaults(model: ResolvedModelConfig): void {
     this.strictModelProviderSelection = true;
+
+    // Preserve manually set baseUrl before overwriting
+    // This is important for Ollama where users can specify a custom server URL
+    const preservedBaseUrl = this.hasManualCredentials
+      ? this._generationConfig.baseUrl
+      : undefined;
+    const preservedBaseUrlSource = this.hasManualCredentials
+      ? this.generationConfigSources['baseUrl']
+      : undefined;
+
     // We're explicitly applying modelProvider defaults now, so manual overrides
     // should no longer block syncAfterAuthRefresh from applying provider defaults.
     this.hasManualCredentials = false;
@@ -691,14 +700,22 @@ export class ModelsConfig {
       };
     }
 
-    // Base URL
-    this._generationConfig.baseUrl = model.baseUrl;
-    this.generationConfigSources['baseUrl'] = {
-      kind: 'modelProviders',
-      authType: model.authType,
-      modelId: model.id,
-      detail: 'baseUrl',
-    };
+    // Base URL: use preserved value if it was manually set, otherwise use model's baseUrl
+    if (preservedBaseUrl !== undefined) {
+      this._generationConfig.baseUrl = preservedBaseUrl;
+      this.generationConfigSources['baseUrl'] = preservedBaseUrlSource || {
+        kind: 'programmatic',
+        detail: 'preserved from manual override',
+      };
+    } else {
+      this._generationConfig.baseUrl = model.baseUrl;
+      this.generationConfigSources['baseUrl'] = {
+        kind: 'modelProviders',
+        authType: model.authType,
+        modelId: model.id,
+        detail: 'baseUrl',
+      };
+    }
 
     // Generation config: apply all fields from MODEL_GENERATION_CONFIG_FIELDS
     const gc = model.generationConfig;
