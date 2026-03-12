@@ -665,12 +665,35 @@ export class ModelsConfig {
     // via settings, environment variables, or programmatic override
     const baseUrlSource = this.generationConfigSources['baseUrl'];
     const currentBaseUrl = this._generationConfig.baseUrl;
+    const modelBaseUrl = model.baseUrl;
+
+    // Determine if we should preserve the current baseUrl
+    // Conditions:
+    // 1. hasManualCredentials is true (user explicitly set credentials via updateCredentials)
+    // 2. OR baseUrlSource is from a non-modelProviders source (settings, env, programmatic)
+    // 3. AND the current baseUrl is set and non-empty
+    // 4. EXTRA SAFEGUARD: Also preserve if current baseUrl is non-localhost but model would reset to localhost
+    const isNonLocalhostUrl = (url: string | undefined): boolean => {
+      if (!url) return false;
+      const lower = url.toLowerCase();
+      return (
+        !lower.includes('localhost') &&
+        !lower.includes('127.0.0.1') &&
+        !lower.includes('::1')
+      );
+    };
+
+    const wouldResetToLocalhost =
+      isNonLocalhostUrl(currentBaseUrl) && !isNonLocalhostUrl(modelBaseUrl);
+
     const shouldPreserveBaseUrl =
-      (this.hasManualCredentials ||
+      ((this.hasManualCredentials ||
         (baseUrlSource !== undefined &&
           baseUrlSource.kind !== 'modelProviders')) &&
-      currentBaseUrl !== undefined &&
-      currentBaseUrl !== '';
+        currentBaseUrl !== undefined &&
+        currentBaseUrl !== '') ||
+      wouldResetToLocalhost;
+
     const preservedBaseUrl = shouldPreserveBaseUrl ? currentBaseUrl : undefined;
     const preservedBaseUrlSource = shouldPreserveBaseUrl
       ? this.generationConfigSources['baseUrl']
@@ -682,6 +705,8 @@ export class ModelsConfig {
       hasManualCredentials: this.hasManualCredentials,
       baseUrlSource,
       currentBaseUrl,
+      modelBaseUrl,
+      wouldResetToLocalhost,
       shouldPreserveBaseUrl,
       preservedBaseUrl,
     });

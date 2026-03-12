@@ -535,6 +535,55 @@ const V3_TO_V1_INVERTED_MAP: Record<string, string> = Object.fromEntries(
   ]),
 );
 
+/**
+ * Clean up legacy keys from settings object.
+ * Removes old V1 keys that have been migrated to V2/V3 nested paths.
+ * Only cleans up when the settings file has the correct version.
+ *
+ * @returns Object with cleaned settings and list of removed keys
+ */
+function cleanupLegacyKeys(settings: Record<string, unknown>): {
+  settings: Record<string, unknown>;
+  removedKeys: string[];
+} {
+  const version = settings[SETTINGS_VERSION_KEY];
+  if (typeof version !== 'number' || version < SETTINGS_VERSION) {
+    return { settings, removedKeys: [] };
+  }
+
+  const removedKeys: string[] = [];
+  const cleaned = { ...settings };
+
+  // Remove legacy keys that have been migrated to nested paths
+  for (const [oldKey, newPath] of Object.entries(MIGRATION_MAP)) {
+    if (oldKey === newPath) {
+      continue;
+    }
+    if (!(oldKey in cleaned)) {
+      continue;
+    }
+
+    const oldValue = cleaned[oldKey];
+
+    // If this key is a V2 container (like 'model') and it's already an object,
+    // it's likely already in V2 format. Don't remove.
+    if (
+      KNOWN_V2_CONTAINERS.has(oldKey) &&
+      typeof oldValue === 'object' &&
+      oldValue !== null &&
+      !Array.isArray(oldValue)
+    ) {
+      continue;
+    }
+
+    // Remove the legacy key
+    delete cleaned[oldKey];
+    removedKeys.push(oldKey);
+  }
+
+  return { settings: cleaned, removedKeys };
+}
+
 function getSettingsFileKeyWarnings(
   settings: Record<string, unknown>,
   settingsFilePath: string,
@@ -1060,6 +1109,27 @@ export function loadSettings(
           }
           settingsObject = v3Migrated;
         }
+
+        // Clean up legacy keys that are still present after migration
+        const { settings: cleanedSettings, removedKeys } =
+          cleanupLegacyKeys(settingsObject);
+        if (removedKeys.length > 0 && MIGRATE_V2_OVERWRITE) {
+          try {
+            fs.writeFileSync(
+              filePath,
+              JSON.stringify(cleanedSettings, null, 2),
+              'utf-8',
+            );
+            writeStderrLine(
+              `Cleaned up legacy settings keys in ${filePath}: ${removedKeys.join(', ')}`,
+            );
+          } catch (e) {
+            writeStderrLine(
+              `Error cleaning up legacy keys in settings file: ${getErrorMessage(e)}`,
+            );
+          }
+        }
+        settingsObject = cleanedSettings;
 
         return { settings: settingsObject as Settings, rawJson: content };
       }
