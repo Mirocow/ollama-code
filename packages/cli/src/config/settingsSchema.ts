@@ -569,7 +569,8 @@ const SETTINGS_SCHEMA = {
         category: 'Model',
         requiresRestart: false,
         default: {},
-        description: 'Memory summary settings for context preservation across sessions.',
+        description:
+          'Memory summary settings for context preservation across sessions.',
         showInDialog: false,
         properties: {
           maxSummaryLength: {
@@ -605,7 +606,8 @@ const SETTINGS_SCHEMA = {
             category: 'Memory Summary',
             requiresRestart: false,
             default: 10,
-            description: 'Interval (in activities) between auto-summarizations.',
+            description:
+              'Interval (in activities) between auto-summarizations.',
             showInDialog: true,
           },
         },
@@ -723,6 +725,28 @@ const SETTINGS_SCHEMA = {
               "Overrides the default context window size for the selected model. Use this setting when a provider's effective context limit differs from Ollama Code's default. This value defines the model's assumed maximum context capacity, not a per-request token limit.",
             parentKey: 'generationConfig',
             showInDialog: false,
+          },
+          maxTokens: {
+            type: 'number',
+            label: 'Max Output Tokens',
+            category: 'Generation Configuration',
+            requiresRestart: false,
+            default: undefined,
+            description:
+              'Maximum number of tokens to generate in a single response. Leave undefined for model defaults.',
+            parentKey: 'generationConfig',
+            showInDialog: true,
+          },
+          temperature: {
+            type: 'number',
+            label: 'Temperature',
+            category: 'Generation Configuration',
+            requiresRestart: false,
+            default: undefined,
+            description:
+              'Controls randomness in output generation. Lower values (e.g., 0.2) make output more deterministic, higher values (e.g., 0.8) make it more creative.',
+            parentKey: 'generationConfig',
+            showInDialog: true,
           },
         },
       },
@@ -855,6 +879,15 @@ const SETTINGS_SCHEMA = {
     description: 'Settings for built-in and custom tools.',
     showInDialog: false,
     properties: {
+      enabled: {
+        type: 'boolean',
+        label: 'Enable Tools',
+        category: 'Tools',
+        requiresRestart: false,
+        default: true,
+        description: 'Enable tool usage in conversations.',
+        showInDialog: true,
+      },
       sandbox: {
         type: 'object',
         label: 'Sandbox',
@@ -1038,6 +1071,15 @@ const SETTINGS_SCHEMA = {
     description: 'Settings for Model Context Protocol (MCP) servers.',
     showInDialog: false,
     properties: {
+      enabled: {
+        type: 'boolean',
+        label: 'Enable MCP',
+        category: 'MCP',
+        requiresRestart: true,
+        default: true,
+        description: 'Enable Model Context Protocol (MCP) server integration.',
+        showInDialog: true,
+      },
       serverCommand: {
         type: 'string',
         label: 'MCP Server Command',
@@ -1092,6 +1134,15 @@ const SETTINGS_SCHEMA = {
             requiresRestart: true,
             default: false,
             description: 'Setting to track whether Folder trust is enabled.',
+            showInDialog: false,
+          },
+          trustedFolders: {
+            type: 'array',
+            label: 'Trusted Folders',
+            category: 'Security',
+            requiresRestart: false,
+            default: [] as string[],
+            description: 'List of folder paths that are explicitly trusted.',
             showInDialog: false,
           },
         },

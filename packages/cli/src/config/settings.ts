@@ -73,6 +73,7 @@ const MIGRATION_MAP: Record<string, string> = {
   customThemes: 'ui.customThemes',
   customWittyPhrases: 'ui.customWittyPhrases',
   debugKeystrokeLogging: 'general.debugKeystrokeLogging',
+  defaultModel: 'model.name',
   dnsResolutionOrder: 'advanced.dnsResolutionOrder',
   enforcedAuthType: 'security.auth.enforcedType',
   excludeTools: 'tools.exclude',
@@ -90,12 +91,14 @@ const MIGRATION_MAP: Record<string, string> = {
   showCitations: 'ui.showCitations',
   ideMode: 'ide.enabled',
   includeDirectories: 'context.includeDirectories',
+  language: 'general.language',
   loadMemoryFromIncludeDirectories: 'context.loadFromIncludeDirectories',
   maxSessionTurns: 'model.maxSessionTurns',
   mcpServers: 'mcpServers',
   mcpServerCommand: 'mcp.serverCommand',
   memoryImportFormat: 'context.importFormat',
   model: 'model.name',
+  ollamaUrl: 'security.auth.baseUrl',
   preferredEditor: 'general.preferredEditor',
   sandbox: 'tools.sandbox',
   selectedAuthType: 'security.auth.selectedType',
@@ -122,6 +125,14 @@ const MIGRATION_MAP: Record<string, string> = {
   tavilyApiKey: 'advanced.tavilyApiKey',
   vlmSwitchMode: 'experimental.vlmSwitchMode',
   visionModelPreview: 'experimental.visionModelPreview',
+
+  // Ollama-specific legacy settings
+  contextWindow: 'model.generationConfig.contextWindowSize',
+  maxTokens: 'model.generationConfig.maxTokens',
+  temperature: 'model.generationConfig.temperature',
+  enableTools: 'tools.enabled',
+  enableMcp: 'mcp.enabled',
+  trustedFolders: 'security.folderTrust.trustedFolders',
 };
 
 // Settings that need boolean inversion during migration (V1 -> V3)
