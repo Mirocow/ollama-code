@@ -39,8 +39,9 @@ export async function GET() {
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Failed to fetch models:', error);
+  } catch {
+    // Connection refused is expected when Ollama is not running
+    // Don't log to avoid console spam during polling
     return NextResponse.json(
       { error: 'Failed to connect to Ollama server', models: [] },
       { status: 503 },

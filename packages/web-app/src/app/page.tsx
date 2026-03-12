@@ -190,8 +190,8 @@ export default function Home() {
     }
 
     fetchSettingsAndModels();
-    // Poll every 30 seconds to check connection
-    const interval = setInterval(fetchSettingsAndModels, 30000);
+    // Poll every 60 seconds to check connection (reduced frequency)
+    const interval = setInterval(fetchSettingsAndModels, 60000);
     return () => clearInterval(interval);
   }, []); // Remove dependencies to prevent re-runs
 
