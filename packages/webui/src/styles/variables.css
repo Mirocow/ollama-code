@@ -1,15 +1,13 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
  */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /**
- * Default CSS variables for @qwen-code/webui
+ * Default CSS variables for @ollama-code/webui
  * These provide fallback values when running outside of VSCode.
  * In VSCode, these will be overridden by VSCode's design tokens.
  */
