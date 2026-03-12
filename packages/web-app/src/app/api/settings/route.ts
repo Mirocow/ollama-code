@@ -73,15 +73,34 @@ export async function GET() {
 
 /**
  * PUT /api/settings
- * Update settings
+ * Update settings (merges with existing settings)
  */
 export async function PUT(request: NextRequest) {
   const settingsPath = getSettingsPath();
   try {
     const newSettings = await request.json();
+
+    // Read existing settings
+    let existingSettings: Partial<FullSettings> = {};
+    if (existsSync(settingsPath)) {
+      try {
+        const content = await readFile(settingsPath, 'utf-8');
+        existingSettings = JSON.parse(content);
+      } catch {
+        // Ignore parse errors, start fresh
+      }
+    }
+
+    // Merge with new settings (new settings take precedence)
+    const mergedSettings = {
+      ...defaultSettings,
+      ...existingSettings,
+      ...newSettings,
+    };
+
     await ensureSettingsDir();
-    await writeFile(settingsPath, JSON.stringify(newSettings, null, 2));
-    return NextResponse.json({ success: true, settings: newSettings });
+    await writeFile(settingsPath, JSON.stringify(mergedSettings, null, 2));
+    return NextResponse.json({ success: true, settings: mergedSettings });
   } catch (error) {
     console.error('Failed to save settings:', error);
     return NextResponse.json(
