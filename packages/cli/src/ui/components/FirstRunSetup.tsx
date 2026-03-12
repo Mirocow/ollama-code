@@ -11,12 +11,11 @@
  */
 
 import type React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Box, Text } from 'ink';
 import { DEFAULT_OLLAMA_MODEL } from '@ollama-code/ollama-code-core';
 import type { ModelInfo } from '../../acp-integration/schema.js';
-import {
-  theme } from '../semantic-colors.js';
+import { theme } from '../semantic-colors.js';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { t } from '../../i18n/index.js';
 import {
@@ -89,6 +88,19 @@ export function FirstRunSetup({
     url: string,
   ): Promise<ConnectionTestResult> => testConnection(url);
 
+  // Refs to avoid stale closures in useEffect
+  const modelRef = useRef(model);
+  const currentFieldRef = useRef(currentField);
+
+  // Keep refs in sync
+  useEffect(() => {
+    modelRef.current = model;
+  }, [model]);
+
+  useEffect(() => {
+    currentFieldRef.current = currentField;
+  }, [currentField]);
+
   // Test connection when baseUrl changes
   useEffect(() => {
     if (!baseUrl.trim()) return;
@@ -107,6 +119,26 @@ export function FirstRunSetup({
         if (result.success) {
           setConnectionStatus('success');
           setAvailableModels(result.models ?? []);
+
+          // Auto-select model: keep current if it exists in the list, otherwise select first
+          const models = result.models ?? [];
+          if (models.length > 0) {
+            const currentModel = modelRef.current;
+            const modelExists = models.some(
+              (m) => m.name === currentModel || m.modelId === currentModel,
+            );
+
+            if (!modelExists) {
+              // Select first model from the list
+              const firstModel = models[0].name || models[0].modelId;
+              setModel(firstModel);
+              // Update current value if we're on the model field
+              if (currentFieldRef.current === 'model') {
+                setCurrentValue(firstModel);
+                setCursorPos(firstModel.length);
+              }
+            }
+          }
         } else {
           setConnectionStatus('error');
           setConnectionError(result.error ?? 'Connection failed');

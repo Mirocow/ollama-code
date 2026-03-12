@@ -51,7 +51,10 @@ import { canUseRipgrep } from '../utils/ripgrepUtils.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import type { LspClient } from '../lsp/types.js';
 import type { SendSdkMcpMessage } from '../plugins/builtin/mcp-tools/mcp-client/index.js';
-import { initializePluginRegistry, getPluginRegistry } from '../plugins/index.js';
+import {
+  initializePluginRegistry,
+  getPluginRegistry,
+} from '../plugins/index.js';
 
 // Other modules
 import { ideContextStore } from '../ide/ideContext.js';
@@ -780,6 +783,9 @@ export class Config {
 
     // Initialize BaseLlmClient now that the ContentGenerator is available
     this.baseLlmClient = new BaseLlmClient(this.contentGenerator, this);
+
+    // Reset OllamaNativeClient so it will be recreated with the new baseUrl
+    this.resetOllamaNativeClient();
   }
 
   /**
@@ -1234,6 +1240,15 @@ export class Config {
     return this.ollamaNativeClient;
   }
 
+  /**
+   * Reset the OllamaNativeClient.
+   * Call this when the baseUrl changes to ensure a new client is created
+   * with the updated configuration.
+   */
+  resetOllamaNativeClient(): void {
+    this.ollamaNativeClient = null;
+  }
+
   getEnableRecursiveFileSearch(): boolean {
     return this.fileFiltering.enableRecursiveFileSearch;
   }
@@ -1593,7 +1608,7 @@ export class Config {
 
     // Initialize plugin registry - this loads ALL tools through plugins
     await initializePluginRegistry(registry, this.targetDir, this);
-    
+
     // Check ripgrep availability and update search tools if needed
     if (this.getUseRipgrep()) {
       let useRipgrep = false;
@@ -1604,7 +1619,9 @@ export class Config {
       }
       // Note: The plugin system will have already registered the appropriate grep tool
       // This check is for logging purposes only
-      this.debugLogger.info(`Using ${useRipgrep ? 'RipGrep' : 'Grep'} for search`);
+      this.debugLogger.info(
+        `Using ${useRipgrep ? 'RipGrep' : 'Grep'} for search`,
+      );
     }
 
     // Discover MCP tools and other external tools
