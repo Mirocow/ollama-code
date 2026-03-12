@@ -820,3 +820,52 @@ export {
   type SessionMemorySummary,
   type CreateSummaryOptions,
 } from './services/memorySummaryService.js';
+
+// ============================================================================
+// Unified Resource Management
+// ============================================================================
+
+// Note: ValidationResult is already exported from './subagents/index.js'
+// So we only export additional types from unified that don't conflict
+export {
+  ResourceLevel,
+  BaseResourceConfig,
+  ListResourcesOptions,
+  CreateResourceOptions,
+  ResourceChangeEvent,
+  ResourceChangeListener,
+  ResourceManagerStats,
+  IResourceManager,
+  ResourceError,
+  ResourceErrorCode,
+} from './unified/index.js';
+
+// ============================================================================
+// Unified Configuration Manager
+// ============================================================================
+
+export {
+  ConfigManager,
+  getConfigManager,
+  initializeConfigManager,
+  type ConfigScope,
+  type ConfigChangeEvent,
+  type ConfigChangeListener,
+  type ConfigSource,
+  type ConfigValue,
+  type ConfigSchemaField,
+  type ConfigSchema,
+  type ConfigManagerOptions,
+  ConfigPriority,
+} from './services/unifiedConfigManager.js';
+
+// ============================================================================
+// Resource Logging
+// ============================================================================
+
+export {
+  ResourceLogger,
+  createResourceLogger,
+  LogOperation,
+  type ResourceLogContext,
+} from './services/resourceLogger.js';
