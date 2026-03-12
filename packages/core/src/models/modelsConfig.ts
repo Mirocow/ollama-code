@@ -650,12 +650,17 @@ export class ModelsConfig {
   private applyResolvedModelDefaults(model: ResolvedModelConfig): void {
     this.strictModelProviderSelection = true;
 
-    // Preserve manually set baseUrl before overwriting
+    // Preserve baseUrl if it was set from a non-modelProviders source
     // This is important for Ollama where users can specify a custom server URL
-    const preservedBaseUrl = this.hasManualCredentials
+    // via settings, environment variables, or programmatic override
+    const baseUrlSource = this.generationConfigSources['baseUrl'];
+    const shouldPreserveBaseUrl =
+      this.hasManualCredentials ||
+      (baseUrlSource !== undefined && baseUrlSource.kind !== 'modelProviders');
+    const preservedBaseUrl = shouldPreserveBaseUrl
       ? this._generationConfig.baseUrl
       : undefined;
-    const preservedBaseUrlSource = this.hasManualCredentials
+    const preservedBaseUrlSource = shouldPreserveBaseUrl
       ? this.generationConfigSources['baseUrl']
       : undefined;
 
@@ -700,12 +705,12 @@ export class ModelsConfig {
       };
     }
 
-    // Base URL: use preserved value if it was manually set, otherwise use model's baseUrl
+    // Base URL: use preserved value if it was set from non-modelProviders source
     if (preservedBaseUrl !== undefined) {
       this._generationConfig.baseUrl = preservedBaseUrl;
       this.generationConfigSources['baseUrl'] = preservedBaseUrlSource || {
         kind: 'programmatic',
-        detail: 'preserved from manual override',
+        detail: 'preserved from non-provider source',
       };
     } else {
       this._generationConfig.baseUrl = model.baseUrl;
