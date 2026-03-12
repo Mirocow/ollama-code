@@ -1,5 +1,5 @@
 {
-  "name": "@ollama-code/ollama-code",
+  "name": "ollama-code-monorepo",
   "version": "0.17.9",
   "packageManager": "pnpm@10.30.3",
   "engines": {
@@ -10,6 +10,7 @@
   "workspaces": [
     "packages/*"
   ],
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+http://178.140.10.58:8082/ai/ollama-code.git"
@@ -147,9 +148,6 @@
       "unrs-resolver",
       "@tailwindcss/oxide"
     ]
-  },
-  "bin": {
-    "ollama-code": "dist/cli.js"
   },
   "files": [
     "dist/",

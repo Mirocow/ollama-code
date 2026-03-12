@@ -88,18 +88,19 @@ if (!image.length) {
 // Build in dependency order to ensure packages are built before their dependents
 // This is the same order as defined in build.js
 const buildOrder = [
-  'packages/test-utils',
-  'packages/core',
-  'packages/cli',
-  'packages/webui',
-  'packages/sdk-typescript',
+  '@ollama-code/ollama-code-test-utils',
+  '@ollama-code/ollama-code-core',
+  '@ollama-code/ollama-code',
+  '@ollama-code/webui',
+  '@ollama-code/web-app',
+  '@ollama-code/sdk',
 ];
 
 if (!argv.s) {
-  execSync('npm install', { stdio: 'inherit' });
+  execSync('npx pnpm install', { stdio: 'inherit' });
   // Build in dependency order instead of using --workspaces
-  for (const workspace of buildOrder) {
-    execSync(`npm run build --workspace=${workspace}`, {
+  for (const pkg of buildOrder) {
+    execSync(`npx pnpm --filter ${pkg} run build`, {
       stdio: 'inherit',
     });
   }
@@ -108,22 +109,18 @@ if (!argv.s) {
 console.log('packing @ollama-code/ollama-code ...');
 const cliPackageDir = join('packages', 'cli');
 rmSync(join(cliPackageDir, 'dist', 'ollama-code-*.tgz'), { force: true });
-execSync(
-  `npm pack -w @ollama-code/ollama-code --pack-destination ./packages/cli/dist`,
-  {
-    stdio: 'ignore',
-  },
-);
+execSync(`npx pnpm --filter @ollama-code/ollama-code pack`, {
+  stdio: 'ignore',
+});
 
 console.log('packing @ollama-code/ollama-code-core ...');
 const corePackageDir = join('packages', 'core');
 rmSync(join(corePackageDir, 'dist', 'ollama-code-core-*.tgz'), {
   force: true,
 });
-execSync(
-  `npm pack -w @ollama-code/ollama-code-core --pack-destination ./packages/core/dist`,
-  { stdio: 'ignore' },
-);
+execSync(`npx pnpm --filter @ollama-code/ollama-code-core pack`, {
+  stdio: 'ignore',
+});
 
 const packageVersion = JSON.parse(
   readFileSync(join(process.cwd(), 'package.json'), 'utf-8'),

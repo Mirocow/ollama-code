@@ -34,36 +34,36 @@ if (!versionType) {
 }
 
 // 2. Bump the version in the root and all workspace package.json files.
-run(`npm version ${versionType} --no-git-tag-version --allow-same-version`);
+run(
+  `npx pnpm version ${versionType} --no-git-tag-version --allow-same-version`,
+);
 
 // 3. Get all workspaces and filter out the one we don't want to version.
 // We intend to maintain sdk version independently.
 const workspacesToExclude = ['@ollama-code/sdk'];
 let lsOutput;
 try {
-  lsOutput = JSON.parse(
-    execSync('npm ls --workspaces --json --depth=0').toString(),
-  );
+  lsOutput = JSON.parse(execSync('npx pnpm ls --json --depth=0').toString());
 } catch (e) {
-  // `npm ls` can exit with a non-zero status code if there are issues
+  // `pnpm ls` can exit with a non-zero status code if there are issues
   // with dependencies, but it will still produce the JSON output we need.
   // We'll try to parse the stdout from the error object.
   if (e.stdout) {
     console.warn(
-      'Warning: `npm ls` exited with a non-zero status code. Attempting to proceed with the output.',
+      'Warning: `pnpm ls` exited with a non-zero status code. Attempting to proceed with the output.',
     );
     try {
       lsOutput = JSON.parse(e.stdout.toString());
     } catch (parseError) {
       console.error(
-        'Error: Failed to parse JSON from `npm ls` output even after `npm ls` failed.',
+        'Error: Failed to parse JSON from `pnpm ls` output even after `pnpm ls` failed.',
       );
-      console.error('npm ls stderr:', e.stderr.toString());
+      console.error('pnpm ls stderr:', e.stderr.toString());
       console.error('Parse error:', parseError);
       process.exit(1);
     }
   } else {
-    console.error('Error: `npm ls` failed with no output.');
+    console.error('Error: `pnpm ls` failed with no output.');
     console.error(e.stderr?.toString() || e);
     process.exit(1);
   }
@@ -75,7 +75,7 @@ const workspacesToVersion = allWorkspaces.filter(
 
 for (const workspaceName of workspacesToVersion) {
   run(
-    `npm version ${versionType} --workspace ${workspaceName} --no-git-tag-version --allow-same-version`,
+    `npx pnpm --filter ${workspaceName} version ${versionType} --no-git-tag-version --allow-same-version`,
   );
 }
 
@@ -104,9 +104,7 @@ if (cliPackageJson.config?.sandboxImageUri) {
   writeJson(cliPackageJsonPath, cliPackageJson);
 }
 
-// 7. Run `npm install` to update package-lock.json.
-run(
-  'npm install --workspace packages/cli --workspace packages/core --package-lock-only',
-);
+// 7. Run `pnpm install` to update pnpm-lock.yaml.
+run('npx pnpm install');
 
 console.log(`Successfully bumped versions to v${newVersion}.`);

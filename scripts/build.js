@@ -25,9 +25,9 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 
-// npm install if node_modules was removed (e.g. via npm run clean or scripts/clean.js)
+// pnpm install if node_modules was removed (e.g. via npm run clean or scripts/clean.js)
 if (!existsSync(join(root, 'node_modules'))) {
-  execSync('npm install', {
+  execSync('npx pnpm install', {
     stdio: 'inherit',
     cwd: root,
     env: { ...process.env, NODE_OPTIONS: '--max-old-space-size=8192' },
@@ -36,31 +36,43 @@ if (!existsSync(join(root, 'node_modules'))) {
 
 // build all workspaces/packages in dependency order
 // CI=true disables progress animations to prevent terminal flickering
-execSync('npm run generate', {
+execSync('npx pnpm run generate', {
   stdio: 'inherit',
   cwd: root,
-  env: { ...process.env, NODE_OPTIONS: '--max-old-space-size=8192', CI: 'true', TERM: 'dumb' },
+  env: {
+    ...process.env,
+    NODE_OPTIONS: '--max-old-space-size=8192',
+    CI: 'true',
+    TERM: 'dumb',
+  },
 });
 
 // Build in dependency order:
 // 1. test-utils (no internal dependencies)
 // 2. core (foundation package)
-// 3. cli (depends on core, test-utils)
+// 3. cli (depends on core, test-utils) - @ollama-code/ollama-code is the CLI package
 // 4. webui (shared UI components)
-// 5. sdk (no internal dependencies)
+// 5. web-app (Next.js application, depends on webui and core)
+// 6. sdk (no internal dependencies)
 const buildOrder = [
-  'packages/test-utils',
-  'packages/core',
-  'packages/cli',
-  'packages/webui',
-  'packages/sdk-typescript',
+  '@ollama-code/ollama-code-test-utils',
+  '@ollama-code/ollama-code-core',
+  '@ollama-code/ollama-code',
+  '@ollama-code/webui',
+  '@ollama-code/web-app',
+  '@ollama-code/sdk',
 ];
 
-for (const workspace of buildOrder) {
-  execSync(`npm run build --workspace=${workspace}`, {
+for (const pkg of buildOrder) {
+  execSync(`npx pnpm --filter ${pkg} run build`, {
     stdio: 'inherit',
     cwd: root,
-    env: { ...process.env, NODE_OPTIONS: '--max-old-space-size=8192', CI: 'true', TERM: 'dumb' },
+    env: {
+      ...process.env,
+      NODE_OPTIONS: '--max-old-space-size=8192',
+      CI: 'true',
+      TERM: 'dumb',
+    },
   });
 }
 
