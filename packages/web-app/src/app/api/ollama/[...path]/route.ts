@@ -11,13 +11,29 @@
  * Supports streaming responses for chat and generate endpoints.
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { readFile, existsSync } from 'fs';
+import { join } from 'path';
+import { promisify } from 'util';
 
-/**
- * Ollama server URL from environment or default
- */
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+const readFileAsync = promisify(readFile);
+const SETTINGS_FILE = join(process.cwd(), '.ollama-code', 'settings.json');
+
+async function getOllamaUrl(): Promise<string> {
+  try {
+    if (existsSync(SETTINGS_FILE)) {
+      const content = await readFileAsync(SETTINGS_FILE, 'utf-8');
+      const settings = JSON.parse(content);
+      if (settings.ollamaUrl) {
+        return settings.ollamaUrl;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to read settings:', error);
+  }
+  return process.env.OLLAMA_URL || 'http://localhost:11434';
+}
 
 /**
  * Proxy handler for all Ollama API requests
@@ -27,12 +43,13 @@ const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const { path } = await params;
   const targetPath = path.join('/');
   const searchParams = request.nextUrl.searchParams;
-  const targetUrl = `${OLLAMA_URL}/api/${targetPath}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+  const ollamaUrl = await getOllamaUrl();
+  const targetUrl = `${ollamaUrl}/api/${targetPath}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
 
   try {
     const response = await fetch(targetUrl, {
@@ -48,7 +65,7 @@ export async function GET(
     console.error('Ollama proxy error:', error);
     return NextResponse.json(
       { error: 'Failed to connect to Ollama server' },
-      { status: 503 }
+      { status: 503 },
     );
   }
 }
@@ -58,11 +75,12 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const { path } = await params;
   const targetPath = path.join('/');
-  const targetUrl = `${OLLAMA_URL}/api/${targetPath}`;
+  const ollamaUrl = await getOllamaUrl();
+  const targetUrl = `${ollamaUrl}/api/${targetPath}`;
   const body = await request.text();
 
   try {
@@ -75,7 +93,8 @@ export async function POST(
     });
 
     // Check if this is a streaming response
-    const isStreaming = request.headers.get('accept') === 'text/event-stream' ||
+    const isStreaming =
+      request.headers.get('accept') === 'text/event-stream' ||
       JSON.parse(body).stream !== false;
 
     if (isStreaming && response.body) {
@@ -118,7 +137,7 @@ export async function POST(
     console.error('Ollama proxy error:', error);
     return NextResponse.json(
       { error: 'Failed to connect to Ollama server' },
-      { status: 503 }
+      { status: 503 },
     );
   }
 }

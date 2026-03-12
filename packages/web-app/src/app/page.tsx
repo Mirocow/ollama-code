@@ -12,7 +12,7 @@ import dynamic from 'next/dynamic';
 // Dynamic imports to avoid SSR issues with browser-only libraries
 const ChatViewer = dynamic(
   () => import('@ollama-code/webui').then((mod) => mod.ChatViewer),
-  { ssr: false, loading: () => <LoadingPlaceholder /> }
+  { ssr: false, loading: () => <LoadingPlaceholder /> },
 );
 
 const FileExplorer = dynamic(
@@ -32,12 +32,18 @@ const TerminalEmulator = dynamic(
 );
 
 const SettingsPanel = dynamic(
-  () => import('@/components/settings/SettingsPanel').then((mod) => mod.SettingsPanel),
+  () =>
+    import('@/components/settings/SettingsPanel').then(
+      (mod) => mod.SettingsPanel,
+    ),
   { ssr: false, loading: () => <LoadingPlaceholder /> },
 );
 
 const ExtensionsPanel = dynamic(
-  () => import('@/components/extensions/ExtensionsPanel').then((mod) => mod.ExtensionsPanel),
+  () =>
+    import('@/components/extensions/ExtensionsPanel').then(
+      (mod) => mod.ExtensionsPanel,
+    ),
   { ssr: false, loading: () => <LoadingPlaceholder /> },
 );
 
@@ -86,9 +92,11 @@ function LoadingPlaceholder() {
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('chat');
   const [inputValue, setInputValue] = useState('');
-  const [models, setModels] = useState<{ name: string; size: number }[]>([]);
-  const [isLoadingModels, setIsLoadingModels] = useState(true);
+  const [models, setModels] = useState<Array<{ name: string; size: number }>>([]);
+  const [_isLoadingModels, setIsLoadingModels] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [ollamaConnected, setOllamaConnected] = useState<boolean | null>(null); // null = checking, true = connected, false = disconnected
+  const [ollamaUrl, setOllamaUrl] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -116,7 +124,7 @@ export default function Home() {
     return session.messages.map((msg) => ({
       uuid: msg.id,
       timestamp: new Date(msg.timestamp).toISOString(),
-      type: msg.role === 'user' ? 'user' as const : 'assistant' as const,
+      type: msg.role === 'user' ? ('user' as const) : ('assistant' as const),
       message: {
         role: msg.role,
         parts: [{ text: msg.content }],
@@ -124,24 +132,51 @@ export default function Home() {
     }));
   })();
 
-  // Fetch available models
+  // Fetch settings (including Ollama URL)
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const response = await fetch('/api/settings');
+        const data = await response.json();
+        setOllamaUrl(data.ollamaUrl || 'http://localhost:11434');
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+        setOllamaUrl('http://localhost:11434');
+      }
+    }
+    fetchSettings();
+  }, []);
+
+  // Fetch available models and check connection
   useEffect(() => {
     async function fetchModels() {
       try {
         const response = await fetch('/api/models');
         const data = await response.json();
-        setModels(data.models || []);
-        if (data.models?.length > 0 && !selectedModel) {
-          setSelectedModel(data.models[0].name);
+
+        if (data.error) {
+          setOllamaConnected(false);
+          setModels([]);
+        } else {
+          setOllamaConnected(true);
+          setModels(data.models || []);
+          if (data.models?.length > 0 && !selectedModel) {
+            setSelectedModel(data.models[0].name);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch models:', error);
+        setOllamaConnected(false);
+        setModels([]);
       } finally {
         setIsLoadingModels(false);
       }
     }
 
     fetchModels();
+    // Poll every 30 seconds to check connection
+    const interval = setInterval(fetchModels, 30000);
+    return () => clearInterval(interval);
   }, [selectedModel, setSelectedModel]);
 
   // Create initial session
@@ -254,8 +289,58 @@ export default function Home() {
     }
   };
 
+  // Retry connection
+  const handleRetryConnection = async () => {
+    setIsLoadingModels(true);
+    setOllamaConnected(null);
+    try {
+      const response = await fetch('/api/models');
+      const data = await response.json();
+      if (data.error) {
+        setOllamaConnected(false);
+      } else {
+        setOllamaConnected(true);
+        setModels(data.models || []);
+        if (data.models?.length > 0 && !selectedModel) {
+          setSelectedModel(data.models[0].name);
+        }
+      }
+    } catch (_error) {
+      setOllamaConnected(false);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
+      {/* Connection Status Banner */}
+      {ollamaConnected === false && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-2 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-yellow-500">
+            <span>⚠️</span>
+            <span className="text-sm">
+              Ollama server is not connected. Make sure Ollama is running at{' '}
+              <code className="px-1 bg-muted rounded">{ollamaUrl}</code>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('settings')}
+              className="px-3 py-1 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors"
+            >
+              Settings
+            </button>
+            <button
+              onClick={handleRetryConnection}
+              className="px-3 py-1 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="h-12 border-b border-border flex items-center px-4 bg-muted/30">
         <div className="flex items-center gap-1">
@@ -274,17 +359,42 @@ export default function Home() {
             </button>
           ))}
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
+          {/* Connection Status */}
+          <div className="flex items-center gap-1.5">
+            <div
+              className={`w-2 h-2 rounded-full ${
+                ollamaConnected === null
+                  ? 'bg-gray-400 animate-pulse'
+                  : ollamaConnected
+                    ? 'bg-green-500'
+                    : 'bg-red-500'
+              }`}
+            />
+            <span className="text-xs text-muted-foreground">
+              {ollamaConnected === null
+                ? 'Checking...'
+                : ollamaConnected
+                  ? 'Connected'
+                  : 'Disconnected'}
+            </span>
+          </div>
+
           <select
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
             className="px-3 py-1.5 bg-background border border-border rounded-md text-sm"
+            disabled={!ollamaConnected || models.length === 0}
           >
-            {models.map((model) => (
-              <option key={model.name} value={model.name}>
-                {model.name}
-              </option>
-            ))}
+            {models.length === 0 ? (
+              <option value="">No models available</option>
+            ) : (
+              models.map((model) => (
+                <option key={model.name} value={model.name}>
+                  {model.name}
+                </option>
+              ))
+            )}
           </select>
           <span className="text-xs text-muted-foreground">
             Ollama Code v0.11.0
@@ -347,15 +457,22 @@ export default function Home() {
               {/* Messages */}
               <div className="flex-1 overflow-auto">
                 <ChatViewer
-                  messages={[...chatMessages, ...(streaming.isStreaming && streaming.currentContent ? [{
-                    uuid: 'streaming',
-                    timestamp: new Date().toISOString(),
-                    type: 'assistant' as const,
-                    message: {
-                      role: 'assistant' as const,
-                      parts: [{ text: streaming.currentContent }],
-                    },
-                  }] : [])]}
+                  messages={[
+                    ...chatMessages,
+                    ...(streaming.isStreaming && streaming.currentContent
+                      ? [
+                          {
+                            uuid: 'streaming',
+                            timestamp: new Date().toISOString(),
+                            type: 'assistant' as const,
+                            message: {
+                              role: 'assistant' as const,
+                              parts: [{ text: streaming.currentContent }],
+                            },
+                          },
+                        ]
+                      : []),
+                  ]}
                   emptyMessage="Start a conversation with Ollama..."
                 />
               </div>

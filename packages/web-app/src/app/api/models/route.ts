@@ -11,8 +11,29 @@
  */
 
 import { NextResponse } from 'next/server';
+import { readFile, existsSync } from 'fs';
+import { join } from 'path';
+import { promisify } from 'util';
 
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+const readFileAsync = promisify(readFile);
+const SETTINGS_FILE = join(process.cwd(), '.ollama-code', 'settings.json');
+
+async function getOllamaUrl(): Promise<string> {
+  // First try settings file
+  try {
+    if (existsSync(SETTINGS_FILE)) {
+      const content = await readFileAsync(SETTINGS_FILE, 'utf-8');
+      const settings = JSON.parse(content);
+      if (settings.ollamaUrl) {
+        return settings.ollamaUrl;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to read settings:', error);
+  }
+  // Fall back to environment variable
+  return process.env.OLLAMA_URL || 'http://localhost:11434';
+}
 
 /**
  * GET /api/models
@@ -21,7 +42,8 @@ const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
  */
 export async function GET() {
   try {
-    const response = await fetch(`${OLLAMA_URL}/api/tags`, {
+    const ollamaUrl = await getOllamaUrl();
+    const response = await fetch(`${ollamaUrl}/api/tags`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -31,8 +53,8 @@ export async function GET() {
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: `Ollama returned ${response.status}` },
-        { status: response.status }
+        { error: `Ollama returned ${response.status}`, models: [] },
+        { status: response.status },
       );
     }
 
@@ -42,7 +64,7 @@ export async function GET() {
     console.error('Failed to fetch models:', error);
     return NextResponse.json(
       { error: 'Failed to connect to Ollama server', models: [] },
-      { status: 503 }
+      { status: 503 },
     );
   }
 }

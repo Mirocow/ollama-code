@@ -10,10 +10,29 @@
  * Handles chat requests with streaming support.
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { readFile, existsSync } from 'fs';
+import { join } from 'path';
+import { promisify } from 'util';
 
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+const readFileAsync = promisify(readFile);
+const SETTINGS_FILE = join(process.cwd(), '.ollama-code', 'settings.json');
+
+async function getOllamaUrl(): Promise<string> {
+  try {
+    if (existsSync(SETTINGS_FILE)) {
+      const content = await readFileAsync(SETTINGS_FILE, 'utf-8');
+      const settings = JSON.parse(content);
+      if (settings.ollamaUrl) {
+        return settings.ollamaUrl;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to read settings:', error);
+  }
+  return process.env.OLLAMA_URL || 'http://localhost:11434';
+}
 
 /**
  * Chat message type
@@ -45,8 +64,9 @@ export async function POST(request: NextRequest) {
   try {
     const body: ChatRequest = await request.json();
     const { stream = true, ...rest } = body;
+    const ollamaUrl = await getOllamaUrl();
 
-    const response = await fetch(`${OLLAMA_URL}/api/chat`, {
+    const response = await fetch(`${ollamaUrl}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -58,7 +78,7 @@ export async function POST(request: NextRequest) {
       const error = await response.text();
       return NextResponse.json(
         { error: `Ollama error: ${error}` },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -93,7 +113,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/x-ndjson',
           'Transfer-Encoding': 'chunked',
           'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
+          Connection: 'keep-alive',
         },
       });
     }
@@ -105,7 +125,7 @@ export async function POST(request: NextRequest) {
     console.error('Chat API error:', error);
     return NextResponse.json(
       { error: 'Failed to process chat request' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
