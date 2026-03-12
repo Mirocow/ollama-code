@@ -28,6 +28,7 @@ import { useSettings } from '../contexts/SettingsContext.js';
 import { MAINLINE_CODER } from '../models/availableModels.js';
 import { getPersistScopeForModelSelection } from '../../config/modelProvidersScope.js';
 import { t } from '../../i18n/index.js';
+import { useOllamaServerStatus } from '../hooks/useOllamaServerStatus.js';
 
 interface ModelDialogProps {
   onClose: () => void;
@@ -232,22 +233,22 @@ function getCapabilityDescription(modelName: string): string {
  */
 function formatProgress(event: OllamaProgressEvent): string {
   const { status, percentage, completed, total } = event;
-  
+
   if (status === 'success') {
     return t('✓ Model loaded successfully');
   }
-  
+
   if (percentage !== undefined) {
     return `${status}: ${percentage.toFixed(1)}%`;
   }
-  
+
   if (completed !== undefined && total !== undefined && total > 0) {
     const pct = (completed / total) * 100;
     const completedMB = (completed / 1024 / 1024).toFixed(1);
     const totalMB = (total / 1024 / 1024).toFixed(1);
     return `${status}: ${pct.toFixed(1)}% (${completedMB}/${totalMB} MB)`;
   }
-  
+
   return status;
 }
 
@@ -256,13 +257,21 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
   const uiState = useContext(UIStateContext);
   const settings = useSettings();
 
+  // Check Ollama server availability
+  const {
+    isAvailable: isServerAvailable,
+    error: serverError,
+    isLoading: isCheckingServer,
+  } = useOllamaServerStatus(config);
+
   // Local error state for displaying errors within the dialog
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
+
   // State for model loading progress
   const [isLoading, setIsLoading] = useState(false);
   const [loadingModelId, setLoadingModelId] = useState<string | null>(null);
-  const [loadingProgress, setLoadingProgress] = useState<OllamaProgressEvent | null>(null);
+  const [loadingProgress, setLoadingProgress] =
+    useState<OllamaProgressEvent | null>(null);
 
   // State for tracking if local models are being loaded
   const [isLoadingLocalModels, setIsLoadingLocalModels] = useState(false);
@@ -475,15 +484,15 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
         // Only handle Ollama models for pull/unload operations
         if (selectedAuthType === AuthType.USE_OLLAMA && !isRuntime) {
           const ollamaClient = config.getOllamaNativeClient();
-          
+
           // Check if model is available locally
           const isAvailable = await ollamaClient.isModelAvailable(modelId);
-          
+
           if (!isAvailable && autoPullOnSwitch) {
             // Model not available locally - pull it
             setIsLoading(true);
             setLoadingModelId(modelId);
-            
+
             // Unload previous model if enabled
             if (autoUnloadPrevious && authType === AuthType.USE_OLLAMA) {
               const previousModelId = config.getModel();
@@ -493,7 +502,9 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
                   uiState?.historyManager.addItem(
                     {
                       type: 'info',
-                      text: t('Unloaded previous model: {{model}}', { model: previousModelId }),
+                      text: t('Unloaded previous model: {{model}}', {
+                        model: previousModelId,
+                      }),
                     },
                     Date.now(),
                   );
@@ -503,20 +514,22 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
                 }
               }
             }
-            
+
             // Pull the model with progress callback
             await ollamaClient.pullModel(modelId, (progress) => {
               setLoadingProgress(progress);
             });
-            
+
             setIsLoading(false);
             setLoadingModelId(null);
             setLoadingProgress(null);
-            
+
             uiState?.historyManager.addItem(
               {
                 type: 'info',
-                text: t('Model {{model}} downloaded successfully', { model: modelId }),
+                text: t('Model {{model}} downloaded successfully', {
+                  model: modelId,
+                }),
               },
               Date.now(),
             );
@@ -529,7 +542,9 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
                 uiState?.historyManager.addItem(
                   {
                     type: 'info',
-                    text: t('Unloaded previous model: {{model}}', { model: previousModelId }),
+                    text: t('Unloaded previous model: {{model}}', {
+                      model: previousModelId,
+                    }),
                   },
                   Date.now(),
                 );
@@ -575,14 +590,30 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       });
       onClose();
     },
-    [authType, config, onClose, settings, uiState, setErrorMessage, autoPullOnSwitch, autoUnloadPrevious],
+    [
+      authType,
+      config,
+      onClose,
+      settings,
+      uiState,
+      setErrorMessage,
+      autoPullOnSwitch,
+      autoUnloadPrevious,
+    ],
   );
 
   const hasModels = MODEL_OPTIONS.length > 0;
 
+  // When using Ollama, don't show models if server is not available
+  const showModelList =
+    authType === AuthType.USE_OLLAMA
+      ? isServerAvailable && hasModels
+      : hasModels;
+
   // Get current model info
   const currentModelId = effectiveConfig?.model ?? config?.getModel?.() ?? '';
-  const contextSize = effectiveConfig?.contextWindowSize ?? tokenLimit(currentModelId, 'input');
+  const contextSize =
+    effectiveConfig?.contextWindowSize ?? tokenLimit(currentModelId, 'input');
   const capabilityBadges = getCapabilityBadges(currentModelId);
   const capabilityDesc = getCapabilityDescription(currentModelId);
 
@@ -627,9 +658,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
           />
           <ConfigRow
             label={t('Features')}
-            value={
-              <Text color={theme.text.secondary}>{capabilityDesc}</Text>
-            }
+            value={<Text color={theme.text.secondary}>{capabilityDesc}</Text>}
           />
 
           {authType === AuthType.USE_OLLAMA && (
@@ -666,9 +695,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
             </Box>
           )}
           <Box marginTop={1}>
-            <Text color={theme.text.secondary}>
-              {t('Please wait...')}
-            </Text>
+            <Text color={theme.text.secondary}>{t('Please wait...')}</Text>
           </Box>
         </Box>
       )}
@@ -682,23 +709,61 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
         </Box>
       )}
 
-      {!hasModels ? (
-        <Box marginTop={1} flexDirection="column">
-          <Text color={theme.status.warning}>
-            {t(
-              'No models available for the current authentication type ({{authType}}).',
-              {
-                authType: authType ? String(authType) : t('(none)'),
-              },
-            )}
+      {/* Server error banner */}
+      {authType === AuthType.USE_OLLAMA && serverError && !isCheckingServer && (
+        <Box
+          marginTop={1}
+          flexDirection="column"
+          paddingX={1}
+          borderStyle="round"
+          borderColor={theme.status.error}
+        >
+          <Text color={theme.status.error} bold>
+            ⚠ {t('Ollama Server Unavailable')}
           </Text>
           <Box marginTop={1}>
-            <Text color={theme.text.secondary}>
-              {t(
-                'Please configure models in settings.modelProviders or use environment variables.',
-              )}
+            <Text color={theme.text.secondary} wrap="wrap">
+              {serverError}
             </Text>
           </Box>
+          <Box marginTop={1}>
+            <Text color={theme.text.accent}>
+              {t('Press Enter to retry or check your Ollama installation.')}
+            </Text>
+          </Box>
+        </Box>
+      )}
+
+      {/* Server checking indicator */}
+      {authType === AuthType.USE_OLLAMA && isCheckingServer && (
+        <Box marginTop={1}>
+          <Text color={theme.text.secondary}>
+            {t('Checking Ollama server availability...')}
+          </Text>
+        </Box>
+      )}
+
+      {!showModelList ? (
+        <Box marginTop={1} flexDirection="column">
+          <Text color={theme.status.warning}>
+            {serverError
+              ? t('Cannot load models: Ollama server is not available.')
+              : t(
+                  'No models available for the current authentication type ({{authType}}).',
+                  {
+                    authType: authType ? String(authType) : t('(none)'),
+                  },
+                )}
+          </Text>
+          {!serverError && (
+            <Box marginTop={1}>
+              <Text color={theme.text.secondary}>
+                {t(
+                  'Please configure models in settings.modelProviders or use environment variables.',
+                )}
+              </Text>
+            </Box>
+          )}
         </Box>
       ) : (
         <Box marginTop={1}>
@@ -722,7 +787,9 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
 
       <Box marginTop={1} flexDirection="column">
         <Text color={theme.text.secondary}>
-          {isLoading ? t('(Loading in progress...)') : t('(Press Esc to close)')}
+          {isLoading
+            ? t('(Loading in progress...)')
+            : t('(Press Esc to close)')}
         </Text>
       </Box>
     </Box>

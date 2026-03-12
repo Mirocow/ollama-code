@@ -127,6 +127,8 @@ export interface UIState {
   isAgentsManagerDialogOpen: boolean;
   // Feedback dialog
   isFeedbackDialogOpen: boolean;
+  // Ollama server status
+  ollamaServerError: string | null;
 }
 
 export const UIStateContext = createContext<UIState | null>(null);

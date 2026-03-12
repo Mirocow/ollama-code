@@ -156,6 +156,9 @@ export const AppContainer = (props: AppContainerProps) => {
   );
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [embeddedShellFocused, setEmbeddedShellFocused] = useState(false);
+  const [ollamaServerError, _setOllamaServerError] = useState<string | null>(
+    null,
+  );
 
   const [geminiMdFileCount, setGeminiMdFileCount] = useState<number>(
     initializationResult.geminiMdFileCount,
@@ -1485,6 +1488,8 @@ export const AppContainer = (props: AppContainerProps) => {
       isAgentsManagerDialogOpen,
       // Feedback dialog
       isFeedbackDialogOpen,
+      // Ollama server status
+      ollamaServerError,
     }),
     [
       isThemeDialogOpen,
@@ -1576,6 +1581,8 @@ export const AppContainer = (props: AppContainerProps) => {
       isAgentsManagerDialogOpen,
       // Feedback dialog
       isFeedbackDialogOpen,
+      // Ollama server status
+      ollamaServerError,
     ],
   );
 

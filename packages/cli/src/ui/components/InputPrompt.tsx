@@ -1188,6 +1188,21 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
           </Text>
         </Box>
       )}
+      {/* Ollama server error banner */}
+      {uiState.ollamaServerError && !shouldShowSuggestions && (
+        <Box
+          marginLeft={2}
+          marginRight={2}
+          borderStyle="round"
+          borderColor={theme.status.error}
+          paddingX={1}
+        >
+          <Text color={theme.status.error} bold>
+            ⚠ {t('Ollama Server Unavailable')}:
+          </Text>
+          <Text color={theme.text.secondary}> {uiState.ollamaServerError}</Text>
+        </Box>
+      )}
     </>
   );
 };
