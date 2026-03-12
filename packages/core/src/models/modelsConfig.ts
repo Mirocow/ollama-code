@@ -11,6 +11,7 @@ import type { ContentGeneratorConfig } from '../core/contentGenerator.js';
 import type { ContentGeneratorConfigSources } from '../core/contentGenerator.js';
 import { DEFAULT_OLLAMA_MODEL } from '../config/models.js';
 import { tokenLimit } from '../core/tokenLimits.js';
+import { createDebugLogger } from '../utils/debugLogger.js';
 
 import { ModelRegistry } from './modelRegistry.js';
 import {
@@ -100,6 +101,8 @@ export class ModelsConfig {
   // Flag indicating whether authType was explicitly provided (not defaulted)
   private readonly authTypeWasExplicitlyProvided: boolean;
 
+  private readonly debugLogger = createDebugLogger('ModelsConfig');
+
   /**
    * Runtime model snapshot storage.
    *
@@ -158,6 +161,13 @@ export class ModelsConfig {
 
     // Initialize selection state
     this.currentAuthType = options.initialAuthType;
+
+    // Debug logging for initialization
+    this.debugLogger.debug('ModelsConfig initialized', {
+      generationConfig: this._generationConfig,
+      generationConfigSources: this.generationConfigSources,
+      initialAuthType: options.initialAuthType,
+    });
   }
 
   /**
@@ -654,15 +664,27 @@ export class ModelsConfig {
     // This is important for Ollama where users can specify a custom server URL
     // via settings, environment variables, or programmatic override
     const baseUrlSource = this.generationConfigSources['baseUrl'];
+    const currentBaseUrl = this._generationConfig.baseUrl;
     const shouldPreserveBaseUrl =
-      this.hasManualCredentials ||
-      (baseUrlSource !== undefined && baseUrlSource.kind !== 'modelProviders');
-    const preservedBaseUrl = shouldPreserveBaseUrl
-      ? this._generationConfig.baseUrl
-      : undefined;
+      (this.hasManualCredentials ||
+        (baseUrlSource !== undefined &&
+          baseUrlSource.kind !== 'modelProviders')) &&
+      currentBaseUrl !== undefined &&
+      currentBaseUrl !== '';
+    const preservedBaseUrl = shouldPreserveBaseUrl ? currentBaseUrl : undefined;
     const preservedBaseUrlSource = shouldPreserveBaseUrl
       ? this.generationConfigSources['baseUrl']
       : undefined;
+
+    // Debug logging
+    this.debugLogger.debug('applyResolvedModelDefaults', {
+      modelId: model.id,
+      hasManualCredentials: this.hasManualCredentials,
+      baseUrlSource,
+      currentBaseUrl,
+      shouldPreserveBaseUrl,
+      preservedBaseUrl,
+    });
 
     // We're explicitly applying modelProvider defaults now, so manual overrides
     // should no longer block syncAfterAuthRefresh from applying provider defaults.
