@@ -43,7 +43,8 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
   protected cache: Map<ResourceLevel, T[]> | null = null;
 
   /** Registered change listeners */
-  protected readonly changeListeners: Set<ResourceChangeListener<T>> = new Set();
+  protected readonly changeListeners: Set<ResourceChangeListener<T>> =
+    new Set();
 
   /** File watchers by path */
   protected readonly watchers: Map<string, FSWatcher> = new Map();
@@ -66,7 +67,7 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
 
   constructor(
     protected readonly config: Config,
-    public readonly resourceType: string,
+    readonly resourceType: string,
     protected readonly configSubdir: string,
   ) {
     this.logger = createLogger(`${resourceType.toUpperCase()}_MANAGER`);
@@ -99,10 +100,7 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
    * Lists all available resources.
    */
   async listResources(options: ListResourcesOptions = {}): Promise<T[]> {
-    this.logger.debug(
-      `Listing ${this.resourceType} resources`,
-      { options }
-    );
+    this.logger.debug(`Listing ${this.resourceType} resources`, { options });
 
     const resources: T[] = [];
     const seenNames = new Set<string>();
@@ -138,7 +136,9 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
       this.sortResources(resources, options.sortBy, options.sortOrder);
     }
 
-    this.logger.info(`Listed ${resources.length} ${this.resourceType} resources`);
+    this.logger.info(
+      `Listed ${resources.length} ${this.resourceType} resources`,
+    );
     return resources;
   }
 
@@ -209,7 +209,7 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
           resourceConfig.name,
           this.resourceType,
         );
-      } catch (error) {
+      } catch (_error) {
         if (error instanceof ResourceError) throw error;
         // File doesn't exist, which is what we want
       }
@@ -238,7 +238,7 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
         source: 'user',
       });
       this.logger.info(`Created ${this.resourceType}: ${resourceConfig.name}`);
-    } catch (error) {
+    } catch (_error) {
       throw new ResourceError(
         `Failed to write ${this.resourceType} file: ${error instanceof Error ? error.message : 'Unknown error'}`,
         ResourceErrorCode.FILE_ERROR,
@@ -322,7 +322,7 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
         source: 'user',
       });
       this.logger.info(`Updated ${this.resourceType}: ${name}`);
-    } catch (error) {
+    } catch (_error) {
       throw new ResourceError(
         `Failed to update ${this.resourceType} file: ${error instanceof Error ? error.message : 'Unknown error'}`,
         ResourceErrorCode.FILE_ERROR,
@@ -370,9 +370,11 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
     if (existing.filePath) {
       try {
         await fs.unlink(existing.filePath);
-      } catch (error) {
+      } catch (_error) {
         // File might not exist or be inaccessible
-        this.logger.warn(`Failed to delete file: ${existing.filePath}`, { error });
+        this.logger.warn(`Failed to delete file: ${existing.filePath}`, {
+          error,
+        });
       }
     }
 
@@ -405,7 +407,7 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
     this.stats.lastRefresh = new Date().toISOString();
 
     this.logger.info(
-      `${this.resourceType} cache refreshed: ${totalResources} resources loaded`
+      `${this.resourceType} cache refreshed: ${totalResources} resources loaded`,
     );
 
     this.notifyChangeListeners({
@@ -551,13 +553,12 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
 
     const projectRoot = this.config.getProjectRoot();
     const homeDir = os.homedir();
-    const isHomeDirectory =
-      path.resolve(projectRoot) === path.resolve(homeDir);
+    const isHomeDirectory = path.resolve(projectRoot) === path.resolve(homeDir);
 
     // Skip project level if in home directory
     if (level === 'project' && isHomeDirectory) {
       this.logger.debug(
-        `Skipping project-level ${this.resourceType}: project root is home directory`
+        `Skipping project-level ${this.resourceType}: project root is home directory`,
       );
       return [];
     }
@@ -588,16 +589,16 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
           const content = await fs.readFile(filePath, 'utf8');
           const resource = this.parseContent(content, filePath, level);
           resources.push(resource);
-        } catch (error) {
+        } catch (_error) {
           this.logger.warn(
             `Failed to parse ${this.resourceType} at ${filePath}`,
-            { error }
+            { error },
           );
         }
       }
 
       return resources;
-    } catch (error) {
+    } catch (_error) {
       // Directory doesn't exist or can't be read
       this.logger.debug(`Cannot read ${this.resourceType} directory: ${dir}`);
       return [];
@@ -652,8 +653,8 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
    * Gets extension-provided resources.
    */
   protected getExtensionResources(): T[] {
-    const extensions = this.config.getActiveExtensions();
     // Subclasses should override this if they support extensions
+    // Note: this.config.getActiveExtensions() can be used to get extension resources
     return [];
   }
 
@@ -689,8 +690,7 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
           comparison = a.name.localeCompare(b.name);
           break;
         case 'level':
-          comparison =
-            (levelOrder[a.level] ?? 5) - (levelOrder[b.level] ?? 5);
+          comparison = (levelOrder[a.level] ?? 5) - (levelOrder[b.level] ?? 5);
           break;
         default:
           comparison = 0;
@@ -707,10 +707,13 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
     for (const listener of this.changeListeners) {
       try {
         listener(event);
-      } catch (error) {
-        this.logger.warn(`${this.resourceType} change listener threw an error`, {
-          error,
-        });
+      } catch (_error) {
+        this.logger.warn(
+          `${this.resourceType} change listener threw an error`,
+          {
+            error,
+          },
+        );
       }
     }
   }
@@ -757,7 +760,7 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
             this.logger.warn(`Watcher error for ${watchPath}`, { error });
           });
         this.watchers.set(watchPath, watcher);
-      } catch (error) {
+      } catch (_error) {
         this.logger.warn(`Failed to watch directory: ${watchPath}`, { error });
       }
     }

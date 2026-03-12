@@ -59,11 +59,27 @@ async function main() {
         console.log('[Server] Terminal WebSocket connection upgrade');
 
         // Enable TCP keepalive on the underlying socket
-        socket.setKeepAlive(true, 30000);
-        socket.setTimeout(120000, () => {
-          console.log('[Server] Socket timeout, destroying');
-          socket.destroy();
-        });
+        // Note: socket is a Duplex but has socket properties
+        if (
+          'setKeepAlive' in socket &&
+          typeof socket.setKeepAlive === 'function'
+        ) {
+          (
+            socket as {
+              setKeepAlive: (enable: boolean, initialDelay: number) => void;
+            }
+          ).setKeepAlive(true, 30000);
+        }
+        if ('setTimeout' in socket && typeof socket.setTimeout === 'function') {
+          (
+            socket as {
+              setTimeout: (timeout: number, callback: () => void) => void;
+            }
+          ).setTimeout(120000, () => {
+            console.log('[Server] Socket timeout, destroying');
+            socket.destroy();
+          });
+        }
       }
     });
 

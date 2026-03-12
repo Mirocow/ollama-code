@@ -828,6 +828,19 @@ export {
 // Note: ValidationResult is already exported from './subagents/index.js'
 // So we only export additional types from unified that don't conflict
 export {
+  ResourceError,
+  ResourceErrorCode,
+  BaseResourceManager,
+  // Unified Managers
+  UnifiedSkillManager,
+  UnifiedSubagentManager,
+  // Resource Factory
+  UnifiedResourceFactory,
+  getUnifiedResourceFactory,
+  resetUnifiedResourceFactory,
+} from './unified/index.js';
+
+export type {
   ResourceLevel,
   BaseResourceConfig,
   ListResourcesOptions,
@@ -836,8 +849,9 @@ export {
   ResourceChangeListener,
   ResourceManagerStats,
   IResourceManager,
-  ResourceError,
-  ResourceErrorCode,
+  ResourceType,
+  ResourceConfigMap,
+  ResourceManagerMap,
 } from './unified/index.js';
 
 // ============================================================================

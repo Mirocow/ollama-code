@@ -10,12 +10,18 @@
  */
 
 import { createLogger, type StructuredLogger } from './structuredLogger.js';
-import type { BaseResourceConfig, ResourceLevel, ResourceError } from '../unified/types.js';
+import type {
+  BaseResourceConfig,
+  ResourceLevel,
+  ResourceError,
+} from '../unified/types.js';
 
 /**
  * Context for resource-related log entries.
  */
-export interface ResourceLogContext<T extends BaseResourceConfig = BaseResourceConfig> {
+export interface ResourceLogContext<
+  T extends BaseResourceConfig = BaseResourceConfig,
+> {
   /** Resource type (skill, agent, subagent) */
   resourceType: string;
 
@@ -54,7 +60,9 @@ export class ResourceLogger {
   /**
    * Logs a resource operation start.
    */
-  logOperationStart(context: Omit<ResourceLogContext, 'duration' | 'error'>): void {
+  logOperationStart(
+    context: Omit<ResourceLogContext, 'duration' | 'error'>,
+  ): void {
     this.logger.debug(`Operation started: ${context.operation}`, {
       resourceType: context.resourceType,
       resourceName: context.resourceName,
@@ -66,9 +74,7 @@ export class ResourceLogger {
   /**
    * Logs a successful resource operation.
    */
-  logOperationSuccess(
-    context: Omit<ResourceLogContext, 'error'>,
-  ): void {
+  logOperationSuccess(context: Omit<ResourceLogContext, 'error'>): void {
     const logData: Record<string, unknown> = {
       resourceType: context.resourceType,
       resourceName: context.resourceName,
@@ -76,14 +82,11 @@ export class ResourceLogger {
       operation: context.operation,
     };
 
-    if (context.duration !== undefined) {
-      logData.duration = context.duration;
+    if ('duration' in context && context['duration'] !== undefined) {
+      logData['duration'] = context['duration'];
     }
 
-    this.logger.info(
-      `Operation completed: ${context.operation}`,
-      logData,
-    );
+    this.logger.info(`Operation completed: ${context.operation}`, logData);
   }
 
   /**
@@ -97,8 +100,8 @@ export class ResourceLogger {
       operation: context.operation,
     };
 
-    if (context.duration !== undefined) {
-      logData.duration = context.duration;
+    if ('duration' in context && context['duration'] !== undefined) {
+      logData['duration'] = context['duration'];
     }
 
     this.logger.error(
@@ -111,7 +114,11 @@ export class ResourceLogger {
   /**
    * Logs resource cache hit.
    */
-  logCacheHit(resourceType: string, resourceName: string, level?: ResourceLevel): void {
+  logCacheHit(
+    resourceType: string,
+    resourceName: string,
+    level?: ResourceLevel,
+  ): void {
     this.logger.debug('Cache hit', {
       resourceType,
       resourceName,
@@ -123,7 +130,11 @@ export class ResourceLogger {
   /**
    * Logs resource cache miss.
    */
-  logCacheMiss(resourceType: string, resourceName: string, level?: ResourceLevel): void {
+  logCacheMiss(
+    resourceType: string,
+    resourceName: string,
+    level?: ResourceLevel,
+  ): void {
     this.logger.debug('Cache miss', {
       resourceType,
       resourceName,
@@ -283,7 +294,10 @@ export function LogOperation(operation: string) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {
-      const manager = this as { resourceType?: string; logger?: ResourceLogger };
+      const manager = this as {
+        resourceType?: string;
+        logger?: ResourceLogger;
+      };
       const resourceType = manager.resourceType || 'resource';
       const logger = manager.logger || createResourceLogger(resourceType);
 

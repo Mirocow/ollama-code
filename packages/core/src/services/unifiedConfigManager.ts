@@ -370,10 +370,7 @@ export class ConfigManager {
   /**
    * Validates a configuration value against the schema.
    */
-  validate(
-    key: string,
-    value: unknown,
-  ): { valid: boolean; errors: string[] } {
+  validate(key: string, value: unknown): { valid: boolean; errors: string[] } {
     const field = this.schema[key];
     if (!field) {
       return { valid: true, errors: [] };
@@ -388,9 +385,7 @@ export class ConfigManager {
     if (field.validate) {
       const result = field.validate(value);
       if (result !== true) {
-        errors.push(
-          typeof result === 'string' ? result : 'Validation failed',
-        );
+        errors.push(typeof result === 'string' ? result : 'Validation failed');
       }
     }
 
@@ -497,13 +492,14 @@ export class ConfigManager {
               : [field.envVar];
 
             for (const envVar of envVars) {
-              if (parsed[envVar] || process.env[envVar]) {
-                let value = parsed[envVar] || process.env[envVar];
+              const envValue = parsed[envVar] || process.env[envVar];
+              if (envValue) {
+                let value: unknown = envValue;
 
                 if (field.transform) {
-                  value = field.transform(value);
+                  value = field.transform(envValue);
                 } else {
-                  value = this.convertValue(value as string, field.type);
+                  value = this.convertValue(envValue, field.type);
                 }
 
                 this.envConfig[key] = value;
@@ -554,10 +550,7 @@ export class ConfigManager {
     config: Record<string, unknown>,
     scope: ConfigScope,
   ): void {
-    const traverse = (
-      obj: Record<string, unknown>,
-      prefix = '',
-    ): void => {
+    const traverse = (obj: Record<string, unknown>, prefix = ''): void => {
       for (const [key, value] of Object.entries(obj)) {
         const fullKey = prefix ? `${prefix}.${key}` : key;
 
@@ -579,7 +572,7 @@ export class ConfigManager {
   }
 
   private deepMerge(
-    ...objects: Record<string, unknown>[]
+    ...objects: Array<Record<string, unknown>>
   ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
 
@@ -605,10 +598,7 @@ export class ConfigManager {
     return result;
   }
 
-  private getNestedValue(
-    obj: Record<string, unknown>,
-    key: string,
-  ): unknown {
+  private getNestedValue(obj: Record<string, unknown>, key: string): unknown {
     const keys = key.split('.');
     let current: unknown = obj;
 
