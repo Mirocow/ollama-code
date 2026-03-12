@@ -46,16 +46,24 @@ async function main() {
       path: '/terminal',
       shell: process.env.SHELL || 'bash',
       cwd: process.env.PROJECT_DIR || process.cwd(),
+      // More aggressive heartbeat for development
+      heartbeatInterval: 15000, // 15 seconds
+      maxMissedHeartbeats: 4, // disconnect after 60 seconds of no response
     });
 
-    // Handle server upgrade for WebSocket
-    server.on('upgrade', (req, _socket, _head) => {
+    // Handle server upgrade for WebSocket with keepalive
+    server.on('upgrade', (req, socket, _head) => {
       const { pathname } = parse(req.url!, true);
 
-      // Terminal WebSocket is handled by TerminalServer
-      // This is just for logging
       if (pathname === '/terminal') {
         console.log('[Server] Terminal WebSocket connection upgrade');
+
+        // Enable TCP keepalive on the underlying socket
+        socket.setKeepAlive(true, 30000);
+        socket.setTimeout(120000, () => {
+          console.log('[Server] Socket timeout, destroying');
+          socket.destroy();
+        });
       }
     });
 

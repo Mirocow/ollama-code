@@ -12,16 +12,53 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
 
+/** Configuration constants */
+const CONFIG = {
+  /** Client sends ping every 8 seconds */
+  CLIENT_HEARTBEAT_INTERVAL: 8000,
+  /** Server must respond within 20 seconds */
+  PONG_TIMEOUT: 20000,
+  /** Auto-reconnect delay */
+  RECONNECT_DELAY: 2000,
+  /** Max reconnect attempts */
+  MAX_RECONNECT_ATTEMPTS: 5,
+};
+
 /**
- * Terminal emulator component using xterm.js
+ * Terminal emulator component using xterm.js with robust WebSocket handling
  */
 export function TerminalEmulator() {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pongTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const reconnectAttemptsRef = useRef(0);
+
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+
+  /**
+   * Clear all timers
+   */
+  const clearTimers = useCallback(() => {
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
+    if (pongTimeoutRef.current) {
+      clearTimeout(pongTimeoutRef.current);
+      pongTimeoutRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  }, []);
 
   /**
    * Initialize terminal
@@ -91,7 +128,6 @@ export function TerminalEmulator() {
     // Handle resize
     const handleResize = () => {
       fitAddon.fit();
-      // Send resize to backend if connected
       if (socketRef.current?.readyState === WebSocket.OPEN) {
         const dims = fitAddon.proposeDimensions();
         if (dims) {
@@ -120,24 +156,54 @@ export function TerminalEmulator() {
   }, []);
 
   /**
-   * Connect to shell WebSocket
+   * Start heartbeat mechanism
+   */
+  const startHeartbeat = useCallback(
+    (socket: WebSocket) => {
+      clearTimers();
+
+      // Send periodic pings
+      heartbeatRef.current = setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ type: 'ping' }));
+
+          // Set pong timeout
+          if (pongTimeoutRef.current) {
+            clearTimeout(pongTimeoutRef.current);
+          }
+          pongTimeoutRef.current = setTimeout(() => {
+            console.warn('[Terminal] Pong timeout, reconnecting...');
+            socket.close(4000, 'Pong timeout');
+          }, CONFIG.PONG_TIMEOUT);
+        }
+      }, CONFIG.CLIENT_HEARTBEAT_INTERVAL);
+    },
+    [clearTimers],
+  );
+
+  /**
+   * Connect to shell WebSocket with auto-reconnect
    */
   const connectToShell = useCallback(() => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
+    if (socketRef.current?.readyState === WebSocket.OPEN || isConnecting) {
       return;
     }
 
     setIsConnecting(true);
+    clearTimers();
 
-    // Determine WebSocket URL based on current location
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/terminal`;
 
+    console.log('[Terminal] Connecting to', wsUrl);
     const socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
+      console.log('[Terminal] Connected');
       setIsConnected(true);
       setIsConnecting(false);
+      reconnectAttemptsRef.current = 0;
+
       xtermRef.current?.writeln('\x1b[32m✓ Connected to shell\x1b[0m');
       xtermRef.current?.writeln('');
 
@@ -154,6 +220,8 @@ export function TerminalEmulator() {
           );
         }
       }
+
+      startHeartbeat(socket);
     };
 
     socket.onmessage = (event) => {
@@ -173,21 +241,67 @@ export function TerminalEmulator() {
           case 'error':
             xtermRef.current?.writeln(`\x1b[31mError: ${message.data}\x1b[0m`);
             break;
+          case 'ping':
+            socket.send(JSON.stringify({ type: 'pong' }));
+            break;
+          case 'pong':
+            // Clear pong timeout on response
+            if (pongTimeoutRef.current) {
+              clearTimeout(pongTimeoutRef.current);
+              pongTimeoutRef.current = null;
+            }
+            break;
         }
       } catch {
-        // Plain text fallback
         xtermRef.current?.write(event.data);
       }
     };
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
+      console.log(
+        '[Terminal] Disconnected, code:',
+        event.code,
+        'reason:',
+        event.reason,
+      );
       setIsConnected(false);
       setIsConnecting(false);
-      xtermRef.current?.writeln('');
-      xtermRef.current?.writeln('\x1b[33m✗ Disconnected from shell\x1b[0m');
+      clearTimers();
+
+      const wasClean = event.code === 1000 || event.code === 1005;
+      const shouldReconnect =
+        !wasClean &&
+        reconnectAttemptsRef.current < CONFIG.MAX_RECONNECT_ATTEMPTS;
+
+      if (!wasClean) {
+        xtermRef.current?.writeln('');
+        xtermRef.current?.writeln(
+          `\x1b[33m✗ Disconnected (code: ${event.code})\x1b[0m`,
+        );
+      }
+
+      // Auto-reconnect on abnormal close
+      if (shouldReconnect) {
+        reconnectAttemptsRef.current++;
+        const delay = CONFIG.RECONNECT_DELAY * reconnectAttemptsRef.current;
+        xtermRef.current?.writeln(
+          `\x1b[36mReconnecting in ${delay / 1000}s (attempt ${reconnectAttemptsRef.current}/${CONFIG.MAX_RECONNECT_ATTEMPTS})...\x1b[0m`,
+        );
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connectToShell();
+        }, delay);
+      } else if (
+        reconnectAttemptsRef.current >= CONFIG.MAX_RECONNECT_ATTEMPTS
+      ) {
+        xtermRef.current?.writeln(
+          '\x1b[31mMax reconnect attempts reached. Click Connect to try again.\x1b[0m',
+        );
+        reconnectAttemptsRef.current = 0;
+      }
     };
 
-    socket.onerror = () => {
+    socket.onerror = (error) => {
+      console.error('[Terminal] Error:', error);
       setIsConnected(false);
       setIsConnecting(false);
       xtermRef.current?.writeln('');
@@ -195,17 +309,20 @@ export function TerminalEmulator() {
     };
 
     socketRef.current = socket;
-  }, []);
+  }, [isConnecting, clearTimers, startHeartbeat]);
 
   /**
    * Disconnect from shell
    */
   const disconnectFromShell = useCallback(() => {
+    clearTimers();
+    reconnectAttemptsRef.current = CONFIG.MAX_RECONNECT_ATTEMPTS; // Prevent auto-reconnect
+
     if (socketRef.current) {
-      socketRef.current.close();
+      socketRef.current.close(1000, 'User disconnect');
       socketRef.current = null;
     }
-  }, []);
+  }, [clearTimers]);
 
   /**
    * Clear terminal
@@ -222,10 +339,11 @@ export function TerminalEmulator() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      clearTimers();
       socketRef.current?.close();
       xtermRef.current?.dispose();
     };
-  }, []);
+  }, [clearTimers]);
 
   return (
     <div className="flex flex-col h-full">

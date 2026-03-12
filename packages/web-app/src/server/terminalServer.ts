@@ -26,6 +26,8 @@ interface TerminalSession {
   socket: WebSocket;
   createdAt: Date;
   lastActivity: Date;
+  /** Track if client responded to last ping */
+  pingReceived: boolean;
 }
 
 /**
@@ -50,13 +52,17 @@ export interface TerminalServerConfig {
   maxSessionsPerIp?: number;
   /** Session timeout in ms (default: 30 minutes) */
   sessionTimeout?: number;
+  /** Heartbeat interval in ms (default: 30 seconds) */
+  heartbeatInterval?: number;
+  /** Max missed heartbeats before disconnect (default: 3) */
+  maxMissedHeartbeats?: number;
 }
 
 /**
  * Terminal message types
  */
 interface TerminalMessage {
-  type: 'input' | 'resize' | 'ping';
+  type: 'input' | 'resize' | 'ping' | 'pong';
   data?: string;
   cols?: number;
   rows?: number;
@@ -82,6 +88,8 @@ export class TerminalServer {
     server: HttpServer;
   };
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+  private missedHeartbeats: Map<string, number> = new Map();
 
   constructor(config: TerminalServerConfig) {
     this.config = {
@@ -94,14 +102,19 @@ export class TerminalServer {
       cwd: config.cwd || process.cwd(),
       maxSessionsPerIp: config.maxSessionsPerIp || 5,
       sessionTimeout: config.sessionTimeout || 30 * 60 * 1000, // 30 minutes
+      heartbeatInterval: config.heartbeatInterval || 30000, // 30 seconds
+      maxMissedHeartbeats: config.maxMissedHeartbeats || 3,
     };
 
     this.wss = new WebSocketServer({
       server: this.config.server,
       path: this.config.path,
+      // Enable native WebSocket ping/pong
+      clientTracking: true,
     });
     this.setupHandlers();
     this.startCleanup();
+    this.startHeartbeat();
   }
 
   /**
@@ -130,12 +143,15 @@ export class TerminalServer {
         this.handleMessage(sessionId, data);
       });
 
-      // Handle close
-      socket.on('close', () => {
+      // Handle close with detailed logging
+      socket.on('close', (code: number, reason: Buffer) => {
+        const reasonStr = reason.toString() || '(no reason)';
+        console.log(
+          `[Terminal] Session ${sessionId} closed - Code: ${code}, Reason: ${reasonStr}`,
+        );
         this.closeSession(sessionId);
         const sessions = this.ipSessions.get(clientIp) || 1;
         this.ipSessions.set(clientIp, sessions - 1);
-        console.log(`[Terminal] Session ${sessionId} closed`);
       });
 
       // Handle errors
@@ -176,8 +192,10 @@ export class TerminalServer {
       socket,
       createdAt: new Date(),
       lastActivity: new Date(),
+      pingReceived: true, // Start with true, assume connection is healthy
     };
     this.sessions.set(sessionId, session);
+    this.missedHeartbeats.set(sessionId, 0);
 
     // Handle PTY output
     ptyProcess.onData((data: string) => {
@@ -231,6 +249,12 @@ export class TerminalServer {
             session.socket.send(JSON.stringify({ type: 'pong' }));
           }
           break;
+
+        case 'pong':
+          // Client responded to our ping, reset missed heartbeats
+          session.pingReceived = true;
+          this.missedHeartbeats.set(sessionId, 0);
+          break;
       }
     } catch (error) {
       console.error(`[Terminal] Failed to parse message:`, error);
@@ -249,6 +273,7 @@ export class TerminalServer {
         // PTY might already be dead
       }
       this.sessions.delete(sessionId);
+      this.missedHeartbeats.delete(sessionId);
     }
   }
 
@@ -293,6 +318,44 @@ export class TerminalServer {
   }
 
   /**
+   * Start heartbeat to detect dead connections
+   */
+  private startHeartbeat(): void {
+    this.heartbeatInterval = setInterval(() => {
+      for (const [sessionId, session] of this.sessions) {
+        if (session.socket.readyState !== WebSocket.OPEN) {
+          continue;
+        }
+
+        // Check if client responded to last ping
+        if (!session.pingReceived) {
+          const missed = (this.missedHeartbeats.get(sessionId) || 0) + 1;
+          this.missedHeartbeats.set(sessionId, missed);
+
+          if (missed >= this.config.maxMissedHeartbeats) {
+            console.log(
+              `[Terminal] Session ${sessionId} timed out (missed ${missed} heartbeats)`,
+            );
+            this.closeSession(sessionId);
+            continue;
+          }
+        }
+
+        // Mark as expecting pong
+        session.pingReceived = false;
+
+        // Send application-level ping
+        try {
+          session.socket.send(JSON.stringify({ type: 'ping' }));
+        } catch {
+          console.log(`[Terminal] Failed to send ping to session ${sessionId}`);
+          this.closeSession(sessionId);
+        }
+      }
+    }, this.config.heartbeatInterval);
+  }
+
+  /**
    * Get server statistics
    */
   getStats(): {
@@ -315,6 +378,10 @@ export class TerminalServer {
   close(): void {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
+    }
+
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
     }
 
     for (const sessionId of this.sessions.keys()) {
