@@ -17,6 +17,7 @@ import { DEFAULT_OLLAMA_MODEL } from '@ollama-code/ollama-code-core';
 import type { ModelInfo } from '../../acp-integration/schema.js';
 import { theme } from '../semantic-colors.js';
 import { useKeypress } from '../hooks/useKeypress.js';
+import { useBracketedPaste } from '../hooks/useBracketedPaste.js';
 import { t } from '../../i18n/index.js';
 import {
   DEFAULT_BASE_URL,
@@ -72,6 +73,9 @@ export function FirstRunSetup({
   >('none');
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+
+  // Enable bracketed paste mode for mouse paste support
+  useBracketedPaste();
 
   const fields: InputField[] = ['baseUrl', 'model'];
   const fieldValues: Record<InputField, string> = {
@@ -457,7 +461,7 @@ export function FirstRunSetup({
         <Box marginTop={1}>
           <Text color={theme.text.secondary} dimColor>
             {t(
-              '←→: move cursor • Tab/↑↓: switch • Enter: confirm • Esc/Ctrl+C: cancel',
+              '←→: move • Tab/↑↓: switch • Enter: confirm • Esc: cancel • Paste: Ctrl+Shift+V or mouse',
             )}
           </Text>
         </Box>
