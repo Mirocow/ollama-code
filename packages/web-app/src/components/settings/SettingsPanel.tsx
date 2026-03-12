@@ -10,6 +10,25 @@ import { useState, useEffect } from 'react';
 import { useWebSessionStore } from '@/stores/webSessionStore';
 
 /**
+ * Apply theme to document
+ */
+function applyTheme(theme: 'light' | 'dark' | 'system') {
+  const root = document.documentElement;
+  const isDark =
+    theme === 'dark' ||
+    (theme === 'system' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  if (isDark) {
+    root.classList.add('dark');
+    root.classList.remove('light');
+  } else {
+    root.classList.add('light');
+    root.classList.remove('dark');
+  }
+}
+
+/**
  * Settings configuration type
  */
 interface SettingsConfig {
@@ -65,6 +84,13 @@ export function SettingsPanel() {
         if (response.ok) {
           const data = await response.json();
           setSettings({ ...defaultSettings, ...data });
+          // Apply theme on load
+          applyTheme(data.theme || 'dark');
+          // Sync to localStorage
+          localStorage.setItem(
+            'ollama-code-settings',
+            JSON.stringify({ ...defaultSettings, ...data }),
+          );
         }
       } catch (error) {
         console.error('Failed to load settings:', error);
@@ -74,6 +100,11 @@ export function SettingsPanel() {
     }
     loadSettings();
   }, []);
+
+  // Apply theme when it changes
+  useEffect(() => {
+    applyTheme(settings.theme);
+  }, [settings.theme]);
 
   // Save settings
   const saveSettings = async () => {
@@ -91,6 +122,8 @@ export function SettingsPanel() {
         if (settings.defaultModel) {
           setSelectedModel(settings.defaultModel);
         }
+        // Save to localStorage for immediate theme application on reload
+        localStorage.setItem('ollama-code-settings', JSON.stringify(settings));
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 2000);
       }
