@@ -208,9 +208,9 @@ export class UnifiedSkillManager extends BaseResourceManager<SkillConfig> {
         filePath,
       });
       return config;
-    } catch (_error) {
+    } catch (caughtError) {
       const skillError = new SkillError(
-        `Failed to parse skill file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to parse skill file: ${caughtError instanceof Error ? caughtError.message : 'Unknown error'}`,
         SkillErrorCode.PARSE_ERROR,
       );
       this.parseErrors.set(filePath, skillError);
@@ -314,10 +314,10 @@ export class UnifiedSkillManager extends BaseResourceManager<SkillConfig> {
           const content = await fs.readFile(skillManifest, 'utf8');
           const skill = this.parseContent(content, skillManifest, level);
           skills.push(skill);
-        } catch (_error) {
-          if (error instanceof SkillError) {
+        } catch (caughtError) {
+          if (caughtError instanceof SkillError) {
             this.logger.error(
-              `Failed to parse skill at ${skillDir}: ${error.message}`,
+              `Failed to parse skill at ${skillDir}: ${caughtError.message}`,
             );
           } else {
             this.logger.debug(

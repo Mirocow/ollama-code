@@ -249,15 +249,15 @@ export class UnifiedSubagentManager extends BaseResourceManager<SubagentConfig> 
         options?.eventEmitter,
         options?.hooks,
       );
-    } catch (_error) {
-      if (error instanceof Error) {
+    } catch (caughtError) {
+      if (caughtError instanceof Error) {
         throw new SubagentError(
-          `Failed to create SubAgentScope: ${error.message}`,
+          `Failed to create SubAgentScope: ${caughtError.message}`,
           SubagentErrorCode.INVALID_CONFIG,
           config.name,
         );
       }
-      throw error;
+      throw caughtError;
     }
   }
 
@@ -366,9 +366,9 @@ export class UnifiedSubagentManager extends BaseResourceManager<SubagentConfig> 
         filePath,
       });
       return config;
-    } catch (_error) {
+    } catch (caughtError) {
       throw new SubagentError(
-        `Failed to parse subagent file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to parse subagent file: ${caughtError instanceof Error ? caughtError.message : 'Unknown error'}`,
         SubagentErrorCode.INVALID_CONFIG,
       );
     }
