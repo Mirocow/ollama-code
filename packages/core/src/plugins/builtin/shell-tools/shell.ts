@@ -468,6 +468,11 @@ function getShellToolDescription(): string {
 
   return `Executes a given shell command (as \`${executionWrapper}\`) in a persistent shell session with optional timeout, ensuring proper handling and security measures.
 
+**IMPORTANT: This tool is for LOCAL terminal operations ONLY.** 
+- Use for: git, npm, docker, pytest, make, etc. on the LOCAL machine
+- DO NOT use for remote servers - use \`ssh_connect\` tool instead
+- If you need to run commands on a remote server (IP address, hostname, "on server", "via SSH"), use \`ssh_connect\` tool, NOT \`run_shell_command\`
+
 IMPORTANT: This tool is for terminal operations like git, npm, docker, etc. DO NOT use it for file operations (reading, writing, editing, searching, finding files) - use the specialized tools for this instead.
 
 **Usage notes**:

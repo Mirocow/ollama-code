@@ -503,7 +503,21 @@ export class GrepTool extends BaseDeclarativeTool<GrepToolParams, ToolResult> {
     super(
       GrepTool.Name,
       'Grep',
-      'A powerful search tool for finding patterns in files\n\n  Usage:\n  - ALWAYS use Grep for search tasks. NEVER invoke `grep` or `rg` as a Bash command. The Grep tool has been optimized for correct permissions and access.\n  - Supports full regex syntax (e.g., "log.*Error", "function\\s+\\w+")\n  - Filter files with glob parameter (e.g., "*.js", "**/*.tsx")\n  - Case-insensitive by default\n  - Use Task tool for open-ended searches requiring multiple rounds\n',
+      `A powerful search tool for finding patterns in FILE CONTENTS.
+
+**IMPORTANT: grep_search searches INSIDE files - it does NOT find files by name.**
+- Use for: searching text/code INSIDE files (e.g., find "function foo", "import React", "TODO")
+- DO NOT use to find files by name - use \`glob\` or \`list_directory\` instead
+- Examples of WRONG usage: "grep_search pattern='*.ts'" or "grep_search pattern='package.json'"
+- Examples of CORRECT usage: "grep_search pattern='useEffect'" or "grep_search pattern='class.*Service'"
+
+Usage:
+- ALWAYS use Grep for content search tasks. NEVER invoke \`grep\` or \`rg\` as a Bash command. The Grep tool has been optimized for correct permissions and access.
+- Supports full regex syntax (e.g., "log.*Error", "function\\s+\\w+")
+- Filter files with glob parameter (e.g., "*.js", "**/*.tsx")
+- Case-insensitive by default
+- Use Task tool for open-ended searches requiring multiple rounds
+`,
       Kind.Search,
       {
         properties: {
