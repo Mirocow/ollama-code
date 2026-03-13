@@ -144,7 +144,7 @@ export class Logger {
       return;
     }
 
-    this.ollamaCodeDir = this.storage.getProjectTempDir();
+    this.ollamaCodeDir = this.storage.getProjectDir();
     this.logFilePath = path.join(this.ollamaCodeDir, LOG_FILE_NAME);
 
     try {

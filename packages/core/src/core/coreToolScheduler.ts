@@ -1276,7 +1276,7 @@ LEARNING TIP: Use the exact tool name "${bestMatch.name}" in future calls.`;
               const truncatedResult = await truncateAndSaveToFile(
                 content,
                 callId,
-                this.config.storage.getProjectTempDir(),
+                this.config.storage.getProjectDir(),
                 threshold,
                 lines,
               );

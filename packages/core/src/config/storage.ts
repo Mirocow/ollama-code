@@ -13,9 +13,6 @@ import {
   getProjectStorageDir,
 } from '../utils/paths.js';
 
-// Re-export getOllamaDir for other modules (replaces getGlobalOllamaDir)
-export { getOllamaDir };
-
 export const GOOGLE_ACCOUNTS_FILENAME = 'google_accounts.json';
 export const OAUTH_FILE = 'oauth_creds.json';
 export const SSH_CREDENTIALS_FILE = 'ssh_credentials.json';
@@ -444,14 +441,6 @@ export class Storage {
     this.targetDir = targetDir;
   }
 
-  /**
-   * Get the global Ollama Code directory (~/.ollama-code/)
-   * @deprecated Use getOllamaDir() from paths.ts instead
-   */
-  static getGlobalOllamaDir(): string {
-    return getOllamaDir();
-  }
-
   static getMcpOAuthTokensPath(): string {
     return path.join(getOllamaDir(), 'mcp-oauth-tokens.json');
   }
@@ -496,13 +485,8 @@ export class Storage {
     return path.join(getOllamaDir(), BIN_DIR_NAME);
   }
 
-  /**
-   * Get the project-specific Ollama Code directory within the project
-   * This returns <project>/.ollama-code/ for project-local settings
-   * @deprecated Use getProjectStorageDir() for centralized storage
-   */
-  getOllamaDir(): string {
-    return path.join(this.targetDir, '.ollama-code');
+  getProjectRoot(): string {
+    return this.targetDir;
   }
 
   /**
@@ -522,42 +506,31 @@ export class Storage {
     return getProjectStorageDir(this.getProjectRoot());
   }
 
-  getProjectTempDir(): string {
-    const hash = getProjectHash(this.getProjectRoot());
-    const tempDir = Storage.getGlobalTempDir();
-    const targetDir = path.join(tempDir, hash);
-    return targetDir;
-  }
-
   static getOAuthCredsPath(): string {
     return path.join(getOllamaDir(), OAUTH_FILE);
   }
 
-  getProjectRoot(): string {
-    return this.targetDir;
-  }
-
   getHistoryDir(): string {
     const hash = getProjectHash(this.getProjectRoot());
-    const historyDir = path.join(getOllamaDir(), 'history');
+    const historyDir = path.join(this.getProjectDir(), 'history');
     const targetDir = path.join(historyDir, hash);
     return targetDir;
   }
 
   getWorkspaceSettingsPath(): string {
-    return path.join(this.getOllamaDir(), 'settings.json');
+    return path.join(getOllamaDir(), 'settings.json');
   }
 
   getProjectCommandsDir(): string {
-    return path.join(this.getOllamaDir(), 'commands');
+    return path.join(getOllamaDir(), 'commands');
   }
 
   getProjectTempCheckpointsDir(): string {
-    return path.join(this.getProjectTempDir(), 'checkpoints');
+    return path.join(this.getProjectDir(), 'checkpoints');
   }
 
   getExtensionsDir(): string {
-    return path.join(this.getOllamaDir(), 'extensions');
+    return path.join(getOllamaDir(), 'extensions');
   }
 
   getExtensionsConfigPath(): string {
@@ -569,7 +542,7 @@ export class Storage {
   }
 
   getHistoryFilePath(): string {
-    return path.join(this.getProjectTempDir(), 'shell_history');
+    return path.join(this.getProjectDir(), 'shell_history');
   }
 
   // ============================================================================

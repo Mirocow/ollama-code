@@ -27,7 +27,7 @@ vi.mock('node:fs/promises', () => ({
 // Mock Storage
 vi.mock('../config/storage.js', () => ({
   Storage: {
-    getGlobalOllamaDir: () => '/mock/.ollama-code',
+    getOllamaDir: () => '/mock/.ollama-code',
   },
 }));
 
@@ -48,7 +48,9 @@ describe('SelfLearningManager', () => {
     // Reset singleton for each test
     vi.clearAllMocks();
     // Access private static instance to reset it
-    (SelfLearningManager as unknown as { instance: SelfLearningManager | null }).instance = null;
+    (
+      SelfLearningManager as unknown as { instance: SelfLearningManager | null }
+    ).instance = null;
     manager = SelfLearningManager.getInstance();
   });
 

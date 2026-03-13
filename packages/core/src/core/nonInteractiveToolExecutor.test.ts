@@ -54,7 +54,7 @@ describe('executeToolCall', () => {
         terminalHeight: 30,
       }),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getTruncateToolOutputThreshold: () =>
         DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,

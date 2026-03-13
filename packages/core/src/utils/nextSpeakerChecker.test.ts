@@ -75,7 +75,7 @@ describe('checkNextSpeaker', () => {
       getModel: () => 'test-model',
       getBaseLlmClient: vi.fn().mockReturnValue(mockBaseLlmClient),
       storage: {
-        getProjectTempDir: vi.fn().mockReturnValue('/test/temp'),
+        getProjectDir: vi.fn().mockReturnValue('/test/temp'),
       },
     } as unknown as Config;
 

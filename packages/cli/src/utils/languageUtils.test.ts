@@ -17,7 +17,7 @@ import {
 vi.mock('@ollama-code/ollama-code-core', () => ({
   getOllamaDir: () => '/mock/.ollama-code',
   Storage: {
-    getGlobalOllamaDir: () => '/mock/.ollama-code',
+    getOllamaDir: () => '/mock/.ollama-code',
   },
 }));
 

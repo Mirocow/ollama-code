@@ -39,8 +39,9 @@ describe('ReadFileTool', () => {
       getTargetDir: () => tempRootDir,
       getWorkspaceContext: () => createMockWorkspaceContext(tempRootDir),
       storage: {
-        getProjectTempDir: () => path.join(tempRootDir, '.temp'),
-        getUserSkillsDir: () => path.join(os.homedir(), '.ollama-code', 'skills'),
+        getProjectDir: () => path.join(tempRootDir, '.temp'),
+        getUserSkillsDir: () =>
+          path.join(os.homedir(), '.ollama-code', 'skills'),
       },
       getTruncateToolOutputThreshold: () => 2500,
       getTruncateToolOutputLines: () => 500,

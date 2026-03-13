@@ -42,10 +42,10 @@ export function buildWebSearchConfig(
   _authType?: string,
 ): WebSearchConfig | undefined {
   // Debug: log what we receive
-  console.error('[DEBUG] buildWebSearchConfig called');
-  console.error('[DEBUG] settings.webSearch:', JSON.stringify(settings.webSearch));
-  console.error('[DEBUG] argv:', JSON.stringify(argv));
-  
+  // console.error('[DEBUG] buildWebSearchConfig called');
+  // console.error('[DEBUG] settings.webSearch:', JSON.stringify(settings.webSearch));
+  // console.error('[DEBUG] argv:', JSON.stringify(argv));
+
   // Step 1: Collect providers from settings or command line/env
   let providers: WebSearchProviderConfig[] = [];
   let userDefault: string | undefined;
@@ -67,6 +67,7 @@ export function buildWebSearchConfig(
       } as WebSearchProviderConfig);
     }
 
+    // Build providers from command line args and environment variables
     const googleKey = argv.googleApiKey || process.env['GOOGLE_API_KEY'];
     const googleEngineId =
       argv.googleSearchEngineId || process.env['GOOGLE_SEARCH_ENGINE_ID'];
@@ -117,6 +118,7 @@ export function buildWebSearchConfig(
     provider: providers,
     default: defaultProvider || 'google-scraper',
   };
-  console.error('[DEBUG] buildWebSearchConfig result:', JSON.stringify(result));
+
+  // console.error('[DEBUG] buildWebSearchConfig result:', JSON.stringify(result));
   return result;
 }

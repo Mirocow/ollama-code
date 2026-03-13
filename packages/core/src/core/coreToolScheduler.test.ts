@@ -248,7 +248,7 @@ describe('CoreToolScheduler', () => {
         terminalHeight: 30,
       }),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getTruncateToolOutputThreshold: () =>
         DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
@@ -325,7 +325,7 @@ describe('CoreToolScheduler', () => {
         terminalHeight: 30,
       }),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getTruncateToolOutputThreshold: () =>
         DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
@@ -559,7 +559,7 @@ describe('CoreToolScheduler', () => {
           terminalHeight: 30,
         }),
         storage: {
-          getProjectTempDir: () => '/tmp',
+          getProjectDir: () => '/tmp',
         },
         getTruncateToolOutputThreshold: () =>
           DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
@@ -645,7 +645,7 @@ describe('CoreToolScheduler', () => {
           terminalHeight: 30,
         }),
         storage: {
-          getProjectTempDir: () => '/tmp',
+          getProjectDir: () => '/tmp',
         },
         getTruncateToolOutputThreshold: () =>
           DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
@@ -735,7 +735,7 @@ describe('CoreToolScheduler with payload', () => {
         terminalHeight: 30,
       }),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getTruncateToolOutputThreshold: () =>
         DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
@@ -1074,7 +1074,7 @@ describe('CoreToolScheduler edit cancellation', () => {
         terminalHeight: 30,
       }),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getToolRegistry: () => mockToolRegistry,
       getUseModelRouter: () => false,
@@ -1180,7 +1180,7 @@ describe('CoreToolScheduler YOLO mode', () => {
         terminalHeight: 30,
       }),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getToolRegistry: () => mockToolRegistry,
       getTruncateToolOutputThreshold: () =>
@@ -1421,7 +1421,7 @@ describe('CoreToolScheduler request queueing', () => {
         terminalHeight: 30,
       }),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getTruncateToolOutputThreshold: () =>
         DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
@@ -1554,7 +1554,7 @@ describe('CoreToolScheduler request queueing', () => {
       getTerminalWidth: vi.fn(() => 80),
       getTerminalHeight: vi.fn(() => 24),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getTruncateToolOutputThreshold: () =>
         DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
@@ -1655,7 +1655,7 @@ describe('CoreToolScheduler request queueing', () => {
         terminalHeight: 30,
       }),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getTruncateToolOutputThreshold: () =>
         DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
@@ -1728,7 +1728,7 @@ describe('CoreToolScheduler request queueing', () => {
         terminalHeight: 30,
       }),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getTruncateToolOutputThreshold: () =>
         DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
@@ -1921,7 +1921,7 @@ describe('CoreToolScheduler Sequential Execution', () => {
         terminalHeight: 30,
       }),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getToolRegistry: () => mockToolRegistry,
       getTruncateToolOutputThreshold: () =>
@@ -2041,7 +2041,7 @@ describe('CoreToolScheduler Sequential Execution', () => {
         terminalHeight: 30,
       }),
       storage: {
-        getProjectTempDir: () => '/tmp',
+        getProjectDir: () => '/tmp',
       },
       getToolRegistry: () => mockToolRegistry,
       getTruncateToolOutputThreshold: () =>

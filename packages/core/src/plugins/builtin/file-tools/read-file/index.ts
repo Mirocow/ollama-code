@@ -183,7 +183,7 @@ export class ReadFileTool extends BaseDeclarativeTool<
 
     const workspaceContext = this.config.getWorkspaceContext();
     const globalTempDir = Storage.getGlobalTempDir();
-    const projectTempDir = this.config.storage.getProjectTempDir();
+    const projectTempDir = this.config.storage.getProjectDir();
     const userSkillsDir = this.config.storage.getUserSkillsDir();
     const resolvedFilePath = path.resolve(filePath);
     const isWithinTempDir =

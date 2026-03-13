@@ -38,6 +38,9 @@ install:
 build:
 	npx pnpm run build
 
+build-cli:
+	npx pnpm run build:cli
+
 build-all:
 	npx pnpm run build:all
 

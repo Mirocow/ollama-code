@@ -29,7 +29,7 @@ vi.mock('node:fs/promises', () => ({
 // Mock Storage
 vi.mock('../config/storage.js', () => ({
   Storage: {
-    getGlobalOllamaDir: () => '/mock/.ollama-code',
+    getOllamaDir: () => '/mock/.ollama-code',
   },
 }));
 
