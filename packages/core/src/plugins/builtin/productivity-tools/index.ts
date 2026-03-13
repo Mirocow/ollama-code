@@ -6,7 +6,7 @@
 
 /**
  * Productivity Tools Plugin
- * 
+ *
  * Built-in plugin providing productivity enhancement tools.
  */
 
@@ -27,46 +27,79 @@ const productivityToolsPlugin: PluginDefinition = {
     tags: ['core', 'builtin', 'productivity'],
     enabledByDefault: true,
   },
-  
+
   // Unified tools array - tool classes that don't need Config
-  tools: [
-    TodoWriteTool,
-    ExitPlanModeTool,
-  ],
-  
+  tools: [TodoWriteTool, ExitPlanModeTool],
+
   // Tool aliases - short names that resolve to canonical tool names
   aliases: [
     // ═══════════════════════════════════════════════════════════════════
     // todo_write aliases
     // ═══════════════════════════════════════════════════════════════════
-    { alias: 'todo', canonicalName: 'todo_write', description: 'Write todo list' },
-    { alias: 'todos', canonicalName: 'todo_write', description: 'Manage todo items' },
-    { alias: 'todo_write', canonicalName: 'todo_write', description: 'Write todo list' },
-    { alias: 'task_list', canonicalName: 'todo_write', description: 'Task list management' },
+    {
+      alias: 'todo',
+      canonicalName: 'todo_write',
+      description: 'Write todo list',
+    },
+    {
+      alias: 'todos',
+      canonicalName: 'todo_write',
+      description: 'Manage todo items',
+    },
+    {
+      alias: 'todo_write',
+      canonicalName: 'todo_write',
+      description: 'Write todo list',
+    },
+    {
+      alias: 'task_list',
+      canonicalName: 'todo_write',
+      description: 'Task list management',
+    },
+    {
+      alias: 'task',
+      canonicalName: 'todo_write',
+      description: 'Task list management',
+    },
     // ═══════════════════════════════════════════════════════════════════
     // exit_plan_mode aliases
     // ═══════════════════════════════════════════════════════════════════
-    { alias: 'exit_plan', canonicalName: 'exit_plan_mode', description: 'Exit plan mode' },
-    { alias: 'plan_done', canonicalName: 'exit_plan_mode', description: 'Finish planning' },
-    { alias: 'exit_plan_mode', canonicalName: 'exit_plan_mode', description: 'Exit plan mode' },
+    {
+      alias: 'exit_plan',
+      canonicalName: 'exit_plan_mode',
+      description: 'Exit plan mode',
+    },
+    {
+      alias: 'plan_done',
+      canonicalName: 'exit_plan_mode',
+      description: 'Finish planning',
+    },
+    {
+      alias: 'exit_plan_mode',
+      canonicalName: 'exit_plan_mode',
+      description: 'Exit plan mode',
+    },
   ],
-  
+
   // Context-aware prompts for model guidance
   prompts: [
     {
       priority: 1,
-      content: 'Productivity tools: todo_write for task management, exit_plan_mode to signal planning completion. Use todo_write to track progress on complex tasks.',
+      content:
+        'Productivity tools: todo_write for task management, exit_plan_mode to signal planning completion. Use todo_write to track progress on complex tasks.',
     },
     {
       priority: 2,
-      content: 'TODO_WRITE: Create structured todo lists with status (pending/in_progress/completed) and priority (high/medium/low). Update status as work progresses. Great for complex multi-step tasks.',
+      content:
+        'TODO_WRITE: Create structured todo lists with status (pending/in_progress/completed) and priority (high/medium/low). Update status as work progresses. Great for complex multi-step tasks.',
     },
     {
       priority: 3,
-      content: 'EXIT_PLAN_MODE: Call when planning phase is complete and ready to execute. Signals transition from analysis to implementation.',
+      content:
+        'EXIT_PLAN_MODE: Call when planning phase is complete and ready to execute. Signals transition from analysis to implementation.',
     },
   ],
-  
+
   // Plugin capabilities
   capabilities: {
     canReadFiles: false,
@@ -76,12 +109,12 @@ const productivityToolsPlugin: PluginDefinition = {
     canUseStorage: true,
     canUsePrompts: true,
   },
-  
+
   hooks: {
     onLoad: async (context) => {
       context.logger.info('Productivity Tools plugin loaded');
     },
-    
+
     onEnable: async (context) => {
       context.logger.info('Productivity Tools plugin enabled');
     },

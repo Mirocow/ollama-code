@@ -402,7 +402,7 @@ export * from './plugins/builtin/mcp-tools/index.js';
 export * from './plugins/builtin/database-tools/index.js';
 export * from './plugins/builtin/git-tools/index.js';
 export * from './plugins/builtin/api-tools/index.js';
-export * from './plugins/builtin/utility-tools/index.js';
+export * from './plugins/builtin/code-analysis-tools/index.js';
 export * from './plugins/builtin/storage-tools/index.js';
 
 // ============================================================================

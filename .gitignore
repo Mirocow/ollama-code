@@ -51,19 +51,20 @@ packages/core/src/generated/
 .integration-tests/
 packages/vscode-ide-companion/*.vsix
 scripts/unused-keys-only-in-locales.json
-logs
 
 # Qwen Code Configs
 
 .qwen/
 !.qwen/commands/
 !.qwen/skills/
-logs/
+
 # GHA credentials
 gha-creds-*.json
 
 # Log files
+logs/
 patch_output.log
+packages/cli/logs
 
 # docs build
 docs-site/.next
@@ -88,3 +89,4 @@ storybook-static
 
 # Ollama Code local storage
 .ollama-code/
+

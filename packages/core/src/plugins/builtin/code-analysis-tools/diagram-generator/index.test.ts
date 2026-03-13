@@ -8,12 +8,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type {
   DiagramGeneratorParams,
   DiagramType,
-  OutputFormat} from './index.js';
+  OutputFormat
+} from './index.js';
 import {
   DiagramGeneratorTool,
   createDiagramGeneratorTool,
 } from './index.js';
-import type { Config } from '../config/config.js';
+import type { Config } from '../../../../config/config.js';
 
 // Mock Config
 const mockConfig = {

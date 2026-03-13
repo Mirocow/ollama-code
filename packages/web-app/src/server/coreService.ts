@@ -16,19 +16,20 @@
  * - MCP Servers
  */
 
-import {
+import type {
   // Config
   Config,
-  Storage,
-  makeFakeConfig,
 
   // Managers
   SkillManager,
   SubagentManager,
-  ExtensionManager,
 
   // Tools
-  ToolRegistry,
+  ToolRegistry} from '@ollama-code/ollama-code-core';
+import {
+  Storage,
+  makeFakeConfig,
+  ExtensionManager,
 
   // Types
   type SkillConfig,

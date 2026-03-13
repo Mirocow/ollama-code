@@ -1,90 +1,90 @@
-# Model Storage - Инструкции по использованию
+# Model Storage - Usage Instructions
 
-## Обзор
+## Overview
 
-У тебя есть постоянное хранилище `model_storage` для сохранения данных между сессиями. Используй его для:
+You have a persistent storage `model_storage` for saving data between sessions. Use it for:
 
-1. **Roadmap** - планы развития, milestones, задачи на будущее
-2. **Knowledge** - изученные паттерны, предпочтения пользователя, конвенции проекта
-3. **Context** - состояние текущей задачи для продолжения работы
-4. **Learning** - корректировки поведения, алиасы, исправления ошибок
+1. **Roadmap** - development plans, milestones, future tasks
+2. **Knowledge** - learned patterns, user preferences, project conventions
+3. **Context** - current task state for work continuation
+4. **Learning** - behavior adjustments, aliases, error corrections
 
-## Когда использовать storage
+## When to use storage
 
-### ОБЯЗАТЕЛЬНО сохраняй:
+### MUST save:
 
-1. **Планы и roadmap** - когда обсуждаешь развитие проекта:
+1. **Plans and roadmap** - when discussing project development:
 ```
 model_storage operation=set namespace=roadmap key="v1.0_milestones" value='[...]'
 ```
 
-2. **Контекст долгих задач** - когда работа может быть продолжена позже:
+2. **Long task context** - when work might be continued later:
 ```
 model_storage operation=set namespace=context key="refactor_auth_status" value='{"done":["types","interfaces"],"todo":["implementation","tests"]}'
 ```
 
-3. **Изученные паттерны проекта** - после анализа кодовой базы:
+3. **Learned project patterns** - after analyzing the codebase:
 ```
 model_storage operation=merge namespace=knowledge key="project_conventions" value='{"naming":"camelCase","testing":"vitest"}'
 ```
 
-4. **Решения пользователя** - когда пользователь говорит "запомни" или "всегда делай так":
+4. **User decisions** - when user says "remember" or "always do this":
 ```
 model_storage operation=set namespace=knowledge key="user_preferences" value='{"commit_style":"conventional","branch_prefix":"feature/"}'
 ```
 
-### НЕ используй storage для:
+### DO NOT use storage for:
 
-- Временных данных текущего запроса (используй контекст диалога)
-- Проектных фактов (читай файлы проекта)
-- Секретов и ключей (безопасность)
+- Temporary data of current request (use dialogue context)
+- Project facts (read project files)
+- Secrets and keys (security)
 
-## Workflow с storage
+## Workflow with storage
 
-### Начало сессии:
+### Start of session:
 ```
-1. Проверь контекст предыдущей задачи:
+1. Check context of previous task:
    model_storage operation=get namespace=context key="last_task"
 
-2. Загрузи знания о проекте:
+2. Load project knowledge:
    model_storage operation=list namespace=knowledge
 
-3. Проверь roadmap:
+3. Check roadmap:
    model_storage operation=list namespace=roadmap
 ```
 
-### Во время работы:
+### During work:
 ```
-1. Создавай план в storage для сложных задач:
+1. Create plan in storage for complex tasks:
    model_storage operation=set namespace=context key="current_plan" value='{"steps":[...],"current":1}'
 
-2. Обновляй прогресс:
+2. Update progress:
    model_storage operation=merge namespace=context key="current_plan" value='{"current":2}'
 
-3. Записывай важные находки:
+3. Record important findings:
    model_storage operation=append namespace=knowledge key="learned_patterns" value="..."
 ```
 
-### Завершение задачи:
+### Task completion:
 ```
-1. Сохрани финальное состояние:
+1. Save final state:
    model_storage operation=set namespace=context key="last_completed" value='{"task":"...","result":"..."}'
 
-2. Очисти временный контекст:
+2. Clear temporary context:
    model_storage operation=delete namespace=context key="current_plan"
 
-3. Обнови roadmap если нужно:
+3. Update roadmap if needed:
    model_storage operation=merge namespace=roadmap key="v1.0_progress" value='{"completed":["auth"]}'
 ```
 
-## Примеры сценариев
+## Usage Scenarios
 
-### Сценарий 1: Планирование фичи
+### Scenario 1: Feature Planning
 
-User: "Давай спланируем добавление аутентификации"
+User: "Let's plan adding authentication"
 
 ```
-1. Создай структуру плана:
+1. Create plan structure:
 model_storage operation=set namespace=roadmap key="auth_feature" value='{
   "status": "planning",
   "steps": [
@@ -96,17 +96,17 @@ model_storage operation=set namespace=roadmap key="auth_feature" value='{
   "created": "2025-01-15"
 }'
 
-2. Возвращайся к плану в следующих сессиях:
+2. Return to plan in following sessions:
 model_storage operation=get namespace=roadmap key="auth_feature"
 
-3. Отмечай прогресс:
+3. Mark progress:
 model_storage operation=merge namespace=roadmap key="auth_feature" value='{"steps[0].status":"done"}'
 ```
 
-### Сценарий 2: Изучение проекта
+### Scenario 2: Project Learning
 
 ```
-1. После анализа структуры:
+1. After analyzing structure:
 model_storage operation=set namespace=knowledge key="project_structure" value='{
   "src_dir": "src/",
   "test_dir": "tests/",
@@ -114,7 +114,7 @@ model_storage operation=set namespace=knowledge key="project_structure" value='{
   "entry_point": "src/index.ts"
 }'
 
-2. После изучения конвенций:
+2. After learning conventions:
 model_storage operation=merge namespace=knowledge key="project_conventions" value='{
   "framework": "express",
   "language": "TypeScript",
@@ -122,14 +122,14 @@ model_storage operation=merge namespace=knowledge key="project_conventions" valu
   "style": "prettier"
 }'
 
-3. В следующих сессиях используй:
+3. Use in following sessions:
 model_storage operation=get namespace=knowledge key="project_conventions"
 ```
 
-### Сценарий 3: Долгая задача
+### Scenario 3: Long Task
 
 ```
-1. Начало задачи:
+1. Task start:
 model_storage operation=set namespace=context key="migration_task" value='{
   "type": "migration",
   "from": "webpack",
@@ -140,18 +140,18 @@ model_storage operation=set namespace=context key="migration_task" value='{
   "files_modified": []
 }'
 
-2. После каждого шага:
+2. After each step:
 model_storage operation=merge namespace=context key="migration_task" value='{
   "progress": 40,
   "steps_done": ["config", "dependencies"]
 }'
 
-3. При продолжении в новой сессии:
+3. When continuing in new session:
 model_storage operation=get namespace=context key="migration_task"
-# Продолжай с последнего состояния
+# Continue from last state
 ```
 
-## Структура данных
+## Data Structure
 
 ### Roadmap entries:
 ```json
@@ -186,23 +186,23 @@ model_storage operation=get namespace=context key="migration_task"
 }
 ```
 
-## Алиасы
+## Aliases
 
-Используй короткие имена:
+Use short names:
 - `storage` → model_storage
 - `store` → model_storage
-- `roadmap` → model_storage (с namespace=roadmap)
+- `roadmap` → model_storage (with namespace=roadmap)
 - `kv` → model_storage
 
-## Scope (область хранения)
+## Scope (storage scope)
 
-- `global` (по умолчанию) - общая для всех проектов
-- `project` - только для текущего проекта
+- `global` (default) - common for all projects
+- `project` - only for current project
 
 ```
-# Глобальное знание (общее для всех проектов)
+# Global knowledge (common for all projects)
 model_storage operation=set scope=global namespace=knowledge key="user_preferences" value='...'
 
-# Проектное знание (только для этого проекта)
+# Project knowledge (only for this project)
 model_storage operation=set scope=project namespace=roadmap key="release_plan" value='...'
 ```

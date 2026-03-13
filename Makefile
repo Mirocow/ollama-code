@@ -11,6 +11,7 @@ help:
 	@echo "  make build-all        - Build all packages and sandbox"
 	@echo "  make test             - Run the test suite"
 	@echo "  make lint             - Lint the code"
+	@echo "  make lint-fix         - Lint and auto-fix code issues"
 	@echo "  make format           - Format the code"
 	@echo "  make preflight        - Run formatting, linting, and tests"
 	@echo "  make clean            - Remove generated files"
@@ -49,6 +50,9 @@ test:
 
 lint:
 	npx pnpm run lint
+
+lint-fix:
+	npx pnpm run lint:fix
 
 format:
 	npx pnpm run format

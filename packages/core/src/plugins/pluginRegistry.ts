@@ -432,7 +432,7 @@ export class PluginRegistry {
       './builtin/git-tools/index.js',
       './builtin/lsp-tools/index.js',
       './builtin/mcp-tools/index.js',
-      './builtin/utility-tools/index.js',
+      './builtin/code-analysis-tools/index.js',
     ];
 
     debugLogger.debug(

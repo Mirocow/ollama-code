@@ -1,13 +1,13 @@
 /**
  * @license
- * Copyright 2025 Qwen Team
+ * Copyright 2025 Ollama Team
  * SPDX-License-Identifier: Apache-2.0
  *
  * Shared timeline styles - base classes only
  * Individual component styles are in their respective CSS files:
  * - LayoutComponents.css (tool calls)
  * - AssistantMessage.css (assistant messages)
- * 
+ *
  * Timeline connectors are inferred from DOM order; data-first/data-last can override
  */
 
@@ -46,7 +46,9 @@
   top: var(--timeline-center-offset, 13px);
 }
 
-.qwen-message.message-item:not(.user-message-container):has(+ .user-message-container)::after,
+.qwen-message.message-item:not(.user-message-container):has(
+    + .user-message-container
+  )::after,
 .qwen-message.message-item:not(.user-message-container):has(
     + :not(.qwen-message.message-item)
   )::after,
