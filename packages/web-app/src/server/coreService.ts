@@ -25,7 +25,8 @@ import type {
   SubagentManager,
 
   // Tools
-  ToolRegistry} from '@ollama-code/ollama-code-core';
+  ToolRegistry,
+} from '@ollama-code/ollama-code-core';
 import {
   Storage,
   makeFakeConfig,
@@ -136,9 +137,14 @@ export class CoreService {
       this.config = makeFakeConfig({
         model: 'llama3.2',
         cwd: this.options.workspaceDir,
+        targetDir: this.options.workspaceDir,
       });
 
-      // Get managers from config
+      // CRITICAL: Initialize the config to set up toolRegistry, skillManager, subagentManager
+      // Without this, getToolRegistry() returns undefined and tools don't work
+      await this.config.initialize();
+
+      // Get managers from config (now properly initialized)
       this.skillManager = this.config.getSkillManager();
       this.subagentManager = this.config.getSubagentManager();
       this.toolRegistry = this.config.getToolRegistry();
@@ -228,9 +234,7 @@ export class CoreService {
   /**
    * Create a new subagent
    */
-  async createAgent(
-    config: Partial<SubagentConfig>,
-  ): Promise<void> {
+  async createAgent(config: Partial<SubagentConfig>): Promise<void> {
     this.ensureInitialized();
 
     const fullConfig: SubagentConfig = {

@@ -58,7 +58,8 @@ const MCPPanel = dynamic(
 );
 
 const MemoryPanel = dynamic(
-  () => import('@/components/memory/MemoryPanel').then((mod) => mod.MemoryPanel),
+  () =>
+    import('@/components/memory/MemoryPanel').then((mod) => mod.MemoryPanel),
   { ssr: false, loading: () => <LoadingPlaceholder /> },
 );
 
@@ -105,6 +106,7 @@ export default function Home() {
   const [isSending, setIsSending] = useState(false);
   const [ollamaConnected, setOllamaConnected] = useState<boolean | null>(null); // null = checking, true = connected, false = disconnected
   const [ollamaUrl, setOllamaUrl] = useState<string>('');
+  const [useTools, setUseTools] = useState(true); // Enable tools by default
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -118,6 +120,7 @@ export default function Home() {
     addMessage,
     startStreaming,
     appendStreamContent,
+    setActiveToolCalls,
     finishStreaming,
     cancelStreaming,
     setSelectedModel,
@@ -228,8 +231,14 @@ export default function Home() {
     const abortController = new AbortController();
     startStreaming(abortController);
 
+    // Clear previous tool calls
+    setActiveToolCalls([]);
+
+    // Choose endpoint based on tool usage
+    const endpoint = useTools ? '/api/chat/tools' : '/api/chat';
+
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -255,6 +264,15 @@ export default function Home() {
 
       const decoder = new TextDecoder();
 
+      // Tool call tracking for tools endpoint
+      interface ToolCall {
+        id: string;
+        name: string;
+        arguments: Record<string, unknown>;
+        result?: unknown;
+      }
+      const currentToolCalls: ToolCall[] = [];
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -265,7 +283,52 @@ export default function Home() {
         for (const line of lines) {
           try {
             const parsed = JSON.parse(line);
-            if (parsed.message?.content) {
+
+            // Handle tools endpoint format (events)
+            if (parsed.type) {
+              switch (parsed.type) {
+                case 'content':
+                  appendStreamContent(parsed.content);
+                  break;
+                case 'tool_calls_start':
+                  for (let i = 0; i < parsed.count; i++) {
+                    currentToolCalls.push({
+                      id: `tc-${Date.now()}-${i}`,
+                      name: '',
+                      arguments: {},
+                      result: undefined,
+                    });
+                  }
+                  setActiveToolCalls(currentToolCalls);
+                  break;
+                case 'tool_call': {
+                  const pendingCall = currentToolCalls.find(
+                    (tc) => tc.name === '' && tc.result === undefined,
+                  );
+                  if (pendingCall) {
+                    pendingCall.name = parsed.name;
+                    pendingCall.arguments = parsed.args;
+                    setActiveToolCalls([...currentToolCalls]);
+                  }
+                  break;
+                }
+                case 'tool_result': {
+                  const runningCall = currentToolCalls.find(
+                    (tc) => tc.name === parsed.name && tc.result === undefined,
+                  );
+                  if (runningCall) {
+                    runningCall.result = parsed.result;
+                    setActiveToolCalls([...currentToolCalls]);
+                  }
+                  break;
+                }
+                case 'done':
+                case 'error':
+                  // Handled after loop
+                  break;
+              }
+            } else if (parsed.message?.content) {
+              // Handle plain Ollama format
               appendStreamContent(parsed.message.content);
             }
           } catch {
@@ -291,9 +354,11 @@ export default function Home() {
     activeSessionId,
     activeSession,
     selectedModel,
+    useTools,
     addMessage,
     startStreaming,
     appendStreamContent,
+    setActiveToolCalls,
     finishStreaming,
   ]);
 
@@ -414,6 +479,20 @@ export default function Home() {
             </span>
           </div>
 
+          {/* Tools toggle */}
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useTools}
+              onChange={(e) => setUseTools(e.target.checked)}
+              className="w-3.5 h-3.5"
+            />
+            <span
+              className={`text-xs ${useTools ? 'text-purple-500' : 'text-muted-foreground'}`}
+            >
+              🔧
+            </span>
+          </label>
           <select
             value={selectedModel}
             onChange={(e) => handleModelChange(e.target.value)}
