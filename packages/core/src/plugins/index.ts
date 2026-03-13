@@ -277,3 +277,7 @@ export { TaskTool } from './builtin/agent-tools/task/index.js';
 export type { TaskParams } from './builtin/agent-tools/task/index.js';
 export { SkillTool } from './builtin/agent-tools/skill/index.js';
 export type { SkillParams } from './builtin/agent-tools/skill/index.js';
+
+// Shell tools - export ShellTool and ShellToolInvocation
+export { ShellTool, ShellToolInvocation } from './builtin/shell-tools/index.js';
+export type { ShellToolParams } from './builtin/shell-tools/shell.js';
