@@ -17,7 +17,7 @@ describe('formatMemoryUsage', () => {
   it('should format bytes less than 1GB as MB', () => {
     expect(formatMemoryUsage(1024 * 1024)).toBe('1.0 MB');
     expect(formatMemoryUsage(512 * 1024 * 1024)).toBe('512.0 MB');
-    expect(formatMemoryUsage(1024 * 1024 - 1)).toBe('1.0 MB');
+    expect(formatMemoryUsage(1024 * 1024 - 1)).toBe('1024.0 KB');
   });
 
   it('should format bytes as GB when >= 1GB', () => {

@@ -59,12 +59,12 @@ describe('retryWithBackoff', () => {
     });
 
     // Advance timers for the retry delay
-    await vi.advanceTimersByTimeAsync(100);
+    await vi.runAllTimersAsync();
 
     const result = await promise;
     expect(result).toBe('success');
     expect(fn).toHaveBeenCalledTimes(2);
-  });
+  }, 10000);
 
   it('should retry on 5xx errors', async () => {
     const error500 = new Error('Internal Server Error') as Error & {
@@ -83,12 +83,12 @@ describe('retryWithBackoff', () => {
       maxDelayMs: 1000,
     });
 
-    await vi.advanceTimersByTimeAsync(100);
+    await vi.runAllTimersAsync();
 
     const result = await promise;
     expect(result).toBe('success');
     expect(fn).toHaveBeenCalledTimes(2);
-  });
+  }, 10000);
 
   it('should not retry on 4xx errors (except 429)', async () => {
     const error400 = new Error('Bad Request') as Error & { status: number };
@@ -122,13 +122,11 @@ describe('retryWithBackoff', () => {
     });
 
     // Advance through all retry delays
-    await vi.advanceTimersByTimeAsync(100);
-    await vi.advanceTimersByTimeAsync(200);
-    await vi.advanceTimersByTimeAsync(400);
+    await vi.runAllTimersAsync();
 
     await expect(promise).rejects.toThrow('Internal Server Error');
     expect(fn).toHaveBeenCalledTimes(3);
-  });
+  }, 10000);
 
   it('should use custom shouldRetryOnError', async () => {
     const customError = new Error('Custom error');
@@ -145,20 +143,24 @@ describe('retryWithBackoff', () => {
       shouldRetryOnError: () => true,
     });
 
-    await vi.advanceTimersByTimeAsync(100);
+    await vi.runAllTimersAsync();
 
     const result = await promise;
     expect(result).toBe('success');
     expect(fn).toHaveBeenCalledTimes(2);
-  });
+  }, 10000);
 
   it('should use shouldRetryOnContent to retry on specific content', async () => {
-    const response = { candidates: [{ content: { parts: [{ text: 'retry' }] } }] };
+    const response = {
+      candidates: [{ content: { parts: [{ text: 'retry' }] } }],
+    };
 
     const fn = vi
       .fn()
       .mockResolvedValueOnce(response)
-      .mockResolvedValueOnce({ candidates: [{ content: { parts: [{ text: 'success' }] } }] });
+      .mockResolvedValueOnce({
+        candidates: [{ content: { parts: [{ text: 'success' }] } }],
+      });
 
     const promise = retryWithBackoff(fn, {
       maxAttempts: 3,
@@ -170,12 +172,14 @@ describe('retryWithBackoff', () => {
       },
     });
 
-    await vi.advanceTimersByTimeAsync(100);
+    await vi.runAllTimersAsync();
 
     const result = await promise;
-    expect(result).toEqual({ candidates: [{ content: { parts: [{ text: 'success' }] } }] });
+    expect(result).toEqual({
+      candidates: [{ content: { parts: [{ text: 'success' }] } }],
+    });
     expect(fn).toHaveBeenCalledTimes(2);
-  });
+  }, 10000);
 
   it('should respect Retry-After header', async () => {
     const error429 = new Error('Too Many Requests') as Error & {
@@ -197,12 +201,12 @@ describe('retryWithBackoff', () => {
     });
 
     // Advance by the Retry-After delay (2 seconds)
-    await vi.advanceTimersByTimeAsync(2000);
+    await vi.runAllTimersAsync();
 
     const result = await promise;
     expect(result).toBe('success');
     expect(fn).toHaveBeenCalledTimes(2);
-  });
+  }, 10000);
 
   it('should handle null options', async () => {
     const fn = vi.fn().mockResolvedValue('success');

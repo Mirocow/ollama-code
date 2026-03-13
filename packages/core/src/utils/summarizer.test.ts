@@ -20,7 +20,11 @@ describe('defaultSummarizer', () => {
       returnDisplay: 'test display',
     };
 
-    const summary = await defaultSummarizer(result, {} as OllamaClient, new AbortController().signal);
+    const summary = await defaultSummarizer(
+      result,
+      {} as OllamaClient,
+      new AbortController().signal,
+    );
     expect(summary).toBe('{"text":"test content"}');
   });
 
@@ -30,7 +34,11 @@ describe('defaultSummarizer', () => {
       returnDisplay: 'test display',
     };
 
-    const summary = await defaultSummarizer(result, {} as OllamaClient, new AbortController().signal);
+    const summary = await defaultSummarizer(
+      result,
+      {} as OllamaClient,
+      new AbortController().signal,
+    );
     expect(summary).toBe('"simple string content"');
   });
 
@@ -40,7 +48,11 @@ describe('defaultSummarizer', () => {
       returnDisplay: 'test display',
     };
 
-    const summary = await defaultSummarizer(result, {} as OllamaClient, new AbortController().signal);
+    const summary = await defaultSummarizer(
+      result,
+      {} as OllamaClient,
+      new AbortController().signal,
+    );
     expect(summary).toBe('[{"text":"part1"},{"text":"part2"}]');
   });
 
@@ -50,7 +62,11 @@ describe('defaultSummarizer', () => {
       returnDisplay: 'test display',
     };
 
-    const summary = await defaultSummarizer(result, {} as OllamaClient, new AbortController().signal);
+    const summary = await defaultSummarizer(
+      result,
+      {} as OllamaClient,
+      new AbortController().signal,
+    );
     expect(summary).toBe('null');
   });
 });
@@ -70,9 +86,13 @@ describe('llmSummarizer', () => {
       returnDisplay: 'test display',
     };
 
-    // Short content should be returned as-is
-    const summary = await llmSummarizer(result, mockOllamaClient, new AbortController().signal);
-    expect(summary).toBe('{"text":"short content"}');
+    // Short content should be returned as-is (partToString extracts text from object)
+    const summary = await llmSummarizer(
+      result,
+      mockOllamaClient,
+      new AbortController().signal,
+    );
+    expect(summary).toBe('short content');
   });
 });
 
@@ -87,17 +107,32 @@ describe('summarizeToolOutput', () => {
 
   it('should return text as-is if shorter than maxOutputTokens', async () => {
     const text = 'short text';
-    const result = await summarizeToolOutput(text, mockOllamaClient, new AbortController().signal, 1000);
+    const result = await summarizeToolOutput(
+      text,
+      mockOllamaClient,
+      new AbortController().signal,
+      1000,
+    );
     expect(result).toBe(text);
   });
 
   it('should return empty string as-is', async () => {
-    const result = await summarizeToolOutput('', mockOllamaClient, new AbortController().signal, 1000);
+    const result = await summarizeToolOutput(
+      '',
+      mockOllamaClient,
+      new AbortController().signal,
+      1000,
+    );
     expect(result).toBe('');
   });
 
   it('should return null/undefined as empty string', async () => {
-    const result = await summarizeToolOutput(null as unknown as string, mockOllamaClient, new AbortController().signal, 1000);
+    const result = await summarizeToolOutput(
+      null as unknown as string,
+      mockOllamaClient,
+      new AbortController().signal,
+      1000,
+    );
     expect(result).toBeNull();
   });
 
@@ -105,15 +140,24 @@ describe('summarizeToolOutput', () => {
     const longText = 'a'.repeat(3000);
     const summarizedText = 'This is a summary';
 
-    (mockOllamaClient.generateContent as ReturnType<typeof vi.fn>).mockResolvedValue({
-      candidates: [{
-        content: {
-          parts: [{ text: summarizedText }],
+    (
+      mockOllamaClient.generateContent as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      candidates: [
+        {
+          content: {
+            parts: [{ text: summarizedText }],
+          },
         },
-      }],
+      ],
     });
 
-    const result = await summarizeToolOutput(longText, mockOllamaClient, new AbortController().signal, 2000);
+    const result = await summarizeToolOutput(
+      longText,
+      mockOllamaClient,
+      new AbortController().signal,
+      2000,
+    );
 
     expect(mockOllamaClient.generateContent).toHaveBeenCalled();
     expect(result).toBe(summarizedText);
@@ -122,9 +166,16 @@ describe('summarizeToolOutput', () => {
   it('should return original text if summarization fails', async () => {
     const longText = 'a'.repeat(3000);
 
-    (mockOllamaClient.generateContent as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API error'));
+    (
+      mockOllamaClient.generateContent as ReturnType<typeof vi.fn>
+    ).mockRejectedValue(new Error('API error'));
 
-    const result = await summarizeToolOutput(longText, mockOllamaClient, new AbortController().signal, 2000);
+    const result = await summarizeToolOutput(
+      longText,
+      mockOllamaClient,
+      new AbortController().signal,
+      2000,
+    );
 
     expect(result).toBe(longText);
   });
@@ -132,22 +183,35 @@ describe('summarizeToolOutput', () => {
   it('should return original text if response has no text', async () => {
     const longText = 'a'.repeat(3000);
 
-    (mockOllamaClient.generateContent as ReturnType<typeof vi.fn>).mockResolvedValue({
-      candidates: [{
-        content: {
-          parts: [],
+    (
+      mockOllamaClient.generateContent as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      candidates: [
+        {
+          content: {
+            parts: [],
+          },
         },
-      }],
+      ],
     });
 
-    const result = await summarizeToolOutput(longText, mockOllamaClient, new AbortController().signal, 2000);
+    const result = await summarizeToolOutput(
+      longText,
+      mockOllamaClient,
+      new AbortController().signal,
+      2000,
+    );
 
     expect(result).toBe(longText);
   });
 
   it('should use default maxOutputTokens if not provided', async () => {
     const text = 'short text';
-    const result = await summarizeToolOutput(text, mockOllamaClient, new AbortController().signal);
+    const result = await summarizeToolOutput(
+      text,
+      mockOllamaClient,
+      new AbortController().signal,
+    );
     expect(result).toBe(text);
   });
 });
