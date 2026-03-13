@@ -327,9 +327,13 @@ export interface ConfigParameters {
   // Web search providers
   webSearch?: {
     provider: Array<{
-      type: 'tavily' | 'google' | 'dashscope';
+      type: 'tavily' | 'google' | 'dashscope' | 'google-scraper';
       apiKey?: string;
       searchEngineId?: string;
+      maxResults?: number;
+      language?: string;
+      country?: string;
+      baseUrl?: string;
     }>;
     default: string;
   };
@@ -471,9 +475,13 @@ export class Config {
   private readonly importFormat: 'tree' | 'flat';
   private readonly webSearch?: {
     provider: Array<{
-      type: 'tavily' | 'google' | 'dashscope';
+      type: 'tavily' | 'google' | 'dashscope' | 'google-scraper';
       apiKey?: string;
       searchEngineId?: string;
+      maxResults?: number;
+      language?: string;
+      country?: string;
+      baseUrl?: string;
     }>;
     default: string;
   };

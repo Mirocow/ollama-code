@@ -1265,14 +1265,19 @@ const SETTINGS_SCHEMA = {
     default: undefined as
       | {
           provider: Array<{
-            type: 'tavily' | 'google' | 'dashscope';
+            type: 'tavily' | 'google' | 'dashscope' | 'google-scraper';
             apiKey?: string;
             searchEngineId?: string;
+            maxResults?: number;
+            language?: string;
+            country?: string;
+            baseUrl?: string;
           }>;
           default: string;
         }
       | undefined,
-    description: 'Configuration for web search providers.',
+    description:
+      'Configuration for web search providers. Use "google-scraper" for free search without API key.',
     showInDialog: false,
   },
 

@@ -30,6 +30,7 @@ export interface WebSearchConfig {
  * 1. settings.json (new format) - highest priority
  * 2. Command line args + environment variables
  * 3. Legacy tavilyApiKey (backward compatibility)
+ * 4. google-scraper as fallback (no API key required)
  *
  * @param argv - Command line arguments
  * @param settings - User settings from settings.json
@@ -73,14 +74,21 @@ export function buildWebSearchConfig(
     }
   }
 
-  // Step 2: If no providers available, return undefined
+  // Step 2: If no providers available, use google-scraper as fallback
+  // This provides free web search without API key
   if (providers.length === 0) {
-    return undefined;
+    providers.push({
+      type: 'google-scraper',
+    } as WebSearchProviderConfig);
   }
 
   // Step 3: Determine default provider
-  // Priority: user explicit config > CLI arg > first available provider (tavily > google)
-  const providerPriority: Array<'tavily' | 'google'> = ['tavily', 'google'];
+  // Priority: user explicit config > CLI arg > first available provider (tavily > google > google-scraper)
+  const providerPriority: Array<'tavily' | 'google' | 'google-scraper'> = [
+    'tavily',
+    'google',
+    'google-scraper',
+  ];
 
   // Determine default provider based on availability
   let defaultProvider = userDefault || argv.webSearchDefault;
@@ -94,7 +102,7 @@ export function buildWebSearchConfig(
     }
     // Fallback to first available provider if none found in priority list
     if (!defaultProvider) {
-      defaultProvider = providers[0]?.type || 'tavily';
+      defaultProvider = providers[0]?.type || 'google-scraper';
     }
   }
 
@@ -102,6 +110,6 @@ export function buildWebSearchConfig(
   // (either from user config, CLI arg, or fallback logic above)
   return {
     provider: providers,
-    default: defaultProvider || 'tavily',
+    default: defaultProvider || 'google-scraper',
   };
 }

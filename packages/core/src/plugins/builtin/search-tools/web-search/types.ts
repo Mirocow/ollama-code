@@ -147,10 +147,27 @@ export interface DashScopeProviderConfig {
 }
 
 /**
+ * Configuration for Google Scraper provider.
+ * Scrapes Google Search directly without API key.
+ */
+export interface GoogleScraperProviderConfig {
+  type: 'google-scraper';
+  /** Maximum number of results to return */
+  maxResults?: number;
+  /** Language for search (e.g., 'ru', 'en') */
+  language?: string;
+  /** Country for search (e.g., 'RU', 'US') */
+  country?: string;
+  /** Base URL for Google (default: 'https://www.google.com') */
+  baseUrl?: string;
+}
+
+/**
  * Discriminated union type for web search provider configurations.
  * This ensures type safety when working with different provider configs.
  */
 export type WebSearchProviderConfig =
   | TavilyProviderConfig
   | GoogleProviderConfig
-  | DashScopeProviderConfig;
+  | DashScopeProviderConfig
+  | GoogleScraperProviderConfig;

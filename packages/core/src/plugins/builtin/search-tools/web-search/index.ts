@@ -22,6 +22,7 @@ import { createDebugLogger } from '../../../../utils/debugLogger.js';
 import { buildContentWithSources } from './utils.js';
 import { TavilyProvider } from './providers/tavily-provider.js';
 import { GoogleProvider } from './providers/google-provider.js';
+import { GoogleScraperProvider } from './providers/google-scraper-provider.js';
 import type {
   WebSearchToolParams,
   WebSearchToolResult,
@@ -85,6 +86,8 @@ class WebSearchToolInvocation extends BaseToolInvocation<
         return new TavilyProvider(config);
       case 'google':
         return new GoogleProvider(config);
+      case 'google-scraper':
+        return new GoogleScraperProvider(config);
       default:
         throw new Error('Unknown provider type');
     }
