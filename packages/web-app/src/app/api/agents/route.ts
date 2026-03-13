@@ -5,9 +5,9 @@
  */
 
 /**
- * Extensions API Route
+ * Agents/Subagents API Route
  *
- * Manage extensions through Core ExtensionManager
+ * Manages subagents through Core SubagentManager
  */
 
 import type { NextRequest } from 'next/server';
@@ -24,95 +24,97 @@ async function ensureCoreService() {
 }
 
 /**
- * GET /api/extensions
+ * GET /api/agents
  *
- * List all extensions
+ * List all available subagents
  */
 export async function GET() {
   try {
     const service = await ensureCoreService();
-    const extensions = await service.listExtensions();
-    return NextResponse.json({ extensions });
+    const agents = await service.listAgents();
+    return NextResponse.json({ agents });
   } catch (error) {
-    console.error('Failed to list extensions:', error);
+    console.error('Failed to list agents:', error);
     return NextResponse.json(
-      { error: 'Failed to list extensions' },
+      { error: 'Failed to list agents' },
       { status: 500 },
     );
   }
 }
 
 /**
- * POST /api/extensions
+ * POST /api/agents
  *
- * Install a new extension
+ * Create a new subagent
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { source, type = 'local' } = body;
+    const { name, description, model, systemPrompt, tools } = body;
 
-    if (!source) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Extension source is required' },
+        { error: 'Name is required' },
         { status: 400 },
       );
     }
 
     const service = await ensureCoreService();
-    const extension = await service.installExtension(
-      source,
-      type as 'git' | 'local',
-    );
-    return NextResponse.json({ success: true, extension });
+    await service.createAgent({
+      name,
+      description,
+      systemPrompt,
+      tools,
+      modelConfig: model ? { model } : undefined,
+    });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to install extension:', error);
+    console.error('Failed to create agent:', error);
     return NextResponse.json(
-      { error: 'Failed to install extension' },
+      { error: 'Failed to create agent' },
       { status: 500 },
     );
   }
 }
 
 /**
- * PUT /api/extensions
+ * PUT /api/agents
  *
- * Enable/disable an extension
+ * Update an existing subagent
  */
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, enabled } = body;
+    const { name, ...config } = body;
 
     if (!name) {
       return NextResponse.json(
-        { error: 'Extension name is required' },
+        { error: 'Name is required' },
         { status: 400 },
       );
     }
 
     const service = await ensureCoreService();
-
-    if (enabled) {
-      await service.enableExtension(name);
-    } else {
-      await service.disableExtension(name);
-    }
+    await service.updateAgent(name, {
+      ...config,
+      modelConfig: config.model ? { model: config.model } : undefined,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to update extension:', error);
+    console.error('Failed to update agent:', error);
     return NextResponse.json(
-      { error: 'Failed to update extension' },
+      { error: 'Failed to update agent' },
       { status: 500 },
     );
   }
 }
 
 /**
- * DELETE /api/extensions
+ * DELETE /api/agents
  *
- * Uninstall an extension
+ * Delete a subagent
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -121,18 +123,18 @@ export async function DELETE(request: NextRequest) {
 
     if (!name) {
       return NextResponse.json(
-        { error: 'Extension name is required' },
+        { error: 'Agent name is required' },
         { status: 400 },
       );
     }
 
     const service = await ensureCoreService();
-    await service.uninstallExtension(name);
+    await service.deleteAgent(name);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to uninstall extension:', error);
+    console.error('Failed to delete agent:', error);
     return NextResponse.json(
-      { error: 'Failed to uninstall extension' },
+      { error: 'Failed to delete agent' },
       { status: 500 },
     );
   }

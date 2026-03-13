@@ -5,9 +5,9 @@
  */
 
 /**
- * Tools API Route
+ * Skills API Route
  *
- * Returns list of available tools from Core ToolRegistry
+ * Manages skills through Core SkillManager
  */
 
 import type { NextRequest } from 'next/server';
@@ -24,19 +24,19 @@ async function ensureCoreService() {
 }
 
 /**
- * GET /api/tools
+ * GET /api/skills
  *
- * Returns list of available tools from ToolRegistry
+ * List all available skills
  */
 export async function GET() {
   try {
     const service = await ensureCoreService();
-    const tools = await service.listTools();
-    return NextResponse.json({ tools });
+    const skills = await service.listSkills();
+    return NextResponse.json({ skills });
   } catch (error) {
-    console.error('Failed to list tools:', error);
+    console.error('Failed to list skills:', error);
     return NextResponse.json(
-      { error: 'Failed to list tools' },
+      { error: 'Failed to list skills' },
       { status: 500 },
     );
   }
