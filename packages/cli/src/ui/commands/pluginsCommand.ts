@@ -743,7 +743,18 @@ async function searchMarketplace(
       context.ui.addItem(
         {
           type: MessageType.INFO,
-          text: t('No plugins found. Try a different search term.'),
+          text: t(`No plugins found. Try a different search term.
+
+💡 Tip: Plugin packages on npm are named:
+   • ollama-code-plugin-<name>  (e.g., ollama-code-plugin-weather)
+   • @ollama-code/<name>        (e.g., @ollama-code/weather)
+
+To publish your plugin:
+   1. Name your package: ollama-code-plugin-<name>
+   2. Add keyword: "ollama-code-plugin"
+   3. Publish to npm: npm publish
+
+See examples/ folder for sample plugins.`),
         },
         Date.now(),
       );
