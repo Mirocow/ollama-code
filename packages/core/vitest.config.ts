@@ -31,10 +31,11 @@ export default defineConfig({
         ['json-summary', { outputFile: 'coverage-summary.json' }],
       ],
     },
+    pool: 'forks',
     poolOptions: {
-      threads: {
-        minThreads: 8,
-        maxThreads: 16,
+      forks: {
+        minForks: 1,
+        maxForks: 2,
       },
     },
   },

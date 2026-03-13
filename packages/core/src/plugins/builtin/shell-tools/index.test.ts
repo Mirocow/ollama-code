@@ -15,31 +15,31 @@ import {
 } from 'vitest';
 
 const mockShellExecutionService = vi.hoisted(() => vi.fn());
-vi.mock('../services/shellExecutionService.js', () => ({
+vi.mock('../../../services/shellExecutionService.js', () => ({
   ShellExecutionService: { execute: mockShellExecutionService },
 }));
 vi.mock('fs');
 vi.mock('os');
 vi.mock('crypto');
-vi.mock('../utils/summarizer.js');
+vi.mock('../../../utils/summarizer.js');
 
-import { isCommandAllowed } from '../utils/shell-utils.js';
+import { isCommandAllowed } from '../../../utils/shell-utils.js';
 import { ShellTool } from './index.js';
-import { type Config } from '../config/config.js';
+import { type Config } from '../../../config/config.js';
 import {
   type ShellExecutionResult,
   type ShellOutputEvent,
-} from '../services/shellExecutionService.js';
+} from '../../../services/shellExecutionService.js';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import { EOL } from 'node:os';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
-import * as summarizer from '../utils/summarizer.js';
+import * as summarizer from '../../../utils/summarizer.js';
 import { ToolErrorType } from '../../../../tools/tool-error.js';
 import { ToolConfirmationOutcome } from '../../../../tools/tools.js';
 import { OUTPUT_UPDATE_INTERVAL_MS } from './index.js';
-import { createMockWorkspaceContext } from '../test-utils/mockWorkspaceContext.js';
+import { createMockWorkspaceContext } from '../../../test-utils/mockWorkspaceContext.js';
 
 describe('ShellTool', () => {
   let shellTool: ShellTool;
@@ -60,7 +60,9 @@ describe('ShellTool', () => {
         .fn()
         .mockReturnValue(createMockWorkspaceContext('/test/dir')),
       storage: {
-        getUserSkillsDir: vi.fn().mockReturnValue('/test/dir/.ollama-code/skills'),
+        getUserSkillsDir: vi
+          .fn()
+          .mockReturnValue('/test/dir/.ollama-code/skills'),
       },
       getOllamaClient: vi.fn(),
       getGitCoAuthor: vi.fn().mockReturnValue({
@@ -965,7 +967,6 @@ describe('ShellTool', () => {
       expect(confirmation).not.toBe(false);
       expect(confirmation && confirmation.type).toBe('exec');
 
-       
       await (confirmation as any).onConfirm(
         ToolConfirmationOutcome.ProceedAlways,
       );

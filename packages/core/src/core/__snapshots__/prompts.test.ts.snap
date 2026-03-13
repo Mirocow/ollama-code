@@ -1389,7 +1389,7 @@ model: true
 
 <example>
 user: start the server implemented in server.js
-model: 
+model:
 <tool_call>
 {"name": "run_shell_command", "arguments": {"command": "node server.js &", "is_background": true}}
 </tool_call>
@@ -1890,7 +1890,7 @@ model: true
 
 <example>
 user: start the server implemented in server.js
-model: 
+model:
 <tool_call>
 {"name": "run_shell_command", "arguments": {"command": "node server.js &", "is_background": true}}
 </tool_call>

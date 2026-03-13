@@ -7,7 +7,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as os from 'os';
 import { SubagentManager } from './subagent-manager.js';
 import { type SubagentConfig, SubagentError } from './types.js';
 import type { ToolRegistry } from '../tools/tool-registry.js';
@@ -16,7 +15,54 @@ import { makeFakeConfig } from '../test-utils/config.js';
 
 // Mock file system operations
 vi.mock('fs/promises');
-vi.mock('os');
+
+// Mock the cache module to prevent singleton initialization issues
+vi.mock('../cache/index.js', () => ({
+  cacheManager: {
+    getResponseCache: vi.fn(),
+    getSemanticCache: vi.fn(),
+    clearAll: vi.fn(),
+  },
+  ResponseCache: vi.fn(),
+  SemanticCache: vi.fn(),
+}));
+
+// Mock the keyBindingsService to prevent singleton initialization issues
+vi.mock('../services/keyBindingsService.js', () => ({
+  KeyBindingsService: {
+    getInstance: vi.fn(() => ({
+      getKeyBindings: vi.fn(() => []),
+      dispose: vi.fn(),
+    })),
+  },
+}));
+
+// Mock the structured logger to prevent file system access
+vi.mock('../services/structuredLogger.js', () => ({
+  createLogger: vi.fn(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  })),
+  LoggerRegistry: {
+    get: vi.fn(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    })),
+  },
+}));
+
+// Mock the paths module to return test values
+vi.mock('../utils/paths.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../utils/paths.js')>();
+  return {
+    ...original,
+    getOllamaDir: vi.fn().mockReturnValue('/home/user/.ollama-code'),
+  };
+});
 
 // Mock yaml parser - use vi.hoisted for proper hoisting
 const mockParseYaml = vi.hoisted(() => vi.fn());
@@ -61,11 +107,9 @@ describe('SubagentManager', () => {
     vi.spyOn(mockConfig, 'getToolRegistry').mockReturnValue(mockToolRegistry);
     vi.spyOn(mockConfig, 'getProjectRoot').mockReturnValue('/test/project');
 
-    // Mock os.homedir
-    vi.mocked(os.homedir).mockReturnValue('/home/user');
-
     // Reset and setup mocks
     vi.clearAllMocks();
+
     mockValidateConfig.mockReturnValue({
       isValid: true,
       errors: [],
@@ -159,7 +203,7 @@ describe('SubagentManager', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   const validConfig: SubagentConfig = {
@@ -501,7 +545,6 @@ You are a helpful assistant.
 
   describe('loadSubagent', () => {
     it('should load subagent from project level first', async () => {
-       
       vi.mocked(fs.readdir).mockResolvedValue(['test-agent.md'] as any);
       vi.mocked(fs.readFile).mockResolvedValue(validMarkdown);
 
@@ -521,7 +564,7 @@ You are a helpful assistant.
     it('should fall back to user level if project level fails', async () => {
       vi.mocked(fs.readdir)
         .mockRejectedValueOnce(new Error('Project dir not found')) // project level fails
-         
+
         .mockResolvedValueOnce(['test-agent.md'] as any); // user level succeeds
       vi.mocked(fs.readFile).mockResolvedValue(validMarkdown);
 
@@ -551,7 +594,6 @@ You are a helpful assistant.
       vi.mocked(fs.readdir).mockResolvedValue([
         'wrong-filename.md',
         'another-file.md',
-         
       ] as any);
 
       // Mock readFile to return content with different name
@@ -601,9 +643,9 @@ You are another assistant.`;
     it('should search user level when filename mismatch at project level', async () => {
       // Mock project level to have no matching files
       vi.mocked(fs.readdir)
-         
+
         .mockResolvedValueOnce(['other-file.md'] as any) // project level
-         
+
         .mockResolvedValueOnce(['user-agent.md'] as any); // user level
 
       const projectMarkdown = `---
@@ -646,7 +688,6 @@ You are a helpful assistant.`;
     });
 
     it('should handle specific level search with filename mismatch', async () => {
-       
       vi.mocked(fs.readdir).mockResolvedValue(['misnamed-file.md'] as any);
 
       const levelMarkdown = `---
@@ -675,7 +716,6 @@ You are a helpful assistant.`;
 
   describe('updateSubagent', () => {
     beforeEach(() => {
-       
       vi.mocked(fs.readdir).mockResolvedValue(['test-agent.md'] as any);
       vi.mocked(fs.readFile).mockResolvedValue(validMarkdown);
       vi.mocked(fs.writeFile).mockResolvedValue(undefined);
@@ -720,7 +760,6 @@ You are a helpful assistant.`;
 
   describe('deleteSubagent', () => {
     it('should delete subagent from specified level', async () => {
-       
       vi.mocked(fs.readdir).mockResolvedValue(['test-agent.md'] as any);
       vi.mocked(fs.readFile).mockResolvedValue(validMarkdown);
       vi.mocked(fs.unlink).mockResolvedValue(undefined);
@@ -734,9 +773,9 @@ You are a helpful assistant.`;
 
     it('should delete from both levels if no level specified', async () => {
       vi.mocked(fs.readdir)
-         
+
         .mockResolvedValueOnce(['test-agent.md'] as any) // project level
-         
+
         .mockResolvedValueOnce(['test-agent.md'] as any); // user level
       vi.mocked(fs.readFile).mockResolvedValue(validMarkdown);
       vi.mocked(fs.unlink).mockResolvedValue(undefined);
@@ -767,7 +806,7 @@ You are a helpful assistant.`;
     it('should succeed if deleted from at least one level', async () => {
       vi.mocked(fs.readdir)
         .mockRejectedValueOnce(new Error('Project dir not found')) // project level fails
-         
+
         .mockResolvedValueOnce(['test-agent.md'] as any); // user level succeeds
       vi.mocked(fs.readFile).mockResolvedValue(validMarkdown);
       vi.mocked(fs.unlink).mockResolvedValue(undefined);
@@ -777,7 +816,7 @@ You are a helpful assistant.`;
 
     it('should delete subagent with mismatched filename', async () => {
       // Mock directory listing to return files with different names
-       
+
       vi.mocked(fs.readdir).mockResolvedValue(['wrong-name.md'] as any);
 
       const mismatchedMarkdown = `---
@@ -809,7 +848,6 @@ You are a helpful assistant.`;
         'file1.md',
         'file2.md',
         'target-file.md',
-         
       ] as any);
 
       const markdowns = [
@@ -865,9 +903,9 @@ Target content`,
     beforeEach(() => {
       // Mock directory listing
       vi.mocked(fs.readdir)
-         
+
         .mockResolvedValueOnce(['agent1.md', 'agent2.md', 'not-md.txt'] as any)
-         
+
         .mockResolvedValueOnce(['agent3.md', 'agent1.md'] as any); // user level
 
       // Mock file reading for valid agents
@@ -936,7 +974,7 @@ System prompt 3`);
 
     it('should handle empty directories', async () => {
       // Reset all mocks for this specific test
-       
+
       vi.mocked(fs.readdir).mockResolvedValue([] as any);
       vi.mocked(fs.readFile).mockRejectedValue(new Error('No files'));
 
@@ -962,7 +1000,6 @@ System prompt 3`);
 
   describe('findSubagentByName', () => {
     it('should find existing subagent', async () => {
-       
       vi.mocked(fs.readdir).mockResolvedValue(['test-agent.md'] as any);
       vi.mocked(fs.readFile).mockResolvedValue(validMarkdown);
 
@@ -992,7 +1029,6 @@ System prompt 3`);
     });
 
     it('should return false for existing names', async () => {
-       
       vi.mocked(fs.readdir).mockResolvedValue(['test-agent.md'] as any);
       vi.mocked(fs.readFile).mockResolvedValue(validMarkdown);
 
@@ -1006,7 +1042,7 @@ System prompt 3`);
       // First call: loads subagent (found at user level), checks if it's at project level (different) -> available
       vi.mocked(fs.readdir)
         .mockRejectedValueOnce(new Error('Project dir not found')) // project level
-         
+
         .mockResolvedValueOnce(['test-agent.md'] as any); // user level - found here
       vi.mocked(fs.readFile).mockResolvedValue(validMarkdown);
 
@@ -1017,7 +1053,7 @@ System prompt 3`);
       expect(availableAtProject).toBe(true); // Available at project because found at user level
 
       // Second call: loads subagent (found at user level), checks if it's at user level (same) -> not available
-       
+
       vi.mocked(fs.readdir).mockResolvedValue(['test-agent.md'] as any); // user level - found here
       vi.mocked(fs.readFile).mockResolvedValue(validMarkdown);
 

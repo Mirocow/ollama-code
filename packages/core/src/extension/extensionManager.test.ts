@@ -12,7 +12,7 @@ import {
   INSTALL_METADATA_FILENAME,
   EXTENSIONS_CONFIG_FILENAME,
 } from './variables.js';
-import { OLLAMA_DIR } from '../config/storage.js';
+import { getOllamaDir } from '../config/storage.js';
 import {
   ExtensionManager,
   SettingScope,
@@ -81,7 +81,7 @@ vi.mock('../index.js', async (importOriginal) => {
   };
 });
 
-const EXTENSIONS_DIRECTORY_NAME = path.join(OLLAMA_DIR, 'extensions');
+const EXTENSIONS_DIRECTORY_NAME = path.join('.ollama-code', 'extensions');
 
 function createExtension({
   extensionsDir = 'extensions-dir',
@@ -634,7 +634,7 @@ describe('extension tests', () => {
         };
 
         const manager = createExtensionManager();
-         
+
         (manager as any).config = mockConfig;
 
         await manager.refreshTools();
@@ -672,7 +672,7 @@ describe('extension tests', () => {
         };
 
         const manager = createExtensionManager();
-         
+
         (manager as any).config = mockConfig;
 
         await manager.refreshMemory();

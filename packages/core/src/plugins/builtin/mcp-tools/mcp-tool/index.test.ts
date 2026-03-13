@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- 
 import type { Mocked } from 'vitest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { safeJsonStringify } from '../utils/safeJsonStringify.js';
+import { safeJsonStringify } from '../../../../utils/safeJsonStringify.js';
 import {
   DiscoveredMCPTool,
   generateValidName,
@@ -15,7 +14,7 @@ import {
 } from './index.js';
 import type { ToolResult } from '../../../../tools/tools.js';
 import { ToolConfirmationOutcome } from '../../../../tools/tools.js';
-import type { CallableTool, Part } from '../types/content.js';
+import type { CallableTool, Part } from '../../../../types/content.js';
 import { ToolErrorType } from '../../../../tools/tool-error.js';
 
 // Mock CallableTool for MCP tool testing

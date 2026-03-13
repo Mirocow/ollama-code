@@ -16,25 +16,28 @@ import {
 import type { WriteFileToolParams } from './index.js';
 import { getCorrectedFileContent, WriteFileTool } from './index.js';
 import { ToolErrorType } from '../../../../tools/tool-error.js';
-import type { FileDiff, ToolEditConfirmationDetails } from '../../../../tools/tools.js';
+import type {
+  FileDiff,
+  ToolEditConfirmationDetails,
+} from '../../../../tools/tools.js';
 import { ToolConfirmationOutcome } from '../../../../tools/tools.js';
-import type { Config } from '../config/config.js';
-import { ApprovalMode } from '../config/config.js';
+import type { Config } from '../../../../config/config.js';
+import { ApprovalMode } from '../../../../config/config.js';
 import type { ToolRegistry } from '../../../../tools/tool-registry.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
-import { OllamaClient } from '../core/ollamaClient.js';
-import { createMockWorkspaceContext } from '../test-utils/mockWorkspaceContext.js';
-import { StandardFileSystemService } from '../services/fileSystemService.js';
-import type { DiffUpdateResult } from '../ide/ide-client.js';
-import { IdeClient } from '../ide/ide-client.js';
+import { OllamaClient } from '../../../../core/ollamaClient.js';
+import { createMockWorkspaceContext } from '../../../../test-utils/mockWorkspaceContext.js';
+import { StandardFileSystemService } from '../../../../services/fileSystemService.js';
+import type { DiffUpdateResult } from '../../../../ide/ide-client.js';
+import { IdeClient } from '../../../../ide/ide-client.js';
 
 const rootDir = path.resolve(os.tmpdir(), 'ollama-code-test-root');
 
 // --- MOCKS ---
-vi.mock('../core/client.js');
-vi.mock('../ide/ide-client.js', () => ({
+vi.mock('../../../../core/ollamaClient.js');
+vi.mock('../../../../ide/ide-client.js', () => ({
   IdeClient: {
     getInstance: vi.fn(),
   },
@@ -85,7 +88,7 @@ const mockConfigInternal = {
 };
 const mockConfig = mockConfigInternal as unknown as Config;
 
-vi.mock('../telemetry/loggers.js', () => ({
+vi.mock('../../../../telemetry/loggers.js', () => ({
   logFileOperation: vi.fn(),
 }));
 
