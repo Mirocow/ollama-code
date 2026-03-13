@@ -57,6 +57,11 @@ const MCPPanel = dynamic(
   { ssr: false, loading: () => <LoadingPlaceholder /> },
 );
 
+const MemoryPanel = dynamic(
+  () => import('@/components/memory/MemoryPanel').then((mod) => mod.MemoryPanel),
+  { ssr: false, loading: () => <LoadingPlaceholder /> },
+);
+
 import { useWebSessionStore } from '@/stores/webSessionStore';
 import type { ChatMessageData } from '@ollama-code/webui';
 
@@ -68,6 +73,7 @@ const tabs = [
   { id: 'files', label: 'Files', icon: '📁' },
   { id: 'terminal', label: 'Terminal', icon: '⌨️' },
   { id: 'tools', label: 'Tools', icon: '🔧' },
+  { id: 'memory', label: 'Memory', icon: '🧠' },
   { id: 'extensions', label: 'Extensions', icon: '🧩' },
   { id: 'mcp', label: 'MCP', icon: '🔌' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
@@ -583,6 +589,7 @@ export default function Home() {
         {activeTab === 'files' && <FileExplorer />}
         {activeTab === 'terminal' && <TerminalEmulator />}
         {activeTab === 'tools' && <ToolsPanel />}
+        {activeTab === 'memory' && <MemoryPanel />}
         {activeTab === 'extensions' && <ExtensionsPanel />}
         {activeTab === 'mcp' && <MCPPanel />}
         {activeTab === 'settings' && <SettingsPanel />}
