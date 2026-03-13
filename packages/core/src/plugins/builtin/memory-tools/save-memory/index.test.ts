@@ -31,7 +31,7 @@ vi.mock(import('node:fs/promises'), async (importOriginal) => {
 
 vi.mock('os');
 
-const MEMORY_SECTION_HEADER = '## Qwen Added Memories';
+const MEMORY_SECTION_HEADER = '## Ollama Added Memories';
 
 // Define a type for our fsAdapter to ensure consistency
 interface FsAdapter {
@@ -99,7 +99,11 @@ describe('MemoryTool', () => {
     let testFilePath: string;
 
     beforeEach(() => {
-      testFilePath = path.join(os.homedir(), '.ollama-code', DEFAULT_CONTEXT_FILENAME);
+      testFilePath = path.join(
+        os.homedir(),
+        '.ollama-code',
+        DEFAULT_CONTEXT_FILENAME,
+      );
     });
 
     it('should create section and save a fact if file does not exist', async () => {
@@ -325,7 +329,7 @@ describe('MemoryTool', () => {
 
       // Clear allowlist before each test to ensure clean state
       const invocation = memoryTool.build({ fact: 'test', scope: 'global' });
-       
+
       (invocation.constructor as any).allowlist.clear();
     });
 
@@ -338,17 +342,19 @@ describe('MemoryTool', () => {
       expect(result).not.toBe(false);
 
       if (result && result.type === 'edit') {
-        const expectedPath = path.join('~', '.ollama-code', 'OLLAMA_CODE.md');
+        const expectedPath = path.join('~', '.ollama-code', 'OLLAMA.md');
         expect(result.title).toBe(
           `Confirm Memory Save: ${expectedPath} (global)`,
         );
-        expect(result.fileName).toContain(path.join('mock', 'home', '.ollama-code'));
-        expect(result.fileName).toContain('OLLAMA_CODE.md');
-        expect(result.fileDiff).toContain('Index: OLLAMA_CODE.md');
-        expect(result.fileDiff).toContain('+## Qwen Added Memories');
+        expect(result.fileName).toContain(
+          path.join('mock', 'home', '.ollama-code'),
+        );
+        expect(result.fileName).toContain('OLLAMA.md');
+        expect(result.fileDiff).toContain('Index: OLLAMA.md');
+        expect(result.fileDiff).toContain('+## Ollama Added Memories');
         expect(result.fileDiff).toContain('+- Test fact');
         expect(result.originalContent).toBe('');
-        expect(result.newContent).toContain('## Qwen Added Memories');
+        expect(result.newContent).toContain('## Ollama Added Memories');
         expect(result.newContent).toContain('- Test fact');
       }
     });
@@ -362,16 +368,16 @@ describe('MemoryTool', () => {
       expect(result).not.toBe(false);
 
       if (result && result.type === 'edit') {
-        const expectedPath = path.join(process.cwd(), 'OLLAMA_CODE.md');
+        const expectedPath = path.join(process.cwd(), 'OLLAMA.md');
         expect(result.title).toBe(
           `Confirm Memory Save: ${expectedPath} (project)`,
         );
         expect(result.fileName).toBe(expectedPath);
-        expect(result.fileDiff).toContain('Index: OLLAMA_CODE.md');
-        expect(result.fileDiff).toContain('+## Qwen Added Memories');
+        expect(result.fileDiff).toContain('Index: OLLAMA.md');
+        expect(result.fileDiff).toContain('+## Ollama Added Memories');
         expect(result.fileDiff).toContain('+- Test fact');
         expect(result.originalContent).toBe('');
-        expect(result.newContent).toContain('## Qwen Added Memories');
+        expect(result.newContent).toContain('## Ollama Added Memories');
         expect(result.newContent).toContain('- Test fact');
       }
     });
@@ -386,7 +392,7 @@ describe('MemoryTool', () => {
 
       const invocation = memoryTool.build(params);
       // Add the memory file to the allowlist with the scope-specific key format
-       
+
       (invocation.constructor as any).allowlist.add(`${memoryFilePath}_global`);
 
       const result = await invocation.shouldConfirmExecute(mockAbortSignal);
@@ -403,7 +409,7 @@ describe('MemoryTool', () => {
 
       const invocation = memoryTool.build(params);
       // Add the memory file to the allowlist with the scope-specific key format
-       
+
       (invocation.constructor as any).allowlist.add(
         `${memoryFilePath}_project`,
       );
@@ -433,7 +439,6 @@ describe('MemoryTool', () => {
 
         // Check that the memory file was added to the allowlist with the scope-specific key format
         expect(
-           
           (invocation.constructor as any).allowlist.has(
             `${memoryFilePath}_global`,
           ),
@@ -460,7 +465,6 @@ describe('MemoryTool', () => {
 
         // Check that the memory file was added to the allowlist with the scope-specific key format
         expect(
-           
           (invocation.constructor as any).allowlist.has(
             `${memoryFilePath}_project`,
           ),
@@ -485,7 +489,7 @@ describe('MemoryTool', () => {
       if (result && result.type === 'edit') {
         // Simulate the onConfirm callback with different outcomes
         await result.onConfirm(ToolConfirmationOutcome.ProceedOnce);
-         
+
         const allowlist = (invocation.constructor as any).allowlist;
         expect(allowlist.has(`${memoryFilePath}_global`)).toBe(false);
 
@@ -509,11 +513,11 @@ describe('MemoryTool', () => {
       expect(result).not.toBe(false);
 
       if (result && result.type === 'edit') {
-        const expectedPath = path.join('~', '.ollama-code', 'OLLAMA_CODE.md');
+        const expectedPath = path.join('~', '.ollama-code', 'OLLAMA.md');
         expect(result.title).toBe(
           `Confirm Memory Save: ${expectedPath} (global)`,
         );
-        expect(result.fileDiff).toContain('Index: OLLAMA_CODE.md');
+        expect(result.fileDiff).toContain('Index: OLLAMA.md');
         expect(result.fileDiff).toContain('+- New fact');
         expect(result.originalContent).toBe(existingContent);
         expect(result.newContent).toContain('- Old fact');
@@ -533,10 +537,10 @@ describe('MemoryTool', () => {
         expect(result.title).toContain('Choose Memory Location');
         expect(result.title).toContain('GLOBAL');
         expect(result.title).toContain('PROJECT');
-        expect(result.fileName).toBe('OLLAMA_CODE.md');
+        expect(result.fileName).toBe('OLLAMA.md');
         expect(result.fileDiff).toContain('Test fact');
-        expect(result.fileDiff).toContain('--- OLLAMA_CODE.md');
-        expect(result.fileDiff).toContain('+++ OLLAMA_CODE.md');
+        expect(result.fileDiff).toContain('--- OLLAMA.md');
+        expect(result.fileDiff).toContain('+++ OLLAMA.md');
         expect(result.fileDiff).toContain('+- Test fact');
         expect(result.originalContent).toContain('scope: global');
         expect(result.originalContent).toContain('INSTRUCTIONS:');
@@ -552,8 +556,8 @@ describe('MemoryTool', () => {
       expect(result).not.toBe(false);
 
       if (result && result.type === 'edit') {
-        const globalPath = path.join('~', '.ollama-code', 'OLLAMA_CODE.md');
-        const projectPath = path.join(process.cwd(), 'OLLAMA_CODE.md');
+        const globalPath = path.join('~', '.ollama-code', 'OLLAMA.md');
+        const projectPath = path.join(process.cwd(), 'OLLAMA.md');
 
         expect(result.fileDiff).toContain(`Global: ${globalPath}`);
         expect(result.fileDiff).toContain(`Project: ${projectPath}`);
@@ -575,7 +579,7 @@ describe('MemoryTool', () => {
       const invocation = memoryTool.build(params);
       const description = invocation.getDescription();
 
-      const expectedPath = path.join('~', '.ollama-code', 'OLLAMA_CODE.md');
+      const expectedPath = path.join('~', '.ollama-code', 'OLLAMA.md');
       expect(description).toBe(`${expectedPath} (global)`);
     });
 
@@ -584,7 +588,7 @@ describe('MemoryTool', () => {
       const invocation = memoryTool.build(params);
       const description = invocation.getDescription();
 
-      const expectedPath = path.join(process.cwd(), 'OLLAMA_CODE.md');
+      const expectedPath = path.join(process.cwd(), 'OLLAMA.md');
       expect(description).toBe(`${expectedPath} (project)`);
     });
 
@@ -593,8 +597,8 @@ describe('MemoryTool', () => {
       const invocation = memoryTool.build(params);
       const description = invocation.getDescription();
 
-      const globalPath = path.join('~', '.ollama-code', 'OLLAMA_CODE.md');
-      const projectPath = path.join(process.cwd(), 'OLLAMA_CODE.md');
+      const globalPath = path.join('~', '.ollama-code', 'OLLAMA.md');
+      const projectPath = path.join(process.cwd(), 'OLLAMA.md');
       expect(description).toBe(
         `CHOOSE: ${globalPath} (global) OR ${projectPath} (project)`,
       );

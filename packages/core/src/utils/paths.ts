@@ -294,6 +294,8 @@ export function resolvePath(
   // Handle {{root}} template variable - replace with baseDir
   if (relativePath.includes('{{root}}')) {
     relativePath = relativePath.replace(/\{\{root\}\}/g, baseDir);
+    // Normalize to remove any double slashes that may result from replacement
+    relativePath = path.normalize(relativePath);
   }
 
   if (relativePath === '~') {

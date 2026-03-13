@@ -20,26 +20,34 @@ vi.mock('./memoryImportProcessor.js', () => ({
   processImports: vi.fn(async (content: string) => ({ content })),
 }));
 
+// Create a variable to hold the mock home directory
+let mockHomeDir: string;
+
+// Mock os module before import
+vi.mock('node:os', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    homedir: () => mockHomeDir,
+  };
+});
+
 describe('memoryDiscovery', () => {
   let tempDir: string;
-  let homeDir: string;
   let mockFileService: FileDiscoveryService;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'memory-discovery-test-'));
-    homeDir = await fs.mkdtemp(path.join(os.tmpdir(), 'home-'));
-
+    tempDir = await fs.mkdtemp(path.join('/tmp', 'memory-discovery-test-'));
+    mockHomeDir = await fs.mkdtemp(path.join('/tmp', 'home-'));
     mockFileService = {
       getFiles: vi.fn().mockResolvedValue([]),
       discoverFiles: vi.fn().mockResolvedValue([]),
     } as unknown as FileDiscoveryService;
-
-    vi.spyOn(os, 'homedir').mockReturnValue(homeDir);
   });
 
   afterEach(async () => {
     await fs.rm(tempDir, { recursive: true, force: true });
-    await fs.rm(homeDir, { recursive: true, force: true });
+    await fs.rm(mockHomeDir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
 
@@ -59,7 +67,10 @@ describe('memoryDiscovery', () => {
 
     it('should load OLLAMA.md from project directory', async () => {
       const ollamaMdPath = path.join(tempDir, 'OLLAMA.md');
-      await fs.writeFile(ollamaMdPath, '# Project Memory\n\nSome instructions.');
+      await fs.writeFile(
+        ollamaMdPath,
+        '# Project Memory\n\nSome instructions.',
+      );
 
       const result = await loadServerHierarchicalMemory(
         tempDir,
@@ -74,10 +85,13 @@ describe('memoryDiscovery', () => {
     });
 
     it('should load global OLLAMA.md from home directory', async () => {
-      const globalOllamaDir = path.join(homeDir, '.ollama-code');
+      const globalOllamaDir = path.join(mockHomeDir, '.ollama-code');
       await fs.mkdir(globalOllamaDir, { recursive: true });
       const globalOllamaMdPath = path.join(globalOllamaDir, 'OLLAMA.md');
-      await fs.writeFile(globalOllamaMdPath, '# Global Memory\n\nGlobal instructions.');
+      await fs.writeFile(
+        globalOllamaMdPath,
+        '# Global Memory\n\nGlobal instructions.',
+      );
 
       const result = await loadServerHierarchicalMemory(
         tempDir,
@@ -92,17 +106,14 @@ describe('memoryDiscovery', () => {
     });
 
     it('should load both global and project OLLAMA.md files', async () => {
-      const globalOllamaDir = path.join(homeDir, '.ollama-code');
+      const globalOllamaDir = path.join(mockHomeDir, '.ollama-code');
       await fs.mkdir(globalOllamaDir, { recursive: true });
       await fs.writeFile(
         path.join(globalOllamaDir, 'OLLAMA.md'),
         '# Global Memory',
       );
 
-      await fs.writeFile(
-        path.join(tempDir, 'OLLAMA.md'),
-        '# Project Memory',
-      );
+      await fs.writeFile(path.join(tempDir, 'OLLAMA.md'), '# Project Memory');
 
       const result = await loadServerHierarchicalMemory(
         tempDir,
@@ -118,10 +129,7 @@ describe('memoryDiscovery', () => {
     });
 
     it('should include context markers in output', async () => {
-      await fs.writeFile(
-        path.join(tempDir, 'OLLAMA.md'),
-        '# Project Memory',
-      );
+      await fs.writeFile(path.join(tempDir, 'OLLAMA.md'), '# Project Memory');
 
       const result = await loadServerHierarchicalMemory(
         tempDir,
@@ -136,7 +144,9 @@ describe('memoryDiscovery', () => {
     });
 
     it('should respect includeDirectoriesToReadOllama', async () => {
-      const additionalDir = await fs.mkdtemp(path.join(os.tmpdir(), 'additional-'));
+      const additionalDir = await fs.mkdtemp(
+        path.join(os.tmpdir(), 'additional-'),
+      );
       await fs.writeFile(
         path.join(additionalDir, 'OLLAMA.md'),
         '# Additional Memory',
@@ -171,10 +181,7 @@ describe('memoryDiscovery', () => {
     });
 
     it('should handle folderTrust false', async () => {
-      await fs.writeFile(
-        path.join(tempDir, 'OLLAMA.md'),
-        '# Project Memory',
-      );
+      await fs.writeFile(path.join(tempDir, 'OLLAMA.md'), '# Project Memory');
 
       const result = await loadServerHierarchicalMemory(
         tempDir,
@@ -216,10 +223,7 @@ describe('memoryDiscovery', () => {
       const subDir = path.join(tempDir, 'src', 'components');
       await fs.mkdir(subDir, { recursive: true });
 
-      await fs.writeFile(
-        path.join(tempDir, 'OLLAMA.md'),
-        '# Root Memory',
-      );
+      await fs.writeFile(path.join(tempDir, 'OLLAMA.md'), '# Root Memory');
 
       // Create git directory to establish project root
       await fs.mkdir(path.join(tempDir, '.git'));

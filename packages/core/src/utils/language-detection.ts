@@ -81,6 +81,7 @@ const extensionToLanguageMap: { [key: string]: string } = {
   '.erb': 'ERB',
   '.jsp': 'JSP',
   '.dockerignore': 'Docker',
+  dockerfile: 'Dockerfile',
   '.gitignore': 'Git',
   '.npmignore': 'npm',
   '.editorconfig': 'EditorConfig',
@@ -99,5 +100,5 @@ export function getLanguageFromFilePath(filePath: string): string | undefined {
     return extensionToLanguageMap[extension];
   }
   const filename = path.basename(filePath).toLowerCase();
-  return extensionToLanguageMap[`.${filename}`];
+  return extensionToLanguageMap[filename];
 }
