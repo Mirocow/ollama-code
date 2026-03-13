@@ -276,10 +276,33 @@ export class WebSearchTool extends BaseDeclarativeTool<
   static readonly Name: string = 'web_search';
 
   constructor(private readonly config: Config) {
+    // Build dynamic description with available providers
+    const webSearchConfig = config.getWebSearchConfig();
+    const availableProviders = webSearchConfig?.provider?.map((p) => p.type) || [];
+    const defaultProvider = webSearchConfig?.default || availableProviders[0] || 'none';
+    
+    const providerList = availableProviders.length > 0 
+      ? availableProviders.map(p => `"${p}"`).join(', ')
+      : 'none (configure in settings)';
+    
+    const description = `Allows searching the web and using results to inform responses. Provides up-to-date information for current events and recent data beyond the training data cutoff. Returns search results formatted with concise answers and source links. Use this tool when accessing information that may be outdated or beyond the knowledge cutoff.
+
+Available providers: ${providerList}
+Default provider: "${defaultProvider}"
+
+Providers:
+- "tavily": Tavily API (requires API key) - best quality, includes AI answer
+- "google": Google Custom Search API (requires API key + search engine ID)
+- "google-scraper": Direct Google search (no API key required) - free, may have rate limits`;
+
+    const providerDescription = availableProviders.length > 0
+      ? `Optional provider to use for the search. Available providers: ${providerList}. Default: "${defaultProvider}". Only specify this parameter if you need a specific provider. Otherwise omit it and the system will use "${defaultProvider}" automatically.`
+      : 'Optional provider to use. No providers configured - add webSearch settings to enable web search.';
+
     super(
       WebSearchTool.Name,
       'WebSearch',
-      'Allows searching the web and using results to inform responses. Provides up-to-date information for current events and recent data beyond the training data cutoff. Returns search results formatted with concise answers and source links. Use this tool when accessing information that may be outdated or beyond the knowledge cutoff.',
+      description,
       Kind.Search,
       {
         type: 'object',
@@ -290,8 +313,7 @@ export class WebSearchTool extends BaseDeclarativeTool<
           },
           provider: {
             type: 'string',
-            description:
-              'Optional provider to use for the search (e.g., "tavily", "google", "dashscope"). IMPORTANT: Only specify this parameter if you explicitly know which provider to use. Otherwise, omit this parameter entirely and let the system automatically select the appropriate provider based on availability and configuration. The system will choose the best available provider automatically.',
+            description: providerDescription,
           },
         },
         required: ['query'],
