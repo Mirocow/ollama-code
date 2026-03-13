@@ -221,3 +221,59 @@ export {
   isEnabled,
   mcpServerRequiresOAuth,
 } from './builtin/mcp-tools/index.js';
+
+// Web Search tools - export types for configuration
+export type {
+  WebSearchProviderConfig,
+  WebSearchConfig,
+  WebSearchToolParams,
+  WebSearchToolResult,
+  WebSearchResultItem,
+  WebSearchProvider,
+  TavilyProviderConfig,
+  GoogleProviderConfig,
+  DashScopeProviderConfig,
+} from './builtin/search-tools/web-search/types.js';
+
+// Productivity tools - export tool classes
+export { TodoWriteTool } from './builtin/productivity-tools/todo-write/index.js';
+export type {
+  TodoItem,
+  TodoWriteParams,
+} from './builtin/productivity-tools/todo-write/index.js';
+export { ExitPlanModeTool } from './builtin/productivity-tools/exit-plan-mode/index.js';
+export type { ExitPlanModeParams } from './builtin/productivity-tools/exit-plan-mode/index.js';
+
+// Storage tools - export types and utilities
+export {
+  StorageNamespaces,
+  type StorageNamespace,
+  type StorageEntry,
+  type StorageMetadata,
+  type ProjectInfo,
+  getProjectInfo,
+  setSessionId,
+  getSessionId,
+  clearSessionStorage,
+  cleanupExpiredEntries,
+  startTTLBackgroundCleanup,
+  stopTTLBackgroundCleanup,
+  isTTLBackgroundCleanupRunning,
+} from './builtin/storage-tools/index.js';
+
+// Memory tools - export memory management utilities
+export {
+  MemoryTool,
+  setOllamaMdFilename,
+  getCurrentOllamaMdFilename,
+  getAllOllamaMdFilenames,
+  OLLAMA_CONFIG_DIR,
+  OLLAMA_CODE_CONFIG_DIR,
+  DEFAULT_CONTEXT_FILENAME,
+} from './builtin/memory-tools/index.js';
+
+// Agent tools - export TaskTool and SkillTool
+export { TaskTool } from './builtin/agent-tools/task/index.js';
+export type { TaskParams } from './builtin/agent-tools/task/index.js';
+export { SkillTool } from './builtin/agent-tools/skill/index.js';
+export type { SkillParams } from './builtin/agent-tools/skill/index.js';

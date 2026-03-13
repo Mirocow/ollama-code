@@ -98,8 +98,10 @@ export function buildWebSearchConfig(
     }
   }
 
+  // At this point, defaultProvider is guaranteed to be a string
+  // (either from user config, CLI arg, or fallback logic above)
   return {
     provider: providers,
-    default: defaultProvider,
+    default: defaultProvider || 'tavily',
   };
 }

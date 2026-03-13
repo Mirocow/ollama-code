@@ -151,15 +151,17 @@ export const storageCommand: SlashCommand = {
               listAvailableNamespaces('project'),
             ]);
 
-            const predefined = Object.values(StorageNamespaces);
-            const allGlobal = [...new Set([...predefined, ...globalNs])];
+            const predefined = Object.values(StorageNamespaces) as string[];
+            const allGlobal: string[] = [
+              ...new Set([...predefined, ...globalNs]),
+            ];
 
             let message = t('Storage Namespaces:\n\n');
 
             if (allGlobal.length > 0) {
               message += t('📁 Global (~/.ollama-code/storage/):\n');
               for (const ns of allGlobal.sort()) {
-                const exists = globalNs.includes(ns);
+                const exists = globalNs.includes(ns as string);
                 const marker = exists ? '✓' : '○';
                 const predefinedMarker = predefined.includes(
                   ns as StorageNamespace,
@@ -215,14 +217,16 @@ export const storageCommand: SlashCommand = {
           kind: CommandKind.BUILT_IN,
           action: async (context) => {
             const namespaces = await listAvailableNamespaces('global');
-            const predefined = Object.values(StorageNamespaces);
-            const allNs = [...new Set([...predefined, ...namespaces])];
+            const predefined = Object.values(StorageNamespaces) as string[];
+            const allNs: string[] = [
+              ...new Set([...predefined, ...namespaces]),
+            ];
 
             let message = t('Global namespaces ({{count}}):\n', {
               count: String(allNs.length),
             });
             for (const ns of allNs.sort()) {
-              const exists = namespaces.includes(ns);
+              const exists = namespaces.includes(ns as string);
               const marker = exists ? '✓' : '○';
               const predefinedMarker = predefined.includes(
                 ns as StorageNamespace,
