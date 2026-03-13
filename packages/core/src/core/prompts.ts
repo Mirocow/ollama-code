@@ -10,7 +10,7 @@ import os from 'node:os';
 
 import process from 'node:process';
 import { isGitRepository } from '../utils/gitUtils.js';
-import { OLLAMA_CODE_CONFIG_DIR } from '../plugins/builtin/memory-tools/save-memory/index.js';
+import { OLLAMA_CODE_CONFIG_DIR } from '../plugins/index.js';
 import type { GenerateContentConfig } from '../types/content.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 import { getToolLearningManager } from '../learning/tool-learning.js';
@@ -649,7 +649,7 @@ Generate a <state_snapshot> with this structure:
 
 RULES:
 - Omit conversational filler completely
-- Use bullet points, not paragraphs  
+- Use bullet points, not paragraphs
 - Keep each section under 50 words
 - If nothing to report in a section, write "N/A"
 `.trim();
@@ -874,7 +874,7 @@ model: true
 
 <example>
 user: start the server implemented in server.js
-model: 
+model:
 <tool_call>
 {"name": "run_shell_command", "arguments": {"command": "node server.js &", "is_background": true}}
 </tool_call>

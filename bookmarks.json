@@ -1,34 +1,43 @@
 {
   "version": "3.0.2",
-  "lastModified": "2026-03-08T12:46:53.529Z",
-  "folders": [],
-  "bookmarks": [
+  "lastModified": "2026-03-13T15:07:02.329Z",
+  "folders": [
     {
-      "id": "mmhph4g6m139zrb0ob",
-      "name": "const handleThoughtEvent = useCallback(",
-      "file": "packages/cli/src/ui/hooks/useOllamaStream.ts",
-      "line": 694,
-      "character": 27,
-      "lineContent": "const handleThoughtEvent = useCallback(",
+      "id": "mmp14bjssyawf2gykr",
+      "name": "Плагины",
       "sortOrder": 0
     },
     {
-      "id": "mmhphwa60lfnwzljpxy",
-      "name": "thoughtBuffer = handleThoughtEvent(",
-      "file": "packages/cli/src/ui/hooks/useOllamaStream.ts",
-      "line": 1213,
-      "character": 20,
-      "lineContent": "thoughtBuffer = handleThoughtEvent(",
+      "id": "mmp14j23bnf4s6ik6q",
+      "name": "Инструменты",
       "sortOrder": 1
     },
     {
-      "id": "mmhqy89l64quheme6gs",
-      "name": "const textValue = ensureString(eventValue);",
-      "file": "packages/cli/src/ui/hooks/useOllamaStream.ts",
-      "line": 600,
-      "character": 49,
-      "lineContent": "const textValue = ensureString(eventValue);",
+      "id": "mmp14nbveubejd68obu",
+      "name": "Промпты",
       "sortOrder": 2
+    },
+    {
+      "id": "mmp14sjzn9umhrnq1u",
+      "name": "Расширения",
+      "sortOrder": 3
+    },
+    {
+      "id": "mmp14x1korligxo29gf",
+      "name": "Команды",
+      "sortOrder": 4
+    }
+  ],
+  "bookmarks": [
+    {
+      "id": "mmp15m70e4tmlivcqf",
+      "name": "* **Plugin Discovery Sources:**",
+      "file": "packages/core/src/plugins/index.ts",
+      "line": 30,
+      "character": 18,
+      "lineContent": "* **Plugin Discovery Sources:**",
+      "folderId": "mmp14bjssyawf2gykr",
+      "sortOrder": 5
     }
   ]
 }

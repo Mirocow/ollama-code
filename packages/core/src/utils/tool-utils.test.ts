@@ -7,7 +7,7 @@
 import { expect, describe, it, beforeEach, afterEach } from 'vitest';
 import { doesToolInvocationMatch, isToolEnabled } from './tool-utils.js';
 import type { AnyToolInvocation, Config } from '../index.js';
-import { ReadFileTool } from '../plugins/builtin/file-tools/read-file/index.js';
+import { ReadFileTool } from '../plugins/index.js';
 import { DynamicAliases } from '../tools/tool-names.js';
 
 // Tool names - these are the canonical tool names used by the system

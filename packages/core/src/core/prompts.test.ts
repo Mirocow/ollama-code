@@ -16,7 +16,7 @@ import { isGitRepository } from '../utils/gitUtils.js';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { OLLAMA_CODE_CONFIG_DIR } from '../plugins/builtin/memory-tools/save-memory/index.js';
+import { OLLAMA_CODE_CONFIG_DIR } from '../plugins/index.js';
 
 // Mock tool names if they are dynamically generated or complex
 vi.mock('../tools/ls', () => ({ LSTool: { Name: 'list_directory' } }));

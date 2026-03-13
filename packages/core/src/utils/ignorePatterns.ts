@@ -6,7 +6,7 @@
 
 import path from 'node:path';
 import type { Config } from '../config/config.js';
-import { getCurrentOllamaMdFilename } from '../plugins/builtin/memory-tools/save-memory/index.js';
+import { getCurrentOllamaMdFilename } from '../plugins/index.js';
 
 /**
  * Common ignore patterns used across multiple tools for basic exclusions.

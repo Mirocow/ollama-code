@@ -79,12 +79,7 @@ __pycache__/
 
 integration-tests/concurrent-runner/output/
 integration-tests/concurrent-runner/task-*
-
 integration-tests/terminal-capture/scenarios/screenshots/
-
-# storybook
-*storybook.log
-storybook-static
 
 
 # Ollama Code local storage

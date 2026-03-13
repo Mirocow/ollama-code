@@ -46,7 +46,7 @@ import {
 import { GitService } from '../services/gitService.js';
 
 // Tools - loaded through plugin system
-import { setOllamaMdFilename } from '../plugins/builtin/memory-tools/save-memory/index.js';
+import { setOllamaMdFilename } from '../plugins/index.js';
 import { canUseRipgrep } from '../utils/ripgrepUtils.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import type { LspClient } from '../lsp/types.js';

@@ -29,7 +29,7 @@ import {
   InputFormat,
   BUILTIN_TOOL_NAMES,
 } from '../index.js';
-import { SkillTool } from '../plugins/builtin/agent-tools/index.js';
+import { SkillTool } from '../plugins/index.js';
 import { uiTelemetryService } from '../services/uiTelemetryService.js';
 import type {
   FunctionResponse,
@@ -51,10 +51,7 @@ import * as path from 'node:path';
 import { doesToolInvocationMatch } from '../utils/tool-utils.js';
 import levenshtein from 'fast-levenshtein';
 import { getPlanModeSystemReminder } from './prompts.js';
-import {
-  ShellToolInvocation,
-  ShellTool,
-} from '../plugins/builtin/shell-tools/index.js';
+import { ShellToolInvocation, ShellTool } from '../plugins/index.js';
 
 export type ValidatingToolCall = {
   status: 'validating';
