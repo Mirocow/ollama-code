@@ -285,15 +285,29 @@ export class WebSearchTool extends BaseDeclarativeTool<
       ? availableProviders.map(p => `"${p}"`).join(', ')
       : 'none (configure in settings)';
     
-    const description = `Allows searching the web and using results to inform responses. Provides up-to-date information for current events and recent data beyond the training data cutoff. Returns search results formatted with concise answers and source links. Use this tool when accessing information that may be outdated or beyond the knowledge cutoff.
+    const description = `Search the web to FIND information when you DON'T know the specific URL.
+
+**WHEN TO USE web_search:**
+- User asks about current events, news, weather, prices, rates
+- You need up-to-date information beyond your knowledge cutoff
+- You don't have a specific URL and need to DISCOVER relevant sources
+- User asks "what is", "how much", "current", "latest", "today"
+
+**WHEN TO USE web_fetch INSTEAD:**
+- You ALREADY HAVE a specific URL and want to read its content
+- User provides a link and asks to extract information from it
+
+**DO NOT use web_search if:**
+- You already know the exact URL → use web_fetch instead
+- The information is in your training data and hasn't changed
+
+Returns search results with titles, snippets, and URLs. Use web_fetch to get full content from any result URL.
 
 Available providers: ${providerList}
-Default provider: "${defaultProvider}"
-
-Providers:
-- "tavily": Tavily API (requires API key) - best quality, includes AI answer
-- "google": Google Custom Search API (requires API key + search engine ID)
-- "google-scraper": Direct Google search (no API key required) - free, may have rate limits`;
+Default: "${defaultProvider}"
+- "tavily": Tavily API (requires key) - best quality with AI answer
+- "google": Google Custom Search API (requires key + engine ID)
+- "google-scraper": Direct search (no key) - free, may have rate limits`;
 
     const providerDescription = availableProviders.length > 0
       ? `Optional provider to use for the search. Available providers: ${providerList}. Default: "${defaultProvider}". Only specify this parameter if you need a specific provider. Otherwise omit it and the system will use "${defaultProvider}" automatically.`
@@ -309,7 +323,7 @@ Providers:
         properties: {
           query: {
             type: 'string',
-            description: 'The search query to find information on the web.',
+            description: 'Search query. Examples: "current bitcoin price", "weather London today", "latest news about AI", "how to fix npm error". Be specific for better results.',
           },
           provider: {
             type: 'string',

@@ -12,7 +12,6 @@
 
 import type { PluginDefinition } from '../../types.js';
 import { GrepTool } from './grep/index.js';
-import { RipGrepTool } from './ripGrep/index.js';
 import { WebFetchTool } from './web-fetch/index.js';
 import * as webSearch from './web-search/index.js';
 
@@ -42,7 +41,6 @@ const searchToolsPlugin: PluginDefinition = {
   // Unified tools array - factory functions for tools that need Config
   tools: [
     GrepTool, // Doesn't need Config
-    RipGrepTool, // Doesn't need Config
     WebFetchTool, // Doesn't need Config
     (config: unknown) =>
       new webSearch.WebSearchTool(
@@ -189,22 +187,22 @@ const searchToolsPlugin: PluginDefinition = {
     {
       priority: 1,
       content:
-        'WEB_SEARCH IS MANDATORY! When user asks about: prices, rates, costs, news, weather, sports, current events, stock markets, exchange rates, product prices, or says "what is", "how much", "current", "latest", "today" → YOU MUST call web_search IMMEDIATELY. NEVER say "I don\'t know" or "I don\'t have access to real-time data". ALWAYS search first!',
+        'WEB_SEARCH vs WEB_FETCH: web_search = find information (no URL known). web_fetch = read specific URL. User asks "what is X price?" → web_search. User gives link "read this page" → web_fetch. User asks about news/weather → web_search. You found URL via web_search and need full content → web_fetch that URL.',
     },
     {
       priority: 2,
       content:
-        'web_search examples: "egg prices" → web_search. "dollar exchange rate" → web_search. "what is the weather" → web_search. "how much does X cost" → web_search. "who won the game" → web_search. "latest news" → web_search. User asking about ANY current data → web_search FIRST, then answer with results!',
+        'WEB_SEARCH IS MANDATORY for current data! When user asks about: prices, rates, costs, news, weather, sports, current events, stock markets, exchange rates, or says "what is", "how much", "current", "latest", "today" → YOU MUST call web_search IMMEDIATELY. NEVER say "I don\'t know" or "I don\'t have access to real-time data".',
     },
     {
       priority: 3,
       content:
-        'Search tools: grep_search searches FILE CONTENTS for text patterns - use when you need to find code/text INSIDE files. Use list_directory or glob to LIST or FIND files by name - NOT grep_search. grep_search with pattern ".*" is WRONG for listing files.',
+        'web_search examples: "egg prices" → web_search. "dollar exchange rate" → web_search. "what is the weather" → web_search. "who won the game" → web_search. "latest news" → web_search. User asking about ANY current data → web_search FIRST, then answer with results!',
     },
     {
       priority: 4,
       content:
-        'GREP_SEARCH: Searches inside files for regex patterns. Use for: finding function definitions, searching for imports, locating error messages, finding TODOs. Does NOT list files - use list_directory or glob for that. Supports -i for case-insensitive, -n for line numbers.',
+        'grep_search searches FILE CONTENTS - use when finding code/text INSIDE files. Use list_directory or glob to FIND files by name - NOT grep_search. grep_search pattern "*.ts" is WRONG (that is a filename pattern, use glob instead).',
     },
   ],
 
@@ -233,6 +231,5 @@ export default searchToolsPlugin;
 
 // Also export tool classes for direct imports
 export { GrepTool } from './grep/index.js';
-export { RipGrepTool } from './ripGrep/index.js';
 export { WebFetchTool } from './web-fetch/index.js';
 export * from './web-search/index.js';

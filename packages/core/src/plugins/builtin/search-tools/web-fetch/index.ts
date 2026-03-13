@@ -206,16 +206,16 @@ export class WebFetchTool extends BaseDeclarativeTool<
     super(
       WebFetchTool.Name,
       'WebFetch',
-      'Fetches content from a specified URL and processes it using an AI model\n- Takes a URL and a prompt as input\n- Fetches the URL content, converts HTML to markdown\n- Processes the content with the prompt using a small, fast model\n- Returns the model\'s response about the content\n- Use this tool when you need to retrieve and analyze web content\n\nUsage notes:\n  - IMPORTANT: If an MCP-provided web fetch tool is available, prefer using that tool instead of this one, as it may have fewer restrictions. All MCP-provided tools start with "mcp__".\n  - The URL must be a fully-formed valid URL\n  - The prompt should describe what information you want to extract from the page\n  - This tool is read-only and does not modify any files\n  - Results may be summarized if the content is very large\n  - Supports both public and private/localhost URLs using direct fetch',
+      'Fetch content from a SPECIFIC URL when you ALREADY KNOW the address.\n\n**WHEN TO USE web_fetch:**\n- You have a specific URL and want to read its content\n- User provides a link and asks to extract/analyze information from it\n- You found a URL via web_search and want the full content\n- You need to read documentation, articles, or any web page\n\n**WHEN TO USE web_search INSTEAD:**\n- You DON\'T have a URL and need to FIND relevant pages\n- User asks a question that requires searching the web\n\n**DO NOT use web_fetch if:**\n- You don\'t have a URL → use web_search first\n\nTakes a URL and a prompt as input. Fetches content, converts HTML to text, processes with the prompt.\n\nUsage notes:\n  - URL must start with http:// or https://\n  - Prompt describes what information to extract from the page\n  - Supports both public and private/localhost URLs\n  - Results may be summarized for large content',
       Kind.Fetch,
       {
         properties: {
           url: {
-            description: 'The URL to fetch content from',
+            description: 'The exact URL to fetch. Must start with http:// or https://. Example: "https://docs.python.org/3/library/os.html"',
             type: 'string',
           },
           prompt: {
-            description: 'The prompt to run on the fetched content',
+            description: 'What to extract/analyze from the page. Examples: "Summarize the main points", "Extract all function names", "Find the installation instructions", "What is the price?"',
             type: 'string',
           },
         },
