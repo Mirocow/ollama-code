@@ -193,12 +193,12 @@ const searchToolsPlugin: PluginDefinition = {
     {
       priority: 3,
       content:
-        'WEB_SEARCH: Use AUTOMATICALLY when user asks about: current events, stock prices, exchange rates, weather, latest news, recent releases, current version of software, or any information that may have changed since your knowledge cutoff. DO NOT say "I don\'t have real-time data" - USE web_search instead!',
+        'WEB_SEARCH: Your primary tool for finding information! Use AUTOMATICALLY when: (1) user asks about facts, prices, rates, news, weather, (2) you don\'t know the answer, (3) information may have changed, (4) user asks "what is", "how to", "where", "when", "who", (5) you need current documentation. NEVER say "I don\'t know" or "I don\'t have real-time data" - USE web_search instead!',
     },
     {
       priority: 4,
       content:
-        'WEB_SEARCH examples: "What is the current dollar rate?" → use web_search. "What\'s the latest version of React?" → use web_search. "Who won the game yesterday?" → use web_search. "What\'s the weather in Moscow?" → use web_search. Always use web_search for time-sensitive or current information.',
+        'WEB_SEARCH examples: "курс юаня" → web_search. "what is React 19" → web_search. "how to fix npm error" → web_search. "who won World Cup" → web_search. "кто президент Франции" → web_search. Any question about facts or current state → web_search FIRST, then answer.',
     },
   ],
 
