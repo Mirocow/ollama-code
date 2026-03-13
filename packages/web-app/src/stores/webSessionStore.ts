@@ -129,6 +129,9 @@ interface WebSessionState {
   // Context caching
   setSessionContext: (sessionId: string, context: number[]) => void;
 
+  // Bulk session operations
+  setSessions: (sessions: Map<string, Session>) => void;
+
   // Todo actions
   setTodos: (todos: TodoItem[]) => void;
   updateTodo: (id: string, updates: Partial<TodoItem>) => void;
@@ -358,6 +361,11 @@ export const useWebSessionStore = create<WebSessionState>()(
           }
           return { sessions };
         });
+      },
+
+      // Bulk session operations
+      setSessions: (newSessions) => {
+        set({ sessions: newSessions });
       },
 
       // Todo actions
