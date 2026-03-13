@@ -15,11 +15,8 @@ import { Kind, BaseDeclarativeTool, BaseToolInvocation } from './tools.js';
 import type { Config } from '../config/config.js';
 import { spawn } from 'node:child_process';
 import { StringDecoder } from 'node:string_decoder';
-import type { SendSdkMcpMessage } from '../plugins/builtin/mcp-tools/index.js';
-import {
-  McpClientManager,
-  DiscoveredMCPTool,
-} from '../plugins/builtin/mcp-tools/index.js';
+import type { SendSdkMcpMessage } from '../plugins/index.js';
+import { McpClientManager, DiscoveredMCPTool } from '../plugins/index.js';
 import { parse } from 'shell-quote';
 import { ToolErrorType } from './tool-error.js';
 import { safeJsonStringify } from '../utils/safeJsonStringify.js';

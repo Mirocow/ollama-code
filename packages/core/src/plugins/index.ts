@@ -189,3 +189,35 @@ export type {
   PluginInstallOptions,
   PluginUpdateOptions,
 } from './pluginMarketplace.js';
+
+// ============================================================================
+// Re-exports from Builtin Plugins (for core/index.ts)
+// ============================================================================
+
+// MCP tools
+export type {
+  SendSdkMcpMessage,
+  DiscoveredMCPPrompt,
+} from './builtin/mcp-tools/index.js';
+export {
+  McpClient,
+  McpClientManager,
+  DiscoveredMCPTool,
+  MCPServerStatus,
+  MCPDiscoveryState,
+  getMCPServerStatus,
+  getMCPDiscoveryState,
+  getAllMCPServerStatuses,
+  updateMCPServerStatus,
+  addMCPStatusChangeListener,
+  removeMCPStatusChangeListener,
+  discoverMcpTools,
+  connectAndDiscover,
+  discoverTools,
+  discoverPrompts,
+  connectToMcpServer,
+  createTransport,
+  hasNetworkTransport,
+  isEnabled,
+  mcpServerRequiresOAuth,
+} from './builtin/mcp-tools/index.js';

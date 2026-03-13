@@ -5,7 +5,7 @@
  */
 
 import type { Config } from '../config/config.js';
-import type { DiscoveredMCPPrompt } from '../plugins/builtin/mcp-tools/index.js';
+import type { DiscoveredMCPPrompt } from '../plugins/index.js';
 
 export function getMCPServerPrompts(
   config: Config,

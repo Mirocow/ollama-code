@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PromptRegistry } from './prompt-registry.js';
-import type { DiscoveredMCPPrompt } from '../plugins/builtin/mcp-tools/index.js';
+import type { DiscoveredMCPPrompt } from '../plugins/index.js';
 
 describe('PromptRegistry', () => {
   let registry: PromptRegistry;
