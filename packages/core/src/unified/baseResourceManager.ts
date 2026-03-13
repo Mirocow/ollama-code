@@ -589,7 +589,7 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
           const content = await fs.readFile(filePath, 'utf8');
           const resource = this.parseContent(content, filePath, level);
           resources.push(resource);
-        } catch (_error) {
+        } catch (error) {
           this.logger.warn(
             `Failed to parse ${this.resourceType} at ${filePath}`,
             { error },
@@ -707,7 +707,7 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
     for (const listener of this.changeListeners) {
       try {
         listener(event);
-      } catch (_error) {
+      } catch (error) {
         this.logger.warn(
           `${this.resourceType} change listener threw an error`,
           {
@@ -760,7 +760,7 @@ export abstract class BaseResourceManager<T extends BaseResourceConfig>
             this.logger.warn(`Watcher error for ${watchPath}`, { error });
           });
         this.watchers.set(watchPath, watcher);
-      } catch (_error) {
+      } catch (error) {
         this.logger.warn(`Failed to watch directory: ${watchPath}`, { error });
       }
     }
