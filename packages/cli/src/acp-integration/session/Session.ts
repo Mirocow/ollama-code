@@ -27,8 +27,7 @@ import {
   getErrorStatus,
   TaskTool,
   UserPromptEvent,
-  TodoWriteTool,
-  ExitPlanModeTool,
+  BUILTIN_TOOL_NAMES,
   readManyFiles,
 } from '@ollama-code/ollama-code-core';
 
@@ -475,9 +474,9 @@ export class Session implements SessionContext {
     }
 
     // Detect TodoWriteTool early - route to plan updates instead of tool_call events
-    const isTodoWriteTool = tool.name === TodoWriteTool.Name;
+    const isTodoWriteTool = tool.name === BUILTIN_TOOL_NAMES.TODO_WRITE;
     const isTaskTool = tool.name === TaskTool.Name;
-    const isExitPlanModeTool = tool.name === ExitPlanModeTool.Name;
+    const isExitPlanModeTool = tool.name === BUILTIN_TOOL_NAMES.EXIT_PLAN_MODE;
 
     // Track cleanup functions for sub-agent event listeners
     let subAgentCleanupFunctions: Array<() => void> = [];

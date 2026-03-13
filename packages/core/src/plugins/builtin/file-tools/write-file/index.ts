@@ -27,7 +27,10 @@ import { ToolErrorType } from '../../../../tools/tool-error.js';
 import { FileEncoding } from '../../../../services/fileSystemService.js';
 import { makeRelative, shortenPath } from '../../../../utils/paths.js';
 import { getErrorMessage, isNodeError } from '../../../../utils/errors.js';
-import { DEFAULT_DIFF_OPTIONS, getDiffStat } from '../../../../tools/diffOptions.js';
+import {
+  DEFAULT_DIFF_OPTIONS,
+  getDiffStat,
+} from '../../../../tools/diffOptions.js';
 import type {
   ModifiableDeclarativeTool,
   ModifyContext,
@@ -35,6 +38,7 @@ import type {
 import { IdeClient } from '../../../../ide/ide-client.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
 import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
+import { auditLogService } from '../../../../services/auditLogService.js';
 
 const debugLogger = createDebugLogger('WRITE_FILE');
 
@@ -193,6 +197,7 @@ class WriteFileToolInvocation extends BaseToolInvocation<
   }
 
   async execute(_abortSignal: AbortSignal): Promise<ToolResult> {
+    const startTime = Date.now();
     const { file_path, content, ai_proposed_content, modified_by_user } =
       this.params;
 
@@ -294,6 +299,17 @@ class WriteFileToolInvocation extends BaseToolInvocation<
       const linesRemoved = Math.max(0, oldLines - newLines);
       uiTelemetryService.recordFileOperation('write', linesAdded, linesRemoved);
 
+      // Audit log file write (debug mode only)
+      if (this.config.getDebugMode()) {
+        auditLogService.enable(this.config.getDebugLogger());
+        auditLogService.logFile(
+          'write',
+          file_path,
+          'success',
+          Date.now() - startTime,
+        );
+      }
+
       const displayResult: FileDiff = {
         fileDiff,
         fileName,
@@ -335,6 +351,17 @@ class WriteFileToolInvocation extends BaseToolInvocation<
         errorMsg = `Error writing to file: ${error.message}`;
       } else {
         errorMsg = `Error writing to file: ${String(error)}`;
+      }
+
+      // Audit log file write failure (debug mode only)
+      if (this.config.getDebugMode()) {
+        auditLogService.enable(this.config.getDebugLogger());
+        auditLogService.logFile(
+          'write',
+          file_path,
+          'failure',
+          Date.now() - startTime,
+        );
       }
 
       return {

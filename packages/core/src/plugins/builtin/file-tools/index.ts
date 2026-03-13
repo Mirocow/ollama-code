@@ -20,6 +20,18 @@ import { GlobTool } from './glob/index.js';
 import { ReadManyFilesTool } from './read-many-files/index.js';
 
 /**
+ * Tool names exported by this plugin
+ */
+export const TOOL_NAMES = {
+  READ_FILE: 'read_file',
+  WRITE_FILE: 'write_file',
+  EDIT: 'edit',
+  LIST_DIRECTORY: 'list_directory',
+  GLOB: 'glob',
+  READ_MANY_FILES: 'read_many_files',
+} as const;
+
+/**
  * Create file tools plugin with config
  */
 export function createFileToolsPlugin(): PluginDefinition {

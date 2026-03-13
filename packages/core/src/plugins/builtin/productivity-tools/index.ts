@@ -15,6 +15,14 @@ import { TodoWriteTool } from './todo-write/index.js';
 import { ExitPlanModeTool } from './exit-plan-mode/index.js';
 
 /**
+ * Tool names exported by this plugin
+ */
+export const TOOL_NAMES = {
+  TODO_WRITE: 'todo_write',
+  EXIT_PLAN_MODE: 'exit_plan_mode',
+} as const;
+
+/**
  * Productivity Tools Plugin Definition
  */
 const productivityToolsPlugin: PluginDefinition = {

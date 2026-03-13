@@ -25,12 +25,11 @@ const debugLogger = createDebugLogger('TOOL_SCHEDULER');
 import {
   ToolConfirmationOutcome,
   ApprovalMode,
-  ReadFileTool,
   ToolErrorType,
-  ShellTool,
   InputFormat,
-  SkillTool,
+  BUILTIN_TOOL_NAMES,
 } from '../index.js';
+import { SkillTool } from '../plugins/builtin/agent-tools/index.js';
 import { uiTelemetryService } from '../services/uiTelemetryService.js';
 import type {
   FunctionResponse,
@@ -52,7 +51,10 @@ import * as path from 'node:path';
 import { doesToolInvocationMatch } from '../utils/tool-utils.js';
 import levenshtein from 'fast-levenshtein';
 import { getPlanModeSystemReminder } from './prompts.js';
-import { ShellToolInvocation } from '../plugins/builtin/shell-tools/index.js';
+import {
+  ShellToolInvocation,
+  ShellTool,
+} from '../plugins/builtin/shell-tools/index.js';
 
 export type ValidatingToolCall = {
   status: 'validating';
@@ -333,7 +335,7 @@ export async function truncateAndSaveToFile(
     return {
       content: `Tool output was too large and has been truncated.
 The full output has been saved to: ${outputFile}
-To read the complete output, use the ${ReadFileTool.Name} tool with the absolute file path above.
+To read the complete output, use the ${BUILTIN_TOOL_NAMES.READ_FILE} tool with the absolute file path above.
 The truncated output below shows the beginning and end of the content. The marker '... [CONTENT TRUNCATED] ...' indicates where content was removed.
 This allows you to efficiently examine different parts of the output without loading the entire file.
 Truncated part of the output:

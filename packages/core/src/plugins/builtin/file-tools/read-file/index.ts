@@ -6,8 +6,16 @@
 
 import path from 'node:path';
 import { makeRelative, shortenPath } from '../../../../utils/paths.js';
-import type { ToolInvocation, ToolLocation, ToolResult } from '../../../../tools/tools.js';
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from '../../../../tools/tools.js';
+import type {
+  ToolInvocation,
+  ToolLocation,
+  ToolResult,
+} from '../../../../tools/tools.js';
+import {
+  BaseDeclarativeTool,
+  BaseToolInvocation,
+  Kind,
+} from '../../../../tools/tools.js';
 
 import type { PartUnion } from '../../../../types/content.js';
 import { processSingleFileContent } from '../../../../utils/fileUtils.js';
@@ -16,6 +24,7 @@ import type { Config } from '../../../../config/config.js';
 import { isSubpath } from '../../../../utils/paths.js';
 import { Storage } from '../../../../config/storage.js';
 import { uiTelemetryService } from '../../../../services/uiTelemetryService.js';
+import { auditLogService } from '../../../../services/auditLogService.js';
 
 /**
  * Parameters for the ReadFile tool
@@ -72,6 +81,7 @@ class ReadFileToolInvocation extends BaseToolInvocation<
   }
 
   async execute(): Promise<ToolResult> {
+    const startTime = Date.now();
     const result = await processSingleFileContent(
       this.params.absolute_path,
       this.config,
@@ -81,6 +91,17 @@ class ReadFileToolInvocation extends BaseToolInvocation<
 
     // Record file read telemetry
     uiTelemetryService.recordFileOperation('read');
+
+    // Audit log file read (debug mode only)
+    if (this.config.getDebugMode()) {
+      auditLogService.enable(this.config.getDebugLogger());
+      auditLogService.logFile(
+        'read',
+        this.params.absolute_path,
+        result.error ? 'failure' : 'success',
+        Date.now() - startTime,
+      );
+    }
 
     if (result.error) {
       return {

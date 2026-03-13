@@ -26,6 +26,17 @@ import { findUnusedExportsTool } from './find-unused-exports/index.js';
 import { analyzeDependenciesTool } from './analyze-dependencies/index.js';
 import { detectDeadCodeTool } from './detect-dead-code/index.js';
 
+/**
+ * Tool names exported by this plugin
+ */
+export const TOOL_NAMES = {
+  CODE_ANALYZER: 'code_analyzer',
+  FIND_UNUSED_EXPORTS: 'find_unused_exports',
+  ANALYZE_DEPENDENCIES: 'analyze_dependencies',
+  DETECT_DEAD_CODE: 'detect_dead_code',
+  DIAGRAM_GENERATOR: 'diagram_generator',
+} as const;
+
 // ============================================================================
 // Plugin Definition
 // ============================================================================
@@ -57,21 +68,61 @@ const codeAnalysisToolsPlugin: PluginDefinition = {
   // Tool aliases for convenience
   aliases: [
     // code_analyzer aliases
-    { alias: 'analyze', canonicalName: 'code_analyzer', description: 'Analyze code' },
+    {
+      alias: 'analyze',
+      canonicalName: 'code_analyzer',
+      description: 'Analyze code',
+    },
     { alias: 'lint', canonicalName: 'code_analyzer', description: 'Lint code' },
-    { alias: 'check', canonicalName: 'code_analyzer', description: 'Check code quality' },
+    {
+      alias: 'check',
+      canonicalName: 'code_analyzer',
+      description: 'Check code quality',
+    },
     // diagram_generator aliases
-    { alias: 'diagram', canonicalName: 'diagram_generator', description: 'Generate diagrams' },
-    { alias: 'draw', canonicalName: 'diagram_generator', description: 'Draw diagrams' },
+    {
+      alias: 'diagram',
+      canonicalName: 'diagram_generator',
+      description: 'Generate diagrams',
+    },
+    {
+      alias: 'draw',
+      canonicalName: 'diagram_generator',
+      description: 'Draw diagrams',
+    },
     // find_unused_exports aliases
-    { alias: 'unused', canonicalName: 'find_unused_exports', description: 'Find unused exports' },
-    { alias: 'exports', canonicalName: 'find_unused_exports', description: 'Find unused exports' },
+    {
+      alias: 'unused',
+      canonicalName: 'find_unused_exports',
+      description: 'Find unused exports',
+    },
+    {
+      alias: 'exports',
+      canonicalName: 'find_unused_exports',
+      description: 'Find unused exports',
+    },
     // analyze_dependencies aliases
-    { alias: 'deps', canonicalName: 'analyze_dependencies', description: 'Analyze dependencies' },
-    { alias: 'dependencies', canonicalName: 'analyze_dependencies', description: 'Analyze dependencies' },
+    {
+      alias: 'deps',
+      canonicalName: 'analyze_dependencies',
+      description: 'Analyze dependencies',
+    },
+    {
+      alias: 'dependencies',
+      canonicalName: 'analyze_dependencies',
+      description: 'Analyze dependencies',
+    },
     // detect_dead_code aliases
-    { alias: 'deadcode', canonicalName: 'detect_dead_code', description: 'Detect dead code' },
-    { alias: 'zombie', canonicalName: 'detect_dead_code', description: 'Find zombie code' },
+    {
+      alias: 'deadcode',
+      canonicalName: 'detect_dead_code',
+      description: 'Detect dead code',
+    },
+    {
+      alias: 'zombie',
+      canonicalName: 'detect_dead_code',
+      description: 'Find zombie code',
+    },
   ],
 
   // Context-aware prompts for model guidance
@@ -198,7 +249,10 @@ Return a prioritized cleanup plan."
 export default codeAnalysisToolsPlugin;
 
 export { codeAnalyzerTool } from './code-analyzer/index.js';
-export { DiagramGeneratorTool, createDiagramGeneratorTool } from './diagram-generator/index.js';
+export {
+  DiagramGeneratorTool,
+  createDiagramGeneratorTool,
+} from './diagram-generator/index.js';
 export { findUnusedExportsTool } from './find-unused-exports/index.js';
 export { analyzeDependenciesTool } from './analyze-dependencies/index.js';
 export { detectDeadCodeTool } from './detect-dead-code/index.js';

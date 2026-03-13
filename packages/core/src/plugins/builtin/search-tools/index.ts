@@ -17,6 +17,15 @@ import { WebFetchTool } from './web-fetch/index.js';
 import * as webSearch from './web-search/index.js';
 
 /**
+ * Tool names exported by this plugin
+ */
+export const TOOL_NAMES = {
+  GREP_SEARCH: 'grep_search',
+  WEB_SEARCH: 'web_search',
+  WEB_FETCH: 'web_fetch',
+} as const;
+
+/**
  * Search Tools Plugin Definition
  */
 const searchToolsPlugin: PluginDefinition = {

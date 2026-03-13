@@ -5,6 +5,19 @@
  */
 
 /**
+ * Storage Tools Plugin
+ *
+ * Universal storage for AI-model with persistence, TTL, and metadata support.
+ */
+
+/**
+ * Tool names exported by this plugin
+ */
+export const TOOL_NAMES = {
+  MODEL_STORAGE: 'model_storage',
+} as const;
+
+/**
  * Model Storage Tool - универсальное хранилище для AI-модели.
  * Позволяет модели сохранять и извлекать структурированные данные:
  * - roadmap: планы развития и задачи (постоянное)

@@ -23,9 +23,7 @@ import {
   type ResumedSessionData,
   type LspClient,
   type ToolName,
-  EditTool,
-  ShellTool,
-  WriteFileTool,
+  BUILTIN_TOOL_NAMES,
   NativeLspClient,
   createDebugLogger,
   NativeLspService,
@@ -748,13 +746,13 @@ export async function loadCliConfig(
       case ApprovalMode.DEFAULT:
         // In default non-interactive mode, all tools that require approval are excluded,
         // unless explicitly enabled via coreTools/allowedTools.
-        excludeUnlessExplicit(ShellTool.Name as ToolName);
-        excludeUnlessExplicit(EditTool.Name as ToolName);
-        excludeUnlessExplicit(WriteFileTool.Name as ToolName);
+        excludeUnlessExplicit(BUILTIN_TOOL_NAMES.RUN_SHELL_COMMAND as ToolName);
+        excludeUnlessExplicit(BUILTIN_TOOL_NAMES.EDIT as ToolName);
+        excludeUnlessExplicit(BUILTIN_TOOL_NAMES.WRITE_FILE as ToolName);
         break;
       case ApprovalMode.AUTO_EDIT:
         // In auto-edit non-interactive mode, only tools that still require a prompt are excluded.
-        excludeUnlessExplicit(ShellTool.Name as ToolName);
+        excludeUnlessExplicit(BUILTIN_TOOL_NAMES.RUN_SHELL_COMMAND as ToolName);
         break;
       case ApprovalMode.YOLO:
         // No extra excludes for YOLO mode.

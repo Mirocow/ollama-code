@@ -43,6 +43,7 @@ import {
   stripShellWrapper,
 } from '../../../utils/shell-utils.js';
 import { createDebugLogger } from '../../../utils/debugLogger.js';
+import { auditLogService } from '../../../services/auditLogService.js';
 
 const debugLogger = createDebugLogger('SHELL');
 
@@ -265,6 +266,21 @@ export class ShellToolInvocation extends BaseToolInvocation<
       }
 
       const result = await resultPromise;
+
+      // Audit log shell command execution (debug mode only)
+      if (this.config.getDebugMode()) {
+        auditLogService.enable(this.config.getDebugLogger());
+        const status = result.aborted
+          ? 'cancelled'
+          : result.exitCode === 0
+            ? 'success'
+            : 'failure';
+        auditLogService.logShell(
+          this.params.command,
+          status,
+          result.exitCode ?? undefined,
+        );
+      }
 
       const backgroundPIDs: number[] = [];
       if (os.platform() !== 'win32') {
