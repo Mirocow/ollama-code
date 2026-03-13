@@ -36,13 +36,33 @@ vi.mock('../tools/write-file', () => ({
 vi.mock('../utils/gitUtils', () => ({
   isGitRepository: vi.fn(),
 }));
-vi.mock('node:fs');
+vi.mock('node:fs', () => {
+  const mockFns = {
+    existsSync: vi.fn(),
+    readFileSync: vi.fn(),
+    writeFileSync: vi.fn(),
+    mkdirSync: vi.fn(),
+    readdirSync: vi.fn(),
+    unlinkSync: vi.fn(),
+    statSync: vi.fn(),
+    lstatSync: vi.fn(),
+    realpathSync: vi.fn(),
+    createReadStream: vi.fn(),
+    createWriteStream: vi.fn(),
+  };
+  return {
+    ...mockFns,
+    default: mockFns,
+  };
+});
 
 describe('Core System Prompt (prompts.ts)', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.stubEnv('OLLAMA_CODE_SYSTEM_MD', undefined);
     vi.stubEnv('OLLAMA_CODE_WRITE_SYSTEM_MD', undefined);
+    // Disable templates to use legacy prompt for these tests
+    vi.stubEnv('OLLAMA_CODE_USE_TEMPLATES', 'false');
   });
 
   it('should return the base prompt when no userMemory is provided', () => {
@@ -281,6 +301,8 @@ describe('Model-specific tool call formats', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.stubEnv('SANDBOX', undefined);
+    // Disable templates to use legacy prompt for these tests
+    vi.stubEnv('OLLAMA_CODE_USE_TEMPLATES', 'false');
   });
 
   it('should use XML format for qwen3-coder model', () => {

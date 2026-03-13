@@ -94,13 +94,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -240,13 +252,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -366,13 +390,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -492,13 +528,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -618,13 +666,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -744,13 +804,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -870,13 +942,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -996,13 +1080,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -1122,13 +1218,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -1248,13 +1356,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -1455,13 +1575,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -1725,13 +1857,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -1932,13 +2076,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -2198,13 +2354,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
@@ -2324,13 +2492,25 @@ You are running in the following environment:
 - **OLLAMA_API_KEY**: (not set)
 
 ### System Information
-- **Node.js Version**: v24.13.1
+- **Node.js Version**: v22.22.1
 - **Platform**: linux
 - **Current Working Directory**: /home/z/my-project/ollama-code/packages/core
 - **Home Directory**: /home/z
+- **Current Username**: z
 
 ### Debug Settings
 - **DEBUG Mode**: disabled
+
+### Environment Variables
+- **PATH**: /home/z/my-project/ollama-code/node_modules/.bin:/home/z/my-project/ollama-code/packages/core/node_modules/.bin:/home/z/my-project/ollama-code/packages/node_modules/.bin:/home/z/my-project/ollama-code...
+- **SHELL**: /bin/bash
+- **TERM**: dumb
+- **EDITOR**: vi
+- **PWD**: /home/z/my-project/ollama-code/packages/core
+- **USER**: z
+- **HOME**: /home/z
+- **DATABASE_URL**: file:/home/z/my-project/db/custom.db
+- **NODE_ENV**: test
 
 # Examples (Illustrating Tone and Workflow)
 <example>
