@@ -19,7 +19,19 @@ vi.mock('../../../services/shellExecutionService.js', () => ({
   ShellExecutionService: { execute: mockShellExecutionService },
 }));
 vi.mock('fs');
-vi.mock('os');
+vi.mock('os', () => {
+  const mockFns = {
+    homedir: vi.fn().mockReturnValue('/home/test'),
+    tmpdir: vi.fn().mockReturnValue('/tmp'),
+    platform: vi.fn().mockReturnValue('linux'),
+    hostname: vi.fn().mockReturnValue('test-host'),
+    EOL: '\n',
+  };
+  return {
+    ...mockFns,
+    default: mockFns,
+  };
+});
 vi.mock('crypto');
 vi.mock('../../../utils/summarizer.js');
 
