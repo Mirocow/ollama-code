@@ -183,12 +183,12 @@ const searchToolsPlugin: PluginDefinition = {
     {
       priority: 1,
       content:
-        'WEB_SEARCH IS MANDATORY! When user asks about: prices, rates, costs, news, weather, sports, current events, stock markets, exchange rates, product prices, or says "почем", "сколько", "каков", "what is", "how much" → YOU MUST call web_search IMMEDIATELY. NEVER say "I don\'t know" or "I don\'t have access to real-time data". ALWAYS search first!',
+        'WEB_SEARCH IS MANDATORY! When user asks about: prices, rates, costs, news, weather, sports, current events, stock markets, exchange rates, product prices, or says "what is", "how much", "current", "latest", "today" → YOU MUST call web_search IMMEDIATELY. NEVER say "I don\'t know" or "I don\'t have access to real-time data". ALWAYS search first!',
     },
     {
       priority: 2,
       content:
-        'web_search examples: "почем яйца" → web_search. "курс доллара" → web_search. "what is the weather" → web_search. "how much does X cost" → web_search. "кто выиграл" → web_search. User asking about ANY current data → web_search FIRST, then answer with results!',
+        'web_search examples: "egg prices" → web_search. "dollar exchange rate" → web_search. "what is the weather" → web_search. "how much does X cost" → web_search. "who won the game" → web_search. "latest news" → web_search. User asking about ANY current data → web_search FIRST, then answer with results!',
     },
     {
       priority: 3,
