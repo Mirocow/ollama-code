@@ -193,7 +193,12 @@ const searchToolsPlugin: PluginDefinition = {
     {
       priority: 3,
       content:
-        'WEB_SEARCH: Use for current events, documentation, error messages, API references. Returns snippets with URLs. Follow up with web_fetch for full content if needed.',
+        'WEB_SEARCH: Use AUTOMATICALLY when user asks about: current events, stock prices, exchange rates, weather, latest news, recent releases, current version of software, or any information that may have changed since your knowledge cutoff. DO NOT say "I don\'t have real-time data" - USE web_search instead!',
+    },
+    {
+      priority: 4,
+      content:
+        'WEB_SEARCH examples: "What is the current dollar rate?" → use web_search. "What\'s the latest version of React?" → use web_search. "Who won the game yesterday?" → use web_search. "What\'s the weather in Moscow?" → use web_search. Always use web_search for time-sensitive or current information.',
     },
   ],
 
