@@ -39,10 +39,16 @@ const searchToolsPlugin: PluginDefinition = {
     enabledByDefault: true,
   },
 
-  // Unified tools array - tool classes (some need Config, some don't)
-  // The plugin registry will try to instantiate without config first,
-  // then with config if the tool requires it
-  tools: [GrepTool, RipGrepTool, WebFetchTool, webSearch.WebSearchTool],
+  // Unified tools array - factory functions for tools that need Config
+  tools: [
+    GrepTool, // Doesn't need Config
+    RipGrepTool, // Doesn't need Config
+    WebFetchTool, // Doesn't need Config
+    (config: unknown) =>
+      new webSearch.WebSearchTool(
+        config as import('../../../config/config.js').Config,
+      ),
+  ],
 
   // Tool aliases - short names that resolve to canonical tool names
   // Includes common model hallucinations and variations

@@ -34,8 +34,10 @@ const shellToolsPlugin: PluginDefinition = {
     enabledByDefault: true,
   },
 
-  // Unified tools array - tool classes that don't need Config
-  tools: [ShellTool],
+  // Unified tools array - factory functions that receive Config
+  tools: [
+    (config: unknown) => new ShellTool(config as import('../../../config/config.js').Config),
+  ],
 
   // Tool aliases - short names that resolve to canonical tool names
   // Includes common model hallucinations and infrastructure tool redirects
