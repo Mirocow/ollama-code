@@ -8,7 +8,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { getMCPServerPrompts } from './mcp-prompts.js';
 import type { Config } from '../config/config.js';
 import { PromptRegistry } from './prompt-registry.js';
-import type { DiscoveredMCPPrompt } from '../plugins/builtin/mcp-tools/mcp-client/index.js';
+import type { DiscoveredMCPPrompt } from '../plugins/builtin/mcp-tools/index.js';
 
 describe('getMCPServerPrompts', () => {
   const createMockPrompt = (

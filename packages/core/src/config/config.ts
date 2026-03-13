@@ -50,7 +50,7 @@ import { setOllamaMdFilename } from '../plugins/builtin/memory-tools/save-memory
 import { canUseRipgrep } from '../utils/ripgrepUtils.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import type { LspClient } from '../lsp/types.js';
-import type { SendSdkMcpMessage } from '../plugins/builtin/mcp-tools/mcp-client/index.js';
+import type { SendSdkMcpMessage } from '../plugins/builtin/mcp-tools/index.js';
 import {
   initializePluginRegistry,
   getPluginRegistry,

@@ -15,9 +15,11 @@ import { Kind, BaseDeclarativeTool, BaseToolInvocation } from './tools.js';
 import type { Config } from '../config/config.js';
 import { spawn } from 'node:child_process';
 import { StringDecoder } from 'node:string_decoder';
-import type { SendSdkMcpMessage } from '../plugins/builtin/mcp-tools/mcp-client/index.js';
-import { McpClientManager } from '../plugins/builtin/mcp-tools/mcp-client-manager/index.js';
-import { DiscoveredMCPTool } from '../plugins/builtin/mcp-tools/mcp-tool/index.js';
+import type { SendSdkMcpMessage } from '../plugins/builtin/mcp-tools/index.js';
+import {
+  McpClientManager,
+  DiscoveredMCPTool,
+} from '../plugins/builtin/mcp-tools/index.js';
 import { parse } from 'shell-quote';
 import { ToolErrorType } from './tool-error.js';
 import { safeJsonStringify } from '../utils/safeJsonStringify.js';
@@ -240,7 +242,9 @@ export class ToolRegistry {
       }
     }
     if (removed > 0) {
-      debugLogger.info(`Unregistered ${removed} tools from plugin "${pluginId}"`);
+      debugLogger.info(
+        `Unregistered ${removed} tools from plugin "${pluginId}"`,
+      );
     }
     return removed;
   }
