@@ -10,40 +10,38 @@
  * This module provides a plugin architecture for extending
  * Ollama Code with custom tools, commands, and functionality.
  *
- * @example
- * // Define a plugin
- * const myPlugin: PluginDefinition = {
- *   metadata: {
- *     id: 'my-plugin',
- *     name: 'My Plugin',
- *     version: '1.0.0',
- *     description: 'A sample plugin',
- *   },
- *   tools: [{
- *     id: 'hello',
- *     name: 'hello_world',
- *     description: 'Say hello to the world',
- *     parameters: {
- *       type: 'object',
- *       properties: {
- *         name: { type: 'string', description: 'Name to greet' }
- *       }
- *     },
- *     execute: async (params) => ({
- *       success: true,
- *       data: `Hello, ${params.name || 'World'}!`
- *     })
- *   }],
- *   hooks: {
- *     onLoad: async (context) => {
- *       context.logger.info('Plugin loaded!');
- *     }
- *   }
- * };
+ * **Builtin Plugins (16):**
+ * - agent-tools - Task and Skill tools for subagent management
+ * - api-tools - HTTP API interaction tools
+ * - code-analysis-tools - Code analysis and linting
+ * - core-tools - Echo, timestamp, environment tools
+ * - database-tools - Database query and management
+ * - dev-tools - Development and debugging utilities
+ * - file-tools - File read, write, edit, glob, grep, list
+ * - git-tools - Git version control operations
+ * - lsp-tools - Language Server Protocol integration
+ * - mcp-tools - Model Context Protocol client
+ * - memory-tools - Ollama.md memory management
+ * - productivity-tools - Todo and plan mode tools
+ * - search-tools - Web search capabilities
+ * - shell-tools - Shell command execution
+ * - ssh-tools - SSH remote operations
+ * - storage-tools - Persistent storage namespaces
  *
- * // Register and enable
- * await pluginManager.registerPlugin(myPlugin);
- * await pluginManager.enablePlugin('my-plugin');
+ * **Plugin Discovery Sources:**
+ * - Builtin plugins (bundled with core)
+ * - User plugins from ~/.ollama-code/plugins/
+ * - Project plugins from .ollama-code/plugins/
+ * - NPM packages with @ollama-code/plugin- prefix
+ *
+ * **Exports:**
+ * - `BUILTIN_TOOL_NAMES` - All tool names from builtin plugins
+ * - `BUILTIN_TOOL_NAMES_SET` - Set for quick lookup
+ * - `FILE_MODIFYING_TOOLS` - Tools that modify files
+ * - `COMMAND_EXECUTING_TOOLS` - Tools that execute commands
+ * - Plugin management classes (PluginManager, PluginLoader, PluginRegistry)
+ * - Security sandbox utilities
+ * - Marketplace integration
  */
 
 // ============================================================================
