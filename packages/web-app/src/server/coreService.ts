@@ -88,6 +88,7 @@ export interface ToolInfo {
   name: string;
   description: string;
   source: 'builtin' | 'extension' | 'mcp';
+  inputSchema?: Record<string, unknown>;
 }
 
 export interface MCPServerInfo {
@@ -360,6 +361,7 @@ export class CoreService {
       name: tool.name,
       description: tool.description || tool.displayName || '',
       source: this.detectToolSource(tool.name),
+      inputSchema: tool.parameterSchema as Record<string, unknown> | undefined,
     }));
   }
 
@@ -437,6 +439,50 @@ export class CoreService {
     await this.extensionManager!.refreshCache();
     await this.skillManager!.refreshCache();
     await this.subagentManager!.refreshCache();
+  }
+
+  // ==========================================================================
+  // Config & ToolRegistry Access
+  // ==========================================================================
+
+  /**
+   * Get the Config instance
+   */
+  getConfig(): Config {
+    this.ensureInitialized();
+    return this.config!;
+  }
+
+  /**
+   * Get the ToolRegistry instance
+   */
+  getToolRegistry(): ToolRegistry {
+    this.ensureInitialized();
+    return this.toolRegistry!;
+  }
+
+  /**
+   * Get the SkillManager instance
+   */
+  getSkillManager(): SkillManager {
+    this.ensureInitialized();
+    return this.skillManager!;
+  }
+
+  /**
+   * Get the SubagentManager instance
+   */
+  getSubagentManager(): SubagentManager {
+    this.ensureInitialized();
+    return this.subagentManager!;
+  }
+
+  /**
+   * Get the ExtensionManager instance
+   */
+  getExtensionManager(): ExtensionManager {
+    this.ensureInitialized();
+    return this.extensionManager!;
   }
 
   /**
