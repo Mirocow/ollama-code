@@ -70,6 +70,41 @@ function isToolClass(item: unknown): boolean {
 }
 
 /**
+ * Check if a tool class constructor requires Config parameter
+ * This is determined by checking the constructor parameter count
+ * Most tool classes that need config have exactly 1 parameter
+ */
+function toolClassNeedsConfig(
+  item: abstract new (...args: unknown[]) => unknown,
+): boolean {
+  // Check if the constructor has parameters
+  // For classes that extend BaseDeclarativeTool, if they have a config parameter,
+  // the constructor will typically have 1 parameter
+  try {
+    // Get the string representation of the constructor
+    const str = item.toString();
+    // Check if constructor has parameters - looks for "constructor(" with content inside
+    const constructorMatch = str.match(/constructor\s*\(([^)]*)\)/);
+    if (constructorMatch) {
+      const params = constructorMatch[1].trim();
+      // If there are parameters and they're not empty, it likely needs config
+      return params.length > 0;
+    }
+    // Also check the class signature for "private readonly config" pattern
+    if (
+      str.includes('private readonly config') ||
+      str.includes('private config')
+    ) {
+      return true;
+    }
+    return false;
+  } catch {
+    // If we can't determine, assume it needs config to be safe
+    return true;
+  }
+}
+
+/**
  * Check if an item is a tool factory function (function without class prototype)
  * Factory functions take config and return tool instances
  */
@@ -267,28 +302,24 @@ export class PluginRegistry {
             `Detected tool class: ${className} from ${pluginId}`,
           );
 
-          // Try to instantiate without config first (for tools that don't need it)
-          try {
-            const toolInstance = new (item as new () => unknown)();
-            const toolName =
-              (toolInstance as { name?: string })?.name || className;
-            this.toolRegistry.registerTool(
-              toolInstance as Parameters<
-                typeof this.toolRegistry.registerTool
-              >[0],
-            );
-            debugLogger.info(`Registered tool class instance: ${toolName}`);
-            registeredCount++;
-          } catch (_e) {
+          // Check if this tool class requires Config parameter
+          const needsConfig = toolClassNeedsConfig(
+            item as abstract new (...args: unknown[]) => unknown,
+          );
+          debugLogger.debug(
+            `Tool class ${className} needs config: ${needsConfig}`,
+          );
+
+          if (needsConfig) {
             // Tool needs config - check if config is available
             if (!this.config) {
               debugLogger.error(
                 `Cannot register tool class ${className}: requires Config but config is not available`,
               );
-              continue; // Skip this tool, don't try to instantiate with undefined
+              continue; // Skip this tool
             }
 
-            // Try with config
+            // Instantiate with config
             try {
               const toolInstance = new (item as new (
                 config: unknown,
@@ -304,9 +335,27 @@ export class PluginRegistry {
                 `Registered tool class with config: ${toolName}`,
               );
               registeredCount++;
-            } catch (e2) {
+            } catch (e) {
               debugLogger.error(
-                `Failed to register tool class ${className}: ${e2}`,
+                `Failed to register tool class ${className}: ${e}`,
+              );
+            }
+          } else {
+            // Tool doesn't need config - instantiate without it
+            try {
+              const toolInstance = new (item as new () => unknown)();
+              const toolName =
+                (toolInstance as { name?: string })?.name || className;
+              this.toolRegistry.registerTool(
+                toolInstance as Parameters<
+                  typeof this.toolRegistry.registerTool
+                >[0],
+              );
+              debugLogger.info(`Registered tool class instance: ${toolName}`);
+              registeredCount++;
+            } catch (e) {
+              debugLogger.error(
+                `Failed to register tool class ${className} without config: ${e}`,
               );
             }
           }
