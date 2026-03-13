@@ -8,7 +8,6 @@ A shared React component library for Qwen Code applications, providing cross-pla
 - **Platform Context**: Abstraction layer for platform-specific capabilities
 - **Tailwind CSS**: Shared styling preset for consistent design
 - **TypeScript**: Full type definitions for all components
-- **Storybook**: Interactive component documentation and development
 - **Multiple Build Formats**: Supports ESM, CJS, and UMD formats for different environments
 - **CDN Usage**: Can be loaded directly in browsers via CDN
 
@@ -305,13 +304,6 @@ module.exports = {
 
 ## Development
 
-### Running Storybook
-
-```bash
-cd packages/webui
-npm run storybook
-```
-
 ### Building
 
 ```bash
@@ -337,7 +329,6 @@ packages/webui/
 │   ├── context/            # Platform context
 │   ├── hooks/              # Custom hooks
 │   └── types/              # Type definitions
-├── .storybook/             # Storybook config
 ├── tailwind.preset.cjs     # Shared Tailwind preset
 └── vite.config.ts          # Build configuration
 ```
