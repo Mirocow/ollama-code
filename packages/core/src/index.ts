@@ -388,55 +388,6 @@ export * from './plugins/index.js';
 // Export prompt logic
 export * from './prompts/mcp-prompts.js';
 
-// Export storage types from storage-tools plugin
-// Note: These are re-exported for backward compatibility
-export {
-  StorageNamespaces,
-  type StorageNamespace,
-  type StorageEntry,
-  type StorageMetadata,
-  type ProjectInfo,
-  getProjectInfo,
-  clearProjectRootCache,
-  setSessionId,
-  getSessionId,
-  clearSessionStorage,
-  cleanupExpiredEntries,
-  startTTLBackgroundCleanup,
-  stopTTLBackgroundCleanup,
-  isTTLBackgroundCleanupRunning,
-} from './plugins/builtin/storage-tools/index.js';
-
-// Export MCP types from mcp-tools plugin
-export {
-  MCPServerStatus,
-  getMCPServerStatus,
-  type McpClient,
-  DiscoveredMCPTool,
-} from './plugins/builtin/mcp-tools/index.js';
-
-// Export agent tools
-export { TaskTool, SkillTool } from './plugins/builtin/agent-tools/index.js';
-
-// Export productivity tools
-export {
-  TodoWriteTool,
-  ExitPlanModeTool,
-} from './plugins/builtin/productivity-tools/index.js';
-
-// Export memory tool functions
-export {
-  getAllOllamaMdFilenames,
-  getCurrentOllamaMdFilename,
-} from './plugins/builtin/memory-tools/index.js';
-
-// Export MCP discovery
-export type { DiscoveredMCPPrompt } from './plugins/builtin/mcp-tools/index.js';
-export {
-  getMCPDiscoveryState,
-  MCPDiscoveryState,
-} from './plugins/builtin/mcp-tools/index.js';
-
 // ============================================================================
 // Services
 // ============================================================================
