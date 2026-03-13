@@ -183,22 +183,22 @@ const searchToolsPlugin: PluginDefinition = {
     {
       priority: 1,
       content:
-        'Search tools: grep_search searches FILE CONTENTS for text patterns - use when you need to find code/text INSIDE files. Use list_directory or glob to LIST or FIND files by name - NOT grep_search. grep_search with pattern ".*" is WRONG for listing files.',
+        'WEB_SEARCH IS MANDATORY! When user asks about: prices, rates, costs, news, weather, sports, current events, stock markets, exchange rates, product prices, or says "почем", "сколько", "каков", "what is", "how much" → YOU MUST call web_search IMMEDIATELY. NEVER say "I don\'t know" or "I don\'t have access to real-time data". ALWAYS search first!',
     },
     {
       priority: 2,
       content:
-        'GREP_SEARCH: Searches inside files for regex patterns. Use for: finding function definitions, searching for imports, locating error messages, finding TODOs. Does NOT list files - use list_directory or glob for that. Supports -i for case-insensitive, -n for line numbers.',
+        'web_search examples: "почем яйца" → web_search. "курс доллара" → web_search. "what is the weather" → web_search. "how much does X cost" → web_search. "кто выиграл" → web_search. User asking about ANY current data → web_search FIRST, then answer with results!',
     },
     {
       priority: 3,
       content:
-        'WEB_SEARCH: Your primary tool for finding information! Use AUTOMATICALLY when: (1) user asks about facts, prices, rates, news, weather, (2) you don\'t know the answer, (3) information may have changed, (4) user asks "what is", "how to", "where", "when", "who", (5) you need current documentation. NEVER say "I don\'t know" or "I don\'t have real-time data" - USE web_search instead!',
+        'Search tools: grep_search searches FILE CONTENTS for text patterns - use when you need to find code/text INSIDE files. Use list_directory or glob to LIST or FIND files by name - NOT grep_search. grep_search with pattern ".*" is WRONG for listing files.',
     },
     {
       priority: 4,
       content:
-        'WEB_SEARCH examples: "курс юаня" → web_search. "what is React 19" → web_search. "how to fix npm error" → web_search. "who won World Cup" → web_search. "кто президент Франции" → web_search. Any question about facts or current state → web_search FIRST, then answer.',
+        'GREP_SEARCH: Searches inside files for regex patterns. Use for: finding function definitions, searching for imports, locating error messages, finding TODOs. Does NOT list files - use list_directory or glob for that. Supports -i for case-insensitive, -n for line numbers.',
     },
   ],
 
