@@ -821,17 +821,26 @@ export async function loadCliConfig(
       sessionData = await sessionService.loadLastSession();
       if (sessionData) {
         sessionId = sessionData.conversation.sessionId;
+        debugLogger.info(`Resumed last session: ${sessionId}`);
+      } else {
+        debugLogger.info('No last session found to resume');
       }
     }
 
     if (argv.resume) {
       sessionId = argv.resume;
+      debugLogger.info(`Attempting to resume session: ${argv.resume}`);
       sessionData = await sessionService.loadSession(argv.resume);
       if (!sessionData) {
-        const message = `No saved session found with ID ${argv.resume}. Run \`ollama-code --resume\` without an ID to choose from existing sessions.`;
+        // Check if session file exists but hash doesn't match
+        const exists = await sessionService.sessionExists(argv.resume);
+        const message = exists
+          ? `Session ${argv.resume} exists but belongs to a different project directory. Sessions are project-specific.`
+          : `No saved session found with ID ${argv.resume}. Run \`ollama-code --resume\` without an ID to choose from existing sessions.`;
         writeStderrLine(message);
         process.exit(1);
       }
+      debugLogger.info(`Successfully resumed session: ${argv.resume}`);
     }
   } else if (argv['sessionId']) {
     // Use provided session ID without session resumption
