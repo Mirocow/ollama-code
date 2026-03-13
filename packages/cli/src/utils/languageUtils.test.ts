@@ -15,6 +15,7 @@ import {
 
 // Mock the Storage module
 vi.mock('@ollama-code/ollama-code-core', () => ({
+  getOllamaDir: () => '/mock/.ollama-code',
   Storage: {
     getGlobalOllamaDir: () => '/mock/.ollama-code',
   },
@@ -108,12 +109,26 @@ describe('languageUtils', () => {
     it('should resolve "auto" using system detection', () => {
       // This test depends on system locale, but should return a valid language
       const result = resolveOutputLanguage('auto');
-      expect(['English', 'Chinese', 'Russian', 'German', 'Japanese', 'Portuguese']).toContain(result);
+      expect([
+        'English',
+        'Chinese',
+        'Russian',
+        'German',
+        'Japanese',
+        'Portuguese',
+      ]).toContain(result);
     });
 
     it('should resolve undefined using system detection', () => {
       const result = resolveOutputLanguage(undefined);
-      expect(['English', 'Chinese', 'Russian', 'German', 'Japanese', 'Portuguese']).toContain(result);
+      expect([
+        'English',
+        'Chinese',
+        'Russian',
+        'German',
+        'Japanese',
+        'Portuguese',
+      ]).toContain(result);
     });
   });
 
@@ -126,7 +141,7 @@ describe('languageUtils', () => {
       delete process.env['LC_ALL'];
       delete process.env['LC_MESSAGES'];
       delete process.env['LC_CTYPE'];
-      
+
       const result = resolveOutputLanguage('auto', 'ru');
       expect(result).toBe('Russian');
     });
@@ -138,7 +153,7 @@ describe('languageUtils', () => {
       delete process.env['LC_ALL'];
       delete process.env['LC_MESSAGES'];
       delete process.env['LC_CTYPE'];
-      
+
       const result = resolveOutputLanguage('auto', 'zh');
       expect(result).toBe('Chinese');
     });
@@ -150,7 +165,7 @@ describe('languageUtils', () => {
       delete process.env['LC_ALL'];
       delete process.env['LC_MESSAGES'];
       delete process.env['LC_CTYPE'];
-      
+
       const result = resolveOutputLanguage('auto', 'ru');
       expect(result).toBe('German');
     });
@@ -162,7 +177,7 @@ describe('languageUtils', () => {
       delete process.env['LC_ALL'];
       delete process.env['LC_MESSAGES'];
       delete process.env['LC_CTYPE'];
-      
+
       const result = resolveOutputLanguage('auto', 'en');
       expect(result).toBe('English');
     });
@@ -174,7 +189,7 @@ describe('languageUtils', () => {
       delete process.env['LC_ALL'];
       delete process.env['LC_MESSAGES'];
       delete process.env['LC_CTYPE'];
-      
+
       // When uiLanguage is 'auto' and system is Russian, should use Russian
       const result = resolveOutputLanguage('auto', 'auto');
       expect(result).toBe('Russian');
@@ -187,7 +202,7 @@ describe('languageUtils', () => {
       delete process.env['LC_ALL'];
       delete process.env['LC_MESSAGES'];
       delete process.env['LC_CTYPE'];
-      
+
       const result = resolveOutputLanguage('Japanese', 'ru');
       expect(result).toBe('Japanese');
     });
@@ -218,7 +233,7 @@ describe('languageUtils', () => {
     it('should create new file when no setting provided and file does not exist', () => {
       // Setup: file doesn't exist
       delete mockFiles[filePath];
-      
+
       // Set system language to English
       delete process.env['OLLAMA_CODE_LANG'];
       process.env['LANG'] = 'en_US.UTF-8';
@@ -284,7 +299,7 @@ describe('languageUtils', () => {
     it('should use UI language fallback when system is English but UI is Russian', () => {
       // Setup: file doesn't exist
       delete mockFiles[filePath];
-      
+
       // Set system language to English
       delete process.env['OLLAMA_CODE_LANG'];
       process.env['LANG'] = 'en_US.UTF-8';

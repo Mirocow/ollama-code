@@ -489,6 +489,7 @@ describe('CoreToolScheduler', () => {
         getGeminiClient: () => null,
         getExcludeTools: () => undefined,
         isInteractive: () => true,
+        getModel: () => 'test-model',
       } as unknown as Config;
 
       // Create scheduler
@@ -653,6 +654,7 @@ describe('CoreToolScheduler', () => {
         getUseModelRouter: () => false,
         getGeminiClient: () => null,
         getChatRecordingService: () => undefined,
+        getModel: () => 'test-model',
       } as unknown as Config;
 
       const scheduler = new CoreToolScheduler({
@@ -1120,7 +1122,7 @@ describe('CoreToolScheduler edit cancellation', () => {
     expect(completedCalls[0].status).toBe('cancelled');
 
     // Check that the diff is preserved
-     
+
     const cancelledCall = completedCalls[0] as any;
     expect(cancelledCall.response.resultDisplay).toBeDefined();
     expect(cancelledCall.response.resultDisplay.fileDiff).toBe(
@@ -1370,7 +1372,7 @@ describe('CoreToolScheduler cancellation during executing with live output', () 
     const completedCalls = onAllToolCallsComplete.mock
       .calls[0][0] as ToolCall[];
     expect(completedCalls[0].status).toBe('cancelled');
-     
+
     const cancelled: any = completedCalls[0];
     expect(cancelled.response.resultDisplay).toBe('hello');
   });
