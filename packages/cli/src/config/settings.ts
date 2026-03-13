@@ -112,7 +112,6 @@ const MIGRATION_MAP: Record<string, string> = {
   toolCallCommand: 'tools.callCommand',
   usageStatisticsEnabled: 'privacy.usageStatisticsEnabled',
   useExternalAuth: 'security.auth.useExternal',
-  useRipgrep: 'tools.useRipgrep',
   vimMode: 'general.vimMode',
 
   enableWelcomeBack: 'ui.enableWelcomeBack',

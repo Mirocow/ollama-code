@@ -1011,26 +1011,6 @@ const SETTINGS_SCHEMA = {
         description: 'Command to run for tool calls.',
         showInDialog: false,
       },
-      useRipgrep: {
-        type: 'boolean',
-        label: 'Use Ripgrep',
-        category: 'Tools',
-        requiresRestart: false,
-        default: true,
-        description:
-          'Use ripgrep for file content search instead of the fallback implementation. Provides faster search performance.',
-        showInDialog: false,
-      },
-      useBuiltinRipgrep: {
-        type: 'boolean',
-        label: 'Use Builtin Ripgrep',
-        category: 'Tools',
-        requiresRestart: false,
-        default: true,
-        description:
-          'Use the bundled ripgrep binary. When set to false, the system-level "rg" command will be used instead. This setting is only effective when useRipgrep is true.',
-        showInDialog: false,
-      },
       enableToolOutputTruncation: {
         type: 'boolean',
         label: 'Enable Tool Output Truncation',

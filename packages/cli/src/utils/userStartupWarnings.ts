@@ -7,12 +7,9 @@
 import fs from 'node:fs/promises';
 import * as os from 'node:os';
 import path from 'node:path';
-import { canUseRipgrep } from '@ollama-code/ollama-code-core';
 
 type WarningCheckOptions = {
   workspaceRoot: string;
-  useRipgrep: boolean;
-  useBuiltinRipgrep: boolean;
 };
 
 type WarningCheck = {
@@ -60,25 +57,6 @@ const rootDirectoryCheck: WarningCheck = {
   },
 };
 
-const ripgrepAvailabilityCheck: WarningCheck = {
-  id: 'ripgrep-availability',
-  check: async (options: WarningCheckOptions) => {
-    if (!options.useRipgrep) {
-      return null;
-    }
-
-    try {
-      const isAvailable = await canUseRipgrep(options.useBuiltinRipgrep);
-      if (!isAvailable) {
-        return 'Ripgrep not available: Please install ripgrep globally to enable faster file content search. Falling back to built-in grep.';
-      }
-      return null;
-    } catch (error) {
-      return `Ripgrep not available: ${error instanceof Error ? error.message : 'Unknown error'}. Falling back to built-in grep.`;
-    }
-  },
-};
-
 // Check for UTF-8 encoding support
 const encodingCheck: WarningCheck = {
   id: 'encoding',
@@ -120,7 +98,6 @@ const encodingCheck: WarningCheck = {
 const WARNING_CHECKS: readonly WarningCheck[] = [
   homeDirectoryCheck,
   rootDirectoryCheck,
-  ripgrepAvailabilityCheck,
   encodingCheck,
 ];
 

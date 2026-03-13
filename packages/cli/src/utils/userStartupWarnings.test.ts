@@ -43,8 +43,6 @@ describe('userStartupWarnings', () => {
 
       const warnings = await getUserStartupWarnings({
         workspaceRoot: '/tmp',
-        useRipgrep: false,
-        useBuiltinRipgrep: false,
       });
 
       const encodingWarning = warnings.find((w) =>
@@ -60,8 +58,6 @@ describe('userStartupWarnings', () => {
 
       const warnings = await getUserStartupWarnings({
         workspaceRoot: '/tmp',
-        useRipgrep: false,
-        useBuiltinRipgrep: false,
       });
 
       const encodingWarning = warnings.find((w) =>
@@ -77,8 +73,6 @@ describe('userStartupWarnings', () => {
 
       const warnings = await getUserStartupWarnings({
         workspaceRoot: '/tmp',
-        useRipgrep: false,
-        useBuiltinRipgrep: false,
       });
 
       const encodingWarning = warnings.find((w) =>
@@ -99,8 +93,6 @@ describe('userStartupWarnings', () => {
 
       const warnings = await getUserStartupWarnings({
         workspaceRoot: '/tmp',
-        useRipgrep: false,
-        useBuiltinRipgrep: false,
       });
 
       const encodingWarning = warnings.find((w) =>
@@ -121,8 +113,6 @@ describe('userStartupWarnings', () => {
 
       const warnings = await getUserStartupWarnings({
         workspaceRoot: '/tmp',
-        useRipgrep: false,
-        useBuiltinRipgrep: false,
       });
 
       const encodingWarning = warnings.find((w) =>
@@ -138,8 +128,6 @@ describe('userStartupWarnings', () => {
 
       const warnings = await getUserStartupWarnings({
         workspaceRoot: '/tmp',
-        useRipgrep: false,
-        useBuiltinRipgrep: false,
       });
 
       const encodingWarning = warnings.find((w) =>

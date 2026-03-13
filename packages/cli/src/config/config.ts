@@ -923,8 +923,6 @@ export async function loadCliConfig(
     folderTrust,
     interactive,
     trustedFolder,
-    useRipgrep: settings.tools?.useRipgrep,
-    useBuiltinRipgrep: settings.tools?.useBuiltinRipgrep,
     shouldUseNodePtyShell: settings.tools?.shell?.enableInteractiveShell,
     skipNextSpeakerCheck: settings.model?.skipNextSpeakerCheck,
     skipLoopDetection: settings.model?.skipLoopDetection ?? false,

@@ -15,190 +15,27 @@ import {
   createPluginMarketplace,
 } from '@ollama-code/ollama-code-core';
 
-/**
- * /plugins command - Manage and inspect plugins
- *
- * Subcommands:
- *   /plugins              - List all plugins with status
- *   /plugins list         - Same as above
- *   /plugins health       - Show health metrics for all plugins
- *   /plugins reload [id]  - Reload all plugins or a specific one
- *   /plugins enable <id>  - Enable a plugin
- *   /plugins disable <id> - Disable a plugin
- *   /plugins info <id>    - Show detailed plugin info
- *   /plugins search <q>   - Search marketplace for plugins
- *   /plugins install <id> - Install plugin from marketplace
- *   /plugins update [id]  - Update plugin(s) from marketplace
- *   /plugins uninstall <id> - Uninstall a plugin
- */
-export const pluginsCommand: SlashCommand = {
-  name: 'plugins',
-  get description() {
-    return t(
-      'Manage plugins. Usage: /plugins [list|health|reload|enable|disable|info|search|install|update|uninstall]',
-    );
-  },
-  kind: CommandKind.BUILT_IN,
-  action: async (context: CommandContext, args?: string): Promise<void> => {
-    const parts = args?.trim().split(/\s+/) || [];
-    const subCommand = parts[0] || 'list';
-    const pluginId = parts[1];
-    const searchQuery = parts.slice(1).join(' ');
-
-    // Get plugin registry
-    const registry = context.services.config?.getPluginRegistry?.();
-
-    if (!registry) {
-      context.ui.addItem(
-        {
-          type: MessageType.ERROR,
-          text: t('Plugin system not available.'),
-        },
-        Date.now(),
-      );
-      return;
-    }
-
-    switch (subCommand) {
-      case 'list':
-      case 'ls':
-        listPlugins(context, registry);
-        break;
-
-      case 'health':
-        await showHealth(context, registry);
-        break;
-
-      case 'reload':
-        if (pluginId) {
-          await reloadPlugin(context, registry, pluginId);
-        } else {
-          await reloadAllPlugins(context, registry);
-        }
-        break;
-
-      case 'enable':
-        if (!pluginId) {
-          context.ui.addItem(
-            {
-              type: MessageType.ERROR,
-              text: t('Usage: /plugins enable <plugin-id>'),
-            },
-            Date.now(),
-          );
-          return;
-        }
-        await enablePlugin(context, registry, pluginId);
-        break;
-
-      case 'disable':
-        if (!pluginId) {
-          context.ui.addItem(
-            {
-              type: MessageType.ERROR,
-              text: t('Usage: /plugins disable <plugin-id>'),
-            },
-            Date.now(),
-          );
-          return;
-        }
-        await disablePlugin(context, registry, pluginId);
-        break;
-
-      case 'info':
-        if (!pluginId) {
-          context.ui.addItem(
-            {
-              type: MessageType.ERROR,
-              text: t('Usage: /plugins info <plugin-id>'),
-            },
-            Date.now(),
-          );
-          return;
-        }
-        showPluginInfo(context, registry, pluginId);
-        break;
-
-      case 'search':
-        await searchMarketplace(context, searchQuery);
-        break;
-
-      case 'install':
-        if (!pluginId) {
-          context.ui.addItem(
-            {
-              type: MessageType.ERROR,
-              text: t('Usage: /plugins install <plugin-id>'),
-            },
-            Date.now(),
-          );
-          return;
-        }
-        await installFromMarketplace(context, pluginId);
-        break;
-
-      case 'update':
-        await updateFromMarketplace(context, pluginId);
-        break;
-
-      case 'uninstall':
-        if (!pluginId) {
-          context.ui.addItem(
-            {
-              type: MessageType.ERROR,
-              text: t('Usage: /plugins uninstall <plugin-id>'),
-            },
-            Date.now(),
-          );
-          return;
-        }
-        await uninstallPlugin(context, pluginId);
-        break;
-
-      case 'help':
-      case '?':
-        showHelp(context);
-        break;
-
-      default:
-        // If it looks like a plugin ID (no spaces, exists), show info
-        if (parts.length === 1 && subCommand.length > 0) {
-          const plugins = registry.getLoadedPlugins?.() || [];
-          const exists = plugins.some(
-            (p: { definition: { metadata: { id: string } } }) =>
-              p.definition.metadata.id === subCommand,
-          );
-          if (exists) {
-            showPluginInfo(context, registry, subCommand);
-            return;
-          }
-        }
-        showHelp(context);
-    }
-  },
-};
+// ═══════════════════════════════════════════════════════════════════════════
+// Plugin Registry Functions
+// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * List all plugins with their status
  */
-function listPlugins(
-  context: CommandContext,
-  registry: {
-    getMetrics(): {
-      loadedPlugins: number;
-      enabledPlugins: number;
-      toolCount: number;
-      aliasCount: number;
-      skillCount: number;
-      disabledPlugins: string[];
-    };
-    getLoadedPlugins(): Array<{
-      definition: { metadata: { id: string; name: string; version: string } };
-      status: string;
-    }>;
-    getEnabledPlugins(): Array<{ definition: { metadata: { id: string } } }>;
-  },
-): void {
+async function listAction(context: CommandContext): Promise<void> {
+  const registry = context.services.config?.getPluginRegistry?.();
+
+  if (!registry) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t('Plugin system not available.'),
+      },
+      Date.now(),
+    );
+    return;
+  }
+
   const metrics = registry.getMetrics();
   const allPlugins = registry.getLoadedPlugins();
   const enabledIds = new Set(
@@ -239,24 +76,20 @@ function listPlugins(
 /**
  * Show health metrics for all plugins
  */
-async function showHealth(
-  context: CommandContext,
-  registry: {
-    checkAllPluginHealth(): Promise<
-      Array<{
-        pluginId: string;
-        status: string;
-        toolCallsTotal: number;
-        toolCallsFailed: number;
-        toolCallsSuccessful: number;
-        avgExecutionTimeMs: number;
-        uptimeMs: number;
-        lastError?: string;
-        lastErrorAt?: Date;
-      }>
-    >;
-  },
-): Promise<void> {
+async function healthAction(context: CommandContext): Promise<void> {
+  const registry = context.services.config?.getPluginRegistry?.();
+
+  if (!registry) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t('Plugin system not available.'),
+      },
+      Date.now(),
+    );
+    return;
+  }
+
   const healthMetrics = await registry.checkAllPluginHealth();
 
   if (healthMetrics.length === 0) {
@@ -313,240 +146,34 @@ async function showHealth(
 }
 
 /**
- * Reload all plugins
- */
-async function reloadAllPlugins(
-  context: CommandContext,
-  registry: {
-    reloadAllPlugins(): Promise<{ success: string[]; failed: string[] }>;
-  },
-): Promise<void> {
-  context.ui.addItem(
-    {
-      type: MessageType.INFO,
-      text: t('🔄 Reloading all plugins...'),
-    },
-    Date.now(),
-  );
-
-  try {
-    const result = await registry.reloadAllPlugins();
-
-    const lines: string[] = ['🔄 Plugin Reload Results:\n'];
-
-    if (result.success.length > 0) {
-      lines.push(`  ✅ Reloaded: ${result.success.length}`);
-      result.success.slice(0, 5).forEach((id) => lines.push(`     - ${id}`));
-      if (result.success.length > 5) {
-        lines.push(`     ... and ${result.success.length - 5} more`);
-      }
-    }
-
-    if (result.failed.length > 0) {
-      lines.push(`  ❌ Failed: ${result.failed.join(', ')}`);
-    }
-
-    context.ui.addItem(
-      {
-        type: MessageType.INFO,
-        text: lines.join('\n'),
-      },
-      Date.now(),
-    );
-  } catch (error) {
-    context.ui.addItem(
-      {
-        type: MessageType.ERROR,
-        text: t(`Failed to reload plugins: ${error}`),
-      },
-      Date.now(),
-    );
-  }
-}
-
-/**
- * Reload a specific plugin
- */
-async function reloadPlugin(
-  context: CommandContext,
-  registry: {
-    reloadPlugin(id: string): Promise<void>;
-  },
-  pluginId: string,
-): Promise<void> {
-  context.ui.addItem(
-    {
-      type: MessageType.INFO,
-      text: t(`🔄 Reloading plugin: ${pluginId}...`),
-    },
-    Date.now(),
-  );
-
-  try {
-    await registry.reloadPlugin(pluginId);
-    context.ui.addItem(
-      {
-        type: MessageType.INFO,
-        text: t(`✅ Plugin "${pluginId}" reloaded successfully.`),
-      },
-      Date.now(),
-    );
-  } catch (error) {
-    context.ui.addItem(
-      {
-        type: MessageType.ERROR,
-        text: t(`Failed to reload plugin "${pluginId}": ${error}`),
-      },
-      Date.now(),
-    );
-  }
-}
-
-/**
- * Enable a plugin
- */
-async function enablePlugin(
-  context: CommandContext,
-  registry: {
-    enablePlugin(id: string): Promise<void>;
-    setPluginEnabled(id: string, enabled: boolean): void;
-    getLoadedPlugins(): Array<{ definition: { metadata: { id: string } } }>;
-  },
-  pluginId: string,
-): Promise<void> {
-  // Check if plugin exists
-  const plugins = registry.getLoadedPlugins();
-  const exists = plugins.some((p) => p.definition.metadata.id === pluginId);
-
-  if (!exists) {
-    context.ui.addItem(
-      {
-        type: MessageType.ERROR,
-        text: t(`Plugin "${pluginId}" not found.`),
-      },
-      Date.now(),
-    );
-    return;
-  }
-
-  try {
-    registry.setPluginEnabled(pluginId, true);
-    await registry.enablePlugin(pluginId);
-    context.ui.addItem(
-      {
-        type: MessageType.INFO,
-        text: t(`✅ Plugin "${pluginId}" enabled.`),
-      },
-      Date.now(),
-    );
-  } catch (error) {
-    context.ui.addItem(
-      {
-        type: MessageType.ERROR,
-        text: t(`Failed to enable plugin "${pluginId}": ${error}`),
-      },
-      Date.now(),
-    );
-  }
-}
-
-/**
- * Disable a plugin
- */
-async function disablePlugin(
-  context: CommandContext,
-  registry: {
-    disablePlugin(id: string): Promise<void>;
-    setPluginEnabled(id: string, enabled: boolean): void;
-    getEnabledPlugins(): Array<{ definition: { metadata: { id: string } } }>;
-  },
-  pluginId: string,
-): Promise<void> {
-  // Check if plugin is enabled
-  const enabledPlugins = registry.getEnabledPlugins();
-  const isEnabled = enabledPlugins.some(
-    (p) => p.definition.metadata.id === pluginId,
-  );
-
-  if (!isEnabled) {
-    context.ui.addItem(
-      {
-        type: MessageType.WARNING,
-        text: t(`Plugin "${pluginId}" is not enabled.`),
-      },
-      Date.now(),
-    );
-    return;
-  }
-
-  try {
-    registry.setPluginEnabled(pluginId, false);
-    await registry.disablePlugin(pluginId);
-    context.ui.addItem(
-      {
-        type: MessageType.INFO,
-        text: t(`❌ Plugin "${pluginId}" disabled.`),
-      },
-      Date.now(),
-    );
-  } catch (error) {
-    context.ui.addItem(
-      {
-        type: MessageType.ERROR,
-        text: t(`Failed to disable plugin "${pluginId}": ${error}`),
-      },
-      Date.now(),
-    );
-  }
-}
-
-/**
  * Show detailed plugin info
  */
-function showPluginInfo(
-  context: CommandContext,
-  registry: {
-    getLoadedPlugins(): Array<{
-      definition: {
-        metadata: {
-          id: string;
-          name: string;
-          version: string;
-          description?: string;
-          author?: string;
-          tags?: string[];
-          dependencies?: Array<{ pluginId: string; optional?: boolean }>;
-        };
-        tools?: unknown[];
-        aliases?: unknown[];
-        capabilities?: {
-          canReadFiles?: boolean;
-          canWriteFiles?: boolean;
-          canExecuteCommands?: boolean;
-          canAccessNetwork?: boolean;
-          canUseStorage?: boolean;
-          canSpawnAgents?: boolean;
-        };
-      };
-      status: string;
-      loadedAt?: Date;
-      enabledAt?: Date;
-      error?: Error;
-    }>;
-    getPluginHealth(id: string):
-      | {
-          status: string;
-          toolCallsTotal: number;
-          toolCallsFailed: number;
-          toolCallsSuccessful: number;
-          avgExecutionTimeMs: number;
-          uptimeMs: number;
-          lastError?: string;
-        }
-      | undefined;
-  },
-  pluginId: string,
-): void {
+async function infoAction(context: CommandContext, args: string): Promise<void> {
+  const pluginId = args.trim();
+  const registry = context.services.config?.getPluginRegistry?.();
+
+  if (!registry) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t('Plugin system not available.'),
+      },
+      Date.now(),
+    );
+    return;
+  }
+
+  if (!pluginId) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t('Usage: /plugins info <plugin-id>'),
+      },
+      Date.now(),
+    );
+    return;
+  }
+
   const plugins = registry.getLoadedPlugins();
   const plugin = plugins.find((p) => p.definition.metadata.id === pluginId);
 
@@ -661,54 +288,225 @@ function showPluginInfo(
 }
 
 /**
- * Format uptime in human-readable format
+ * Enable a plugin
  */
-function formatUptime(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(0)}s`;
-  if (ms < 3600000) return `${(ms / 60000).toFixed(0)}m`;
-  if (ms < 86400000) return `${(ms / 3600000).toFixed(1)}h`;
-  return `${(ms / 86400000).toFixed(1)}d`;
+async function enableAction(context: CommandContext, args: string): Promise<void> {
+  const pluginId = args.trim();
+  const registry = context.services.config?.getPluginRegistry?.();
+
+  if (!registry) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t('Plugin system not available.'),
+      },
+      Date.now(),
+    );
+    return;
+  }
+
+  if (!pluginId) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t('Usage: /plugins enable <plugin-id>'),
+      },
+      Date.now(),
+    );
+    return;
+  }
+
+  // Check if plugin exists
+  const plugins = registry.getLoadedPlugins();
+  const exists = plugins.some((p) => p.definition.metadata.id === pluginId);
+
+  if (!exists) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t(`Plugin "${pluginId}" not found.`),
+      },
+      Date.now(),
+    );
+    return;
+  }
+
+  try {
+    registry.setPluginEnabled(pluginId, true);
+    await registry.enablePlugin(pluginId);
+    context.ui.addItem(
+      {
+        type: MessageType.INFO,
+        text: t(`✅ Plugin "${pluginId}" enabled.`),
+      },
+      Date.now(),
+    );
+  } catch (error) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t(`Failed to enable plugin "${pluginId}": ${error}`),
+      },
+      Date.now(),
+    );
+  }
 }
 
 /**
- * Show help for the plugins command
+ * Disable a plugin
  */
-function showHelp(context: CommandContext): void {
-  const helpText = `
-📦 /plugins - Manage Ollama Code Plugins
+async function disableAction(context: CommandContext, args: string): Promise<void> {
+  const pluginId = args.trim();
+  const registry = context.services.config?.getPluginRegistry?.();
 
-Usage: /plugins <command> [arguments]
+  if (!registry) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t('Plugin system not available.'),
+      },
+      Date.now(),
+    );
+    return;
+  }
 
-Commands:
-  list                List all plugins with status (default)
-  health              Show health metrics for all plugins
-  reload [id]         Reload all plugins or a specific one
-  enable <id>         Enable a disabled plugin
-  disable <id>        Disable an enabled plugin
-  info <id>           Show detailed plugin information
+  if (!pluginId) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t('Usage: /plugins disable <plugin-id>'),
+      },
+      Date.now(),
+    );
+    return;
+  }
 
-Marketplace:
-  search <query>      Search marketplace for plugins
-  install <id>        Install plugin from marketplace
-  update [id]         Update plugin(s) from marketplace
-  uninstall <id>      Uninstall a plugin
-
-Examples:
-  /plugins                    List all plugins
-  /plugins health             Show health metrics
-  /plugins search weather     Search for weather plugins
-  /plugins install weather    Install weather plugin
-  /plugins update             Update all plugins
-  /plugins info search-tools  Show plugin details
-`;
-  context.ui.addItem(
-    {
-      type: MessageType.INFO,
-      text: helpText,
-    },
-    Date.now(),
+  // Check if plugin is enabled
+  const enabledPlugins = registry.getEnabledPlugins();
+  const isEnabled = enabledPlugins.some(
+    (p) => p.definition.metadata.id === pluginId,
   );
+
+  if (!isEnabled) {
+    context.ui.addItem(
+      {
+        type: MessageType.WARNING,
+        text: t(`Plugin "${pluginId}" is not enabled.`),
+      },
+      Date.now(),
+    );
+    return;
+  }
+
+  try {
+    registry.setPluginEnabled(pluginId, false);
+    await registry.disablePlugin(pluginId);
+    context.ui.addItem(
+      {
+        type: MessageType.INFO,
+        text: t(`❌ Plugin "${pluginId}" disabled.`),
+      },
+      Date.now(),
+    );
+  } catch (error) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t(`Failed to disable plugin "${pluginId}": ${error}`),
+      },
+      Date.now(),
+    );
+  }
+}
+
+/**
+ * Reload plugins
+ */
+async function reloadAction(context: CommandContext, args: string): Promise<void> {
+  const pluginId = args.trim();
+  const registry = context.services.config?.getPluginRegistry?.();
+
+  if (!registry) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t('Plugin system not available.'),
+      },
+      Date.now(),
+    );
+    return;
+  }
+
+  if (pluginId) {
+    context.ui.addItem(
+      {
+        type: MessageType.INFO,
+        text: t(`🔄 Reloading plugin: ${pluginId}...`),
+      },
+      Date.now(),
+    );
+
+    try {
+      await registry.reloadPlugin(pluginId);
+      context.ui.addItem(
+        {
+          type: MessageType.INFO,
+          text: t(`✅ Plugin "${pluginId}" reloaded successfully.`),
+        },
+        Date.now(),
+      );
+    } catch (error) {
+      context.ui.addItem(
+        {
+          type: MessageType.ERROR,
+          text: t(`Failed to reload plugin "${pluginId}": ${error}`),
+        },
+        Date.now(),
+      );
+    }
+  } else {
+    context.ui.addItem(
+      {
+        type: MessageType.INFO,
+        text: t('🔄 Reloading all plugins...'),
+      },
+      Date.now(),
+    );
+
+    try {
+      const result = await registry.reloadAllPlugins();
+
+      const lines: string[] = ['🔄 Plugin Reload Results:\n'];
+
+      if (result.success.length > 0) {
+        lines.push(`  ✅ Reloaded: ${result.success.length}`);
+        result.success.slice(0, 5).forEach((id) => lines.push(`     - ${id}`));
+        if (result.success.length > 5) {
+          lines.push(`     ... and ${result.success.length - 5} more`);
+        }
+      }
+
+      if (result.failed.length > 0) {
+        lines.push(`  ❌ Failed: ${result.failed.join(', ')}`);
+      }
+
+      context.ui.addItem(
+        {
+          type: MessageType.INFO,
+          text: lines.join('\n'),
+        },
+        Date.now(),
+      );
+    } catch (error) {
+      context.ui.addItem(
+        {
+          type: MessageType.ERROR,
+          text: t(`Failed to reload plugins: ${error}`),
+        },
+        Date.now(),
+      );
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -718,10 +516,8 @@ Examples:
 /**
  * Search marketplace for plugins
  */
-async function searchMarketplace(
-  context: CommandContext,
-  query: string,
-): Promise<void> {
+async function searchAction(context: CommandContext, args: string): Promise<void> {
+  const query = args.trim();
   const marketplace = createPluginMarketplace(process.cwd());
 
   context.ui.addItem(
@@ -812,10 +608,20 @@ See examples/ folder for sample plugins.`),
 /**
  * Install plugin from marketplace
  */
-async function installFromMarketplace(
-  context: CommandContext,
-  pluginId: string,
-): Promise<void> {
+async function installAction(context: CommandContext, args: string): Promise<void> {
+  const pluginId = args.trim();
+
+  if (!pluginId) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t('Usage: /plugins install <plugin-id>'),
+      },
+      Date.now(),
+    );
+    return;
+  }
+
   const marketplace = createPluginMarketplace(process.cwd());
 
   context.ui.addItem(
@@ -867,10 +673,8 @@ async function installFromMarketplace(
 /**
  * Update plugin(s) from marketplace
  */
-async function updateFromMarketplace(
-  context: CommandContext,
-  pluginId?: string,
-): Promise<void> {
+async function updateAction(context: CommandContext, args: string): Promise<void> {
+  const pluginId = args.trim();
   const marketplace = createPluginMarketplace(process.cwd());
 
   if (pluginId) {
@@ -968,10 +772,20 @@ async function updateFromMarketplace(
 /**
  * Uninstall a plugin
  */
-async function uninstallPlugin(
-  context: CommandContext,
-  pluginId: string,
-): Promise<void> {
+async function uninstallAction(context: CommandContext, args: string): Promise<void> {
+  const pluginId = args.trim();
+
+  if (!pluginId) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t('Usage: /plugins uninstall <plugin-id>'),
+      },
+      Date.now(),
+    );
+    return;
+  }
+
   const marketplace = createPluginMarketplace(process.cwd());
 
   context.ui.addItem(
@@ -1012,3 +826,168 @@ async function uninstallPlugin(
     );
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Utilities
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Format uptime in human-readable format
+ */
+function formatUptime(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60000) return `${(ms / 1000).toFixed(0)}s`;
+  if (ms < 3600000) return `${(ms / 60000).toFixed(0)}m`;
+  if (ms < 86400000) return `${(ms / 3600000).toFixed(1)}h`;
+  return `${(ms / 86400000).toFixed(1)}d`;
+}
+
+/**
+ * Complete plugin IDs for autocomplete
+ */
+async function completePlugins(
+  context: CommandContext,
+  partialArg: string,
+): Promise<string[]> {
+  const registry = context.services.config?.getPluginRegistry?.();
+  if (!registry) return [];
+
+  let plugins = registry.getLoadedPlugins();
+
+  if (context.invocation?.name === 'enable') {
+    plugins = plugins.filter((p) => !registry.getEnabledPlugins().includes(p));
+  }
+  if (context.invocation?.name === 'disable') {
+    plugins = plugins.filter((p) => registry.getEnabledPlugins().includes(p));
+  }
+
+  const pluginIds = plugins.map((p) => p.definition.metadata.id);
+  return pluginIds.filter((id) => id.startsWith(partialArg));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SubCommand Definitions
+// ═══════════════════════════════════════════════════════════════════════════
+
+const listCommand: SlashCommand = {
+  name: 'list',
+  get description() {
+    return t('List all plugins with status (default action)');
+  },
+  kind: CommandKind.BUILT_IN,
+  action: listAction,
+};
+
+const healthCommand: SlashCommand = {
+  name: 'health',
+  get description() {
+    return t('Show health metrics for all plugins');
+  },
+  kind: CommandKind.BUILT_IN,
+  action: healthAction,
+};
+
+const infoCommand: SlashCommand = {
+  name: 'info',
+  get description() {
+    return t('Show detailed plugin information');
+  },
+  kind: CommandKind.BUILT_IN,
+  action: infoAction,
+  completion: completePlugins,
+};
+
+const enableCommand: SlashCommand = {
+  name: 'enable',
+  get description() {
+    return t('Enable a disabled plugin');
+  },
+  kind: CommandKind.BUILT_IN,
+  action: enableAction,
+  completion: completePlugins,
+};
+
+const disableCommand: SlashCommand = {
+  name: 'disable',
+  get description() {
+    return t('Disable an enabled plugin');
+  },
+  kind: CommandKind.BUILT_IN,
+  action: disableAction,
+  completion: completePlugins,
+};
+
+const reloadCommand: SlashCommand = {
+  name: 'reload',
+  get description() {
+    return t('Reload all plugins or a specific one');
+  },
+  kind: CommandKind.BUILT_IN,
+  action: reloadAction,
+  completion: completePlugins,
+};
+
+const searchCommand: SlashCommand = {
+  name: 'search',
+  get description() {
+    return t('Search marketplace for plugins');
+  },
+  kind: CommandKind.BUILT_IN,
+  action: searchAction,
+};
+
+const installCommand: SlashCommand = {
+  name: 'install',
+  get description() {
+    return t('Install plugin from marketplace');
+  },
+  kind: CommandKind.BUILT_IN,
+  action: installAction,
+};
+
+const updateCommand: SlashCommand = {
+  name: 'update',
+  get description() {
+    return t('Update plugin(s) from marketplace');
+  },
+  kind: CommandKind.BUILT_IN,
+  action: updateAction,
+  completion: completePlugins,
+};
+
+const uninstallCommand: SlashCommand = {
+  name: 'uninstall',
+  get description() {
+    return t('Uninstall a plugin');
+  },
+  kind: CommandKind.BUILT_IN,
+  action: uninstallAction,
+  completion: completePlugins,
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Main Command Export
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const pluginsCommand: SlashCommand = {
+  name: 'plugins',
+  get description() {
+    return t('Manage plugins');
+  },
+  kind: CommandKind.BUILT_IN,
+  subCommands: [
+    listCommand,
+    healthCommand,
+    infoCommand,
+    enableCommand,
+    disableCommand,
+    reloadCommand,
+    searchCommand,
+    installCommand,
+    updateCommand,
+    uninstallCommand,
+  ],
+  action: (context, args) =>
+    // Default to list if no subcommand is provided
+    listCommand.action!(context, args),
+};

@@ -535,8 +535,6 @@ export async function main() {
         ...(await getStartupWarnings()),
         ...(await getUserStartupWarnings({
           workspaceRoot: process.cwd(),
-          useRipgrep: settings.merged.tools?.useRipgrep ?? true,
-          useBuiltinRipgrep: settings.merged.tools?.useBuiltinRipgrep ?? true,
         })),
         ...getSettingsWarnings(settings),
       ]),

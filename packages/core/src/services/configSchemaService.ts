@@ -257,8 +257,6 @@ export const ConfigSchema = z.object({
   // File handling
   fileFiltering: FileFilteringOptionsSchema.optional(),
   defaultFileEncoding: FileEncodingSchema.optional().default('utf8'),
-  useRipgrep: z.boolean().optional().default(true),
-  useBuiltinRipgrep: z.boolean().optional().default(true),
 
   // Shell
   shellExecution: ShellExecutionConfigSchema.optional(),
@@ -427,8 +425,6 @@ export class ConfigSchemaService {
         enableFuzzySearch: true,
       },
       defaultFileEncoding: 'utf8',
-      useRipgrep: true,
-      useBuiltinRipgrep: true,
       shellExecution: {
         terminalWidth: 80,
         terminalHeight: 24,

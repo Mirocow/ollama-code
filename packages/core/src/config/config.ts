@@ -47,7 +47,6 @@ import { GitService } from '../services/gitService.js';
 
 // Tools - loaded through plugin system
 import { setOllamaMdFilename } from '../plugins/index.js';
-import { canUseRipgrep } from '../utils/ripgrepUtils.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import type { LspClient } from '../lsp/types.js';
 import type { SendSdkMcpMessage } from '../plugins/index.js';
@@ -341,8 +340,6 @@ export interface ConfigParameters {
   interactive?: boolean;
   trustedFolder?: boolean;
   defaultFileEncoding?: FileEncodingType;
-  useRipgrep?: boolean;
-  useBuiltinRipgrep?: boolean;
   shouldUseNodePtyShell?: boolean;
   skipNextSpeakerCheck?: boolean;
   shellExecutionConfig?: ShellExecutionConfig;
@@ -488,8 +485,6 @@ export class Config {
   private readonly chatCompression: ChatCompressionSettings | undefined;
   private readonly interactive: boolean;
   private readonly trustedFolder: boolean | undefined;
-  private readonly useRipgrep: boolean;
-  private readonly useBuiltinRipgrep: boolean;
   private readonly shouldUseNodePtyShell: boolean;
   private readonly skipNextSpeakerCheck: boolean;
   private shellExecutionConfig: ShellExecutionConfig;
@@ -593,8 +588,6 @@ export class Config {
 
     // Web search
     this.webSearch = params.webSearch;
-    this.useRipgrep = params.useRipgrep ?? true;
-    this.useBuiltinRipgrep = params.useBuiltinRipgrep ?? true;
     this.shouldUseNodePtyShell = params.shouldUseNodePtyShell ?? false;
     this.skipNextSpeakerCheck = params.skipNextSpeakerCheck ?? true;
     this.shellExecutionConfig = {
@@ -1485,14 +1478,6 @@ export class Config {
     return this.interactive;
   }
 
-  getUseRipgrep(): boolean {
-    return this.useRipgrep;
-  }
-
-  getUseBuiltinRipgrep(): boolean {
-    return this.useBuiltinRipgrep;
-  }
-
   getShouldUseNodePtyShell(): boolean {
     return this.shouldUseNodePtyShell;
   }
@@ -1616,21 +1601,6 @@ export class Config {
 
     // Initialize plugin registry - this loads ALL tools through plugins
     await initializePluginRegistry(registry, this.targetDir, this);
-
-    // Check ripgrep availability and update search tools if needed
-    if (this.getUseRipgrep()) {
-      let useRipgrep = false;
-      try {
-        useRipgrep = await canUseRipgrep(this.getUseBuiltinRipgrep());
-      } catch {
-        // If ripgrep check fails, fallback to GrepTool
-      }
-      // Note: The plugin system will have already registered the appropriate grep tool
-      // This check is for logging purposes only
-      this.debugLogger.info(
-        `Using ${useRipgrep ? 'RipGrep' : 'Grep'} for search`,
-      );
-    }
 
     // Discover MCP tools and other external tools
     await registry.discoverAllTools();
