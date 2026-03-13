@@ -1,0 +1,105 @@
+{
+  "metadata": {
+    "id": "weather",
+    "name": "Weather Plugin",
+    "version": "1.0.0",
+    "description": "Get current weather and forecasts for any location worldwide",
+    "author": "Ollama Code Team",
+    "tags": ["weather", "forecast", "climate", "temperature"],
+    "license": "Apache-2.0",
+    "homepage": "https://github.com/ollama-code/plugins/tree/main/weather",
+    "repository": "https://github.com/ollama-code/plugins"
+  },
+  "tools": [
+    {
+      "name": "get_weather",
+      "displayName": "Get Weather",
+      "description": "Get current weather for a city. Returns temperature, humidity, wind speed, and conditions.",
+      "category": "fetch",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "City name (e.g., 'London', 'New York', 'Tokyo')"
+          },
+          "units": {
+            "type": "string",
+            "enum": ["celsius", "fahrenheit"],
+            "default": "celsius",
+            "description": "Temperature units"
+          }
+        },
+        "required": ["city"]
+      },
+      "handler": "getWeather",
+      "timeout": 10000
+    },
+    {
+      "name": "get_forecast",
+      "displayName": "Get Forecast",
+      "description": "Get 3-day weather forecast for a city",
+      "category": "fetch",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "City name"
+          },
+          "days": {
+            "type": "number",
+            "default": 3,
+            "minimum": 1,
+            "maximum": 7,
+            "description": "Number of days (1-7)"
+          }
+        },
+        "required": ["city"]
+      },
+      "handler": "getForecast",
+      "timeout": 15000
+    }
+  ],
+  "aliases": [
+    {
+      "alias": "weather",
+      "canonicalName": "get_weather",
+      "description": "Shortcut for weather command"
+    },
+    {
+      "alias": "forecast",
+      "canonicalName": "get_forecast",
+      "description": "Shortcut for forecast command"
+    }
+  ],
+  "prompts": [
+    {
+      "priority": 10,
+      "content": "Weather plugin available! Use get_weather to get current weather for any city. Example: get_weather(city='London') returns temperature, humidity, and conditions."
+    }
+  ],
+  "capabilities": {
+    "canReadFiles": false,
+    "canWriteFiles": false,
+    "canExecuteCommands": false,
+    "canAccessNetwork": true,
+    "canUseStorage": false
+  },
+  "settings": [
+    {
+      "name": "api_key",
+      "type": "string",
+      "description": "OpenWeatherMap API key (optional - uses free tier if not provided)",
+      "required": false,
+      "sensitive": true
+    },
+    {
+      "name": "default_units",
+      "type": "string",
+      "enum": ["celsius", "fahrenheit"],
+      "default": "celsius",
+      "description": "Default temperature units"
+    }
+  ]
+}

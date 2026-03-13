@@ -11,6 +11,9 @@ import {
 } from './types.js';
 import { MessageType } from '../types.js';
 import { t } from '../../i18n/index.js';
+import {
+  createPluginMarketplace,
+} from '@ollama-code/ollama-code-core';
 
 /**
  * /plugins command - Manage and inspect plugins
@@ -23,12 +26,16 @@ import { t } from '../../i18n/index.js';
  *   /plugins enable <id>  - Enable a plugin
  *   /plugins disable <id> - Disable a plugin
  *   /plugins info <id>    - Show detailed plugin info
+ *   /plugins search <q>   - Search marketplace for plugins
+ *   /plugins install <id> - Install plugin from marketplace
+ *   /plugins update [id]  - Update plugin(s) from marketplace
+ *   /plugins uninstall <id> - Uninstall a plugin
  */
 export const pluginsCommand: SlashCommand = {
   name: 'plugins',
   get description() {
     return t(
-      'Manage plugins. Usage: /plugins [list|health|reload|enable|disable|info] [id]',
+      'Manage plugins. Usage: /plugins [list|health|reload|enable|disable|info|search|install|update|uninstall]',
     );
   },
   kind: CommandKind.BUILT_IN,
@@ -36,6 +43,7 @@ export const pluginsCommand: SlashCommand = {
     const parts = args?.trim().split(/\s+/) || [];
     const subCommand = parts[0] || 'list';
     const pluginId = parts[1];
+    const searchQuery = parts.slice(1).join(' ');
 
     // Get plugin registry
     const registry = context.services.config?.getPluginRegistry?.();
@@ -109,6 +117,42 @@ export const pluginsCommand: SlashCommand = {
           return;
         }
         showPluginInfo(context, registry, pluginId);
+        break;
+
+      case 'search':
+        await searchMarketplace(context, searchQuery);
+        break;
+
+      case 'install':
+        if (!pluginId) {
+          context.ui.addItem(
+            {
+              type: MessageType.ERROR,
+              text: t('Usage: /plugins install <plugin-id>'),
+            },
+            Date.now(),
+          );
+          return;
+        }
+        await installFromMarketplace(context, pluginId);
+        break;
+
+      case 'update':
+        await updateFromMarketplace(context, pluginId);
+        break;
+
+      case 'uninstall':
+        if (!pluginId) {
+          context.ui.addItem(
+            {
+              type: MessageType.ERROR,
+              text: t('Usage: /plugins uninstall <plugin-id>'),
+            },
+            Date.now(),
+          );
+          return;
+        }
+        await uninstallPlugin(context, pluginId);
         break;
 
       case 'help':
@@ -637,22 +681,27 @@ function showHelp(context: CommandContext): void {
 Usage: /plugins <command> [arguments]
 
 Commands:
-  list              List all plugins with status (default)
-  health            Show health metrics for all plugins
-  reload [id]       Reload all plugins or a specific one
-  enable <id>       Enable a disabled plugin
-  disable <id>      Disable an enabled plugin
-  info <id>         Show detailed plugin information
+  list                List all plugins with status (default)
+  health              Show health metrics for all plugins
+  reload [id]         Reload all plugins or a specific one
+  enable <id>         Enable a disabled plugin
+  disable <id>        Disable an enabled plugin
+  info <id>           Show detailed plugin information
+
+Marketplace:
+  search <query>      Search marketplace for plugins
+  install <id>        Install plugin from marketplace
+  update [id]         Update plugin(s) from marketplace
+  uninstall <id>      Uninstall a plugin
 
 Examples:
-  /plugins                  List all plugins
-  /plugins health           Show health metrics
-  /plugins reload           Reload all plugins
-  /plugins reload core-tools     Reload specific plugin
-  /plugins info memory-tools     Show plugin details
-  /plugins enable search-tools   Enable a plugin
+  /plugins                    List all plugins
+  /plugins health             Show health metrics
+  /plugins search weather     Search for weather plugins
+  /plugins install weather    Install weather plugin
+  /plugins update             Update all plugins
+  /plugins info search-tools  Show plugin details
 `;
-
   context.ui.addItem(
     {
       type: MessageType.INFO,
@@ -660,4 +709,295 @@ Examples:
     },
     Date.now(),
   );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Marketplace Functions
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Search marketplace for plugins
+ */
+async function searchMarketplace(
+  context: CommandContext,
+  query: string,
+): Promise<void> {
+  const marketplace = createPluginMarketplace(process.cwd());
+
+  context.ui.addItem(
+    {
+      type: MessageType.INFO,
+      text: t(`🔍 Searching marketplace for: "${query || 'all plugins'}"...`),
+    },
+    Date.now(),
+  );
+
+  try {
+    const plugins = await marketplace.search({
+      query,
+      limit: 20,
+      sortBy: 'downloads',
+    });
+
+    if (plugins.length === 0) {
+      context.ui.addItem(
+        {
+          type: MessageType.INFO,
+          text: t('No plugins found. Try a different search term.'),
+        },
+        Date.now(),
+      );
+      return;
+    }
+
+    const lines: string[] = [`🔍 Found ${plugins.length} plugins:\n`];
+
+    for (const plugin of plugins) {
+      const statusBadge = plugin.installed
+        ? plugin.updateAvailable
+          ? '📦⬆️'
+          : '📦✓'
+        : '📦';
+      const trustBadge = plugin.verified ? '✓' : '○';
+
+      lines.push(
+        `  ${statusBadge} ${plugin.name} (${plugin.id}) v${plugin.version} [${trustBadge}]`,
+      );
+
+      if (plugin.description) {
+        const desc =
+          plugin.description.length > 60
+            ? plugin.description.substring(0, 57) + '...'
+            : plugin.description;
+        lines.push(`      ${desc}`);
+      }
+    }
+
+    lines.push('');
+    lines.push('Legend:');
+    lines.push('  📦 = Available  📦✓ = Installed  📦⬆️ = Update available');
+    lines.push('  ✓ = Verified  ○ = Community');
+    lines.push('\nUse /plugins info <id> for details.');
+    lines.push('Use /plugins install <id> to install.');
+
+    context.ui.addItem(
+      {
+        type: MessageType.INFO,
+        text: lines.join('\n'),
+      },
+      Date.now(),
+    );
+  } catch (error) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t(`Search failed: ${error}`),
+      },
+      Date.now(),
+    );
+  }
+}
+
+/**
+ * Install plugin from marketplace
+ */
+async function installFromMarketplace(
+  context: CommandContext,
+  pluginId: string,
+): Promise<void> {
+  const marketplace = createPluginMarketplace(process.cwd());
+
+  context.ui.addItem(
+    {
+      type: MessageType.INFO,
+      text: t(`📥 Installing plugin: ${pluginId}...`),
+    },
+    Date.now(),
+  );
+
+  try {
+    const result = await marketplace.install(pluginId, { global: true });
+
+    if (result.success) {
+      const lines: string[] = [`✅ ${result.message}`];
+      if (result.plugin) {
+        lines.push(`   Installed to: ${result.plugin.installedPath}`);
+        lines.push('\nTo use the plugin, restart Ollama Code or run:');
+        lines.push(`  /plugins enable ${result.plugin.id}`);
+      }
+
+      context.ui.addItem(
+        {
+          type: MessageType.INFO,
+          text: lines.join('\n'),
+        },
+        Date.now(),
+      );
+    } else {
+      context.ui.addItem(
+        {
+          type: MessageType.ERROR,
+          text: t(`❌ ${result.message}`),
+        },
+        Date.now(),
+      );
+    }
+  } catch (error) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t(`Installation failed: ${error}`),
+      },
+      Date.now(),
+    );
+  }
+}
+
+/**
+ * Update plugin(s) from marketplace
+ */
+async function updateFromMarketplace(
+  context: CommandContext,
+  pluginId?: string,
+): Promise<void> {
+  const marketplace = createPluginMarketplace(process.cwd());
+
+  if (pluginId) {
+    context.ui.addItem(
+      {
+        type: MessageType.INFO,
+        text: t(`🔄 Updating plugin: ${pluginId}...`),
+      },
+      Date.now(),
+    );
+
+    try {
+      const result = await marketplace.update(pluginId);
+
+      if (result.success) {
+        context.ui.addItem(
+          {
+            type: MessageType.INFO,
+            text: t(`✅ ${result.message}`),
+          },
+          Date.now(),
+        );
+      } else {
+        context.ui.addItem(
+          {
+            type: MessageType.ERROR,
+            text: t(`❌ ${result.message}`),
+          },
+          Date.now(),
+        );
+      }
+    } catch (error) {
+      context.ui.addItem(
+        {
+          type: MessageType.ERROR,
+          text: t(`Update failed: ${error}`),
+        },
+        Date.now(),
+      );
+    }
+  } else {
+    context.ui.addItem(
+      {
+        type: MessageType.INFO,
+        text: t('🔄 Checking for plugin updates...'),
+      },
+      Date.now(),
+    );
+
+    try {
+      const results = await marketplace.updateAll({ checkOnly: true });
+
+      if (results.length === 0) {
+        context.ui.addItem(
+          {
+            type: MessageType.INFO,
+            text: t('No plugins installed.'),
+          },
+          Date.now(),
+        );
+        return;
+      }
+
+      const lines: string[] = ['📋 Update Check Results:\n'];
+
+      for (const result of results) {
+        if (result.success) {
+          lines.push(`  ✅ ${result.pluginId}: ${result.message}`);
+        } else {
+          lines.push(`  ❌ ${result.pluginId}: ${result.message}`);
+        }
+      }
+
+      lines.push('\nUse /plugins update <id> to update a specific plugin.');
+
+      context.ui.addItem(
+        {
+          type: MessageType.INFO,
+          text: lines.join('\n'),
+        },
+        Date.now(),
+      );
+    } catch (error) {
+      context.ui.addItem(
+        {
+          type: MessageType.ERROR,
+          text: t(`Update check failed: ${error}`),
+        },
+        Date.now(),
+      );
+    }
+  }
+}
+
+/**
+ * Uninstall a plugin
+ */
+async function uninstallPlugin(
+  context: CommandContext,
+  pluginId: string,
+): Promise<void> {
+  const marketplace = createPluginMarketplace(process.cwd());
+
+  context.ui.addItem(
+    {
+      type: MessageType.INFO,
+      text: t(`🗑️ Uninstalling plugin: ${pluginId}...`),
+    },
+    Date.now(),
+  );
+
+  try {
+    const result = await marketplace.uninstall(pluginId, { global: true });
+
+    if (result.success) {
+      context.ui.addItem(
+        {
+          type: MessageType.INFO,
+          text: t(`✅ ${result.message}`),
+        },
+        Date.now(),
+      );
+    } else {
+      context.ui.addItem(
+        {
+          type: MessageType.ERROR,
+          text: t(`❌ ${result.message}`),
+        },
+        Date.now(),
+      );
+    }
+  } catch (error) {
+    context.ui.addItem(
+      {
+        type: MessageType.ERROR,
+        text: t(`Uninstall failed: ${error}`),
+      },
+      Date.now(),
+    );
+  }
 }

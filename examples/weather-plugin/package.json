@@ -1,0 +1,25 @@
+{
+  "name": "ollama-code-plugin-weather",
+  "version": "1.0.0",
+  "description": "Weather plugin for Ollama Code - get current weather for any city",
+  "main": "index.js",
+  "keywords": [
+    "ollama-code-plugin",
+    "weather",
+    "forecast",
+    "climate"
+  ],
+  "author": "Ollama Code Team",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ollama-code/plugins"
+  },
+  "engines": {
+    "ollamaCode": ">=0.17.0"
+  },
+  "ollamaCode": {
+    "plugin": true,
+    "entrypoint": "index.js"
+  }
+}
