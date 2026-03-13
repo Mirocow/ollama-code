@@ -41,6 +41,11 @@ export function buildWebSearchConfig(
   settings: Settings,
   _authType?: string,
 ): WebSearchConfig | undefined {
+  // Debug: log what we receive
+  console.error('[DEBUG] buildWebSearchConfig called');
+  console.error('[DEBUG] settings.webSearch:', JSON.stringify(settings.webSearch));
+  console.error('[DEBUG] argv:', JSON.stringify(argv));
+  
   // Step 1: Collect providers from settings or command line/env
   let providers: WebSearchProviderConfig[] = [];
   let userDefault: string | undefined;
@@ -108,8 +113,10 @@ export function buildWebSearchConfig(
 
   // At this point, defaultProvider is guaranteed to be a string
   // (either from user config, CLI arg, or fallback logic above)
-  return {
+  const result = {
     provider: providers,
     default: defaultProvider || 'google-scraper',
   };
+  console.error('[DEBUG] buildWebSearchConfig result:', JSON.stringify(result));
+  return result;
 }
