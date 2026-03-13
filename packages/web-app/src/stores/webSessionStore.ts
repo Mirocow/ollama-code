@@ -58,6 +58,13 @@ export interface StreamingState {
   currentContent: string;
   thinkingContent?: string;
   abortController?: AbortController;
+  /** Active tool calls during streaming */
+  activeToolCalls?: Array<{
+    id: string;
+    name: string;
+    arguments: Record<string, unknown>;
+    result?: unknown;
+  }>;
 }
 
 /**
@@ -110,6 +117,7 @@ interface WebSessionState {
   startStreaming: (abortController: AbortController) => void;
   appendStreamContent: (content: string) => void;
   setThinkingContent: (content: string) => void;
+  setActiveToolCalls: (toolCalls: StreamingState['activeToolCalls']) => void;
   finishStreaming: () => void;
   cancelStreaming: () => void;
 
@@ -273,15 +281,36 @@ export const useWebSessionStore = create<WebSessionState>()(
         }));
       },
 
+      setActiveToolCalls: (toolCalls) => {
+        set((state) => ({
+          streaming: {
+            ...state.streaming,
+            activeToolCalls: toolCalls,
+          },
+        }));
+      },
+
       finishStreaming: () => {
         const { streaming, activeSessionId } = get();
 
         if (activeSessionId && streaming.currentContent) {
-          // Add assistant message to session
+          // Add assistant message to session with tool calls
           get().addMessage(activeSessionId, {
             role: 'assistant',
             content: streaming.currentContent,
             thinking: streaming.thinkingContent,
+            toolCalls: streaming.activeToolCalls,
+          });
+        } else if (
+          activeSessionId &&
+          streaming.activeToolCalls &&
+          streaming.activeToolCalls.length > 0
+        ) {
+          // Only tool calls, no content
+          get().addMessage(activeSessionId, {
+            role: 'assistant',
+            content: '',
+            toolCalls: streaming.activeToolCalls,
           });
         }
 
@@ -338,7 +367,9 @@ export const useWebSessionStore = create<WebSessionState>()(
 
       updateTodo: (id, updates) => {
         set((state) => ({
-          todos: state.todos.map((t) => t.id === id ? { ...t, ...updates } : t),
+          todos: state.todos.map((t) =>
+            t.id === id ? { ...t, ...updates } : t,
+          ),
         }));
       },
 
@@ -368,7 +399,8 @@ export const useWebSessionStore = create<WebSessionState>()(
         if (
           state &&
           Array.isArray(
-            (state as unknown as { sessions: Array<[string, Session]> }).sessions,
+            (state as unknown as { sessions: Array<[string, Session]> })
+              .sessions,
           )
         ) {
           // Convert array back to Map after rehydration

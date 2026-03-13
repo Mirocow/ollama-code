@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useWebSessionStore } from '@/stores/webSessionStore';
+import { useWebSessionStore, type ChatMessage } from '@/stores/webSessionStore';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
 /**
@@ -21,7 +21,37 @@ interface OllamaModel {
 }
 
 /**
- * Main chat interface component
+ * Skill information
+ */
+interface SkillInfo {
+  name: string;
+  description: string;
+  level: string;
+}
+
+/**
+ * Agent information
+ */
+interface AgentInfo {
+  name: string;
+  description: string;
+  model?: string;
+  tools?: string[];
+}
+
+/**
+ * Streaming event types
+ */
+type StreamEvent =
+  | { type: 'content'; content: string }
+  | { type: 'tool_calls_start'; count: number }
+  | { type: 'tool_call'; name: string; args: Record<string, unknown> }
+  | { type: 'tool_result'; name: string; result: unknown }
+  | { type: 'done' }
+  | { type: 'error'; error: string };
+
+/**
+ * Main chat interface component with full tool execution support
  */
 export function ChatInterface() {
   const {
@@ -34,6 +64,7 @@ export function ChatInterface() {
     addMessage,
     startStreaming,
     appendStreamContent,
+    setActiveToolCalls,
     finishStreaming,
     cancelStreaming,
     setSelectedModel,
@@ -44,25 +75,20 @@ export function ChatInterface() {
   const [inputValue, setInputValue] = useState('');
   const [models, setModels] = useState<OllamaModel[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(true);
+  const [skills, setSkills] = useState<SkillInfo[]>([]);
+  const [agents, setAgents] = useState<AgentInfo[]>([]);
+  const [selectedSkill, setSelectedSkill] = useState<string>('');
+  const [selectedAgent, setSelectedAgent] = useState<string>('');
+  const [useTools, setUseTools] = useState(true);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // WebSocket connection
-  const { isConnected, send: _send } = useWebSocket({
+  // WebSocket connection (for status indicator)
+  const { isConnected } = useWebSocket({
     url: process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:11434/api/ws',
-    onMessage: (chunk) => {
-      if (chunk.type === 'chunk' && chunk.content) {
-        appendStreamContent(chunk.content);
-      } else if (chunk.type === 'done') {
-        finishStreaming();
-      } else if (chunk.type === 'error') {
-        console.error('WebSocket error:', chunk.error);
-        finishStreaming();
-      }
-    },
-    onError: (error) => {
-      console.error('WebSocket error:', error);
-    },
+    onMessage: () => {},
+    onError: () => {},
   });
 
   // Fetch available models
@@ -85,6 +111,32 @@ export function ChatInterface() {
     fetchModels();
   }, [selectedModel, setSelectedModel]);
 
+  // Fetch skills and agents
+  useEffect(() => {
+    async function fetchResources() {
+      try {
+        const [skillsRes, agentsRes] = await Promise.all([
+          fetch('/api/skills'),
+          fetch('/api/agents'),
+        ]);
+
+        if (skillsRes.ok) {
+          const skillsData = await skillsRes.json();
+          setSkills(skillsData.skills || []);
+        }
+
+        if (agentsRes.ok) {
+          const agentsData = await agentsRes.json();
+          setAgents(agentsData.agents || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch skills/agents:', error);
+      }
+    }
+
+    fetchResources();
+  }, []);
+
   // Create initial session
   useEffect(() => {
     if (sessions.size === 0) {
@@ -95,12 +147,43 @@ export function ChatInterface() {
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [streaming.currentContent]);
+  }, [streaming.currentContent, streaming.activeToolCalls]);
 
   // Get active session
   const activeSession = activeSessionId ? sessions.get(activeSessionId) : null;
 
-  // Handle send message
+  // Build system prompt from skill/agent
+  const buildSystemPrompt = useCallback(async (): Promise<
+    string | undefined
+  > => {
+    if (selectedAgent) {
+      try {
+        const res = await fetch(`/api/agents/${selectedAgent}`);
+        if (res.ok) {
+          const agent = await res.json();
+          return agent.systemPrompt;
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+
+    if (selectedSkill) {
+      try {
+        const res = await fetch(`/api/skills/${selectedSkill}`);
+        if (res.ok) {
+          const skill = await res.json();
+          return skill.systemPrompt;
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+
+    return undefined;
+  }, [selectedAgent, selectedSkill]);
+
+  // Handle send message with tool execution
   const handleSend = useCallback(async () => {
     if (!inputValue.trim() || streaming.isStreaming || !activeSessionId) return;
 
@@ -117,20 +200,34 @@ export function ChatInterface() {
     const abortController = new AbortController();
     startStreaming(abortController);
 
-    // Send to Ollama via API route
+    // Clear previous tool calls
+    setActiveToolCalls([]);
+
+    // Get system prompt
+    const systemPrompt = await buildSystemPrompt();
+
+    // Build messages array
+    const messages = [
+      ...(systemPrompt
+        ? [{ role: 'system' as const, content: systemPrompt }]
+        : []),
+      ...(activeSession?.messages || []).map((m) => ({
+        role: m.role as 'user' | 'assistant' | 'system',
+        content: m.content,
+      })),
+      { role: 'user' as const, content: userMessage },
+    ];
+
+    // Choose endpoint based on tool usage
+    const endpoint = useTools ? '/api/chat/tools' : '/api/chat';
+
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: selectedModel,
-          messages: [
-            ...(activeSession?.messages || []).map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
-            { role: 'user', content: userMessage },
-          ],
+          messages,
           stream: true,
         }),
         signal: abortController.signal,
@@ -144,6 +241,7 @@ export function ChatInterface() {
       if (!reader) throw new Error('No response body');
 
       const decoder = new TextDecoder();
+      const currentToolCalls: ChatMessage['toolCalls'] = [];
 
       while (true) {
         const { done, value } = await reader.read();
@@ -154,17 +252,78 @@ export function ChatInterface() {
 
         for (const line of lines) {
           try {
-            const parsed = JSON.parse(line);
-            if (parsed.message?.content) {
-              appendStreamContent(parsed.message.content);
+            const event: StreamEvent = JSON.parse(line);
+
+            switch (event.type) {
+              case 'content':
+                appendStreamContent(event.content);
+                break;
+
+              case 'tool_calls_start':
+                // Initialize tool calls
+                for (let i = 0; i < event.count; i++) {
+                  currentToolCalls.push({
+                    id: `tc-${Date.now()}-${i}`,
+                    name: '',
+                    arguments: {},
+                    result: undefined,
+                  });
+                }
+                setActiveToolCalls(currentToolCalls);
+                break;
+
+              case 'tool_call': {
+                // Update first pending tool call with name and args
+                const pendingCall = currentToolCalls.find(
+                  (tc) => tc.name === '' && tc.result === undefined,
+                );
+                if (pendingCall) {
+                  pendingCall.name = event.name;
+                  pendingCall.arguments = event.args;
+                  setActiveToolCalls([...currentToolCalls]);
+                }
+                break;
+              }
+
+              case 'tool_result': {
+                // Update tool call with result
+                const runningCall = currentToolCalls.find(
+                  (tc) => tc.name === event.name && tc.result === undefined,
+                );
+                if (runningCall) {
+                  runningCall.result = event.result;
+                  setActiveToolCalls([...currentToolCalls]);
+                }
+                break;
+              }
+
+              case 'done':
+                finishStreaming();
+                break;
+
+              case 'error':
+                console.error('Stream error:', event.error);
+                finishStreaming();
+                break;
             }
           } catch {
-            // Skip invalid JSON
+            // For /api/chat endpoint (plain Ollama format)
+            try {
+              const parsed = JSON.parse(line);
+              if (parsed.message?.content) {
+                appendStreamContent(parsed.message.content);
+              }
+            } catch {
+              // Skip invalid JSON
+            }
           }
         }
       }
 
-      finishStreaming();
+      // If we got here without 'done' event, finish anyway
+      if (streaming.isStreaming) {
+        finishStreaming();
+      }
     } catch (error) {
       if ((error as Error).name === 'AbortError') {
         console.log('Request aborted');
@@ -179,10 +338,13 @@ export function ChatInterface() {
     activeSessionId,
     activeSession,
     selectedModel,
+    useTools,
     addMessage,
     startStreaming,
     appendStreamContent,
+    setActiveToolCalls,
     finishStreaming,
+    buildSystemPrompt,
   ]);
 
   // Handle keyboard shortcut
@@ -191,6 +353,87 @@ export function ChatInterface() {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  // Render tool call status
+  const renderToolCall = (
+    toolCall: NonNullable<ChatMessage['toolCalls']>[0],
+    showResult = true,
+  ) => {
+    const hasResult = toolCall.result !== undefined;
+    const isError =
+      toolCall.result &&
+      typeof toolCall.result === 'object' &&
+      'error' in toolCall.result;
+
+    return (
+      <div
+        key={toolCall.id}
+        className={`mb-2 p-3 rounded-lg border ${
+          !hasResult
+            ? 'border-blue-300 dark:border-blue-700'
+            : isError
+              ? 'border-red-300 dark:border-red-700'
+              : 'border-green-300 dark:border-green-700'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-lg">
+            {hasResult ? (isError ? '❌' : '✅') : '🔄'}
+          </span>
+          <span
+            className={`px-2 py-0.5 rounded text-xs font-medium ${
+              !hasResult
+                ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                : isError
+                  ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300'
+                  : 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300'
+            }`}
+          >
+            {!hasResult ? 'running' : isError ? 'error' : 'completed'}
+          </span>
+          <span className="font-mono font-semibold">{toolCall.name}</span>
+        </div>
+
+        {Object.keys(toolCall.arguments).length > 0 && (
+          <details className="mt-2">
+            <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+              Arguments
+            </summary>
+            <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-auto">
+              {JSON.stringify(toolCall.arguments, null, 2)}
+            </pre>
+          </details>
+        )}
+
+        {showResult && toolCall.result !== undefined && (
+          <details className="mt-2" open>
+            <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+              Result
+            </summary>
+            <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-auto max-h-48">
+              {typeof toolCall.result === 'string'
+                ? toolCall.result
+                : JSON.stringify(toolCall.result, null, 2)}
+            </pre>
+          </details>
+        )}
+      </div>
+    );
+  };
+
+  // Render message tool calls
+  const renderMessageToolCalls = (toolCalls: ChatMessage['toolCalls']) => {
+    if (!toolCalls || toolCalls.length === 0) return null;
+
+    return (
+      <div className="mt-2 border-t border-border pt-2">
+        <div className="text-xs text-muted-foreground mb-2">
+          Tool Calls ({toolCalls.length})
+        </div>
+        {toolCalls.map((tc) => renderToolCall(tc))}
+      </div>
+    );
   };
 
   return (
@@ -208,7 +451,9 @@ export function ChatInterface() {
               Model
             </label>
             {isLoadingModels ? (
-              <div className="text-sm text-muted-foreground">Loading models...</div>
+              <div className="text-sm text-muted-foreground">
+                Loading models...
+              </div>
             ) : (
               <select
                 value={selectedModel}
@@ -222,6 +467,63 @@ export function ChatInterface() {
                 ))}
               </select>
             )}
+          </div>
+
+          {/* Skill selector */}
+          <div className="p-4 border-b border-border">
+            <label className="text-sm text-muted-foreground mb-2 block">
+              Skill (System Prompt)
+            </label>
+            <select
+              value={selectedSkill}
+              onChange={(e) => {
+                setSelectedSkill(e.target.value);
+                setSelectedAgent(''); // Clear agent when skill selected
+              }}
+              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm"
+            >
+              <option value="">None</option>
+              {skills.map((skill) => (
+                <option key={skill.name} value={skill.name}>
+                  {skill.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Agent selector */}
+          <div className="p-4 border-b border-border">
+            <label className="text-sm text-muted-foreground mb-2 block">
+              Agent (Subagent)
+            </label>
+            <select
+              value={selectedAgent}
+              onChange={(e) => {
+                setSelectedAgent(e.target.value);
+                setSelectedSkill(''); // Clear skill when agent selected
+              }}
+              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm"
+            >
+              <option value="">None</option>
+              {agents.map((agent) => (
+                <option key={agent.name} value={agent.name}>
+                  {agent.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tools toggle */}
+          <div className="p-4 border-b border-border">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useTools}
+                onChange={(e) => setUseTools(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <span className="text-sm">Enable Tool Execution</span>
+            </label>
           </div>
 
           {/* Sessions list */}
@@ -246,7 +548,10 @@ export function ChatInterface() {
           {/* New chat button */}
           <div className="p-4 border-t border-border">
             <button
-              onClick={() => createSession(selectedModel)}
+              onClick={() => {
+                const id = createSession(selectedModel);
+                setActiveSession(id);
+              }}
               className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
             >
               New Chat
@@ -279,8 +584,25 @@ export function ChatInterface() {
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
-          <h1 className="font-semibold">{activeSession?.title || 'New Chat'}</h1>
+          <h1 className="font-semibold">
+            {activeSession?.title || 'New Chat'}
+          </h1>
           <div className="ml-auto flex items-center gap-2">
+            {useTools && (
+              <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                Tools
+              </span>
+            )}
+            {selectedSkill && (
+              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                {selectedSkill}
+              </span>
+            )}
+            {selectedAgent && (
+              <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                {selectedAgent}
+              </span>
+            )}
             <span
               className={`text-xs px-2 py-1 rounded-full ${
                 isConnected
@@ -319,19 +641,43 @@ export function ChatInterface() {
                     </pre>
                   </details>
                 )}
-                <div className="whitespace-pre-wrap">{message.content}</div>
+                {message.content && (
+                  <div className="whitespace-pre-wrap">{message.content}</div>
+                )}
+                {message.role === 'assistant' &&
+                  renderMessageToolCalls(message.toolCalls)}
               </div>
             </div>
           ))}
 
-          {/* Streaming response */}
-          {streaming.isStreaming && streaming.currentContent && (
-            <div className="flex justify-start">
-              <div className="max-w-[80%] px-4 py-2 rounded-lg bg-muted">
-                <div className="whitespace-pre-wrap">{streaming.currentContent}</div>
+          {/* Active tool calls being executed */}
+          {streaming.activeToolCalls &&
+            streaming.activeToolCalls.length > 0 && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] p-3 rounded-lg bg-muted border border-border">
+                  <div className="text-sm font-medium mb-2 text-muted-foreground">
+                    Executing Tools...
+                  </div>
+                  {streaming.activeToolCalls.map((tc) =>
+                    renderToolCall(tc, false),
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+          {/* Streaming response */}
+          {streaming.isStreaming &&
+            streaming.currentContent &&
+            (!streaming.activeToolCalls ||
+              streaming.activeToolCalls.length === 0) && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] px-4 py-2 rounded-lg bg-muted">
+                  <div className="whitespace-pre-wrap">
+                    {streaming.currentContent}
+                  </div>
+                </div>
+              </div>
+            )}
 
           <div ref={messagesEndRef} />
         </div>
