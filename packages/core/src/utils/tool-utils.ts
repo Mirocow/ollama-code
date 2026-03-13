@@ -12,7 +12,7 @@ import { DynamicAliases, type ToolName } from '../tools/tool-names.js';
 export type { ToolName };
 
 const normalizeIdentifier = (identifier: string): string =>
-  identifier.trim().replace(/^_+/, '');
+  identifier.trim().replace(/^_+/, '').toLowerCase();
 
 /**
  * Gets all known aliases for a tool name.
