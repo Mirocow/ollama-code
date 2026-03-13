@@ -388,17 +388,6 @@ export * from './plugins/index.js';
 // Export prompt logic
 export * from './prompts/mcp-prompts.js';
 
-// Export builtin tool names for CLI configuration
-// Note: Tools are loaded dynamically via the plugin system
-export {
-  BUILTIN_TOOL_NAMES,
-  BUILTIN_TOOL_NAMES_SET,
-  FILE_MODIFYING_TOOLS,
-  COMMAND_EXECUTING_TOOLS,
-  isBuiltinTool,
-  type BuiltinToolName,
-} from './tools/builtin-tool-names.js';
-
 // Export storage types from storage-tools plugin
 // Note: These are re-exported for backward compatibility
 export {

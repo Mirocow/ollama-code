@@ -8,13 +8,26 @@
 
 /**
  * Core Tools Plugin
- * 
+ *
  * Built-in plugin providing essential tools for Ollama Code.
  * This plugin demonstrates the plugin system architecture and provides
  * a template for creating custom plugins.
  */
 
-import type { PluginDefinition, PluginTool, PluginContext } from '../../types.js';
+import type {
+  PluginDefinition,
+  PluginTool,
+  PluginContext,
+} from '../../types.js';
+
+/**
+ * Tool names exported by this plugin
+ */
+export const TOOL_NAMES = {
+  ECHO: 'echo',
+  TIMESTAMP: 'timestamp',
+  GET_ENV: 'get_env',
+} as const;
 
 /**
  * Tool: echo
@@ -23,7 +36,8 @@ import type { PluginDefinition, PluginTool, PluginContext } from '../../types.js
 const echoTool: PluginTool = {
   id: 'echo',
   name: 'echo',
-  description: 'Echo back the input message. Useful for testing the plugin system.',
+  description:
+    'Echo back the input message. Useful for testing the plugin system.',
   parameters: {
     type: 'object',
     properties: {
@@ -54,7 +68,8 @@ const echoTool: PluginTool = {
 const timestampTool: PluginTool = {
   id: 'timestamp',
   name: 'timestamp',
-  description: 'Get the current timestamp in various formats (ISO, Unix, locale)',
+  description:
+    'Get the current timestamp in various formats (ISO, Unix, locale)',
   parameters: {
     type: 'object',
     properties: {
@@ -70,9 +85,9 @@ const timestampTool: PluginTool = {
   execute: async (params) => {
     const format = (params['format'] as string) || 'all';
     const now = new Date();
-    
+
     const result: Record<string, string | number> = {};
-    
+
     if (format === 'iso' || format === 'all') {
       result['iso'] = now.toISOString();
     }
@@ -82,7 +97,7 @@ const timestampTool: PluginTool = {
     if (format === 'locale' || format === 'all') {
       result['locale'] = now.toLocaleString();
     }
-    
+
     return {
       success: true,
       data: result,
@@ -100,7 +115,8 @@ const timestampTool: PluginTool = {
 const envTool: PluginTool = {
   id: 'env',
   name: 'get_env',
-  description: 'Get the value of an environment variable. Use with caution for sensitive data.',
+  description:
+    'Get the value of an environment variable. Use with caution for sensitive data.',
   parameters: {
     type: 'object',
     properties: {
@@ -119,27 +135,33 @@ const envTool: PluginTool = {
   execute: async (params) => {
     const name = params['name'] as string;
     const defaultValue = params['defaultValue'] as string | undefined;
-    
+
     const value = process.env[name] ?? defaultValue;
-    
+
     if (value === undefined) {
       return {
         success: false,
         error: `Environment variable '${name}' is not set and no default was provided`,
       };
     }
-    
+
     // Mask sensitive variables
-    const sensitivePatterns = ['KEY', 'SECRET', 'PASSWORD', 'TOKEN', 'CREDENTIAL'];
-    const isSensitive = sensitivePatterns.some(pattern => 
-      name.toUpperCase().includes(pattern)
+    const sensitivePatterns = [
+      'KEY',
+      'SECRET',
+      'PASSWORD',
+      'TOKEN',
+      'CREDENTIAL',
+    ];
+    const isSensitive = sensitivePatterns.some((pattern) =>
+      name.toUpperCase().includes(pattern),
     );
-    
+
     return {
       success: true,
       data: isSensitive ? '*** (value hidden for security)' : value,
       display: {
-        summary: isSensitive 
+        summary: isSensitive
           ? `${name} = *** (hidden)`
           : `${name} = ${value.substring(0, 50)}${value.length > 50 ? '...' : ''}`,
       },
@@ -155,41 +177,76 @@ const coreToolsPlugin: PluginDefinition = {
     id: 'core-tools',
     name: 'Core Tools',
     version: '1.0.0',
-    description: 'Built-in core tools for file operations, shell execution, and more',
+    description:
+      'Built-in core tools for file operations, shell execution, and more',
     author: 'Ollama Code Team',
     tags: ['core', 'builtin', 'tools'],
     enabledByDefault: true,
   },
-  
+
   tools: [echoTool, timestampTool, envTool],
-  
+
   // Tool aliases - short names that resolve to canonical tool names
   aliases: [
     // echo aliases
-    { alias: 'repeat', canonicalName: 'echo', description: 'Echo back the input message' },
-    { alias: 'say', canonicalName: 'echo', description: 'Echo back the input message' },
+    {
+      alias: 'repeat',
+      canonicalName: 'echo',
+      description: 'Echo back the input message',
+    },
+    {
+      alias: 'say',
+      canonicalName: 'echo',
+      description: 'Echo back the input message',
+    },
     // timestamp aliases
-    { alias: 'time', canonicalName: 'timestamp', description: 'Get current timestamp' },
-    { alias: 'date', canonicalName: 'timestamp', description: 'Get current date/time' },
-    { alias: 'now', canonicalName: 'timestamp', description: 'Get current timestamp' },
+    {
+      alias: 'time',
+      canonicalName: 'timestamp',
+      description: 'Get current timestamp',
+    },
+    {
+      alias: 'date',
+      canonicalName: 'timestamp',
+      description: 'Get current date/time',
+    },
+    {
+      alias: 'now',
+      canonicalName: 'timestamp',
+      description: 'Get current timestamp',
+    },
     // get_env aliases
-    { alias: 'env', canonicalName: 'get_env', description: 'Get environment variable value' },
-    { alias: 'getenv', canonicalName: 'get_env', description: 'Get environment variable value' },
-    { alias: 'environment', canonicalName: 'get_env', description: 'Get environment variable value' },
+    {
+      alias: 'env',
+      canonicalName: 'get_env',
+      description: 'Get environment variable value',
+    },
+    {
+      alias: 'getenv',
+      canonicalName: 'get_env',
+      description: 'Get environment variable value',
+    },
+    {
+      alias: 'environment',
+      canonicalName: 'get_env',
+      description: 'Get environment variable value',
+    },
   ],
-  
+
   // Context-aware prompts for model guidance
   prompts: [
     {
       priority: 1,
-      content: 'Core utility tools: echo for testing, timestamp for date/time, get_env for environment variables. These are simple tools for basic operations and testing.',
+      content:
+        'Core utility tools: echo for testing, timestamp for date/time, get_env for environment variables. These are simple tools for basic operations and testing.',
     },
     {
       priority: 2,
-      content: 'GET_ENV: Read environment variables. Useful for checking PATH, HOME, configuration. Note: sensitive values (KEYS, PASSWORDS, TOKENS) are masked for security.',
+      content:
+        'GET_ENV: Read environment variables. Useful for checking PATH, HOME, configuration. Note: sensitive values (KEYS, PASSWORDS, TOKENS) are masked for security.',
     },
   ],
-  
+
   // Plugin capabilities
   capabilities: {
     canReadFiles: false,
@@ -199,30 +256,32 @@ const coreToolsPlugin: PluginDefinition = {
     canUseStorage: true,
     canUsePrompts: true,
   },
-  
+
   hooks: {
     onLoad: async (context: PluginContext) => {
       context.logger.info('Core Tools plugin loaded');
     },
-    
+
     onEnable: async (context: PluginContext) => {
       context.logger.info('Core Tools plugin enabled');
     },
-    
+
     onDisable: async (context: PluginContext) => {
       context.logger.info('Core Tools plugin disabled');
     },
-    
+
     onBeforeToolExecute: async (toolId, params, context) => {
       context.logger.debug(`Executing tool: ${toolId}`);
       return true; // Allow execution
     },
-    
+
     onAfterToolExecute: async (toolId, params, result, context) => {
-      context.logger.debug(`Tool ${toolId} completed: ${result.success ? 'success' : 'failed'}`);
+      context.logger.debug(
+        `Tool ${toolId} completed: ${result.success ? 'success' : 'failed'}`,
+      );
     },
   },
-  
+
   defaultConfig: {
     maxEchoLength: 10000,
     envWhitelist: ['PATH', 'HOME', 'USER', 'SHELL', 'NODE_VERSION'],
