@@ -11,13 +11,8 @@
  * Larger models receive more detailed instructions, smaller models get concise versions.
  */
 
-// Import templates as text (esbuild will embed them via .md loader)
-// Note: esbuild handles .md files via loader: { '.md': 'text' } config
-import system8b from './system-8b.md';
-import system14b from './system-14b.md';
-import system32b from './system-32b.md';
-import system70b from './system-70b.md';
-import storageInstructions from './storage-instructions.md';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 /**
  * Model size tiers for prompt selection
@@ -35,19 +30,113 @@ const SIZE_THRESHOLDS = {
 } as const;
 
 /**
- * Mapping of size tiers to template content (embedded at build time)
- */
-const TEMPLATE_MAP: Record<ModelSizeTier, string> = {
-  small: system8b,
-  medium: system14b,
-  large: system32b,
-  xlarge: system70b,
-};
-
-/**
  * Cache for loaded templates
  */
 const templateCache = new Map<string, string>();
+
+/**
+ * Get the directory containing template files
+ */
+function getTemplatesDir(): string {
+  // Try multiple possible locations for the templates directory
+  const possiblePaths = [
+    // When running from dist (compiled JS)
+    path.join(__dirname, 'templates'),
+    // When running from src directly
+    __dirname,
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(path.join(p, 'system-8b.md'))) {
+      return p;
+    }
+  }
+
+  // Fallback to current directory
+  return __dirname;
+}
+
+/**
+ * Load a template file by name
+ */
+function loadTemplate(name: string): string {
+  if (templateCache.has(name)) {
+    return templateCache.get(name)!;
+  }
+
+  const templatesDir = getTemplatesDir();
+  const filePath = path.join(templatesDir, name);
+
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    templateCache.set(name, content);
+    return content;
+  } catch {
+    // Return a minimal fallback template if file not found
+    console.warn(`Template file not found: ${filePath}, using fallback`);
+    return getFallbackTemplate(name);
+  }
+}
+
+/**
+ * Fallback templates when files are not available
+ */
+function getFallbackTemplate(name: string): string {
+  const fallbacks: Record<string, string> = {
+    'system-8b.md': `# Role
+You are Ollama Code, a CLI agent. Be concise (<3 lines).
+Follow project conventions. Use absolute paths.
+{{ENVIRONMENT_INFO}}
+{{TOOL_LEARNING}}
+Respond in user's language.`,
+    'system-14b.md': `# Role
+You are Ollama Code, a CLI agent for development. Be concise (<3 lines), code/commands unchanged.
+Follow project conventions. Use absolute paths: {{ROOT}} + relative.
+Before changes: check tests, dependencies. After changes: run linter/tests.
+{{ENVIRONMENT_INFO}}
+{{TOOL_LEARNING}}
+Respond in user's language.`,
+    'system-32b.md': `# Role
+You are Ollama Code, a CLI agent for development. Be concise (<3 lines), code/commands unchanged.
+# Rules
+- Follow project conventions
+- Use absolute paths: {{ROOT}} + relative
+- Before changes: check tests, dependencies
+- After changes: run linter/tests
+- Never commit without request
+{{ENVIRONMENT_INFO}}
+{{TOOL_LEARNING}}
+Respond in user's language.`,
+    'system-70b.md': `# Role
+You are Ollama Code, a CLI agent for development. Be concise (<3 lines), code/commands unchanged.
+# Rules
+- Follow project conventions
+- Use absolute paths: {{ROOT}} + relative
+- Before changes: check tests, dependencies
+- After changes: run linter/tests
+- Never commit without request
+- For current info: USE web_search tool
+{{ENVIRONMENT_INFO}}
+{{TOOL_LEARNING}}
+Respond in user's language.`,
+    'storage-instructions.md': `# Storage
+Use model_storage tool for persistent data across sessions.`,
+  };
+  return fallbacks[name] || fallbacks['system-14b.md'];
+}
+
+/**
+ * Get the system prompt template for a model size tier
+ */
+function getTemplateByTier(tier: ModelSizeTier): string {
+  const templateMap: Record<ModelSizeTier, string> = {
+    small: 'system-8b.md',
+    medium: 'system-14b.md',
+    large: 'system-32b.md',
+    xlarge: 'system-70b.md',
+  };
+  return loadTemplate(templateMap[tier]);
+}
 
 /**
  * Extract model size from model name
@@ -165,7 +254,7 @@ export function getSizeTier(modelName: string): ModelSizeTier {
  */
 export function getSystemPromptTemplate(modelName?: string): string {
   const tier = modelName ? getSizeTier(modelName) : 'medium';
-  return TEMPLATE_MAP[tier];
+  return getTemplateByTier(tier);
 }
 
 /**
@@ -174,7 +263,7 @@ export function getSystemPromptTemplate(modelName?: string): string {
  * @returns Storage instructions content
  */
 export function getStorageInstructions(): string {
-  return storageInstructions;
+  return loadTemplate('storage-instructions.md');
 }
 
 /**
@@ -183,11 +272,16 @@ export function getStorageInstructions(): string {
  * @returns Map of tier to template content
  */
 export function getAllTemplates(): Record<ModelSizeTier, string> {
-  return { ...TEMPLATE_MAP };
+  return {
+    small: getTemplateByTier('small'),
+    medium: getTemplateByTier('medium'),
+    large: getTemplateByTier('large'),
+    xlarge: getTemplateByTier('xlarge'),
+  };
 }
 
 /**
- * Clear the template cache (no-op since templates are embedded)
+ * Clear the template cache
  */
 export function clearTemplateCache(): void {
   templateCache.clear();
@@ -271,5 +365,10 @@ export function getRecommendedModelsForTier(tier: ModelSizeTier): string[] {
 }
 
 // Export template names for external use
-export const TEMPLATE_FILES = TEMPLATE_MAP;
+export const TEMPLATE_FILES = {
+  small: 'system-8b.md',
+  medium: 'system-14b.md',
+  large: 'system-32b.md',
+  xlarge: 'system-70b.md',
+};
 export { SIZE_THRESHOLDS };
