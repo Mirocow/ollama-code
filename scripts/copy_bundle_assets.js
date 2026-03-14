@@ -38,4 +38,20 @@ for (const file of sbFiles) {
 }
 
 console.log('Copied sandbox profiles to dist/');
+
+// Copy prompt templates (.md files from packages/core/src/prompts/templates/)
+const templatesDir = join(root, 'packages/core/src/prompts/templates');
+const templatesDistDir = join(distDir, 'prompts/templates');
+
+if (existsSync(templatesDir)) {
+  mkdirSync(templatesDistDir, { recursive: true });
+  const mdFiles = glob.sync('*.md', { cwd: templatesDir });
+  for (const file of mdFiles) {
+    copyFileSync(join(templatesDir, file), join(templatesDistDir, file));
+  }
+  console.log(
+    `Copied ${mdFiles.length} prompt templates to dist/prompts/templates/`,
+  );
+}
+
 console.log('\n✅ All bundle assets copied to dist/');

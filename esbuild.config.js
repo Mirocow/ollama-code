@@ -70,7 +70,10 @@ esbuild
       // Make global available for compatibility
       global: 'globalThis',
     },
-    loader: { '.node': 'file' },
+    loader: {
+      '.node': 'file',
+      '.md': 'text', // Embed markdown files as strings
+    },
     metafile: true,
     write: true,
     keepNames: true,
