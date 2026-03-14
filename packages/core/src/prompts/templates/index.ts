@@ -40,17 +40,25 @@ const templateCache = new Map<string, string>();
 function getTemplatesDir(): string {
   // Try multiple possible locations for the templates directory
   const possiblePaths = [
-    // When running from dist (compiled JS)
+    // When running from bundled cli.js (templates in dist/prompts/templates/)
+    path.join(__dirname, 'prompts', 'templates'),
+    // When running from dist (compiled JS with templates subdirectory)
     path.join(__dirname, 'templates'),
-    // When running from src directly
+    // When running from src directly (templates in same directory)
     __dirname,
   ];
 
   for (const p of possiblePaths) {
-    if (fs.existsSync(path.join(p, 'system-8b.md'))) {
+    const testPath = path.join(p, 'system-8b.md');
+    if (fs.existsSync(testPath)) {
       return p;
     }
   }
+
+  // Log for debugging why templates weren't found
+  console.warn(
+    `[TEMPLATES] No templates found. __dirname=${__dirname}, checked: ${possiblePaths.map(p => path.join(p, 'system-8b.md')).join(', ')}`,
+  );
 
   // Fallback to current directory
   return __dirname;
