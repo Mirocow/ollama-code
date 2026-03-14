@@ -317,6 +317,11 @@ export async function main() {
 
   const isDebugMode = cliConfig.isDebugMode(argv);
 
+  // Enable debug log file when --debug flag is present
+  if (isDebugMode) {
+    process.env['OLLAMA_CODE_DEBUG_LOG_FILE'] = '1';
+  }
+
   dns.setDefaultResultOrder(
     validateDnsResolutionOrder(settings.merged.advanced?.dnsResolutionOrder),
   );
@@ -436,11 +441,12 @@ export async function main() {
   // Initialize output language file
   const uiLanguage = settings.merged.general?.language;
   const userOutputLang = settings.user.originalSettings.general?.outputLanguage;
-  const workspaceOutputLang = settings.workspace.originalSettings.general?.outputLanguage;
-  const explicitOutputLanguage = 
+  const workspaceOutputLang =
+    settings.workspace.originalSettings.general?.outputLanguage;
+  const explicitOutputLanguage =
     (typeof userOutputLang === 'string' ? userOutputLang : undefined) ??
     (typeof workspaceOutputLang === 'string' ? workspaceOutputLang : undefined);
-  
+
   initializeLlmOutputLanguage(
     explicitOutputLanguage,
     typeof uiLanguage === 'string' ? uiLanguage : undefined,
@@ -492,7 +498,9 @@ export async function main() {
       process.on('SIGTERM', async () => {
         process.stdin.setRawMode(wasRaw);
         // Cancel any ongoing stream via streamingStore
-        const { streamingStore } = await import('./ui/stores/streamingStore.js');
+        const { streamingStore } = await import(
+          './ui/stores/streamingStore.js'
+        );
         streamingStore.getState().cancelStream();
         await runExitCleanup();
         process.exit(0);
@@ -500,7 +508,9 @@ export async function main() {
       process.on('SIGINT', async () => {
         process.stdin.setRawMode(wasRaw);
         // Cancel any ongoing stream via streamingStore to prevent hanging
-        const { streamingStore } = await import('./ui/stores/streamingStore.js');
+        const { streamingStore } = await import(
+          './ui/stores/streamingStore.js'
+        );
         streamingStore.getState().cancelStream();
         await runExitCleanup();
         process.exit(0);
