@@ -92,6 +92,7 @@ import {
   setDebugLogSession,
   type DebugLogger,
 } from '../utils/debugLogger.js';
+import { initializeAutoStorage } from '../utils/autoStorage.js';
 
 import {
   ModelsConfig,
@@ -653,6 +654,10 @@ export class Config {
     }
     this.initialized = true;
     this.debugLogger.info('Config initialization started');
+
+    // Initialize auto storage for model's notebook
+    initializeAutoStorage(this.storage);
+    this.debugLogger.debug('Auto storage initialized');
 
     // Initialize centralized FileDiscoveryService
     this.getFileService();

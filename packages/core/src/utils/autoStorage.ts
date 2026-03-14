@@ -15,7 +15,10 @@
  * This acts as a "notebook" for the AI model.
  */
 
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { createDebugLogger } from './debugLogger.js';
+import type { Storage } from '../config/storage.js';
 
 const debugLogger = createDebugLogger('AUTO_STORAGE');
 
@@ -58,6 +61,67 @@ export interface StorageService {
 }
 
 /**
+ * Adapter to make Storage class compatible with StorageService interface
+ */
+export class StorageAdapter implements StorageService {
+  private storageDir: string;
+
+  constructor(storage: Storage) {
+    this.storageDir = storage.getProjectStorageDir();
+    // Ensure storage directory exists
+    if (!fs.existsSync(this.storageDir)) {
+      fs.mkdirSync(this.storageDir, { recursive: true });
+    }
+  }
+
+  private getFilePath(namespace: string, key: string): string {
+    const nsDir = path.join(this.storageDir, namespace);
+    if (!fs.existsSync(nsDir)) {
+      fs.mkdirSync(nsDir, { recursive: true });
+    }
+    return path.join(nsDir, `${key}.json`);
+  }
+
+  async setItem(namespace: string, key: string, value: unknown): Promise<void> {
+    const filePath = this.getFilePath(namespace, key);
+    await fs.promises.writeFile(filePath, JSON.stringify(value, null, 2), 'utf-8');
+  }
+
+  async getItem(namespace: string, key: string): Promise<unknown> {
+    const filePath = this.getFilePath(namespace, key);
+    try {
+      if (fs.existsSync(filePath)) {
+        const content = await fs.promises.readFile(filePath, 'utf-8');
+        return JSON.parse(content);
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  async appendItem(namespace: string, key: string, value: unknown): Promise<void> {
+    const filePath = this.getFilePath(namespace, key);
+    let items: unknown[] = [];
+
+    try {
+      if (fs.existsSync(filePath)) {
+        const content = await fs.promises.readFile(filePath, 'utf-8');
+        items = JSON.parse(content);
+        if (!Array.isArray(items)) {
+          items = [];
+        }
+      }
+    } catch {
+      items = [];
+    }
+
+    items.push(value);
+    await fs.promises.writeFile(filePath, JSON.stringify(items, null, 2), 'utf-8');
+  }
+}
+
+/**
  * Global storage service reference
  */
 let globalStorageService: StorageService | null = null;
@@ -68,6 +132,16 @@ let globalStorageService: StorageService | null = null;
 export function setAutoStorageService(service: StorageService): void {
   globalStorageService = service;
   debugLogger.info('Auto storage service initialized');
+}
+
+/**
+ * Initialize auto storage from a Storage instance
+ * This is the preferred way to initialize auto storage
+ */
+export function initializeAutoStorage(storage: Storage): void {
+  const adapter = new StorageAdapter(storage);
+  setAutoStorageService(adapter);
+  debugLogger.info('Auto storage initialized from Storage instance');
 }
 
 /**
