@@ -31,6 +31,8 @@ export const DEFAULT_PHP_TIMEOUT_MS = 120000;
 export type PHPAction =
   | 'run' // Run PHP script
   | 'r' // Alias for run
+  | 'eval' // Execute inline PHP code
+  | 'e' // Alias for eval
   | 'test' // Run PHPUnit tests
   | 't' // Alias for test
   | 'lint' // Run PHP_CodeSniffer (phpcs)
@@ -63,6 +65,7 @@ export type PHPAction =
 // Action aliases mapping
 const ACTION_ALIASES: Record<string, PHPAction> = {
   r: 'run',
+  e: 'eval',
   t: 'test',
   l: 'lint',
   f: 'format',
@@ -82,6 +85,7 @@ const ACTION_ALIASES: Record<string, PHPAction> = {
 export interface PHPToolParams {
   action: PHPAction;
   script?: string; // PHP file path for run action
+  code?: string; // Inline PHP code for eval action
   args?: string[]; // Additional arguments
   packages?: string[]; // Packages for composer require/remove
   directory?: string; // Working directory
@@ -169,6 +173,9 @@ export class PHPToolInvocation extends BaseToolInvocation<
       case 'run':
         return this.buildRunCommand();
 
+      case 'eval':
+        return this.buildEvalCommand();
+
       case 'test':
         return this.buildTestCommand();
 
@@ -225,6 +232,14 @@ export class PHPToolInvocation extends BaseToolInvocation<
       parts.push(...this.params.args);
     }
     return parts.join(' ');
+  }
+
+  private buildEvalCommand(): string {
+    // Execute inline PHP code using -r flag
+    const code = this.params.code || '';
+    // Escape single quotes in code for shell
+    const escapedCode = code.replace(/'/g, '\'"\'"');
+    return `php -r '${escapedCode}'`;
   }
 
   private buildTestCommand(): string {
@@ -480,58 +495,68 @@ function getPHPToolDescription(): string {
    - Requires: \`script\` (path to .php file)
    - Optional: \`args\` (script arguments)
 
-2. **test** - Run PHPUnit tests
+2. **eval** - Execute inline PHP code (no file needed)
+   - Requires: \`code\` (PHP code string)
+   - Example: { "action": "eval", "code": "echo json_encode(array_map(fn($x) => $x * 2, range(1, 10)));" }
+
+3. **test** - Run PHPUnit tests
    - Optional: \`test_pattern\` (test filter pattern)
    - Optional: \`args\` (additional PHPUnit arguments)
 
-3. **lint** - Run PHP_CodeSniffer (phpcs)
+4. **lint** - Run PHP_CodeSniffer (phpcs)
    - Optional: \`script\` (file/directory to lint)
    - Optional: \`args\` (additional phpcs arguments)
 
-4. **format** - Run PHP-CS-Fixer
+5. **format** - Run PHP-CS-Fixer
    - Optional: \`script\` (file/directory to format)
    - Optional: \`args\` (additional fixer arguments)
 
-5. **composer_install** - Install dependencies
+6. **composer_install** - Install dependencies
    - Optional: \`args\` (additional composer arguments)
 
-6. **composer_update** - Update dependencies
+7. **composer_update** - Update dependencies
    - Optional: \`packages\` (specific packages to update)
    - Optional: \`args\` (additional composer arguments)
 
-7. **composer_require** - Add packages to project
+8. **composer_require** - Add packages to project
    - Requires: \`packages\` (list of packages)
    - Optional: \`args\` (additional composer arguments)
 
-8. **composer_remove** - Remove packages from project
+9. **composer_remove** - Remove packages from project
    - Requires: \`packages\` (list of packages)
    - Optional: \`args\` (additional composer arguments)
 
-9. **composer_dump_autoload** - Regenerate autoload files
-   - Optional: \`args\` (additional composer arguments)
-
-10. **composer_outdated** - Check for outdated packages
+10. **composer_dump_autoload** - Regenerate autoload files
     - Optional: \`args\` (additional composer arguments)
 
-11. **phpunit** - Run PHPUnit directly (global installation)
+11. **composer_outdated** - Check for outdated packages
+    - Optional: \`args\` (additional composer arguments)
+
+12. **phpunit** - Run PHPUnit directly (global installation)
     - Optional: \`test_pattern\` (test filter pattern)
     - Optional: \`script\` (test file/directory)
     - Optional: \`args\` (additional phpunit arguments)
 
-12. **psalm** - Run Psalm static analysis
+13. **psalm** - Run Psalm static analysis
     - Optional: \`script\` (file/directory to analyze)
     - Optional: \`args\` (additional psalm arguments)
 
-13. **phpstan** - Run PHPStan analysis
+14. **phpstan** - Run PHPStan analysis
     - Optional: \`script\` (file/directory to analyze)
     - Optional: \`args\` (additional phpstan arguments)
 
-14. **artisan** - Run Laravel Artisan commands
+15. **artisan** - Run Laravel Artisan commands
     - Requires: \`command\` (artisan command name)
     - Optional: \`args\` (command arguments)
 
-15. **custom** - Run custom PHP command
+16. **custom** - Run custom PHP command
     - Requires: \`command\` (custom command string)
+
+**Quick Execution (eval action):**
+Use \`eval\` to run PHP code directly without creating a file:
+\`\`\`json
+{ "action": "eval", "code": "echo 'Hello, World!';" }
+\`\`\`
 
 **Common Parameters:**
 - \`directory\`: Working directory (defaults to project root)
@@ -614,6 +639,8 @@ export class PHPTool extends BaseDeclarativeTool<PHPToolParams, ToolResult> {
             enum: [
               'run',
               'r',
+              'eval',
+              'e',
               'test',
               't',
               'lint',
@@ -648,6 +675,10 @@ export class PHPTool extends BaseDeclarativeTool<PHPToolParams, ToolResult> {
           script: {
             type: 'string',
             description: 'PHP script path or file to process',
+          },
+          code: {
+            type: 'string',
+            description: 'Inline PHP code to execute (for eval action)',
           },
           args: {
             type: 'array',
@@ -696,6 +727,10 @@ export class PHPTool extends BaseDeclarativeTool<PHPToolParams, ToolResult> {
 
     if (params.action === 'run' && !params.script && !params.command) {
       return 'Script path is required for run action.';
+    }
+
+    if ((params.action === 'eval' || params.action === 'e') && !params.code) {
+      return 'Code is required for eval action.';
     }
 
     if (params.action === 'composer_require' && !params.packages?.length) {

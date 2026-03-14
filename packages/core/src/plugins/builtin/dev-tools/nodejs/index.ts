@@ -34,6 +34,8 @@ export type NodePackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun';
 export type NodeJsAction =
   | 'run' // Run a Node.js script
   | 'r' // Alias for run
+  | 'eval' // Execute inline JavaScript code
+  | 'e' // Alias for eval
   | 'install' // Install dependencies
   | 'i' // Alias for install
   | 'add' // Add a package
@@ -61,6 +63,7 @@ export type NodeJsAction =
 // Action aliases mapping
 const ACTION_ALIASES: Record<string, NodeJsAction> = {
   r: 'run',
+  e: 'eval',
   i: 'install',
   a: 'add',
   t: 'test',
@@ -73,6 +76,7 @@ export interface NodeJsToolParams {
   action: NodeJsAction;
   package_manager?: NodePackageManager;
   script?: string; // Script path for run action
+  code?: string; // Inline JavaScript code for eval action
   args?: string[]; // Additional arguments
   packages?: string[]; // Packages for add/remove
   directory?: string; // Working directory
@@ -193,6 +197,9 @@ export class NodeJsToolInvocation extends BaseToolInvocation<
       case 'run':
         return this.buildRunCommand();
 
+      case 'eval':
+        return this.buildEvalCommand();
+
       case 'install':
         return this.buildInstallCommand(pm);
 
@@ -258,6 +265,14 @@ export class NodeJsToolInvocation extends BaseToolInvocation<
       parts.push(...this.params.args);
     }
     return parts.join(' ');
+  }
+
+  private buildEvalCommand(): string {
+    // Execute inline JavaScript code using -e flag
+    const code = this.params.code || '';
+    // Escape single quotes and double quotes in code for shell
+    const escapedCode = code.replace(/'/g, '\'"\'"');
+    return `node -e '${escapedCode}'`;
   }
 
   private buildInstallCommand(pm: NodePackageManager): string {
@@ -640,7 +655,11 @@ The tool auto-detects the package manager based on lock files (yarn.lock, pnpm-l
    - Requires: \`script\` (path to .js/.mjs/.ts file)
    - Optional: \`args\` (script arguments)
 
-2. **install** - Install dependencies from package.json
+2. **eval** - Execute inline JavaScript code (no file needed)
+   - Requires: \`code\` (JavaScript code string)
+   - Example: { "action": "eval", "code": "console.log([1,2,3].map(x => x*2))" }
+
+3. **install** - Install dependencies from package.json
    - Uses detected or specified package manager
 
 3. **add** - Add packages to the project
@@ -700,9 +719,21 @@ The tool auto-detects the package manager based on lock files (yarn.lock, pnpm-l
 - \`background\`: Run in background (for dev servers)
 - \`description\`: Brief description of the action
 
+**Quick Execution (eval action):**
+Use \`eval\` to run JavaScript code directly without creating a file:
+\`\`\`json
+{ "action": "eval", "code": "console.log([1,2,3,4,5].filter(x => x > 2).map(x => x * 3))" }
+\`\`\`
+
 **Examples:**
 
 \`\`\`json
+// Execute inline JavaScript (recommended for quick tasks)
+{
+  "action": "eval",
+  "code": "const nums = Array.from({length: 100}, (_, i) => i + 1); const result = nums.filter(n => n % 3 === 0).map(n => n * 3); console.log(result.sort((a,b) => b - a).slice(0, 10));"
+}
+
 // Install dependencies
 {
   "action": "install"
@@ -754,6 +785,8 @@ export class NodeJsTool extends BaseDeclarativeTool<
             enum: [
               'run',
               'r',
+              'eval',
+              'e',
               'install',
               'i',
               'add',
@@ -789,6 +822,10 @@ export class NodeJsTool extends BaseDeclarativeTool<
           script: {
             type: 'string',
             description: 'JavaScript/TypeScript script path to run',
+          },
+          code: {
+            type: 'string',
+            description: 'Inline JavaScript code to execute (for eval action)',
           },
           args: {
             type: 'array',
@@ -849,6 +886,10 @@ export class NodeJsTool extends BaseDeclarativeTool<
 
     if (params.action === 'run' && !params.script) {
       return 'Script path is required for run action.';
+    }
+
+    if ((params.action === 'eval' || params.action === 'e') && !params.code) {
+      return 'Code is required for eval action.';
     }
 
     if (params.action === 'add' && !params.packages?.length) {

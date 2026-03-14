@@ -30,6 +30,8 @@ export const DEFAULT_GOLANG_TIMEOUT_MS = 120000;
 
 export type GolangAction =
   | 'run' // Run a Go file
+  | 'eval' // Execute inline Go code (creates temp file)
+  | 'e' // Alias for eval
   | 'build' // Build a Go program
   | 'test' // Run tests
   | 'test_cover' // Run tests with coverage
@@ -56,11 +58,13 @@ export type GolangAction =
 // Action aliases mapping
 const ACTION_ALIASES: Record<string, GolangAction> = {
   init: 'mod_init',
+  e: 'eval',
 };
 
 export interface GolangToolParams {
   action: GolangAction;
   file?: string; // Go file path for run/build
+  code?: string; // Inline Go code for eval action
   args?: string[]; // Additional arguments
   package?: string; // Package name/path
   packages?: string[]; // Packages for get/install
@@ -155,6 +159,9 @@ export class GolangToolInvocation extends BaseToolInvocation<
       case 'run':
         return this.buildRunCommand();
 
+      case 'eval':
+        return this.buildEvalCommand();
+
       case 'build':
         return this.buildBuildCommand();
 
@@ -235,6 +242,17 @@ export class GolangToolInvocation extends BaseToolInvocation<
       parts.push(...this.params.args);
     }
     return parts.join(' ');
+  }
+
+  private buildEvalCommand(): string {
+    // Go doesn't support inline code execution directly,
+    // so we create a temp file and run it
+    const code = this.params.code || '';
+    // Escape single quotes in code for shell
+    const escapedCode = code.replace(/'/g, '\'"\'"');
+    // Create a temp file with the code and run it
+    // Using a heredoc approach for better code handling
+    return `go run /dev/stdin <<'GOEOF'\n${escapedCode}\nGOEOF`;
   }
 
   private buildBuildCommand(): string {
@@ -579,77 +597,88 @@ function getGolangToolDescription(): string {
    - Optional: \`file\` (Go file to run, defaults to current directory)
    - Optional: \`args\` (program arguments)
 
-2. **build** - Build a Go program
+2. **eval** - Execute inline Go code (creates temp file)
+   - Requires: \`code\` (Go code string)
+   - Note: Code must be a complete Go program with package main and main function
+
+3. **build** - Build a Go program
    - Optional: \`file\` or \`package\` (what to build)
    - Optional: \`output\` (output binary name)
    - Optional: \`verbose\` (show package names)
 
-3. **test** - Run tests
+4. **test** - Run tests
    - Optional: \`test_pattern\` (test name pattern)
    - Optional: \`package\` (package to test, defaults to ./...)
    - Optional: \`race\` (enable race detector)
    - Optional: \`verbose\` (show test details)
 
-4. **test_cover** - Run tests with coverage
+5. **test_cover** - Run tests with coverage
    - Optional: \`cover_profile\` (coverage output file)
    - Same options as test
 
-5. **test_bench** - Run benchmarks
+6. **test_bench** - Run benchmarks
    - Optional: \`bench_pattern\` (benchmark pattern, defaults to all)
    - Optional: \`package\` (package to benchmark)
 
-6. **fmt** - Format Go code
+7. **fmt** - Format Go code
    - Optional: \`file\` or \`package\` (defaults to ./...)
 
-7. **vet** - Run go vet static analysis
+8. **vet** - Run go vet static analysis
    - Optional: \`file\` or \`package\` (defaults to ./...)
 
-8. **lint** - Run golangci-lint
+9. **lint** - Run golangci-lint
    - Requires golangci-lint installed
    - Optional: \`file\` (file to lint)
    - Optional: \`args\` (additional lint arguments)
 
-9. **init** or **mod_init** - Initialize go.mod
-   - Optional: \`module_name\` (module path)
-   - \`init\` is an alias for \`mod_init\`
+10. **init** or **mod_init** - Initialize go.mod
+    - Optional: \`module_name\` (module path)
+    - \`init\` is an alias for \`mod_init\`
 
-10. **mod_tidy** - Tidy dependencies in go.mod
+11. **mod_tidy** - Tidy dependencies in go.mod
 
-11. **mod_download** - Download dependencies
+12. **mod_download** - Download dependencies
     - Optional: \`packages\` (specific packages)
 
-12. **mod_verify** - Verify dependencies
+13. **mod_verify** - Verify dependencies
 
-13. **mod_graph** - Show dependency graph
+14. **mod_graph** - Show dependency graph
 
-14. **get** - Add a dependency
+15. **get** - Add a dependency
     - Requires: \`packages\` (package paths)
 
-15. **install** - Install a Go tool
+16. **install** - Install a Go tool
     - Requires: \`packages\` (package paths)
 
-16. **list** - List packages
+17. **list** - List packages
     - Optional: \`package\` (defaults to ./...)
     - Optional: \`args\` (list flags like -m, -json)
 
-17. **doc** - Show documentation
+18. **doc** - Show documentation
     - Optional: \`package\` (package to document)
     - Optional: \`args\` (additional doc arguments)
 
-18. **env** - Show Go environment
+19. **env** - Show Go environment
     - Optional: \`args\` (specific env vars)
 
-19. **version** - Show Go version
+20. **version** - Show Go version
 
-20. **clean** - Clean build cache
+21. **clean** - Clean build cache
     - Optional: \`args\` (clean flags)
 
-21. **generate** - Run go generate
+22. **generate** - Run go generate
     - Optional: \`file\` (file with generate directives)
     - Optional: \`verbose\` (show details)
 
-22. **custom** - Run custom Go command
+23. **custom** - Run custom Go command
     - Requires: \`command\` (custom command string)
+
+**Quick Execution (eval action):**
+Use \`eval\` to run Go code directly without creating a file:
+\`\`\`
+action: eval
+code: package main; import "fmt"; func main() { fmt.Println("Hello") }
+\`\`\`
 
 **Common Parameters:**
 - \`directory\`: Working directory (defaults to project root)
@@ -725,6 +754,8 @@ export class GolangTool extends BaseDeclarativeTool<
             type: 'string',
             enum: [
               'run',
+              'eval',
+              'e',
               'build',
               'test',
               'test_cover',
@@ -753,6 +784,10 @@ export class GolangTool extends BaseDeclarativeTool<
           file: {
             type: 'string',
             description: 'Go file path for run/build actions',
+          },
+          code: {
+            type: 'string',
+            description: 'Inline Go code to execute (for eval action)',
           },
           args: {
             type: 'array',
@@ -829,6 +864,10 @@ export class GolangTool extends BaseDeclarativeTool<
   ): string | null {
     if (!params.action) {
       return 'Action is required.';
+    }
+
+    if ((params.action === 'eval' || params.action === 'e') && !params.code) {
+      return 'Code is required for eval action.';
     }
 
     if (params.action === 'get' && !params.packages?.length) {

@@ -112,6 +112,8 @@ export type TypeScriptAction =
   | 'v' // Alias for version
   | 'run' // Run TypeScript file
   | 'r' // Alias for run
+  | 'eval' // Execute inline TypeScript code
+  | 'e' // Alias for eval
   | 'run_esm' // Run ESM TypeScript file
   | 'transpile' // Transpile only (no type check)
   | 't' // Alias for transpile
@@ -125,12 +127,14 @@ const ACTION_ALIASES: Record<string, TypeScriptAction> = {
   k: 'check',
   v: 'version',
   r: 'run',
+  e: 'eval',
   t: 'transpile',
 };
 
 export interface TypeScriptToolParams {
   action: TypeScriptAction;
   file?: string; // File to compile/run
+  code?: string; // Inline TypeScript code for eval action
   args?: string[]; // Additional arguments
   directory?: string; // Working directory
   timeout?: number;
@@ -259,6 +263,9 @@ export class TypeScriptToolInvocation extends BaseToolInvocation<
 
       case 'run':
         return this.buildRunCommand(runner);
+
+      case 'eval':
+        return this.buildEvalCommand(runner);
 
       case 'run_esm':
         return this.buildRunEsmCommand(runner);
@@ -437,6 +444,15 @@ export class TypeScriptToolInvocation extends BaseToolInvocation<
     }
 
     return parts.join(' ');
+  }
+
+  private buildEvalCommand(runner?: TypeScriptRunner): string {
+    // Execute inline TypeScript code using tsx eval
+    const effectiveRunner = runner || 'tsx';
+    const code = this.params.code || '';
+    // Escape single quotes in code for shell
+    const escapedCode = code.replace(/'/g, '\'"\'"');
+    return `${getRunnerCommand(effectiveRunner).join(' ')} eval '${escapedCode}'`;
   }
 
   private buildRunEsmCommand(runner?: TypeScriptRunner): string {
@@ -628,16 +644,26 @@ function getTypeScriptToolDescription(): string {
    - Optional: \`project\` (tsconfig.json path)
    - Optional: \`args\` (program arguments)
 
-10. **run_esm** - Run ESM TypeScript with tsx (same as run, tsx natively supports ESM)
+10. **eval** - Execute inline TypeScript code (no file needed)
+    - Requires: \`code\` (TypeScript code string)
+    - Example: { "action": "eval", "code": "console.log([1,2,3].map(x => x * 2))" }
+
+11. **run_esm** - Run ESM TypeScript with tsx (same as run, tsx natively supports ESM)
     - Requires: \`file\` (TypeScript file to run)
     - Optional: \`args\` (program arguments)
 
-11. **transpile** - Fast transpile and run with tsx (no full type check)
+12. **transpile** - Fast transpile and run with tsx (no full type check)
     - Requires: \`file\` (TypeScript file to run)
     - Optional: \`args\` (program arguments)
 
-12. **custom** - Run custom TypeScript command
+13. **custom** - Run custom TypeScript command
     - Requires: \`command\` (custom command string)
+
+**Quick Execution (eval action):**
+Use \`eval\` to run TypeScript code directly without creating a file:
+\`\`\`json
+{ "action": "eval", "code": "const nums = [1,2,3,4,5]; console.log(nums.filter(n => n > 2).map(n => n * 3));" }
+\`\`\`
 
 **Common Parameters:**
 - \`directory\`: Working directory (defaults to project root)
@@ -769,6 +795,8 @@ export class TypeScriptTool extends BaseDeclarativeTool<
               'v',
               'run',
               'r',
+              'eval',
+              'e',
               'run_esm',
               'transpile',
               't',
@@ -779,6 +807,10 @@ export class TypeScriptTool extends BaseDeclarativeTool<
           file: {
             type: 'string',
             description: 'TypeScript file to compile or run',
+          },
+          code: {
+            type: 'string',
+            description: 'Inline TypeScript code to execute (for eval action)',
           },
           args: {
             type: 'array',
@@ -868,6 +900,10 @@ export class TypeScriptTool extends BaseDeclarativeTool<
       return 'File is required for run action.';
     }
 
+    if ((params.action === 'eval' || params.action === 'e') && !params.code) {
+      return 'Code is required for eval action.';
+    }
+
     if (params.action === 'run_esm' && !params.file) {
       return 'File is required for run_esm action.';
     }
@@ -905,6 +941,10 @@ export class TypeScriptTool extends BaseDeclarativeTool<
   protected createInvocation(
     params: TypeScriptToolParams,
   ): ToolInvocation<TypeScriptToolParams, ToolResult> {
-    return new TypeScriptToolInvocation(this.config, params, TypeScriptTool.allowlist);
+    return new TypeScriptToolInvocation(
+      this.config,
+      params,
+      TypeScriptTool.allowlist,
+    );
   }
 }
