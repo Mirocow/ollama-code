@@ -31,6 +31,8 @@ export const DEFAULT_SWIFT_TIMEOUT_MS = 120000;
 export type SwiftAction =
   | 'run' // Run with swift run
   | 'r' // Alias for run
+  | 'eval' // Execute inline Swift code (no package needed)
+  | 'e' // Alias for eval
   | 'build' // Build with swift build
   | 'b' // Alias for build
   | 'test' // Run tests with swift test
@@ -51,6 +53,7 @@ export type SwiftAction =
 // Action aliases mapping
 const ACTION_ALIASES: Record<string, SwiftAction> = {
   r: 'run',
+  e: 'eval',
   b: 'build',
   t: 'test',
   init: 'package_init',
@@ -59,6 +62,7 @@ const ACTION_ALIASES: Record<string, SwiftAction> = {
 
 export interface SwiftToolParams {
   action: SwiftAction;
+  code?: string; // Inline Swift code for eval action
   args?: string[]; // Additional arguments
   directory?: string; // Working directory
   timeout?: number;
@@ -150,6 +154,9 @@ export class SwiftToolInvocation extends BaseToolInvocation<
       case 'run':
         return this.buildRunCommand();
 
+      case 'eval':
+        return this.buildEvalCommand();
+
       case 'build':
         return this.buildBuildCommand();
 
@@ -216,6 +223,14 @@ export class SwiftToolInvocation extends BaseToolInvocation<
     }
 
     return parts.join(' ');
+  }
+
+  private buildEvalCommand(): string {
+    // Execute inline Swift code using swift interpreter
+    const code = this.params.code || '';
+    // Swift can run code directly with swift -e or by passing code to stdin
+    // Using heredoc for better code handling
+    return `swift -e '${code.replace(/'/g, "'\"'\"'")}'`;
   }
 
   private buildBuildCommand(): string {
@@ -481,44 +496,48 @@ function getSwiftToolDescription(): string {
    - Optional: \`configuration\` (debug or release)
    - Optional: \`args\` (program arguments)
 
-2. **build** - Build the project
+2. **eval** - Execute inline Swift code (no package needed)
+   - Requires: \`code\` (Swift code string)
+   - Example: { "action": "eval", "code": "print(\\"Hello, Swift!\\")" }
+
+3. **build** - Build the project
    - Optional: \`target\` (specific target to build)
    - Optional: \`product\` (specific product to build)
    - Optional: \`configuration\` (debug or release)
 
-3. **test** - Run tests
+4. **test** - Run tests
    - Optional: \`configuration\` (debug or release)
    - Optional: \`enable_test_discovery\` (enable test discovery)
    - Optional: \`args\` (additional test arguments)
 
-4. **package_init** - Initialize a new package
+5. **package_init** - Initialize a new package
    - Optional: \`package_name\` (package name)
    - Optional: \`package_type\` (library, executable, system-module, manifest)
 
-5. **package_resolve** - Resolve package dependencies
+6. **package_resolve** - Resolve package dependencies
    - Optional: \`args\` (additional arguments)
 
-6. **package_update** - Update package dependencies
+7. **package_update** - Update package dependencies
    - Optional: \`args\` (additional arguments)
 
-7. **package_dump** - Dump package manifest as JSON
+8. **package_dump** - Dump package manifest as JSON
    - Optional: \`args\` (additional arguments)
 
-8. **package_desc** - Describe the package structure
+9. **package_desc** - Describe the package structure
    - Optional: \`args\` (--type json for JSON output)
 
-9. **package_clean** - Clean build artifacts
-   - Optional: \`args\` (additional arguments)
+10. **package_clean** - Clean build artifacts
+    - Optional: \`args\` (additional arguments)
 
-10. **package_edit** - Put a dependency in editable mode
+11. **package_edit** - Put a dependency in editable mode
     - Requires: \`package_name\` (package to edit)
 
-11. **package_unedit** - Remove a dependency from editable mode
+12. **package_unedit** - Remove a dependency from editable mode
     - Requires: \`package_name\` (package name)
 
-12. **package_reset** - Reset the complete package cache
+13. **package_reset** - Reset the complete package cache
 
-13. **custom** - Run custom Swift command
+14. **custom** - Run custom Swift command
     - Requires: \`command\` (custom command string)
 
 **Common Parameters:**
@@ -619,6 +638,8 @@ export class SwiftTool extends BaseDeclarativeTool<
             enum: [
               'run',
               'r',
+              'eval',
+              'e',
               'build',
               'b',
               'test',
@@ -637,6 +658,10 @@ export class SwiftTool extends BaseDeclarativeTool<
               'custom',
             ],
             description: 'The Swift action to perform',
+          },
+          code: {
+            type: 'string',
+            description: 'Inline Swift code to execute (for eval action)',
           },
           args: {
             type: 'array',
@@ -702,6 +727,10 @@ export class SwiftTool extends BaseDeclarativeTool<
   ): string | null {
     if (!params.action) {
       return 'Action is required.';
+    }
+
+    if ((params.action === 'eval' || params.action === 'e') && !params.code) {
+      return 'Code is required for eval action.';
     }
 
     if (params.action === 'package_edit' && !params.package_name) {

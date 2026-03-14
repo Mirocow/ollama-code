@@ -34,6 +34,8 @@ export type CppCompiler = 'gcc' | 'g++' | 'clang' | 'clang++';
 export type CppAction =
   | 'compile' // Compile C/C++ files
   | 'c' // Alias for compile
+  | 'eval' // Execute inline C/C++ code (creates temp file, compiles and runs)
+  | 'e' // Alias for eval
   | 'run' // Compile and run
   | 'r' // Alias for run
   | 'build' // Build with make/cmake
@@ -61,6 +63,7 @@ export type CppAction =
 // Action aliases mapping
 const ACTION_ALIASES: Record<string, CppAction> = {
   c: 'compile',
+  e: 'eval',
   r: 'run',
   b: 'build',
   t: 'test',
@@ -77,6 +80,7 @@ const ACTION_ALIASES: Record<string, CppAction> = {
 export interface CppToolParams {
   action: CppAction;
   compiler?: CppCompiler;
+  code?: string; // Inline C/C++ code for eval action
   file?: string; // Source file for compile/run
   args?: string[]; // Additional arguments
   directory?: string; // Working directory
@@ -172,6 +176,9 @@ export class CppToolInvocation extends BaseToolInvocation<
     switch (action) {
       case 'compile':
         return this.buildCompileCommand();
+
+      case 'eval':
+        return this.buildEvalCommand();
 
       case 'run':
         return this.buildRunCommand();
@@ -292,6 +299,20 @@ export class CppToolInvocation extends BaseToolInvocation<
       return `${compileCmd} && ${runCmd} ${this.params.args.join(' ')}`;
     }
     return `${compileCmd} && ${runCmd}`;
+  }
+
+  private buildEvalCommand(): string {
+    // Execute inline C/C++ code by creating a temp file and running
+    const code = this.params.code || '';
+    // Using temp directory for compilation
+    const tempDir = '/tmp/cpp_eval';
+    const tempFile = `${tempDir}/main.cpp`;
+    const outputFile = `${tempDir}/main`;
+    // Get compiler (default to g++)
+    const compiler = this.params.compiler || 'g++';
+    // Escape single quotes in code for shell
+    const escapedCode = code.replace(/'/g, '\'"\'"');
+    return `mkdir -p ${tempDir} && cat > ${tempFile} <<'CPPEOF'\n${escapedCode}\nCPPEOF && ${compiler} ${tempFile} -o ${outputFile} && ${outputFile}`;
   }
 
   private buildBuildCommand(): string {
@@ -521,46 +542,50 @@ function getCppToolDescription(): string {
    - Optional: \`include_dirs\` (include directories)
    - Optional: \`libs\` (libraries to link)
 
-2. **run** - Compile and run a program
+2. **eval** - Execute inline C/C++ code (no file needed, compiles and runs temp file)
+   - Requires: \`code\` (C/C++ code string)
+   - Example: { "action": "eval", "code": "#include <iostream>\\nint main() { std::cout << \\"Hello\\"; return 0; }" }
+
+3. **run** - Compile and run a program
    - Requires: \`file\` (source file)
    - Optional: \`output\` (output binary name)
    - Optional: \`args\` (program arguments)
 
-3. **build** - Build project (auto-detects CMake or Make)
+4. **build** - Build project (auto-detects CMake or Make)
    - Optional: \`build_dir\` (CMake build directory)
    - Optional: \`target\` (build target)
 
-4. **test** - Run tests with CTest
+5. **test** - Run tests with CTest
    - Optional: \`build_dir\` (build directory)
 
-5. **cmake_configure** - Configure CMake project
+6. **cmake_configure** - Configure CMake project
    - Optional: \`build_dir\` (build directory, defaults to 'build')
    - Optional: \`args\` (CMake arguments)
 
-6. **cmake_build** - Build CMake project
+7. **cmake_build** - Build CMake project
    - Optional: \`build_dir\` (build directory)
    - Optional: \`target\` (build target)
    - Optional: \`args\` (build arguments)
 
-7. **cmake_clean** - Clean CMake build
+8. **cmake_clean** - Clean CMake build
    - Optional: \`build_dir\` (build directory)
 
-8. **cmake_test** - Run CTest
+9. **cmake_test** - Run CTest
    - Optional: \`build_dir\` (build directory)
    - Optional: \`args\` (ctest arguments)
 
-9. **cmake_install** - Install CMake project
-   - Optional: \`build_dir\` (build directory)
+10. **cmake_install** - Install CMake project
+    - Optional: \`build_dir\` (build directory)
 
-10. **make** - Run make
+11. **make** - Run make
     - Optional: \`target\` (make target)
     - Optional: \`args\` (make arguments)
 
-11. **make_clean** - Run make clean
+12. **make_clean** - Run make clean
 
-12. **make_install** - Run make install
+13. **make_install** - Run make install
 
-13. **custom** - Run custom C/C++ command
+14. **custom** - Run custom C/C++ command
     - Requires: \`command\` (custom command string)
 
 **Common Parameters:**
@@ -653,6 +678,8 @@ export class CppTool extends BaseDeclarativeTool<CppToolParams, ToolResult> {
             enum: [
               'compile',
               'c',
+              'eval',
+              'e',
               'run',
               'r',
               'build',
@@ -684,6 +711,10 @@ export class CppTool extends BaseDeclarativeTool<CppToolParams, ToolResult> {
             enum: ['gcc', 'g++', 'clang', 'clang++'],
             description:
               'Compiler to use (auto-detected from file extension if not specified)',
+          },
+          code: {
+            type: 'string',
+            description: 'Inline C/C++ code to execute (for eval action)',
           },
           file: {
             type: 'string',
@@ -766,6 +797,10 @@ export class CppTool extends BaseDeclarativeTool<CppToolParams, ToolResult> {
 
     if (params.action === 'compile' && !params.file) {
       return 'File is required for compile action.';
+    }
+
+    if ((params.action === 'eval' || params.action === 'e') && !params.code) {
+      return 'Code is required for eval action.';
     }
 
     if (params.action === 'run' && !params.file) {
