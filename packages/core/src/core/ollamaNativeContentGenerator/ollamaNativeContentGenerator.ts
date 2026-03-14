@@ -161,19 +161,22 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
     // Convert request once
     const ollamaRequest = this.converter.convertGenAIRequestToOllama(request);
     if (request.config?.tools) {
+      console.error(`[DEBUG GENERATOR] request.config.tools exists, has ${Array.isArray(request.config.tools) ? request.config.tools.length : 1} items`);
       ollamaRequest.tools = await this.converter.convertGenAIToolsToOllamaAsync(
         request.config.tools,
       );
+    } else {
+      console.error('[DEBUG GENERATOR] request.config.tools is MISSING or undefined!');
     }
     this.applyConfigOptions(ollamaRequest);
 
     // Log tools count for debugging
     if (ollamaRequest.tools && ollamaRequest.tools.length > 0) {
-      debugLogger.info(
-        `Sending ${ollamaRequest.tools.length} tools to Ollama API`,
+      console.error(
+        `[DEBUG GENERATOR] Sending ${ollamaRequest.tools.length} tools to Ollama API`,
       );
     } else {
-      debugLogger.warn('WARNING: No tools being sent to Ollama API!');
+      console.error('[DEBUG GENERATOR] WARNING: No tools being sent to Ollama API!');
     }
 
     // Log full request before sending (file only)

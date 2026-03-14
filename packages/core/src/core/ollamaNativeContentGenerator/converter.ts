@@ -199,10 +199,15 @@ export class OllamaContentConverter {
   async convertGenAIToolsToOllamaAsync(
     genaiTools: ToolListUnion | undefined,
   ): Promise<OllamaTool[]> {
-    if (!genaiTools) return [];
+    if (!genaiTools) {
+      console.error('[DEBUG CONVERTER] No tools provided to converter');
+      return [];
+    }
 
     const ollamaTools: OllamaTool[] = [];
     const toolsArray = Array.isArray(genaiTools) ? genaiTools : [genaiTools];
+
+    console.error(`[DEBUG CONVERTER] Processing ${toolsArray.length} tool objects`);
 
     debugLogger.debug('Converting tools to Ollama format', {
       toolsCount: toolsArray.length,
@@ -214,11 +219,13 @@ export class OllamaContentConverter {
       // Handle CallableTool vs Tool
       if ('tool' in tool) {
         actualTool = await (tool as CallableTool).tool();
+        console.error(`[DEBUG CONVERTER] Unwrapped CallableTool`);
       } else {
         actualTool = tool as Tool;
       }
 
       if (actualTool.functionDeclarations) {
+        console.error(`[DEBUG CONVERTER] Found ${actualTool.functionDeclarations.length} function declarations`);
         for (const func of actualTool.functionDeclarations) {
           if (func.name && func.description) {
             let parameters: Record<string, unknown> | undefined;
@@ -245,6 +252,11 @@ export class OllamaContentConverter {
           }
         }
       }
+    }
+
+    console.error(`[DEBUG CONVERTER] Converted ${ollamaTools.length} tools total`);
+    if (ollamaTools.length > 0) {
+      console.error(`[DEBUG CONVERTER] Tool names: ${ollamaTools.map(t => t.function.name).slice(0, 10).join(', ')}${ollamaTools.length > 10 ? '...' : ''}`);
     }
 
     debugLogger.info('Converted tools for Ollama', {

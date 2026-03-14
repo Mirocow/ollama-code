@@ -74,6 +74,17 @@ export class OllamaChat {
     this.sessionId = options.sessionId ?? `session-${Date.now()}`;
     this._contextCache = contextCacheManager;
 
+    // DEBUG: Log tools in constructor
+    if (this.tools && this.tools.length > 0) {
+      const toolCount = this.tools.reduce(
+        (acc, t) => acc + (t.functionDeclarations?.length || 0),
+        0,
+      );
+      console.error(`[DEBUG CHAT] Constructor received ${toolCount} tools`);
+    } else {
+      console.error('[DEBUG CHAT] Constructor received NO tools!');
+    }
+
     debugLogger.info('OllamaChat initialized', {
       enableContextCaching: this.enableContextCaching,
       sessionId: this.sessionId,
@@ -216,6 +227,17 @@ export class OllamaChat {
     this.messageCount++;
 
     const contentGenerator = this.config.getContentGenerator();
+
+    // DEBUG: Log tools status
+    if (this.tools && this.tools.length > 0) {
+      const toolCount = this.tools.reduce(
+        (acc, t) => acc + (t.functionDeclarations?.length || 0),
+        0,
+      );
+      console.error(`[DEBUG CHAT] sendMessageStream has ${toolCount} tools available`);
+    } else {
+      console.error('[DEBUG CHAT] sendMessageStream has NO tools!');
+    }
 
     const request = {
       model,
