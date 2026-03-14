@@ -48,7 +48,8 @@ Ollama Code's built-in tools can be broadly categorized as follows:
 - **[Web Fetch Tool](./web-fetch.md) (`web_fetch`):** For retrieving content from URLs.
 - **[Web Search Tool](./web-search.md) (`web_search`):** For searching the web.
 - **[Multi-File Read Tool](./multi-file.md) (`read_many_files`):** A specialized tool for reading content from multiple files or directories, often used by the `@` command.
-- **[Memory Tool](./memory.md) (`save_memory`):** For saving and recalling information across sessions.
+- **[Memory Tool](./memory.md) (`save_memory`):** For saving user-requested facts and preferences across sessions (user-facing, Markdown format).
+- **[Storage Tool](./storage.md) (`model_storage`):** For AI-internal structured data management with CRUD operations, TTL, and metadata (roadmaps, knowledge base, session data).
 - **[Todo Write Tool](./todo-write.md) (`todo_write`):** For creating and managing structured task lists during coding sessions.
 - **[Task Tool](./task.md) (`task`):** For delegating complex tasks to specialized subagents.
 - **[Exit Plan Mode Tool](./exit-plan-mode.md) (`exit_plan_mode`):** For exiting plan mode and proceeding with implementation.

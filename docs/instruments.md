@@ -297,10 +297,94 @@ Complete list of all supported development instruments and tools.
 **Canonical Name**: `save_memory`  
 **Aliases**: `memory`, `save`
 
+Tool for saving user facts and preferences upon explicit request.
+
 | Parameter | Description |
 |-----------|-------------|
-| `fact` | Fact to remember |
-| `scope` | global/project |
+| `fact` | Fact to remember (required) |
+| `scope` | `global` or `project` |
+
+**When to use:**
+- User explicitly asks "remember this"
+- Personal user preferences
+- Important project context
+
+**Example**:
+```json
+{
+  "fact": "I prefer TypeScript for new projects",
+  "scope": "global"
+}
+```
+
+---
+
+### Model Storage (`model_storage`)
+
+**Canonical Name**: `model_storage`  
+**Aliases**: `storage`, `store`, `kv`, `roadmap`
+
+Universal key-value storage for AI internal use with full CRUD, TTL, and metadata support.
+
+| Parameter | Description |
+|-----------|-------------|
+| `operation` | Operation: set/get/delete/list/append/merge/batch/stats |
+| `namespace` | Namespace: roadmap/session/knowledge/context/learning/metrics |
+| `key` | Key |
+| `value` | Value (any JSON) |
+| `ttl` | Time-to-live in seconds |
+| `tags` | Tags for categorization |
+| `scope` | `global` or `project` |
+
+**When to use:**
+- Project roadmaps and plans
+- AI knowledge base (patterns, conventions)
+- Temporary session data
+- Metrics and statistics
+
+**Examples**:
+```json
+// Save milestone
+{
+  "operation": "set",
+  "namespace": "roadmap",
+  "key": "v1.0",
+  "value": {"features": ["auth"], "status": "planning"}
+}
+
+// With TTL (expires in 1 hour)
+{
+  "operation": "set",
+  "namespace": "session",
+  "key": "temp",
+  "value": "data",
+  "ttl": 3600
+}
+
+// Batch operations
+{
+  "operation": "batch",
+  "namespace": "roadmap",
+  "actions": [
+    { "operation": "set", "key": "a", "value": 1 },
+    { "operation": "delete", "key": "old" }
+  ]
+}
+```
+
+---
+
+### Differences between `save_memory` and `model_storage`
+
+| Characteristic | `save_memory` | `model_storage` |
+|----------------|---------------|-----------------|
+| **Initiator** | User request | AI decision |
+| **Format** | Markdown | JSON |
+| **Confirmation** | Required | Automatic |
+| **Operations** | Add only | Full CRUD |
+| **TTL** | No | Yes |
+
+---
 
 ### Skill (`skill`)
 

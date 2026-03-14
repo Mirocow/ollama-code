@@ -32,7 +32,7 @@ const debugLogger = createDebugLogger('MEMORY_TOOL');
 const memoryToolSchemaData: FunctionDeclaration = {
   name: 'save_memory',
   description:
-    'Saves a specific piece of information or fact to your long-term memory. Use this when the user explicitly asks you to remember something, or when they state a clear, concise fact that seems important to retain for future interactions.',
+    'Saves user facts and preferences to long-term memory in OLLAMA_MEMORY.md. Use ONLY when the user EXPLICITLY asks you to remember something. For AI internal data storage (roadmaps, knowledge, session data), use model_storage tool instead.',
   parametersJsonSchema: {
     type: 'object',
     properties: {
@@ -44,7 +44,7 @@ const memoryToolSchemaData: FunctionDeclaration = {
       scope: {
         type: 'string',
         description:
-          'Where to save the memory: "global" saves to user-level ~/.ollama-code/OLLAMA_CODE.md (shared across all projects), "project" saves to current project\'s OLLAMA_CODE.md (project-specific). If not specified, will prompt user to choose.',
+          'Where to save the memory: "global" saves to user-level ~/.ollama-code/OLLAMA_MEMORY.md (shared across all projects), "project" saves to current project\'s OLLAMA_MEMORY.md (project-specific). If not specified, will prompt user to choose.',
         enum: ['global', 'project'],
       },
     },
@@ -53,25 +53,43 @@ const memoryToolSchemaData: FunctionDeclaration = {
 };
 
 const memoryToolDescription = `
-Saves a specific piece of information or fact to your long-term memory.
+Saves user facts and preferences to long-term memory in OLLAMA_MEMORY.md (Markdown format).
 
-Use this tool:
+This is SEPARATE from OLLAMA.md which contains project context. OLLAMA_MEMORY.md is specifically for user preferences and facts.
 
-- When the user explicitly asks you to remember something (e.g., "Remember that I like pineapple on pizza", "Please save this: my cat's name is Whiskers").
-- When the user states a clear, concise fact about themselves, their preferences, or their environment that seems important for you to retain for future interactions to provide a more personalized and effective assistance.
+## IMPORTANT: When to Use This Tool
 
-Do NOT use this tool:
+Use save_memory ONLY when the user EXPLICITLY asks:
+- "Remember that..." / "Запомни..."
+- "Please save this..." / "Сохрани это..."
+- "Don't forget that..." / "Не забудь..."
+- "I prefer..." / "Я предпочитаю..."
 
-- To remember conversational context that is only relevant for the current session.
-- To save long, complex, or rambling pieces of text. The fact should be relatively short and to the point.
-- If you are unsure whether the information is a fact worth remembering long-term. If in doubt, you can ask the user, "Should I remember that for you?"
+## When NOT to Use This Tool
+
+Do NOT use save_memory for:
+- AI internal data (roadmaps, plans, metrics) → use **model_storage**
+- Temporary session data → use **model_storage** with namespace "session"
+- Learned patterns and conventions → use **model_storage** with namespace "knowledge"
+- Structured data with TTL/expiration → use **model_storage**
+
+## Key Differences from model_storage
+
+| save_memory | model_storage |
+|-------------|---------------|
+| User-facing, requires confirmation | AI-internal, automatic |
+| Markdown (human-readable) | JSON (structured) |
+| Add only | Full CRUD operations |
+| No TTL | TTL support |
+| User edits manually | AI manages |
+| Stored in OLLAMA_MEMORY.md | Stored in .ollama-code/storage.json |
 
 ## Parameters
 
 - \`fact\` (string, required): The specific fact or piece of information to remember. This should be a clear, self-contained statement. For example, if the user says "My favorite color is blue", the fact would be "My favorite color is blue".
 - \`scope\` (string, optional): Where to save the memory:
-  - "global": Saves to user-level ~/.ollama-code/OLLAMA_CODE.md (shared across all projects)
-  - "project": Saves to current project's OLLAMA_CODE.md (project-specific)
+  - "global": Saves to user-level ~/.ollama-code/OLLAMA_MEMORY.md (shared across all projects)
+  - "project": Saves to current project's OLLAMA_MEMORY.md (project-specific)
   - If not specified, the tool will ask the user where they want to save the memory.
 `;
 
@@ -79,6 +97,8 @@ export const OLLAMA_CONFIG_DIR = '.ollama-code';
 // Backward compatibility alias
 export const OLLAMA_CODE_CONFIG_DIR = OLLAMA_CONFIG_DIR;
 export const DEFAULT_CONTEXT_FILENAME = 'OLLAMA.md';
+// Memory file for user facts and preferences (separate from project context)
+export const MEMORY_FILENAME = 'OLLAMA_MEMORY.md';
 export const MEMORY_SECTION_HEADER = '## Ollama Added Memories';
 
 // This variable will hold the currently configured filename for OLLAMA.md context files.
@@ -117,11 +137,11 @@ interface SaveMemoryParams {
 }
 
 function getGlobalMemoryFilePath(): string {
-  return path.join(getOllamaDir(), getCurrentOllamaMdFilename());
+  return path.join(getOllamaDir(), MEMORY_FILENAME);
 }
 
 function getProjectMemoryFilePath(): string {
-  return path.join(process.cwd(), getCurrentOllamaMdFilename());
+  return path.join(process.cwd(), MEMORY_FILENAME);
 }
 
 function getMemoryFilePath(scope: 'global' | 'project' = 'global'): string {

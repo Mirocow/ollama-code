@@ -9,6 +9,7 @@ export default {
   'web-fetch': 'Web Fetch',
   'web-search': 'Web Search',
   memory: 'Memory',
+  storage: 'Storage',
   'mcp-server': 'MCP Servers',
   sandbox: 'Sandboxing',
 };

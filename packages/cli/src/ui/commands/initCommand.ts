@@ -11,7 +11,7 @@ import type {
   SlashCommand,
   SlashCommandActionReturn,
 } from './types.js';
-import { getCurrentOllamaMdFilename } from '@ollama-code/ollama-code-core';
+import { MEMORY_FILENAME } from '@ollama-code/ollama-code-core';
 import { CommandKind } from './types.js';
 import { Text } from 'ink';
 import React from 'react';
@@ -20,7 +20,7 @@ import { t } from '../../i18n/index.js';
 export const initCommand: SlashCommand = {
   name: 'init',
   get description() {
-    return t('Analyzes the project and creates a tailored OLLAMA_CODE.md file.');
+    return t(`Analyzes the project and creates a tailored ${MEMORY_FILENAME} context file.`);
   },
   kind: CommandKind.BUILT_IN,
   action: async (
@@ -35,8 +35,7 @@ export const initCommand: SlashCommand = {
       };
     }
     const targetDir = context.services.config.getTargetDir();
-    const contextFileName = getCurrentOllamaMdFilename();
-    const contextFilePath = path.join(targetDir, contextFileName);
+    const contextFilePath = path.join(targetDir, MEMORY_FILENAME);
 
     try {
       if (fs.existsSync(contextFilePath)) {
@@ -53,7 +52,7 @@ export const initCommand: SlashCommand = {
                 prompt: React.createElement(
                   Text,
                   null,
-                  `A ${contextFileName} file already exists in this directory. Do you want to regenerate it?`,
+                  `A ${MEMORY_FILENAME} file already exists in this directory. Do you want to regenerate it?`,
                 ),
                 originalInvocation: {
                   raw: context.invocation?.raw || '/init',
@@ -73,7 +72,7 @@ export const initCommand: SlashCommand = {
         context.ui.addItem(
           {
             type: 'info',
-            text: `Empty ${contextFileName} created. Now analyzing the project to populate it.`,
+            text: `Empty ${MEMORY_FILENAME} created. Now analyzing the project to populate it.`,
           },
           Date.now(),
         );
@@ -81,21 +80,21 @@ export const initCommand: SlashCommand = {
         return {
           type: 'message',
           messageType: 'error',
-          content: `Failed to create ${contextFileName}: ${err instanceof Error ? err.message : String(err)}`,
+          content: `Failed to create ${MEMORY_FILENAME}: ${err instanceof Error ? err.message : String(err)}`,
         };
       }
     } catch (error) {
       return {
         type: 'message',
         messageType: 'error',
-        content: `Unexpected error preparing ${contextFileName}: ${error instanceof Error ? error.message : String(error)}`,
+        content: `Unexpected error preparing ${MEMORY_FILENAME}: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
 
     return {
       type: 'submit_prompt',
       content: `
-You are Ollama Code, an interactive CLI agent. Analyze the current directory and generate a comprehensive ${contextFileName} file to be used as instructional context for future interactions.
+You are Ollama Code, an interactive CLI agent. Analyze the current directory and generate a comprehensive ${MEMORY_FILENAME} file to be used as instructional context for future interactions.
 
 **Analysis Process:**
 
@@ -111,7 +110,7 @@ You are Ollama Code, an interactive CLI agent. Analyze the current directory and
     *   **Code Project:** Look for clues like \`package.json\`, \`requirements.txt\`, \`pom.xml\`, \`go.mod\`, \`Cargo.toml\`, \`build.gradle\`, or a \`src\` directory. If you find them, this is likely a software project.
     *   **Non-Code Project:** If you don't find code-related files, this might be a directory for documentation, research papers, notes, or something else.
 
-**${contextFileName} Content Generation:**
+**${MEMORY_FILENAME} Content Generation:**
 
 **For a Code Project:**
 
@@ -127,7 +126,9 @@ You are Ollama Code, an interactive CLI agent. Analyze the current directory and
 
 **Final Output:**
 
-Write the complete content to the \`${contextFileName}\` file. The output must be well-formatted Markdown.
+Write the complete content to the \`${MEMORY_FILENAME}\` file. The output must be well-formatted Markdown.
+
+**IMPORTANT: After writing the ${MEMORY_FILENAME} file, you MUST execute the command \`/memory refresh\` to load the new context into memory. This is required so that the context becomes available in the current session.**
 `,
     };
   },

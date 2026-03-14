@@ -368,11 +368,7 @@ function ensureStorageEntry(value: unknown): StorageEntry {
 
 const storageToolSchemaData: FunctionDeclaration = {
   name: 'model_storage',
-  description: `Universal storage for AI model to persist structured data.
-
-PERSISTENCE MODES:
-- persistent: Data saved to files, survives between sessions (default for roadmap, knowledge, learning, metrics)
-- session: Data kept in memory only, cleared when session ends (default for session, context)
+  description: `AI-internal key-value storage for structured data. Use this for roadmaps, knowledge base, session data, metrics, and learned patterns. NOT for user-requested memory saves - use save_memory tool for that.
 
 NAMESPACES (predefined):
 - roadmap: Project roadmap, milestones, future plans (persistent)
@@ -383,22 +379,13 @@ NAMESPACES (predefined):
 - metrics: Statistics, performance data (persistent)
 
 OPERATIONS:
-- set: Store a value (overwrites existing)
-- get: Retrieve a value by key
-- delete: Remove a key
-- list: List all keys in namespace
-- append: Add item to array
-- merge: Merge object with existing data
-- clear: Clear all data in namespace
-- exists: Check if key exists
-- stats: Get storage statistics
-- batch: Execute multiple operations atomically
+- set/get/delete/list/append/merge/clear/exists/stats/batch
 
 FEATURES:
 - TTL (Time-To-Live): Auto-expire data after specified seconds
 - Tags: Categorize entries for filtering
 - Metadata: Track createdAt, updatedAt, version
-- Batch: Execute multiple operations in one call`,
+- Scope: global (all projects) or project-specific`,
   parametersJsonSchema: {
     type: 'object',
     properties: {
@@ -482,7 +469,33 @@ FEATURES:
 const storageToolDescription = `
 # Model Storage Tool
 
-Universal key-value storage for AI model with persistence, TTL, and metadata support.
+AI-internal key-value storage with persistence, TTL, and metadata support.
+
+## IMPORTANT: When to Use This Tool
+
+Use model_storage for AI-managed data:
+- **roadmap**: Project plans, milestones, feature tracking
+- **knowledge**: Learned patterns, conventions, API patterns
+- **session**: Temporary session state (cleared on exit)
+- **context**: Current task context and decisions
+- **learning**: Tool corrections, alias mappings
+- **metrics**: Performance data, statistics
+
+## When NOT to Use This Tool
+
+Do NOT use model_storage for:
+- User-requested memory saves → use **save_memory**
+- Facts user wants to edit manually → use **save_memory** (Markdown is user-friendly)
+
+## Key Differences from save_memory
+
+| model_storage | save_memory |
+|---------------|-------------|
+| AI-internal, automatic | User-facing, requires confirmation |
+| JSON (structured) | Markdown (human-readable) |
+| Full CRUD operations | Add only |
+| TTL support | No TTL |
+| AI manages | User edits manually |
 
 ## Persistence Modes
 
@@ -1918,7 +1931,7 @@ const storageToolsPlugin: PluginDefinition = {
     name: 'Storage Tools',
     version: '1.1.0',
     description:
-      'Universal storage for AI model with TTL, metadata, and batch operations',
+      'AI-internal key-value storage for roadmaps, knowledge, session data. For user-requested memory saves, use memory-tools (save_memory).',
     enabledByDefault: true,
   },
 
@@ -1969,17 +1982,17 @@ const storageToolsPlugin: PluginDefinition = {
     {
       priority: 1,
       content:
-        'Storage tool (model_storage) is universal key-value storage for AI models. Supports persistent and session storage, TTL, metadata, batch operations. Namespaces: roadmap, session, knowledge, context, learning, metrics.',
+        'model_storage: AI-internal key-value storage. Use for roadmaps, knowledge base, session data, metrics. NOT for user-requested memory saves (use save_memory for that). Supports TTL, metadata, batch operations.',
     },
     {
       priority: 2,
       content:
-        'STORAGE OPERATIONS: set/get/delete for single items, list for keys, append for arrays, merge for objects, batch for multiple ops. Use TTL for temporary data, tags for categorization.',
+        'TOOL CHOICE: AI needs to store roadmap/knowledge/patterns → model_storage. User says "Remember X" → save_memory. model_storage is automatic (no confirmation), JSON format, full CRUD. save_memory requires confirmation, Markdown format, add only.',
     },
     {
       priority: 3,
       content:
-        'NAMESPACE GUIDELINES: roadmap (project plans), session (temporary data), knowledge (learned patterns), context (current task), learning (corrections), metrics (statistics). Persistent by default except session/context.',
+        'NAMESPACES: roadmap (plans), session (temp, cleared on exit), knowledge (learned patterns), context (current task), learning (tool corrections), metrics (stats). Use TTL for temporary data, tags for categorization.',
     },
   ],
 

@@ -8,7 +8,7 @@ import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import { homedir } from 'node:os';
-import { getAllOllamaMdFilenames } from '../plugins/index.js';
+import { getAllOllamaMdFilenames, MEMORY_FILENAME } from '../plugins/index.js';
 import type { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 import { processImports } from './memoryImportProcessor.js';
 import { OLLAMA_DIR } from './paths.js';
@@ -121,7 +121,8 @@ async function getOllamaMdFilePathsInternalForEachDir(
   folderTrust: boolean,
 ): Promise<string[]> {
   const allPaths = new Set<string>();
-  const ollamaMdFilenames = getAllOllamaMdFilenames();
+  // Combine configured context files (OLLAMA.md) with memory file (OLLAMA_MEMORY.md)
+  const ollamaMdFilenames = [...getAllOllamaMdFilenames(), MEMORY_FILENAME];
 
   for (const ollamaMdFilename of ollamaMdFilenames) {
     const resolvedHome = path.resolve(userHomePath);

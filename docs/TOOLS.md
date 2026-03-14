@@ -986,105 +986,407 @@ Delegates complex, multi-step tasks to specialized subagents.
 
 ## Memory & Knowledge
 
+Ollama Code provides two tools for storing information with different purposes:
+
+### Tool Comparison
+
+| Feature | `save_memory` | `model_storage` |
+|---------|---------------|-----------------|
+| **Purpose** | User facts & preferences | AI internal data |
+| **Triggered by** | Explicit user request | AI decision |
+| **Format** | Markdown (human-readable) | JSON (structured) |
+| **Confirmation** | ✅ Always required | ❌ Automatic |
+| **Operations** | Add only | set/get/delete/list/merge/batch |
+| **TTL** | ❌ No | ✅ Yes (auto-expire) |
+| **Metadata** | ❌ No | ✅ createdAt, version, tags |
+
+---
+
 ### save_memory
 
-Saves information to long-term memory for use in future sessions.
+Tool for saving user facts and preferences to long-term memory. Use it when the user explicitly asks to remember something important.
 
-**Parameters:**
+#### When to Use ✅
 
-| Name    | Type   | Required | Description                                            |
-| ------- | ------ | -------- | ------------------------------------------------------ |
-| `fact`  | string | Yes      | The fact or information to remember                    |
-| `scope` | string | No       | `global` (all projects) or `project` (current project) |
+1. **User explicitly asks to remember**
+   - "Remember that my cat's name is Whiskers"
+   - "Please remember: I prefer tabs over spaces"
+   - "Don't forget that I work remotely on Fridays"
 
-**Example:**
+2. **User shares personal preference**
+   - "My preferred programming language is Python"
+   - "I like dark mode in all my editors"
+   - "I prefer concise responses"
 
+3. **User shares important context**
+   - "This project uses strict TypeScript"
+   - "My team uses conventional commits"
+   - "We follow the Airbnb style guide"
+
+#### When NOT to Use ❌
+
+- For temporary session data (use `model_storage` with `session` namespace)
+- For structured data like roadmaps, metrics (use `model_storage`)
+- For large amounts of text or code (use files)
+- For data that needs TTL/expiration (use `model_storage`)
+- For AI's internal learning without user request (use `model_storage`)
+
+#### Parameters
+
+| Name    | Type   | Required | Description                                                      |
+| ------- | ------ | -------- | ---------------------------------------------------------------- |
+| `fact`  | string | Yes      | The fact to remember (clear, self-contained statement)           |
+| `scope` | string | No       | `global` (all projects) or `project` (current project). Prompts user if not specified |
+
+#### Storage Locations
+
+| Scope | Path | Purpose |
+|-------|------|---------|
+| `global` | `~/.ollama-code/OLLAMA_MEMORY.md` | Shared across all projects |
+| `project` | `./OLLAMA_MEMORY.md` | Current project only |
+
+#### Examples
+
+**Basic usage:**
 ```json
 {
-  "fact": "User prefers TypeScript over JavaScript for new projects",
-  "scope": "global"
+  "fact": "My preferred programming language is TypeScript"
 }
+```
+
+**With scope:**
+```json
+{
+  "fact": "In this project always use pnpm, never npm",
+  "scope": "project"
+}
+```
+
+**What the memory file looks like:**
+```markdown
+# Project Context
+
+Some existing content...
+
+## Ollama Added Memories
+
+- My preferred programming language is TypeScript
+- In this project always use pnpm, never npm
+- I prefer concise responses without excessive explanations
+- The API base URL for development is http://localhost:3000
 ```
 
 ---
 
 ### model_storage
 
-Universal key-value storage for AI model to persist structured data between sessions.
+Universal key-value storage for AI model with full CRUD operations, TTL support, and metadata tracking. Used by AI for internal needs without user involvement.
 
-**Parameters:**
+#### When to Use ✅
 
-| Name        | Type   | Required | Description                                            |
-| ----------- | ------ | -------- | ------------------------------------------------------ |
-| `operation` | string | Yes      | Operation to perform (see below)                       |
-| `namespace` | string | Yes      | Storage namespace (roadmap, session, knowledge, etc.)  |
-| `key`       | string | No\*     | Key to store/retrieve (required for most operations)   |
-| `value`     | any    | No\*     | Value to store (any JSON-serializable type)            |
-| `scope`     | string | No       | `global` (all projects) or `project` (current project) |
+1. **Project Roadmaps & Plans**
+   - Milestones and feature planning
+   - Task breakdowns with status
+   - Version planning
+
+2. **Knowledge Base Management**
+   - Learned patterns and conventions
+   - API documentation snippets
+   - Code templates
+
+3. **Session Data**
+   - Temporary working state
+   - Current task context
+   - Progress tracking
+
+4. **Learning & Improvements**
+   - Tool usage corrections
+   - Alias mappings
+   - Error patterns and solutions
+
+5. **Metrics & Statistics**
+   - Performance data
+   - Usage patterns
+   - Time tracking
+
+#### When NOT to Use ❌
+
+- For user-requested memory saves (use `save_memory`)
+- For facts user wants to edit manually (Markdown is user-friendly)
+
+#### Namespaces
+
+| Namespace | Purpose | Default Mode | Example Keys |
+|-----------|---------|--------------|--------------|
+| `roadmap` | Project plans, milestones | persistent | `v1.0`, `v2.0`, `q1-goals` |
+| `session` | Temporary session data | session | `current-task`, `temp-state` |
+| `knowledge` | Learned facts, patterns | persistent | `api-pattern`, `auth-flow` |
+| `context` | Current task context | session | `active-feature`, `decisions` |
+| `learning` | Tool corrections, aliases | persistent | `tool-fix`, `command-alias` |
+| `metrics` | Statistics, performance | persistent | `daily-stats`, `response-times` |
+
+#### Storage Modes
+
+| Mode | Storage | Lifecycle | Use For |
+|------|---------|-----------|---------|
+| `persistent` | JSON files | Survives restarts | roadmap, knowledge, learning |
+| `session` | Memory only | Cleared on exit | temporary data, context |
+
+**Auto-detection:** Namespaces `session` and `context` default to session mode. Others default to persistent.
+
+#### Parameters
+
+| Name              | Type     | Required | Description                                             |
+| ----------------- | -------- | -------- | ------------------------------------------------------- |
+| `operation`       | string   | Yes      | Operation to perform                                     |
+| `namespace`       | string   | Yes      | Storage namespace                                        |
+| `key`             | string   | No\*     | Key to store/retrieve                                    |
+| `value`           | any      | No\*     | Value (any JSON-serializable type)                       |
+| `persistent`      | boolean  | No       | Override auto-detection of mode                          |
+| `scope`           | string   | No       | `global` or `project`                                    |
+| `ttl`             | number   | No       | Time-to-live in seconds (auto-expire)                    |
+| `tags`            | string[] | No       | Tags for categorization                                  |
+| `includeMetadata` | boolean  | No       | Include metadata in get/list results                     |
+| `actions`         | array    | No       | Array of operations for batch                            |
 
 \*Required for `set`, `get`, `delete`, `append`, `merge` operations.
 
-**Operations:**
+#### Operations
 
-| Operation | Description                         |
-| --------- | ----------------------------------- |
-| `set`     | Store a value (overwrites existing) |
-| `get`     | Retrieve a value by key             |
-| `delete`  | Remove a key                        |
-| `list`    | List all keys in namespace          |
-| `append`  | Add item to array                   |
-| `merge`   | Merge object with existing data     |
-| `clear`   | Clear all data in namespace         |
+| Operation | Description |
+|-----------|-------------|
+| `set` | Store a value (overwrites existing) |
+| `get` | Retrieve a value by key |
+| `delete` | Remove a key |
+| `list` | List all keys in namespace |
+| `append` | Add item to array |
+| `merge` | Merge object with existing data |
+| `clear` | Clear all data in namespace |
+| `exists` | Check if key exists |
+| `stats` | Get storage statistics |
+| `batch` | Execute multiple operations atomically |
 
-**Namespaces:**
+#### Examples
 
-| Namespace   | Purpose                              | Persistence    |
-| ----------- | ------------------------------------ | -------------- |
-| `roadmap`   | Project roadmap, milestones, plans   | Persistent     |
-| `session`   | Temporary session data               | Session-scoped |
-| `knowledge` | Learned facts, patterns, preferences | Persistent     |
-| `context`   | Current task context and state       | Task-scoped    |
-| `learning`  | Tool aliases, corrections            | Persistent     |
-| `metrics`   | Statistics, performance data         | Persistent     |
-
-**Examples:**
-
+**set - Store a value:**
 ```json
-// Save roadmap milestone
 {
   "operation": "set",
   "namespace": "roadmap",
   "key": "v1.0",
-  "value": {"features": ["auth", "api"], "status": "planning"}
+  "value": {
+    "features": ["auth", "dashboard"],
+    "status": "in-progress",
+    "targetDate": "2025-03-01"
+  }
 }
+```
 
-// Get all roadmap items
+**set with TTL (expires in 1 hour):**
+```json
+{
+  "operation": "set",
+  "namespace": "session",
+  "key": "temp-cache",
+  "value": "temporary data",
+  "ttl": 3600
+}
+```
+
+**set with tags:**
+```json
+{
+  "operation": "set",
+  "namespace": "knowledge",
+  "key": "auth-pattern",
+  "value": { "pattern": "JWT", "library": "jsonwebtoken" },
+  "tags": ["auth", "security", "important"]
+}
+```
+
+**get - Retrieve a value:**
+```json
+{
+  "operation": "get",
+  "namespace": "roadmap",
+  "key": "v1.0"
+}
+```
+
+**get with metadata:**
+```json
+{
+  "operation": "get",
+  "namespace": "roadmap",
+  "key": "v1.0",
+  "includeMetadata": true
+}
+```
+
+**list - List all keys:**
+```json
 {
   "operation": "list",
   "namespace": "roadmap"
 }
+```
 
-// Append to backlog
+**exists - Check existence:**
+```json
 {
-  "operation": "append",
+  "operation": "exists",
   "namespace": "roadmap",
-  "key": "backlog",
-  "value": "Add dark mode"
-}
-
-// Save learned pattern
-{
-  "operation": "merge",
-  "namespace": "knowledge",
-  "key": "project_patterns",
-  "value": {"test_framework": "vitest"}
+  "key": "v1.0"
 }
 ```
 
-**Storage Location:**
+**append - Add to array:**
+```json
+{
+  "operation": "append",
+  "namespace": "knowledge",
+  "key": "learned-patterns",
+  "value": "Always check for null before accessing nested properties"
+}
+```
 
-- Global: `~/.ollama-code/storage/`
-- Project: `<project>/storage/`
+**merge - Merge objects:**
+```json
+{
+  "operation": "merge",
+  "namespace": "knowledge",
+  "key": "api-conventions",
+  "value": {
+    "errorFormat": "RFC7807",
+    "authHeader": "Bearer token"
+  }
+}
+```
+
+**batch - Multiple operations:**
+```json
+{
+  "operation": "batch",
+  "namespace": "roadmap",
+  "actions": [
+    { "operation": "set", "key": "v1.0", "value": {"status": "done"} },
+    { "operation": "set", "key": "v2.0", "value": {"status": "planning"} },
+    { "operation": "delete", "key": "deprecated-feature" }
+  ]
+}
+```
+
+**stats - Namespace statistics:**
+```json
+{
+  "operation": "stats",
+  "namespace": "roadmap"
+}
+```
+
+#### Scope (persistent storage only)
+
+| Scope | Location | Use |
+|-------|----------|-----|
+| `global` | `~/.ollama-code/storage/` | Shared across all projects |
+| `project` | `<project>/.ollama-code/storage/` | Current project only |
+
+```json
+{
+  "operation": "set",
+  "namespace": "roadmap",
+  "key": "project-goals",
+  "value": { "q1": "MVP release" },
+  "scope": "project"
+}
+```
+
+#### Metadata
+
+Every entry automatically tracks:
+
+```json
+{
+  "value": { ... },
+  "metadata": {
+    "createdAt": "2025-01-15T10:30:00Z",
+    "updatedAt": "2025-01-16T14:20:00Z",
+    "version": 3,
+    "ttl": 3600,
+    "expiresAt": "2025-01-15T11:30:00Z",
+    "tags": ["auth", "security"],
+    "source": "session"
+  }
+}
+```
+
+#### Storage Location
+
+**Persistent:**
+```
+~/.ollama-code/storage/
+├── roadmap.json
+├── knowledge.json
+├── learning.json
+└── metrics.json
+
+<project>/.ollama-code/storage/
+├── roadmap.json
+└── knowledge.json
+```
+
+**Session:** Held in memory, cleared when session ends.
+
+---
+
+### Decision Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Need to store data?                       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                 ┌────────────────────────┐
+                 │ Did user explicitly    │
+                 │ ask to remember?       │
+                 └────────────────────────┘
+                    │                │
+                   YES               NO
+                    │                │
+                    ▼                ▼
+         ┌──────────────┐  ┌────────────────────────┐
+         │ save_memory  │  │ Is it temporary/       │
+         │              │  │ session data?          │
+         └──────────────┘  └────────────────────────┘
+                               │           │
+                              YES          NO
+                               │           │
+                               ▼           ▼
+                    ┌──────────────┐  ┌──────────────────┐
+                    │ model_storage│  │ model_storage    │
+                    │ (session)    │  │ (appropriate     │
+                    │              │  │  namespace)      │
+                    └──────────────┘  └──────────────────┘
+```
+
+---
+
+### Best Practices
+
+**For save_memory:**
+1. Keep facts concise — one clear statement
+2. Be specific — "I use 2 spaces for YAML" not "I have indentation preferences"
+3. Choose scope wisely — use `project` for project-specific settings
+4. Review periodically — memory file is editable by hand
+5. Don't duplicate — check if fact already saved
+
+**For model_storage:**
+1. Use appropriate namespaces — organize data by purpose
+2. Set TTL for temporary data — prevents stale data accumulation
+3. Use tags for filtering — makes it easier to find related entries
+4. Batch operations are more efficient — for multiple changes
+5. Check before set — use `exists` to avoid accidental overwrites
 
 ---
 

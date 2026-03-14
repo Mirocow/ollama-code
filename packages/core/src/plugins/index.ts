@@ -270,6 +270,7 @@ export {
   OLLAMA_CONFIG_DIR,
   OLLAMA_CODE_CONFIG_DIR,
   DEFAULT_CONTEXT_FILENAME,
+  MEMORY_FILENAME,
 } from './builtin/memory-tools/index.js';
 
 // Agent tools - export TaskTool and SkillTool

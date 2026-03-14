@@ -454,11 +454,19 @@ Delegate tasks to specialized subagents.
 
 ### save_memory
 
-Save facts to long-term memory.
+Save facts to long-term memory in `OLLAMA_MEMORY.md`.
 
 **Scopes**:
-- `global`: User-level memory (~/.ollama-code/)
-- `project`: Project-specific memory (./OLLAMA_CODE.md)
+- `global`: User-level memory (`~/.ollama-code/OLLAMA_MEMORY.md`)
+- `project`: Project-specific memory (`./OLLAMA_MEMORY.md`)
+
+### /init
+
+Creates `OLLAMA_MEMORY.md` with project analysis (for code projects).
+
+### /memory init
+
+Creates `OLLAMA_MEMORY.md` with user facts template (for non-code projects or preferences).
 
 ### skill
 

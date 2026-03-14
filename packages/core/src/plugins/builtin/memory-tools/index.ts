@@ -7,7 +7,8 @@
 /**
  * Memory Tools Plugin
  *
- * Built-in plugin providing memory/context management tools.
+ * Built-in plugin providing memory/context management tools for USER-REQUESTED memory saves.
+ * For AI-internal storage, use storage-tools plugin (model_storage).
  */
 
 import type { PluginDefinition } from '../../types.js';
@@ -28,7 +29,7 @@ const memoryToolsPlugin: PluginDefinition = {
     id: 'memory-tools',
     name: 'Memory Tools',
     version: '1.0.0',
-    description: 'Memory and context management tools: save_memory',
+    description: 'User-facing memory tool for saving facts and preferences. For AI internal data, use model_storage.',
     author: 'Ollama Code Team',
     tags: ['core', 'builtin', 'memory', 'context'],
     enabledByDefault: true,
@@ -97,17 +98,17 @@ const memoryToolsPlugin: PluginDefinition = {
     {
       priority: 1,
       content:
-        'Memory tool (save_memory) for persistent context across sessions. Stores information in ~/.ollama-code/OLLAMA_MEMORY.md. Use to remember important facts, user preferences, project details.',
+        'save_memory: Use ONLY when user EXPLICITLY asks to remember something ("Remember...", "Save this...", "Don\'t forget..."). Stores facts/preferences in Markdown. Requires user confirmation. For AI internal data (roadmaps, knowledge, session state), use model_storage instead.',
     },
     {
       priority: 2,
       content:
-        'MEMORY USAGE: Save project-specific information (architecture, patterns, conventions), user preferences, important decisions, learned patterns. Memory persists across all sessions.',
+        'MEMORY TOOL CHOICE: User says "Remember X" → save_memory. AI needs to store roadmap/knowledge/session data → model_storage. save_memory is user-facing (Markdown, confirmation required). model_storage is AI-internal (JSON, automatic, TTL support).',
     },
     {
       priority: 3,
       content:
-        'Read memory at start of session to recall previous context. Update when learning new patterns or making important decisions. Keep entries concise and well-organized.',
+        'save_memory stores in OLLAMA_MEMORY.md (Markdown format, separate from OLLAMA.md project context). User can edit manually. Use "global" scope for all projects (~/.ollama-code/OLLAMA_MEMORY.md), "project" scope for current project only (./OLLAMA_MEMORY.md). Keep facts concise and specific.',
     },
   ],
 
@@ -143,4 +144,5 @@ export {
   OLLAMA_CONFIG_DIR,
   OLLAMA_CODE_CONFIG_DIR,
   DEFAULT_CONTEXT_FILENAME,
+  MEMORY_FILENAME,
 } from './save-memory/index.js';
