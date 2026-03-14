@@ -148,7 +148,7 @@ const DEFAULT_CONFIG: ToolResultCacheConfig = {
     glob: 5 * 60 * 1000,
     // Search operations - medium TTL
     grep: 15 * 60 * 1000, // 15 minutes
-    ripgrep_search: 15 * 60 * 1000,
+    grep_search: 15 * 60 * 1000,
     // Web operations - longer TTL
     web_fetch: 60 * 60 * 1000, // 1 hour
     web_search: 60 * 60 * 1000,

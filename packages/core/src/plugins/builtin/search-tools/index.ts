@@ -94,11 +94,6 @@ const searchToolsPlugin: PluginDefinition = {
       canonicalName: 'grep_search',
       description: 'Search text in files',
     },
-    {
-      alias: 'rg',
-      canonicalName: 'grep_search',
-      description: 'Ripgrep search',
-    },
     // Legacy tool name (was ToolNamesMigration)
     {
       alias: 'search_file_content',

@@ -56,7 +56,7 @@ export function logExtensionInstallEvent(..._args: unknown[]): void {}
 export function logExtensionUninstall(..._args: unknown[]): void {}
 export function logExtensionDisable(..._args: unknown[]): void {}
 export function logExtensionUpdateEvent(..._args: unknown[]): void {}
-export function logRipgrepFallback(..._args: unknown[]): void {}
+
 export function logNextSpeakerCheck(..._args: unknown[]): void {}
 export function logAuth(..._args: unknown[]): void {}
 export function logSkillLaunch(..._args: unknown[]): void {}
@@ -104,9 +104,7 @@ export class KittySequenceOverflowEvent {
 export class ToolOutputTruncatedEvent {
   constructor(..._args: unknown[]) {}
 }
-export class RipgrepFallbackEvent {
-  constructor(..._args: unknown[]) {}
-}
+
 export class NextSpeakerCheckEvent {
   constructor(..._args: unknown[]) {}
 }
