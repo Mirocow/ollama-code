@@ -78,15 +78,41 @@ Do NOT say "I don't know" or "I don't have access to real-time data" - search th
 | list_directory    | Directory listing                    | ls, dir          |
 | run_shell_command | **LOCAL** shell commands             | run, shell, exec |
 | ssh_connect       | **REMOTE** SSH connections           | ssh, remote      |
-| python_dev        | Python: run, test, lint, pip         | py, pip, pytest  |
-| nodejs_dev        | Node.js: npm/yarn/pnpm, test, build  | npm, yarn        |
-| golang_dev        | Go: run, build, test, mod            | go               |
-| rust_dev          | Rust: cargo build, test, clippy      | cargo            |
+| python_dev        | Python: **exec** (inline), test, pip | py, pip, pytest  |
+| nodejs_dev        | Node.js: **eval** (inline), test     | npm, yarn        |
+| golang_dev        | Go: **eval** (inline), run, build    | go               |
+| rust_dev          | Rust: **eval** (inline), build, test | cargo            |
 | todo_write        | Task management                      | todo             |
 | save_memory       | Save facts to memory                 | memory           |
 | model_storage     | Model data storage                   | storage, roadmap |
 | task              | Launch subagent                      | agent            |
 | skill             | Execute skill                        | -                |
+
+## Inline Code Execution
+
+**Run code without files using exec/eval action:**
+```
+python_dev:  {"action": "exec", "code": "print([x*3 for x in range(1,101) if x%3==0][:10])"}
+nodejs_dev:  {"action": "eval", "code": "console.log([1,2,3].map(x=>x*2))"}
+golang_dev:  {"action": "eval", "code": "fmt.Println(\"hello\")"}
+```
+
+## Code File Workflow
+
+**Create and run a code file:**
+1. Use `write_file` to create the file
+2. Use `python_dev`/`nodejs_dev`/etc with `run` action to execute
+
+**Example:**
+```
+# Step 1: Create file
+write_file file_path="/tmp/calc.py" content="print([x*3 for x in range(1,101) if x%3==0][:10])"
+
+# Step 2: Run file
+python_dev action="run" script="/tmp/calc.py"
+```
+
+**For quick tasks, prefer inline execution (exec/eval) over file creation.**
 
 ## Shell vs SSH Selection
 

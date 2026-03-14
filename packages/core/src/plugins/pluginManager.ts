@@ -47,6 +47,8 @@ export class PluginManager {
     | null = null;
   private sessionId: string = '';
   private modelId: string | undefined;
+  // Tool registry reference for cross-plugin tool execution
+  private toolRegistry: import('../tools/tool-registry.js').ToolRegistry | null = null;
 
   // Health monitoring
   private healthMetrics: Map<string, PluginHealth> = new Map();
@@ -56,6 +58,20 @@ export class PluginManager {
   // Event history
   private eventHistory: PluginEvent[] = [];
   private maxEventHistory = 100;
+
+  /**
+   * Set tool registry for cross-plugin tool execution
+   */
+  setToolRegistry(registry: import('../tools/tool-registry.js').ToolRegistry): void {
+    this.toolRegistry = registry;
+  }
+
+  /**
+   * Get tool registry
+   */
+  getToolRegistry(): import('../tools/tool-registry.js').ToolRegistry | null {
+    return this.toolRegistry;
+  }
 
   /**
    * Set storage instance for plugins
@@ -448,6 +464,105 @@ export class PluginManager {
   }
 
   /**
+   * Execute a tool by name or alias (cross-plugin tool execution)
+   * This allows plugins to call tools from other plugins
+   */
+  async executeToolByName(
+    toolName: string,
+    params: Record<string, unknown>,
+  ): Promise<import('./types.js').ToolExecutionResult> {
+    // First try to find in ToolRegistry (registered tools like write_file)
+    if (this.toolRegistry) {
+      const tool = this.toolRegistry.getTool(toolName);
+      if (tool) {
+        debugLogger.info(
+          `Executing tool "${toolName}" via ToolRegistry for cross-plugin call`,
+        );
+        try {
+          // Build invocation and execute
+          const invocation = tool.build(params);
+          const result = await invocation.execute(
+            new AbortController().signal,
+          );
+          return {
+            success: !result.error,
+            data: result,
+            error: result.error?.message,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error:
+              error instanceof Error ? error.message : String(error),
+          };
+        }
+      }
+    }
+
+    // Then try to find in PluginManager tools
+    const resolvedToolId = this.findToolByName(toolName);
+    if (resolvedToolId) {
+      debugLogger.info(
+        `Executing tool "${toolName}" (resolved to "${resolvedToolId}") via PluginManager`,
+      );
+      try {
+        const result = await this.executeTool(resolvedToolId, params);
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
+
+    return {
+      success: false,
+      error: `Tool "${toolName}" not found in any registry`,
+    };
+  }
+
+  /**
+   * Find a tool by name or alias across all registries
+   * Returns the tool ID if found, undefined otherwise
+   */
+  findToolByName(toolName: string): string | undefined {
+    // Normalize name
+    const normalizedName = toolName.trim().toLowerCase();
+
+    // First check ToolRegistry (for tools like write_file)
+    if (this.toolRegistry) {
+      const tool = this.toolRegistry.getTool(toolName);
+      if (tool) {
+        return tool.name;
+      }
+    }
+
+    // Check PluginManager tools (plugin-id:tool-name format)
+    for (const [toolId, tool] of this.tools) {
+      if (
+        tool.id.toLowerCase() === normalizedName ||
+        tool.name.toLowerCase() === normalizedName
+      ) {
+        return toolId;
+      }
+    }
+
+    // Check aliases in tools
+    for (const [toolId, tool] of this.tools) {
+      if (tool.aliases?.some((a) => a.toLowerCase() === normalizedName)) {
+        return toolId;
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
    * Create plugin context with ALL services available
    */
   private createPluginContext(definition: PluginDefinition): PluginContext {
@@ -525,6 +640,14 @@ export class PluginManager {
       getSessionId: () => this.sessionId,
       // Model ID access - available to ALL plugins
       getModelId: () => this.modelId,
+      // Execute another tool by name or alias - available to ALL plugins
+      executeTool: async (toolName: string, params: Record<string, unknown>) => {
+        return this.executeToolByName(toolName, params);
+      },
+      // Find a tool by name or alias - available to ALL plugins
+      findTool: (toolName: string) => {
+        return this.findToolByName(toolName);
+      },
     };
 
     return {

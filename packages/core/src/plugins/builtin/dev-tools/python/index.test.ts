@@ -121,9 +121,15 @@ describe('PythonTool', () => {
   describe('Action Types', () => {
     const validActions = [
       'run',
+      'r',
+      'exec',
+      'e',
       'test',
+      't',
       'lint',
+      'l',
       'format',
+      'f',
       'venv_create',
       'venv_activate',
       'pip_install',
@@ -137,7 +143,8 @@ describe('PythonTool', () => {
       it(`should accept '${action}' action`, () => {
         const params: PythonToolParams = { action: action as PythonToolParams['action'] };
         // Add required params for specific actions
-        if (action === 'run') params.script = 'main.py';
+        if (action === 'run' || action === 'r') params.script = 'main.py';
+        if (action === 'exec' || action === 'e') params.code = 'print("hello")';
         if (action === 'pip_install') params.packages = ['requests'];
         if (action === 'custom') params.command = 'echo test';
 
@@ -181,5 +188,55 @@ describe('PythonToolInvocation', () => {
 
     const invocation = tool['createInvocation'](params);
     expect(invocation.getDescription()).toContain('venv');
+  });
+
+  it('should accept exec action for inline code execution', async () => {
+    const tool = new PythonTool(mockConfig);
+    const params: PythonToolParams = {
+      action: 'exec',
+      code: 'print([x*3 for x in range(1,101) if x%3==0][:10])',
+    };
+
+    const error = tool.validateToolParamValues(params);
+    expect(error).toBeNull();
+
+    const invocation = tool['createInvocation'](params);
+    expect(invocation.getDescription()).toContain('exec');
+  });
+
+  it('should require code for exec action', async () => {
+    const tool = new PythonTool(mockConfig);
+    const params: PythonToolParams = {
+      action: 'exec',
+    };
+
+    const error = tool.validateToolParamValues(params);
+    expect(error).toBeTruthy();
+    expect(error).toContain('code');
+  });
+
+  it('should accept exec alias "e"', async () => {
+    const tool = new PythonTool(mockConfig);
+    const params: PythonToolParams = {
+      action: 'e',
+      code: 'print("hello")',
+    };
+
+    const error = tool.validateToolParamValues(params);
+    expect(error).toBeNull();
+  });
+
+  it('should build correct description for exec action', async () => {
+    const tool = new PythonTool(mockConfig);
+    const params: PythonToolParams = {
+      action: 'exec',
+      code: 'print("hello world")',
+      description: 'Quick print test',
+    };
+
+    const invocation = tool['createInvocation'](params);
+    const description = invocation.getDescription();
+    expect(description).toContain('exec');
+    expect(description).toContain('Quick print test');
   });
 });

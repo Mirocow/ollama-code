@@ -24,6 +24,7 @@ import {
 } from '../../../../tools/tools.js';
 import { DEFAULT_OLLAMA_MODEL } from '../../../../config/models.js';
 import { createDebugLogger, type DebugLogger } from '../../../../utils/debugLogger.js';
+import { autoSaveWebContent } from '../../../../utils/autoStorage.js';
 
 const URL_FETCH_TIMEOUT_MS = 10000;
 const MAX_CONTENT_LENGTH = 100000;
@@ -122,6 +123,22 @@ ${textContent}
       this.debugLogger.debug(
         `[WebFetchTool] Successfully processed content from ${this.params.url}`,
       );
+
+      // Auto-save web content to storage for model's notebook
+      try {
+        autoSaveWebContent(resultText, this.params.url, {
+          tags: ['web-fetch', 'auto-saved'],
+        });
+        this.debugLogger.debug(
+          `[WebFetchTool] Auto-saved content to storage`,
+        );
+      } catch (saveError) {
+        // Don't fail the request if auto-save fails
+        this.debugLogger.warn(
+          `[WebFetchTool] Failed to auto-save content:`,
+          saveError,
+        );
+      }
 
       return {
         llmContent: resultText,

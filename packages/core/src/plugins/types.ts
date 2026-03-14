@@ -172,6 +172,20 @@ export interface PluginServices {
    * Get model ID being used
    */
   getModelId: () => string | undefined;
+  /**
+   * Execute another tool by name or alias
+   * Allows plugins to call tools from other plugins
+   * @param toolName - Tool name or alias (e.g., 'write_file', 'write')
+   * @param params - Tool parameters
+   * @returns Tool execution result
+   */
+  executeTool: (toolName: string, params: Record<string, unknown>) => Promise<ToolExecutionResult>;
+  /**
+   * Find a tool by name or alias
+   * @param toolName - Tool name or alias
+   * @returns Tool ID if found, undefined otherwise
+   */
+  findTool: (toolName: string) => string | undefined;
 }
 
 /**

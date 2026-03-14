@@ -153,6 +153,10 @@ export class PluginRegistry {
       `Initializing plugin registry with config: ${this.config ? 'provided' : 'NOT provided'}`,
     );
 
+    // Set tool registry in plugin manager for cross-plugin tool execution
+    pluginManager.setToolRegistry(toolRegistry);
+    debugLogger.info('ToolRegistry set in PluginManager for cross-plugin tool execution');
+
     if (!this.config) {
       debugLogger.warn(
         'Config not provided to plugin registry - factory tools will NOT be registered!',
@@ -918,6 +922,13 @@ export async function initializePluginRegistry(
         process.env[name] ?? defaultValue,
       getAllEnv: () =>
         ({ ...process.env }) as Record<string, string | undefined>,
+      // Cross-plugin tool execution
+      executeTool: async (toolName: string, params: Record<string, unknown>) => {
+        return pluginManager.executeToolByName(toolName, params);
+      },
+      findTool: (toolName: string) => {
+        return pluginManager.findToolByName(toolName);
+      },
     };
     setPluginToolContextProvider(contextProvider);
     debugLogger.info('Plugin tool context provider initialized with config');

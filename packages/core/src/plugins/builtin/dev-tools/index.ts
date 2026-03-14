@@ -499,22 +499,32 @@ const devToolsPlugin: PluginDefinition = {
     {
       priority: 2,
       content:
-        'PYTHON: venv/virtualenv for environments, pip/pipenv/poetry for packages, pytest/unittest for testing, black/flake8/mypy for linting. Use requirements.txt or pyproject.toml for dependencies.',
+        'QUICK CODE EXECUTION: Use `exec` action (python_dev) or `eval` action (other languages) for inline code without creating files. Example: python_dev {"action": "exec", "code": "print([x*3 for x in range(1,101) if x%3==0])"}',
     },
     {
       priority: 3,
       content:
-        'NODE.JS: npm/yarn/pnpm for packages, Jest/Mocha for testing, ESLint/Prettier for linting. Check package.json for scripts and dependencies. Use npx for one-off commands.',
+        'FILE CREATION WORKFLOW: To create and run a code file: (1) Use write_file tool to create the file, (2) Use python_dev/nodejs_dev/etc with "run" action to execute it. Example: write_file {"file_path": "/path/to/script.py", "content": "print(1+1)"}, then python_dev {"action": "run", "script": "/path/to/script.py"}',
     },
     {
       priority: 4,
       content:
-        'RUST: cargo for everything (build, test, run, add dependencies). Cargo.toml for config. Use clippy for linting, rustfmt for formatting. Check for Cargo.lock in projects.',
+        'PYTHON: Use exec action for inline code, run action for scripts. venv/virtualenv for environments, pip/pipenv/poetry for packages, pytest/unittest for testing.',
     },
     {
       priority: 5,
       content:
-        'GO: go mod for modules, go build/test/run for compilation. gofmt for formatting. Check go.mod for dependencies. Use go get to add packages.',
+        'NODE.JS: Use eval action for inline code, run action for scripts. npm/yarn/pnpm for packages, Jest/Mocha for testing, ESLint/Prettier for linting.',
+    },
+    {
+      priority: 6,
+      content:
+        'RUST: Use eval action for inline code. cargo for everything (build, test, run, add dependencies). Cargo.toml for config.',
+    },
+    {
+      priority: 7,
+      content:
+        'GO: Use eval action for inline code. go mod for modules, go build/test/run for compilation. gofmt for formatting.',
     },
   ],
 
