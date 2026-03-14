@@ -40,6 +40,26 @@ import {
   type PluginToolContextProvider,
 } from './pluginToolAdapter.js';
 
+// ============================================================================
+// Static imports for builtin plugins (required for esbuild bundling)
+// ============================================================================
+import * as coreToolsPlugin from './builtin/core-tools/index.js';
+import * as fileToolsPlugin from './builtin/file-tools/index.js';
+import * as shellToolsPlugin from './builtin/shell-tools/index.js';
+import * as sshToolsPlugin from './builtin/ssh-tools/index.js';
+import * as searchToolsPlugin from './builtin/search-tools/index.js';
+import * as devToolsPlugin from './builtin/dev-tools/index.js';
+import * as agentToolsPlugin from './builtin/agent-tools/index.js';
+import * as memoryToolsPlugin from './builtin/memory-tools/index.js';
+import * as storageToolsPlugin from './builtin/storage-tools/index.js';
+import * as productivityToolsPlugin from './builtin/productivity-tools/index.js';
+import * as apiToolsPlugin from './builtin/api-tools/index.js';
+import * as databaseToolsPlugin from './builtin/database-tools/index.js';
+import * as gitToolsPlugin from './builtin/git-tools/index.js';
+import * as lspToolsPlugin from './builtin/lsp-tools/index.js';
+import * as mcpToolsPlugin from './builtin/mcp-tools/index.js';
+import * as codeAnalysisToolsPlugin from './builtin/code-analysis-tools/index.js';
+
 const debugLogger = createDebugLogger('PLUGIN_REGISTRY');
 
 // ============================================================================
@@ -155,7 +175,9 @@ export class PluginRegistry {
 
     // Set tool registry in plugin manager for cross-plugin tool execution
     pluginManager.setToolRegistry(toolRegistry);
-    debugLogger.info('ToolRegistry set in PluginManager for cross-plugin tool execution');
+    debugLogger.info(
+      'ToolRegistry set in PluginManager for cross-plugin tool execution',
+    );
 
     if (!this.config) {
       debugLogger.warn(
@@ -419,24 +441,24 @@ export class PluginRegistry {
   private async importBuiltinPlugins(): Promise<PluginDefinition[]> {
     const plugins: PluginDefinition[] = [];
 
-    // List of builtin plugins to load
+    // Use statically imported modules (required for esbuild bundling)
     const pluginModules = [
-      './builtin/core-tools/index.js',
-      './builtin/file-tools/index.js',
-      './builtin/shell-tools/index.js',
-      './builtin/ssh-tools/index.js',
-      './builtin/search-tools/index.js',
-      './builtin/dev-tools/index.js',
-      './builtin/agent-tools/index.js',
-      './builtin/memory-tools/index.js',
-      './builtin/storage-tools/index.js',
-      './builtin/productivity-tools/index.js',
-      './builtin/api-tools/index.js',
-      './builtin/database-tools/index.js',
-      './builtin/git-tools/index.js',
-      './builtin/lsp-tools/index.js',
-      './builtin/mcp-tools/index.js',
-      './builtin/code-analysis-tools/index.js',
+      { path: 'core-tools', module: coreToolsPlugin },
+      { path: 'file-tools', module: fileToolsPlugin },
+      { path: 'shell-tools', module: shellToolsPlugin },
+      { path: 'ssh-tools', module: sshToolsPlugin },
+      { path: 'search-tools', module: searchToolsPlugin },
+      { path: 'dev-tools', module: devToolsPlugin },
+      { path: 'agent-tools', module: agentToolsPlugin },
+      { path: 'memory-tools', module: memoryToolsPlugin },
+      { path: 'storage-tools', module: storageToolsPlugin },
+      { path: 'productivity-tools', module: productivityToolsPlugin },
+      { path: 'api-tools', module: apiToolsPlugin },
+      { path: 'database-tools', module: databaseToolsPlugin },
+      { path: 'git-tools', module: gitToolsPlugin },
+      { path: 'lsp-tools', module: lspToolsPlugin },
+      { path: 'mcp-tools', module: mcpToolsPlugin },
+      { path: 'code-analysis-tools', module: codeAnalysisToolsPlugin },
     ];
 
     debugLogger.debug(
@@ -446,9 +468,8 @@ export class PluginRegistry {
     let successCount = 0;
     let failCount = 0;
 
-    for (const modulePath of pluginModules) {
+    for (const { path: modulePath, module } of pluginModules) {
       try {
-        const module = await import(modulePath);
         if (module.default) {
           const pluginId =
             (module.default as { metadata?: { id?: string } })?.metadata?.id ||
@@ -923,12 +944,11 @@ export async function initializePluginRegistry(
       getAllEnv: () =>
         ({ ...process.env }) as Record<string, string | undefined>,
       // Cross-plugin tool execution
-      executeTool: async (toolName: string, params: Record<string, unknown>) => {
-        return pluginManager.executeToolByName(toolName, params);
-      },
-      findTool: (toolName: string) => {
-        return pluginManager.findToolByName(toolName);
-      },
+      executeTool: async (
+        toolName: string,
+        params: Record<string, unknown>,
+      ) => pluginManager.executeToolByName(toolName, params),
+      findTool: (toolName: string) => pluginManager.findToolByName(toolName),
     };
     setPluginToolContextProvider(contextProvider);
     debugLogger.info('Plugin tool context provider initialized with config');
