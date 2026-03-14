@@ -533,10 +533,18 @@ async function searchAction(
   const query = args.trim();
   const marketplace = createPluginMarketplace(process.cwd());
 
+  // Build display query with prefix for user clarity
+  const displayQuery = query
+    ? query.startsWith('ollama-code-plugin-') ||
+      query.startsWith('@ollama-code/')
+      ? query
+      : `ollama-code-plugin-${query}`
+    : 'all plugins';
+
   context.ui.addItem(
     {
       type: MessageType.INFO,
-      text: t(`🔍 Searching marketplace for: "${query || 'all plugins'}"...`),
+      text: t(`🔍 Searching marketplace for: "${displayQuery}"...`),
     },
     Date.now(),
   );

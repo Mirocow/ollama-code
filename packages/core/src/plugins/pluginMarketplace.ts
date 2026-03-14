@@ -193,9 +193,17 @@ export class PluginMarketplace {
     } = options;
 
     try {
-      // Build search query
+      // Build search query with prefix for better targeting
       const searchTerms = [];
-      if (query) searchTerms.push(query);
+      if (query) {
+        // Add prefix if not already present
+        const prefixedQuery =
+          query.startsWith('ollama-code-plugin-') ||
+          query.startsWith('@ollama-code/')
+            ? query
+            : `ollama-code-plugin-${query}`;
+        searchTerms.push(prefixedQuery);
+      }
       if (keywords.length > 0)
         searchTerms.push(...keywords.map((k) => `keywords:${k}`));
       if (author) searchTerms.push(`author:${author}`);
