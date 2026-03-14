@@ -505,7 +505,11 @@ export class Config {
   constructor(params: ConfigParameters) {
     this.sessionId = params.sessionId ?? randomUUID();
     this.sessionData = params.sessionData;
-    setDebugLogSession(this);
+    this.debugMode = params.debugMode;
+    // Only enable debug logging when debugMode is explicitly enabled via --debug flag
+    if (this.debugMode) {
+      setDebugLogSession(this);
+    }
     this.debugLogger = createDebugLogger();
     this.embeddingModel =
       params.embeddingModel ?? DEFAULT_OLLAMA_EMBEDDING_MODEL;
@@ -516,7 +520,6 @@ export class Config {
       this.targetDir,
       params.includeDirectories ?? [],
     );
-    this.debugMode = params.debugMode;
     this.inputFormat = params.inputFormat ?? InputFormat.TEXT;
     const normalizedOutputFormat = normalizeConfigOutputFormat(
       params.outputFormat ?? params.output?.format,
@@ -831,7 +834,10 @@ export class Config {
   ): string {
     this.sessionId = sessionId ?? randomUUID();
     this.sessionData = sessionData;
-    setDebugLogSession(this);
+    // Only enable debug logging when debugMode is explicitly enabled
+    if (this.debugMode) {
+      setDebugLogSession(this);
+    }
     this.debugLogger = createDebugLogger();
     this.chatRecordingService = this.chatRecordingEnabled
       ? new ChatRecordingService(this)

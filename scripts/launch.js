@@ -52,8 +52,9 @@ const env = {
   DEV: 'true',
 };
 
-// Enable debug logging if --debug flag is present or DEBUG env is set
-if (process.env.DEBUG || hasDebugFlag) {
+// Enable debug logging ONLY when --debug flag is explicitly present
+// Environment variable DEBUG alone no longer enables debug logging
+if (hasDebugFlag) {
   // If this is not set, the debugger will pause on the outer process rather
   // than the relaunched process making it harder to debug.
   env.OLLAMA_CODE_NO_RELAUNCH = 'true';

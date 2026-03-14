@@ -592,12 +592,9 @@ export async function loadHierarchicalGeminiMemory(
 }
 
 export function isDebugMode(argv: CliArgs): boolean {
-  return (
-    argv.debug ||
-    [process.env['DEBUG'], process.env['DEBUG_MODE']].some(
-      (v) => v === 'true' || v === '1',
-    )
-  );
+  // Debug mode is ONLY enabled by explicit --debug flag
+  // Environment variables DEBUG/DEBUG_MODE no longer enable debug mode
+  return argv.debug === true;
 }
 
 export async function loadCliConfig(
