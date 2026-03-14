@@ -9,6 +9,7 @@ import { promises as fs } from 'node:fs';
 import { v4 as uuidv4 } from 'uuid';
 import * as os from 'os';
 import { createDebugLogger } from './debugLogger.js';
+import { getOllamaDir } from './paths.js';
 
 const debugLogger = createDebugLogger('API_LOGGER');
 
@@ -65,7 +66,8 @@ export class ApiLogger {
       }
       this.logDir = path.normalize(resolvedPath);
     } else {
-      this.logDir = path.join(process.cwd(), 'logs', 'ollama');
+      // Default to ~/.ollama-code/logs
+      this.logDir = path.join(getOllamaDir(), 'logs');
     }
   }
 
