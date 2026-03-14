@@ -10,8 +10,11 @@ This directory contains example CLI commands for testing Ollama Code behavior.
 ## Environment Setup
 
 ```bash
-export OLLAMA_HOST=192.168.1.100
-export OLLAMA_BASE_URL=http://192.168.1.100:11434
+# Set Ollama server URL
+export OLLAMA_BASE_URL=http://your-server:11434
+
+# Or use the CLI flag
+ollama-code --ollama-base-url http://your-server:11434 --model your-model "your prompt"
 ```
 
 ## Test Scripts Overview
