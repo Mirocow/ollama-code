@@ -212,11 +212,10 @@ export class PythonToolInvocation extends BaseToolInvocation<
   }
 
   private buildExecCommand(python: string): string {
-    // Execute inline Python code using -c flag
+    // Execute inline Python code using heredoc to avoid escaping issues
+    // This handles template literals (${...}), quotes, and special chars properly
     const code = this.params.code || '';
-    // Escape single quotes in code for shell
-    const escapedCode = code.replace(/'/g, '\'"\'"');
-    return `${python} -c '${escapedCode}'`;
+    return `${python} <<'PYEOF'\n${code}\nPYEOF`;
   }
 
   private buildTestCommand(python: string): string {

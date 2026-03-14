@@ -303,6 +303,7 @@ export class CppToolInvocation extends BaseToolInvocation<
 
   private buildEvalCommand(): string {
     // Execute inline C/C++ code by creating a temp file and running
+    // Using heredoc with quoted delimiter to prevent any shell interpretation
     const code = this.params.code || '';
     // Using temp directory for compilation
     const tempDir = '/tmp/cpp_eval';
@@ -310,9 +311,7 @@ export class CppToolInvocation extends BaseToolInvocation<
     const outputFile = `${tempDir}/main`;
     // Get compiler (default to g++)
     const compiler = this.params.compiler || 'g++';
-    // Escape single quotes in code for shell
-    const escapedCode = code.replace(/'/g, '\'"\'"');
-    return `mkdir -p ${tempDir} && cat > ${tempFile} <<'CPPEOF'\n${escapedCode}\nCPPEOF && ${compiler} ${tempFile} -o ${outputFile} && ${outputFile}`;
+    return `mkdir -p ${tempDir} && cat > ${tempFile} <<'CPPEOF'\n${code}\nCPPEOF && ${compiler} ${tempFile} -o ${outputFile} && ${outputFile}`;
   }
 
   private buildBuildCommand(): string {

@@ -295,10 +295,11 @@ export class JavaToolInvocation extends BaseToolInvocation<
 
   private buildEvalCommand(): string {
     // Execute inline Java code using jshell (Java 9+)
+    // jshell accepts input from stdin, using heredoc for proper escaping
     const code = this.params.code || '';
-    // jshell accepts input from stdin or file
-    // Using heredoc to pass code to jshell
-    return `echo '${code.replace(/'/g, "'\"'\"'")}' | jshell --feedback silent`;
+    // Add /exit to ensure jshell terminates
+    const jshellCode = code.trim().endsWith('/exit') ? code : `${code}\n/exit`;
+    return `jshell --feedback silent <<'JAVAEOF'\n${jshellCode}\nJAVAEOF`;
   }
 
   private buildCompileCommand(): string {

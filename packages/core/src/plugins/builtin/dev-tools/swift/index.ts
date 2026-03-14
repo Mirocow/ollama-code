@@ -226,11 +226,10 @@ export class SwiftToolInvocation extends BaseToolInvocation<
   }
 
   private buildEvalCommand(): string {
-    // Execute inline Swift code using swift interpreter
+    // Execute inline Swift code using heredoc to avoid escaping issues
+    // This handles template literals (${...}), quotes, and special chars properly
     const code = this.params.code || '';
-    // Swift can run code directly with swift -e or by passing code to stdin
-    // Using heredoc for better code handling
-    return `swift -e '${code.replace(/'/g, "'\"'\"'")}'`;
+    return `swift <<'SWIFTEOF'\n${code}\nSWIFTEOF`;
   }
 
   private buildBuildCommand(): string {

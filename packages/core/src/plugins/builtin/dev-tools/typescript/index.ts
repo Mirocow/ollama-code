@@ -447,12 +447,12 @@ export class TypeScriptToolInvocation extends BaseToolInvocation<
   }
 
   private buildEvalCommand(runner?: TypeScriptRunner): string {
-    // Execute inline TypeScript code using tsx eval
+    // Execute inline TypeScript code using heredoc to avoid escaping issues
+    // This handles template literals (${...}), quotes, and special chars properly
     const effectiveRunner = runner || 'tsx';
     const code = this.params.code || '';
-    // Escape single quotes in code for shell
-    const escapedCode = code.replace(/'/g, '\'"\'"');
-    return `${getRunnerCommand(effectiveRunner).join(' ')} eval '${escapedCode}'`;
+    const runnerCmd = getRunnerCommand(effectiveRunner).join(' ');
+    return `${runnerCmd} <<'TSEOF'\n${code}\nTSEOF`;
   }
 
   private buildRunEsmCommand(runner?: TypeScriptRunner): string {

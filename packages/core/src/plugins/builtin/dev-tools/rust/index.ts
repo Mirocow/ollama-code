@@ -289,14 +289,12 @@ export class RustToolInvocation extends BaseToolInvocation<
 
   private buildEvalCommand(): string {
     // Execute inline Rust code by creating a temp file and running with rustc
+    // Using heredoc with quoted delimiter to prevent any shell interpretation
     const code = this.params.code || '';
-    // Create temp file, compile and run, then cleanup
-    // Using a heredoc approach for the temp file content
-    const escapedCode = code.replace(/'/g, '\'"\'"');
     // Create a temp directory and file, then compile and run
     const tempDir = '/tmp/rust_eval';
     const tempFile = `${tempDir}/main.rs`;
-    return `mkdir -p ${tempDir} && cat > ${tempFile} <<'RUSTEOF'\n${escapedCode}\nRUSTEOF && rustc ${tempFile} -o ${tempDir}/main && ${tempDir}/main`;
+    return `mkdir -p ${tempDir} && cat > ${tempFile} <<'RUSTEOF'\n${code}\nRUSTEOF && rustc ${tempFile} -o ${tempDir}/main && ${tempDir}/main`;
   }
 
   private buildBuildCommand(): string {

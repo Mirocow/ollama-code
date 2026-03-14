@@ -246,13 +246,10 @@ export class GolangToolInvocation extends BaseToolInvocation<
 
   private buildEvalCommand(): string {
     // Go doesn't support inline code execution directly,
-    // so we create a temp file and run it
+    // so we create a temp file and run it via stdin
+    // Using heredoc with quoted delimiter to prevent any shell interpretation
     const code = this.params.code || '';
-    // Escape single quotes in code for shell
-    const escapedCode = code.replace(/'/g, '\'"\'"');
-    // Create a temp file with the code and run it
-    // Using a heredoc approach for better code handling
-    return `go run /dev/stdin <<'GOEOF'\n${escapedCode}\nGOEOF`;
+    return `go run /dev/stdin <<'GOEOF'\n${code}\nGOEOF`;
   }
 
   private buildBuildCommand(): string {

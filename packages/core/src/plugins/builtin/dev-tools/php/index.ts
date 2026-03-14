@@ -235,11 +235,12 @@ export class PHPToolInvocation extends BaseToolInvocation<
   }
 
   private buildEvalCommand(): string {
-    // Execute inline PHP code using -r flag
+    // Execute inline PHP code using heredoc to avoid escaping issues
+    // This handles template literals (${...}), quotes, and special chars properly
     const code = this.params.code || '';
-    // Escape single quotes in code for shell
-    const escapedCode = code.replace(/'/g, '\'"\'"');
-    return `php -r '${escapedCode}'`;
+    // Add PHP opening tag if not present
+    const phpCode = code.trim().startsWith('<?php') ? code : `<?php\n${code}`;
+    return `php <<'PHPEOF'\n${phpCode}\nPHPEOF`;
   }
 
   private buildTestCommand(): string {

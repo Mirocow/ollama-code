@@ -268,11 +268,10 @@ export class NodeJsToolInvocation extends BaseToolInvocation<
   }
 
   private buildEvalCommand(): string {
-    // Execute inline JavaScript code using -e flag
+    // Execute inline JavaScript code using heredoc to avoid escaping issues
+    // This handles template literals (${...}), quotes, and special chars properly
     const code = this.params.code || '';
-    // Escape single quotes and double quotes in code for shell
-    const escapedCode = code.replace(/'/g, '\'"\'"');
-    return `node -e '${escapedCode}'`;
+    return `node <<'NODEEOF'\n${code}\nNODEEOF`;
   }
 
   private buildInstallCommand(pm: NodePackageManager): string {
