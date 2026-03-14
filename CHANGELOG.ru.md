@@ -1,5 +1,75 @@
 # Журнал изменений
 
+## 0.17.5
+
+_Исправление: Загрузка шаблонов и опция --file_
+
+### Исправления ошибок
+
+#### Исправлена ошибка загрузки шаблонов
+
+Исправлена ошибка "Unknown file extension .md" при запуске bundle CLI:
+
+| Проблема | Решение |
+| -------- | ------- |
+| Статические импорты `.md` в bundle | Заменены на `fs.readFileSync()` во время выполнения |
+| Неправильные пути к шаблонам | Добавлено определение путей для bundle/dist режимов |
+| Отсутствующие шаблоны | Fallback-шаблоны при отсутствии файлов |
+
+**Разрешение путей к шаблонам:**
+
+```typescript
+// Теперь проверяет несколько расположений:
+1. dist/prompts/templates/  (bundled cli.js)
+2. dist/templates/          (скомпилированный JS)
+3. __dirname/               (src напрямую)
+```
+
+#### Добавлена опция --file
+
+Новая опция CLI для загрузки и выполнения файлов задач:
+
+```bash
+# По имени (из ~/.ollama-code/tasks/)
+npm run cli -- --file tools-demo
+
+# С полным путём
+npm run cli -- --file ~/my-tasks/project-audit.md
+
+# С относительным путём
+npm run cli -- --file ./TASK.md
+```
+
+**Поддерживаемые форматы путей:**
+
+| Формат | Пример | Описание |
+| ------ | ------ | -------- |
+| Имя | `tools-demo` | Ищет в `~/.ollama-code/tasks/` |
+| Home | `~/tasks/test.md` | Расширяется до домашней директории |
+| Относительный | `./TASK.md` | Относительно текущей директории |
+| Абсолютный | `/path/to/task.md` | Полный путь |
+
+### Изменённые файлы
+
+| Файл | Изменения |
+| ---- | --------- |
+| `packages/core/src/prompts/templates/index.ts` | Runtime загрузка шаблонов с fallback |
+| `packages/cli/src/config/config.ts` | Добавлен парсинг опции --file |
+| `scripts/copy_bundle_assets.js` | Копирование шаблонов в dist/prompts/templates/ |
+| `README.md` | Добавлена секция "Running Task Files" |
+| `README.ru.md` | Добавлена секция "Запуск файлов задач" |
+
+### Коммиты
+
+```
+38350c19 fix: improve template directory detection with debug logging
+17965656 fix: load templates at runtime instead of static imports
+1321e6dd docs: add --file option examples to README
+992850d1 feat: add --file option to load task files
+```
+
+---
+
 ## 0.17.4
 
 _Упрощённые английские промпты с контекстом SSH пользователя_

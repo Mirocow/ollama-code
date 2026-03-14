@@ -1,5 +1,75 @@
 # Changelog
 
+## 0.17.5
+
+_Fix: Template Loading & --file Option_
+
+### Bug Fixes
+
+#### Fixed Template Loading Error
+
+Resolved "Unknown file extension .md" error when running bundled CLI:
+
+| Issue | Solution |
+| ----- | -------- |
+| Static `.md` imports in bundle | Replaced with `fs.readFileSync()` at runtime |
+| Wrong template paths | Added multiple path detection for bundled/dist modes |
+| Missing templates | Fallback templates when files not found |
+
+**Template Path Resolution:**
+
+```typescript
+// Now checks multiple locations:
+1. dist/prompts/templates/  (bundled cli.js)
+2. dist/templates/          (compiled JS)
+3. __dirname/               (src directly)
+```
+
+#### Added --file Option
+
+New CLI option to load and execute task files:
+
+```bash
+# By name (from ~/.ollama-code/tasks/)
+npm run cli -- --file tools-demo
+
+# With full path
+npm run cli -- --file ~/my-tasks/project-audit.md
+
+# With relative path
+npm run cli -- --file ./TASK.md
+```
+
+**Supported Path Formats:**
+
+| Format | Example | Description |
+| ------ | ------- | ----------- |
+| Name | `tools-demo` | Looks in `~/.ollama-code/tasks/` |
+| Home | `~/tasks/test.md` | Expanded to home directory |
+| Relative | `./TASK.md` | Relative to current directory |
+| Absolute | `/path/to/task.md` | Full path |
+
+### Files Modified
+
+| File | Changes |
+| ---- | ------- |
+| `packages/core/src/prompts/templates/index.ts` | Runtime template loading with fallbacks |
+| `packages/cli/src/config/config.ts` | Added --file option parsing |
+| `scripts/copy_bundle_assets.js` | Copy templates to dist/prompts/templates/ |
+| `README.md` | Added "Running Task Files" section |
+| `README.ru.md` | Added "Запуск файлов задач" section |
+
+### Commits
+
+```
+38350c19 fix: improve template directory detection with debug logging
+17965656 fix: load templates at runtime instead of static imports
+1321e6dd docs: add --file option examples to README
+992850d1 feat: add --file option to load task files
+```
+
+---
+
 ## 0.17.4
 
 _Simplified English Prompts with SSH User Context_

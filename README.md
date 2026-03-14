@@ -227,6 +227,42 @@ npm run dev:server
 
 ---
 
+## What's New in v0.17.5
+
+### Fixed: Template Loading & --file Option
+
+**Bug Fixes:**
+
+| Issue | Solution |
+| ----- | -------- |
+| "Unknown file extension .md" error | Replaced static imports with runtime `fs.readFileSync()` |
+| Wrong template paths in bundle | Added multiple path detection for bundled/dist modes |
+| Missing templates | Fallback templates when files not found |
+
+**New --file Option:**
+
+```bash
+# Load task by name (from ~/.ollama-code/tasks/)
+npm run cli -- --file tools-demo
+
+# Load with full path
+npm run cli -- --file ~/my-tasks/project-audit.md
+
+# Load with relative path
+npm run cli -- --file ./TASK.md
+```
+
+**Supported Path Formats:**
+
+| Format | Example | Description |
+| ------ | ------- | ----------- |
+| Name | `tools-demo` | Looks in `~/.ollama-code/tasks/` |
+| Home | `~/tasks/test.md` | Expanded to home directory |
+| Relative | `./TASK.md` | Relative to current directory |
+| Absolute | `/path/to/task.md` | Full path |
+
+---
+
 ## What's New in v0.17.2
 
 ### Model Storage Tool — Persistent AI Memory
