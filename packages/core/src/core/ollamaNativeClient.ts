@@ -24,6 +24,8 @@ import { apiLogger } from '../utils/apiLogger.js';
 import { createHttpClient, type AxiosInstance } from '../utils/httpClient.js';
 
 import { abortSignalAny } from '../utils/nodePolyfills.js';
+// Static import for bundle compatibility (replaces dynamic import)
+import { getModelHandlerFactory } from '../model-handlers/index.js';
 // Lazy-initialized debug logger to ensure session is set before use
 let _debugLogger: ReturnType<typeof createDebugLogger> | null = null;
 function getDebugLogger() {
@@ -739,21 +741,23 @@ export class OllamaNativeClient {
         if (axiosError.response) {
           const status = axiosError.response.status;
           const errorData = axiosError.response.data;
-          
+
           // Extract model name from request body for better error messages
           const requestBody = body as { model?: string } | undefined;
           const modelName = requestBody?.model;
-          
+
           // Build a more informative error message
           let errorMessage: string;
           if (status === 404) {
             // 404 typically means model not found in Ollama
-            errorMessage = errorData?.error || 
-              (modelName 
+            errorMessage =
+              errorData?.error ||
+              (modelName
                 ? `Model '${modelName}' not found. Make sure the model is installed (try: ollama pull ${modelName})`
                 : 'Resource not found');
           } else {
-            errorMessage = errorData?.error ||
+            errorMessage =
+              errorData?.error ||
               `Ollama API error: ${status} ${axiosError.response.statusText}`;
           }
 
@@ -907,7 +911,7 @@ export class OllamaNativeClient {
         // Extract model name from request body for better error messages
         const bodyWithModel = body as { model?: string } | undefined;
         const modelName = bodyWithModel?.model;
-        
+
         let errorMessage: string;
         // Try to read error from stream
         const chunks: Buffer[] = [];
@@ -925,14 +929,14 @@ export class OllamaNativeClient {
         } catch {
           errorMessage = `Ollama API error: ${response.status} ${response.statusText}`;
         }
-        
+
         // Enhance error message for 404 (model not found)
         if (response.status === 404 && !errorText.includes('not found')) {
-          errorMessage = modelName 
+          errorMessage = modelName
             ? `Model '${modelName}' not found. Make sure the model is installed (try: ollama pull ${modelName})`
             : 'Resource not found';
         }
-        
+
         debugLog('error', 'Streaming request failed', {
           status: response.status,
           error: errorMessage,
@@ -964,7 +968,7 @@ export class OllamaNativeClient {
             reject(new OllamaAbortError('Request aborted by user'));
             return;
           }
-          
+
           // Refresh timeout on each chunk to handle long-running generations
           refreshTimeout();
           chunkCount++;
@@ -1759,10 +1763,7 @@ export class OllamaNativeClient {
       }
 
       // Fall back to model handler patterns
-      // Import dynamically to avoid circular dependency
-      const { getModelHandlerFactory } = await import(
-        '../model-handlers/index.js'
-      );
+      // Use statically imported module (required for bundle)
       const factory = getModelHandlerFactory();
       const handlerSupport = factory.supportsTools(modelName);
 
@@ -1786,9 +1787,6 @@ export class OllamaNativeClient {
 
       // Fall back to model handler patterns on error
       try {
-        const { getModelHandlerFactory } = await import(
-          '../model-handlers/index.js'
-        );
         const factory = getModelHandlerFactory();
         return factory.supportsTools(modelName);
       } catch {

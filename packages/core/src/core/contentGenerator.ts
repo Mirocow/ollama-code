@@ -25,6 +25,9 @@ import {
   StrictMissingModelIdError,
 } from '../models/modelConfigErrors.js';
 import { PROVIDER_SOURCED_FIELDS } from '../models/modelsConfig.js';
+// Static imports for bundle compatibility (replaces dynamic imports)
+import { HybridContentGenerator } from './hybridContentGenerator.js';
+import { createOllamaNativeContentGenerator } from './ollamaNativeContentGenerator/index.js';
 
 /**
  * Interface abstracting the core functionalities for generating content and counting tokens.
@@ -252,7 +255,6 @@ export async function createContentGenerator(
 
   // Check if context caching is enabled
   if (generatorConfig.enableContextCaching) {
-    const { HybridContentGenerator } = await import('./hybridContentGenerator.js');
     const hybridGenerator = new HybridContentGenerator({
       model: generatorConfig.model,
       baseUrl: generatorConfig.baseUrl,
@@ -261,13 +263,15 @@ export async function createContentGenerator(
       preferGenerateEndpoint: true,
       sessionId: generatorConfig.sessionId ?? config.getSessionId(),
     });
-    
-    return new LoggingContentGenerator(hybridGenerator, config, generatorConfig);
+
+    return new LoggingContentGenerator(
+      hybridGenerator,
+      config,
+      generatorConfig,
+    );
   }
 
   // Use native Ollama API (default)
-  const { createOllamaNativeContentGenerator } =
-    await import('./ollamaNativeContentGenerator/index.js');
   const baseGenerator = createOllamaNativeContentGenerator(
     generatorConfig,
     config,
