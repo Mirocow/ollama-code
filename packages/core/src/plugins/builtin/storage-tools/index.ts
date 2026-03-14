@@ -68,6 +68,8 @@ export const StorageNamespaces = {
   CONTEXT: 'context', // Контекст текущей задачи (session)
   LEARNING: 'learning', // Обучение модели (persistent)
   METRICS: 'metrics', // Метрики и статистика (persistent)
+  PLANS: 'plans', // Активные планы (persistent, TTL 7 days)
+  TODOS: 'todos', // Задачи todo-list (persistent)
 } as const;
 
 // Namespace'ы с сессионным хранением по умолчанию
@@ -2079,5 +2081,199 @@ const storageToolsPlugin: PluginDefinition = {
     },
   },
 };
+
+// ============================================================================
+// Internal API Functions (for use by other plugins/modules)
+// ============================================================================
+
+/**
+ * Options for storage API operations
+ */
+export interface StorageApiOptions {
+  scope?: 'global' | 'project';
+  ttl?: number;
+  tags?: string[];
+}
+
+/**
+ * Get a value from storage
+ * @param namespace - The namespace (e.g., 'todos', 'plans', 'session')
+ * @param key - The key to retrieve
+ * @param options - Optional scope and other settings
+ * @returns The stored value or undefined if not found
+ */
+export async function storageGet<T = unknown>(
+  namespace: string,
+  key: string,
+  options: StorageApiOptions = {},
+): Promise<T | undefined> {
+  const { scope = 'project' } = options;
+  const useSession = SESSION_NAMESPACES.has(namespace.toLowerCase());
+
+  if (useSession) {
+    const entry = getSessionEntry(namespace, key);
+    if (!entry || isExpired(entry)) return undefined;
+    return entry.value as T;
+  }
+
+  const data = await readNamespaceData(namespace, scope);
+  const entry = data[key];
+  if (!entry || isExpired(entry)) return undefined;
+  return entry.value as T;
+}
+
+/**
+ * Set a value in storage
+ * @param namespace - The namespace (e.g., 'todos', 'plans', 'session')
+ * @param key - The key to set
+ * @param value - The value to store
+ * @param options - Optional scope, TTL, tags
+ */
+export async function storageSet<T = unknown>(
+  namespace: string,
+  key: string,
+  value: T,
+  options: StorageApiOptions = {},
+): Promise<void> {
+  const { scope = 'project', ttl, tags } = options;
+  const useSession = SESSION_NAMESPACES.has(namespace.toLowerCase());
+  const metadata = createMetadata(ttl, tags);
+
+  if (useSession) {
+    setSessionEntry(namespace, key, { value, metadata });
+    return;
+  }
+
+  const data = await readNamespaceData(namespace, scope);
+  data[key] = { value, metadata };
+  await writeNamespaceData(namespace, data, scope);
+}
+
+/**
+ * Delete a key from storage
+ * @param namespace - The namespace
+ * @param key - The key to delete
+ * @param options - Optional scope
+ * @returns true if key was deleted, false if not found
+ */
+export async function storageDelete(
+  namespace: string,
+  key: string,
+  options: StorageApiOptions = {},
+): Promise<boolean> {
+  const { scope = 'project' } = options;
+  const useSession = SESSION_NAMESPACES.has(namespace.toLowerCase());
+
+  if (useSession) {
+    return deleteSessionEntry(namespace, key);
+  }
+
+  const data = await readNamespaceData(namespace, scope);
+  if (!(key in data)) return false;
+  delete data[key];
+  await writeNamespaceData(namespace, data, scope);
+  return true;
+}
+
+/**
+ * List all keys in a namespace
+ * @param namespace - The namespace
+ * @param options - Optional scope
+ * @returns Array of keys
+ */
+export async function storageList(
+  namespace: string,
+  options: StorageApiOptions = {},
+): Promise<string[]> {
+  const { scope = 'project' } = options;
+  const useSession = SESSION_NAMESPACES.has(namespace.toLowerCase());
+
+  if (useSession) {
+    const nsData = getSessionData(namespace);
+    return Array.from(nsData.keys());
+  }
+
+  const data = await readNamespaceData(namespace, scope);
+  return Object.keys(data);
+}
+
+/**
+ * Check if a key exists in storage
+ * @param namespace - The namespace
+ * @param key - The key to check
+ * @param options - Optional scope
+ * @returns true if key exists and not expired
+ */
+export async function storageExists(
+  namespace: string,
+  key: string,
+  options: StorageApiOptions = {},
+): Promise<boolean> {
+  const { scope = 'project' } = options;
+  const useSession = SESSION_NAMESPACES.has(namespace.toLowerCase());
+
+  if (useSession) {
+    const entry = getSessionEntry(namespace, key);
+    return entry !== undefined && !isExpired(entry);
+  }
+
+  const data = await readNamespaceData(namespace, scope);
+  const entry = data[key];
+  return entry !== undefined && !isExpired(entry);
+}
+
+/**
+ * Get all entries in a namespace
+ * @param namespace - The namespace
+ * @param options - Optional scope
+ * @returns Record of key -> value
+ */
+export async function storageGetAll<T = unknown>(
+  namespace: string,
+  options: StorageApiOptions = {},
+): Promise<Record<string, T>> {
+  const { scope = 'project' } = options;
+  const useSession = SESSION_NAMESPACES.has(namespace.toLowerCase());
+
+  if (useSession) {
+    const nsData = getSessionData(namespace);
+    const result: Record<string, T> = {};
+    for (const [key, entry] of nsData.entries()) {
+      if (!isExpired(entry)) {
+        result[key] = entry.value as T;
+      }
+    }
+    return result;
+  }
+
+  const data = await readNamespaceData(namespace, scope);
+  const result: Record<string, T> = {};
+  for (const [key, entry] of Object.entries(data)) {
+    if (!isExpired(entry)) {
+      result[key] = entry.value as T;
+    }
+  }
+  return result;
+}
+
+/**
+ * Clear all entries in a namespace
+ * @param namespace - The namespace
+ * @param options - Optional scope
+ */
+export async function storageClear(
+  namespace: string,
+  options: StorageApiOptions = {},
+): Promise<void> {
+  const { scope = 'project' } = options;
+  const useSession = SESSION_NAMESPACES.has(namespace.toLowerCase());
+
+  if (useSession) {
+    clearSessionNamespace(namespace);
+    return;
+  }
+
+  await writeNamespaceData(namespace, {}, scope);
+}
 
 export default storageToolsPlugin;

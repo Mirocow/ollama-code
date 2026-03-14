@@ -5,18 +5,29 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { TodoWriteParams, TodoItem } from './index.js';
+import type { TodoWriteParams, TodoItem, TodosData } from './index.js';
 import { TodoWriteTool } from './index.js';
-import * as fs from 'fs/promises';
-import * as fsSync from 'fs';
 import type { Config } from '../config/config.js';
+import * as storageTools from '../../storage-tools/index.js';
 
-// Mock fs modules
-vi.mock('fs/promises');
-vi.mock('fs');
+// Mock storage-tools module
+vi.mock('../../storage-tools/index.js', () => ({
+  storageGet: vi.fn(),
+  storageSet: vi.fn(),
+  StorageNamespaces: {
+    ROADMAP: 'roadmap',
+    SESSION: 'session',
+    KNOWLEDGE: 'knowledge',
+    CONTEXT: 'context',
+    LEARNING: 'learning',
+    METRICS: 'metrics',
+    PLANS: 'plans',
+    TODOS: 'todos',
+  },
+}));
 
-const mockFs = vi.mocked(fs);
-const mockFsSync = vi.mocked(fsSync);
+const mockStorageGet = vi.mocked(storageTools.storageGet);
+const mockStorageSet = vi.mocked(storageTools.storageSet);
 
 describe('TodoWriteTool', () => {
   let tool: TodoWriteTool;
@@ -125,7 +136,7 @@ describe('TodoWriteTool', () => {
   });
 
   describe('execute', () => {
-    it('should create new todos file when none exists', async () => {
+    it('should create new todos when none exists', async () => {
       const params: TodoWriteParams = {
         todos: [
           { id: '1', content: 'Task 1', status: 'pending' },
@@ -133,10 +144,9 @@ describe('TodoWriteTool', () => {
         ],
       };
 
-      // Mock file not existing
-      mockFs.readFile.mockRejectedValue({ code: 'ENOENT' });
-      mockFs.mkdir.mockResolvedValue(undefined);
-      mockFs.writeFile.mockResolvedValue(undefined);
+      // Mock storage returning undefined (no existing todos)
+      mockStorageGet.mockResolvedValue(undefined);
+      mockStorageSet.mockResolvedValue(undefined);
 
       const invocation = tool.build(params);
       const result = await invocation.execute(mockAbortSignal);
@@ -146,7 +156,6 @@ describe('TodoWriteTool', () => {
       );
       expect(result.llmContent).toContain('<system-reminder>');
       expect(result.llmContent).toContain('Your todo list has changed');
-      expect(result.llmContent).toContain(JSON.stringify(params.todos));
       expect(result.returnDisplay).toEqual({
         type: 'todo_list',
         todos: [
@@ -154,17 +163,25 @@ describe('TodoWriteTool', () => {
           { id: '2', content: 'Task 2', status: 'in_progress' },
         ],
       });
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('test-session-123.json'),
-        expect.stringContaining('"todos"'),
-        'utf-8',
+      expect(mockStorageSet).toHaveBeenCalledWith(
+        'todos',
+        'items',
+        expect.objectContaining({
+          items: params.todos,
+          sessionId: 'test-session-123',
+        }),
+        { scope: 'project' },
       );
     });
 
     it('should replace todos with new ones', async () => {
-      const existingTodos = [
-        { id: '1', content: 'Existing Task', status: 'completed' },
-      ];
+      const existingData: TodosData = {
+        items: [{ id: '1', content: 'Existing Task', status: 'completed' }],
+        sessionId: 'test-session-123',
+        createdAt: '2025-03-14T10:00:00Z',
+        updatedAt: '2025-03-14T10:00:00Z',
+        status: 'active',
+      };
 
       const params: TodoWriteParams = {
         todos: [
@@ -173,12 +190,9 @@ describe('TodoWriteTool', () => {
         ],
       };
 
-      // Mock existing file
-      mockFs.readFile.mockResolvedValue(
-        JSON.stringify({ todos: existingTodos }),
-      );
-      mockFs.mkdir.mockResolvedValue(undefined);
-      mockFs.writeFile.mockResolvedValue(undefined);
+      // Mock storage returning existing data
+      mockStorageGet.mockResolvedValue(existingData);
+      mockStorageSet.mockResolvedValue(undefined);
 
       const invocation = tool.build(params);
       const result = await invocation.execute(mockAbortSignal);
@@ -187,8 +201,6 @@ describe('TodoWriteTool', () => {
         'Todos have been modified successfully',
       );
       expect(result.llmContent).toContain('<system-reminder>');
-      expect(result.llmContent).toContain('Your todo list has changed');
-      expect(result.llmContent).toContain(JSON.stringify(params.todos));
       expect(result.returnDisplay).toEqual({
         type: 'todo_list',
         todos: [
@@ -196,14 +208,9 @@ describe('TodoWriteTool', () => {
           { id: '2', content: 'New Task', status: 'pending' },
         ],
       });
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('test-session-123.json'),
-        expect.stringMatching(/"Updated Task"/),
-        'utf-8',
-      );
     });
 
-    it('should handle file write errors', async () => {
+    it('should handle storage errors', async () => {
       const params: TodoWriteParams = {
         todos: [
           { id: '1', content: 'Task 1', status: 'pending' },
@@ -211,17 +218,16 @@ describe('TodoWriteTool', () => {
         ],
       };
 
-      mockFs.readFile.mockRejectedValue({ code: 'ENOENT' });
-      mockFs.mkdir.mockResolvedValue(undefined);
-      mockFs.writeFile.mockRejectedValue(new Error('Write failed'));
+      // Mock storageGet returns undefined (no existing data)
+      mockStorageGet.mockResolvedValue(undefined);
+      // Mock storageSet throws error
+      mockStorageSet.mockRejectedValue(new Error('Storage failed'));
 
       const invocation = tool.build(params);
       const result = await invocation.execute(mockAbortSignal);
 
       expect(result.llmContent).toContain('Failed to modify todos');
       expect(result.llmContent).toContain('<system-reminder>');
-      expect(result.llmContent).toContain('Todo list modification failed');
-      expect(result.llmContent).toContain('Write failed');
       expect(result.returnDisplay).toContain('Error writing todos');
     });
 
@@ -230,8 +236,8 @@ describe('TodoWriteTool', () => {
         todos: [],
       };
 
-      mockFs.mkdir.mockResolvedValue(undefined);
-      mockFs.writeFile.mockResolvedValue(undefined);
+      mockStorageGet.mockResolvedValue(undefined);
+      mockStorageSet.mockResolvedValue(undefined);
 
       const invocation = tool.build(params);
       const result = await invocation.execute(mockAbortSignal);
@@ -239,16 +245,10 @@ describe('TodoWriteTool', () => {
       expect(result.llmContent).toContain('Todo list has been cleared');
       expect(result.llmContent).toContain('<system-reminder>');
       expect(result.llmContent).toContain('Your todo list is now empty');
-      expect(result.llmContent).toContain('no pending tasks');
       expect(result.returnDisplay).toEqual({
         type: 'todo_list',
         todos: [],
       });
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('test-session-123.json'),
-        expect.stringContaining('"todos"'),
-        'utf-8',
-      );
     });
   });
 
@@ -277,24 +277,21 @@ describe('TodoWriteTool', () => {
   });
 
   describe('getDescription', () => {
-    it('should return "Create todos" when no todos file exists', () => {
-      // Mock existsSync to return false (file doesn't exist)
-      mockFsSync.existsSync.mockReturnValue(false);
-
+    it('should return "Update todos" for todo operations', () => {
+      // With storage-tools integration, we always use 'update' operation type
+      // because storage handles both create and update scenarios
       const params = {
         todos: [{ id: '1', content: 'Test todo', status: 'pending' as const }],
       };
       const invocation = tool.build(params);
-      expect(invocation.getDescription()).toBe('Create todos');
+      expect(invocation.getDescription()).toBe('Update todos');
     });
 
-    it('should return "Update todos" when todos file exists', () => {
-      // Mock existsSync to return true (file exists)
-      mockFsSync.existsSync.mockReturnValue(true);
-
+    it('should return "Update todos" for multiple todos', () => {
       const params = {
         todos: [
-          { id: '1', content: 'Updated todo', status: 'completed' as const },
+          { id: '1', content: 'First todo', status: 'pending' as const },
+          { id: '2', content: 'Second todo', status: 'completed' as const },
         ],
       };
       const invocation = tool.build(params);

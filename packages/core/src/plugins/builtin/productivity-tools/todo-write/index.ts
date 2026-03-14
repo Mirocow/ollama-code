@@ -4,6 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * Todo Write Tool
+ *
+ * Uses model_storage for persistence via the 'todos' namespace.
+ * Data is stored in: ~/.ollama-code/projects/<hash>/storage/<session-id>.json
+ * Under the 'todos' namespace with key 'items'.
+ */
+
 import type { ToolResult } from '../../../../tools/tools.js';
 import {
   BaseDeclarativeTool,
@@ -11,26 +19,40 @@ import {
   Kind,
 } from '../../../../tools/tools.js';
 import type { FunctionDeclaration } from '../../../../types/content.js';
-import * as fs from 'fs/promises';
-import * as fsSync from 'fs';
-import * as path from 'path';
-
-import { getProjectStorageDir } from '../../../../utils/paths.js';
 import type { Config } from '../../../../config/config.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
+import {
+  storageGet,
+  storageSet,
+  StorageNamespaces,
+} from '../../storage-tools/index.js';
 
 const debugLogger = createDebugLogger('TODO_WRITE');
+
+// Namespace for todos in storage
+const TODOS_NAMESPACE = 'todos';
+const TODOS_KEY = 'items';
 
 export interface TodoItem {
   id: string;
   content: string;
   status: 'pending' | 'in_progress' | 'completed';
+  priority?: 'high' | 'medium' | 'low';
 }
 
 export interface TodoWriteParams {
   todos: TodoItem[];
   modified_by_user?: boolean;
   modified_content?: string;
+}
+
+export interface TodosData {
+  items: TodoItem[];
+  sessionId: string;
+  createdAt: string;
+  updatedAt: string;
+  planId?: string; // Link to active plan if any
+  status: 'active' | 'completed' | 'abandoned';
 }
 
 const todoWriteToolSchemaData: FunctionDeclaration = {
@@ -55,6 +77,10 @@ const todoWriteToolSchemaData: FunctionDeclaration = {
             },
             id: {
               type: 'string',
+            },
+            priority: {
+              type: 'string',
+              enum: ['high', 'medium', 'low'],
             },
           },
           required: ['content', 'status', 'id'],
@@ -93,127 +119,6 @@ Skip using this tool ONLY when:
 
 **DO NOT skip todo_write just because a task seems "simple" - most coding tasks have hidden complexity.**
 
-## Examples of When to Use the Todo List
-
-<example>
-User: I want to add a dark mode toggle to the application settings. Make sure you run the tests and build when you're done!
-Assistant: I'll help add a dark mode toggle to your application settings. Let me create a todo list to track this implementation.
-*Creates todo list with the following items:*
-1. Create dark mode toggle component in Settings page
-2. Add dark mode state management (context/store)
-3. Implement CSS-in-JS styles for dark theme
-4. Update existing components to support theme switching
-5. Run tests and build process, addressing any failures or errors that occur
-*Begins working on the first task*
-
-<reasoning>
-The assistant used the todo list because:
-1. Adding dark mode is a multi-step feature requiring UI, state management, and styling changes
-2. The user explicitly requested tests and build be run afterward
-3. The assistant inferred that tests and build need to pass by adding "Ensure tests and build succeed" as the final task
-</reasoning>
-</example>
-
-<example>
-User: Help me rename the function getCwd to getCurrentWorkingDirectory across my project
-Assistant: Let me first search through your codebase to find all occurrences of 'getCwd'.
-*Uses grep or search tools to locate all instances of getCwd in the codebase*
-Assistant: I've found 15 instances of 'getCwd' across 8 different files. Let me create a todo list to track these changes.
-*Creates todo list with specific items for each file that needs updating*
-
-<reasoning>
-The assistant used the todo list because:
-1. First, the assistant searched to understand the scope of the task
-2. Upon finding multiple occurrences across different files, it determined this was a complex task with multiple steps
-3. The todo list helps ensure every instance is tracked and updated systematically
-4. This approach prevents missing any occurrences and maintains code consistency
-</reasoning>
-</example>
-
-
-<example>
-User: I need to implement these features for my e-commerce site: user registration, product catalog, shopping cart, and checkout flow.
-Assistant: I'll help implement these features. First, let's add all the features to the todo list.
-*Creates a todo list breaking down each feature into specific tasks based on the project architecture*
-Assistant: Let's start with user registration. This will involve creating database models, API endpoints, and frontend forms that integrate with your existing authentication system.
-
-<reasoning>
-The assistant used the todo list because:
-1. The user provided multiple complex features to implement in a comma separated list
-2. The todo list helps organize these large features into manageable tasks
-3. This approach allows for tracking progress across the entire implementation
-</reasoning>
-</example>
-
-<example>
-User: Can you help optimize my React application? It's rendering slowly and has performance issues.</user>
-Assistant: I'll help optimize your React application. First, let me examine your codebase to identify potential performance bottlenecks.
-*Reviews component structure, render patterns, state management, and data fetching*
-Assistant: After analyzing your codebase, I've identified several performance issues. Let me create a todo list to track our optimization efforts.
-*Creates todo list with items like: 1) Implement memoization for expensive calculations in ProductList, 2) Add virtualization for long lists in Dashboard, 3) Optimize image loading in Gallery component, 4) Fix state update loops in ShoppingCart, 5) Review bundle size and implement code splitting*
-Let's start by implementing memoization for the expensive calculations in your ProductList component.</assistant>
-
-<reasoning>
-The assistant used the todo list because:
-1. First, the assistant examined the codebase to identify specific performance issues
-2. Based on this analysis, it identified multiple optimization opportunities
-3. Performance optimization is a non-trivial task requiring multiple steps
-4. The todo list helps methodically track improvements across different components
-5. This systematic approach ensures all performance bottlenecks are addressed
-</reasoning>
-</example>
-
-## Examples of When NOT to Use the Todo List
-
-<example>
-User: How do I print 'Hello World' in Python?
-Assistant: In Python, you can print "Hello World" with this simple code:
-
-python
-print("Hello World")
-
-This will output the text "Hello World" to the console when executed.</assistant>
-
-<reasoning>
-The assistant did not use the todo list because this is a single, trivial task that can be completed in one step. There's no need to track multiple tasks or steps for such a straightforward request.
-</reasoning>
-</example>
-
-<example>
-User: What does the git status command do?
-Assistant: The git status command shows the current state of your working directory and staging area. It displays which changes have been staged, which haven't, and which files aren't being tracked by Git. This is a fundamental command for understanding the current state of your repository before making commits.
-
-<reasoning>
-The assistant did not use the todo list because this is an informational request with no actual coding task to complete. The user is simply asking for an explanation, not for the assistant to perform multiple steps or tasks.
-</reasoning>
-</example>
-
-<example>
-User: Can you add a comment to the calculateTotal function to explain what it does?
-Assistant: Sure, let me add a comment to the calculateTotal function to explain what it does.
-* Uses the Edit tool to add a comment to the calculateTotal function *
-
-<reasoning>
-The assistant did not use the todo list because this is a single, straightforward task confined to one location in the code. Adding a comment doesn't require tracking multiple steps or systematic organization.
-</reasoning>
-</example>
-
-<example>
-User: Run npm install for me and tell me what happens.
-Assistant: I'll run the npm install command for you.
-
-*Executes: npm install*
-
-The command completed successfully. Here's the output:
-[Output of npm install command]
-
-All dependencies have been installed according to your package.json file.
-
-<reasoning>
-The assistant did not use the todo list because this is a single command execution with immediate results. There are no multiple steps to track or organize, making the todo list unnecessary for this straightforward task.
-</reasoning>
-</example>
-
 ## Task States and Management
 
 1. **Task States**: Use these states to track progress:
@@ -246,61 +151,88 @@ The assistant did not use the todo list because this is a single command executi
 When in doubt, use this tool. Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.
 `;
 
-const TODO_SUBDIR = 'todos';
-
 /**
- * Get the todo file path using centralized project storage
+ * Read todos from storage
  */
-function getTodoFilePath(projectDir: string, sessionId?: string): string {
-  // Use centralized project storage directory
-  const storageDir = getProjectStorageDir(projectDir);
-  const todoDir = path.join(storageDir, TODO_SUBDIR);
-
-  // Use sessionId if provided, otherwise fall back to 'default'
-  const filename = `${sessionId || 'default'}.json`;
-  return path.join(todoDir, filename);
-}
-
-/**
- * Reads the current todos from the file system
- */
-async function readTodosFromFile(
-  projectDir: string,
-  sessionId?: string,
-): Promise<TodoItem[]> {
+async function readTodosFromStorage(
+  sessionId: string,
+): Promise<TodosData | null> {
   try {
-    const todoFilePath = getTodoFilePath(projectDir, sessionId);
-    const content = await fs.readFile(todoFilePath, 'utf-8');
-    const data = JSON.parse(content);
-    return Array.isArray(data.todos) ? data.todos : [];
+    const data = await storageGet<TodosData>(TODOS_NAMESPACE, TODOS_KEY, {
+      scope: 'project',
+    });
+    return data || null;
   } catch (err) {
-    const error = err as Error & { code?: string };
-    if (!(error instanceof Error) || error.code !== 'ENOENT') {
-      throw err;
-    }
-    return [];
+    debugLogger.error('[TodoWrite] Error reading todos from storage:', err);
+    return null;
   }
 }
 
 /**
- * Writes todos to the file system
+ * Write todos to storage
  */
-async function writeTodosToFile(
+async function writeTodosToStorage(
   todos: TodoItem[],
-  projectDir: string,
-  sessionId?: string,
+  sessionId: string,
+  existingData?: TodosData | null,
 ): Promise<void> {
-  const todoFilePath = getTodoFilePath(projectDir, sessionId);
-  const todoDir = path.dirname(todoFilePath);
+  const now = new Date().toISOString();
 
-  await fs.mkdir(todoDir, { recursive: true });
-
-  const data = {
-    todos,
-    sessionId: sessionId || 'default',
+  const data: TodosData = {
+    items: todos,
+    sessionId,
+    createdAt: existingData?.createdAt || now,
+    updatedAt: now,
+    planId: existingData?.planId,
+    status: todos.length === 0
+      ? 'completed'
+      : todos.every(t => t.status === 'completed')
+        ? 'completed'
+        : 'active',
   };
 
-  await fs.writeFile(todoFilePath, JSON.stringify(data, null, 2), 'utf-8');
+  await storageSet(TODOS_NAMESPACE, TODOS_KEY, data, { scope: 'project' });
+
+  // Also update plan status if linked
+  if (data.planId) {
+    try {
+      const plan = await storageGet<{ status: string; todos: TodoItem[]; progress: number }>(
+        StorageNamespaces.PLANS,
+        data.planId,
+        { scope: 'project' },
+      );
+
+      if (plan && plan.status === 'active') {
+        const completed = todos.filter(t => t.status === 'completed').length;
+        const total = todos.length;
+        const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        await storageSet(
+          StorageNamespaces.PLANS,
+          data.planId,
+          {
+            ...plan,
+            todos,
+            progress,
+            status: progress === 100 ? 'completed' : 'active',
+            completedAt: progress === 100 ? now : undefined,
+          },
+          { scope: 'project' },
+        );
+      }
+    } catch {
+      // Ignore errors updating plan
+    }
+  }
+}
+
+/**
+ * Calculate progress percentage
+ */
+function calculateProgress(todos: TodoItem[]): number {
+  if (todos.length === 0) return 0;
+  const completed = todos.filter(t => t.status === 'completed').length;
+  return Math.round((completed / todos.length) * 100);
 }
 
 class TodoWriteToolInvocation extends BaseToolInvocation<
@@ -331,22 +263,25 @@ class TodoWriteToolInvocation extends BaseToolInvocation<
 
   async execute(_signal: AbortSignal): Promise<ToolResult> {
     const { todos, modified_by_user, modified_content } = this.params;
-    const sessionId = this.config.getSessionId();
-    const projectDir = this.config.getProjectRoot();
+    const sessionId = this.config.getSessionId() || 'default';
 
     try {
+      // Read existing data to preserve plan linkage
+      const existingData = await readTodosFromStorage(sessionId);
+
       let finalTodos: TodoItem[];
 
       if (modified_by_user && modified_content !== undefined) {
         // User modified the content in external editor, parse it directly
         const data = JSON.parse(modified_content);
-        finalTodos = Array.isArray(data.todos) ? data.todos : [];
+        finalTodos = Array.isArray(data.todos) ? data.todos : Array.isArray(data.items) ? data.items : [];
       } else {
         // Use the normal todo logic - simply replace with new todos
         finalTodos = todos;
       }
 
-      await writeTodosToFile(finalTodos, projectDir, sessionId);
+      // Write to storage
+      await writeTodosToStorage(finalTodos, sessionId, existingData);
 
       // Create structured display object for rich UI rendering
       const todoResultDisplay = {
@@ -356,6 +291,7 @@ class TodoWriteToolInvocation extends BaseToolInvocation<
 
       // Create plain string format with system reminder
       const todosJson = JSON.stringify(finalTodos);
+      const progress = calculateProgress(finalTodos);
       let llmContent: string;
 
       if (finalTodos.length === 0) {
@@ -367,10 +303,18 @@ Your todo list is now empty. DO NOT mention this explicitly to the user. You hav
 </system-reminder>`;
       } else {
         // Normal message for todos with items
+        const inProgress = finalTodos.find(t => t.status === 'in_progress');
+        const pending = finalTodos.filter(t => t.status === 'pending');
+        const completed = finalTodos.filter(t => t.status === 'completed');
+
         llmContent = `Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
 
 <system-reminder>
-Your todo list has changed. DO NOT mention this explicitly to the user. Here are the latest contents of your todo list: 
+Your todo list has changed. DO NOT mention this explicitly to the user. Here are the latest contents of your todo list:
+
+Progress: ${progress}% (${completed.length}/${finalTodos.length} completed)
+${inProgress ? `Current task: ${inProgress.content}` : 'No task in progress'}
+${pending.length > 0 ? `Pending: ${pending.length} tasks` : ''}
 
 ${todosJson}. Continue on with the tasks at hand if applicable.
 </system-reminder>`;
@@ -406,30 +350,47 @@ Todo list modification failed with error: ${errorMessage}. You may need to retry
  * Utility function to read todos for a specific session (useful for session recovery)
  */
 export async function readTodosForSession(
-  projectDir: string,
-  sessionId?: string,
+  sessionId: string,
 ): Promise<TodoItem[]> {
-  return readTodosFromFile(projectDir, sessionId);
+  try {
+    const data = await storageGet<TodosData>(TODOS_NAMESPACE, TODOS_KEY, {
+      scope: 'project',
+    });
+    return data?.items || [];
+  } catch {
+    return [];
+  }
 }
 
 /**
- * Utility function to list all todo files in the todos directory
+ * Get active todos with metadata (for reminders)
  */
-export async function listTodoSessions(projectDir: string): Promise<string[]> {
+export async function getActiveTodos(): Promise<TodosData | null> {
   try {
-    // Use centralized project storage directory
-    const storageDir = getProjectStorageDir(projectDir);
-    const todoDir = path.join(storageDir, TODO_SUBDIR);
-    const files = await fs.readdir(todoDir);
-    return files
-      .filter((file: string) => file.endsWith('.json'))
-      .map((file: string) => file.replace('.json', ''));
-  } catch (err) {
-    const error = err as Error & { code?: string };
-    if (!(error instanceof Error) || error.code !== 'ENOENT') {
-      throw err;
+    const result = await storageGet<TodosData>(TODOS_NAMESPACE, TODOS_KEY, {
+      scope: 'project',
+    });
+    return result ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Link todos to a plan (called by exit_plan_mode)
+ */
+export async function linkTodosToPlan(planId: string): Promise<void> {
+  try {
+    const data = await storageGet<TodosData>(TODOS_NAMESPACE, TODOS_KEY, {
+      scope: 'project',
+    });
+
+    if (data) {
+      data.planId = planId;
+      await storageSet(TODOS_NAMESPACE, TODOS_KEY, data, { scope: 'project' });
     }
-    return [];
+  } catch {
+    // Ignore errors
   }
 }
 
@@ -483,11 +444,8 @@ export class TodoWriteTool extends BaseDeclarativeTool<
   }
 
   protected createInvocation(params: TodoWriteParams) {
-    // Determine if this is a create or update operation by checking if todos file exists
-    const sessionId = this.config.getSessionId();
-    const projectDir = this.config.getProjectRoot();
-    const todoFilePath = getTodoFilePath(projectDir, sessionId);
-    const operationType = fsSync.existsSync(todoFilePath) ? 'update' : 'create';
+    // Determine if this is a create or update operation
+    const operationType = 'update'; // Always update since storage handles both
 
     return new TodoWriteToolInvocation(this.config, params, operationType);
   }
