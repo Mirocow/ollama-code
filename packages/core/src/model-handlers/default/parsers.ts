@@ -26,7 +26,9 @@ import {
  * Parser for <tool_call=...> format.
  * Used by Qwen and similar models.
  *
- * Example: <tool_call={"name": "list_directory", "arguments": {"path": "/home"}}>
+ * Supports two formats:
+ * 1. Inline: <tool_call={"name": "list_directory", "arguments": {"path": "/home"}}>
+ * 2. Multi-line: <tool_call=...>\n{"name": "...", "arguments": {...}}\n</tool_call=...>
  */
 export class ToolCallTagParser implements IToolCallTextParser {
   readonly name = 'tool-call-tag';
@@ -39,15 +41,35 @@ export class ToolCallTagParser implements IToolCallTextParser {
   parse(content: string): ToolCallParseResult {
     const toolCalls: ParsedToolCall[] = [];
     let cleanedContent = content;
-    const pattern = /<tool_call\s*=\s*/gi;
+
+    // Pattern 1: Multi-line format <tool_call=...>\n{...}\n</tool_call=...>
+    const multiLinePattern =
+      /<tool_call\s*=\s*\.\.\.\s*>([\s\S]*?)<\/tool_call\s*=\s*\.\.\.\s*>/gi;
     let match;
 
-    while ((match = pattern.exec(content)) !== null) {
+    while ((match = multiLinePattern.exec(content)) !== null) {
+      try {
+        const jsonStr = match[1].trim();
+        const parsed = JSON.parse(jsonStr);
+        const toolCall = extractToolCall(parsed);
+        if (toolCall) {
+          toolCalls.push(toolCall);
+          cleanedContent = cleanedContent.replace(match[0], '');
+        }
+      } catch {
+        /* skip invalid JSON */
+      }
+    }
+
+    // Pattern 2: Inline format <tool_call={"name": "...", ...}>
+    const inlinePattern = /<tool_call\s*=\s*/gi;
+
+    while ((match = inlinePattern.exec(content)) !== null) {
       const jsonStart = match.index + match[0].length;
       const result = tryParseJsonAt(content, jsonStart);
       if (result) {
         const toolCall = extractToolCall(result.json);
-        if (toolCall) {
+        if (toolCall && !hasToolCall(toolCalls, toolCall.name)) {
           toolCalls.push(toolCall);
           const closingAngle = content.indexOf('>', result.end);
           if (closingAngle !== -1) {
@@ -59,6 +81,7 @@ export class ToolCallTagParser implements IToolCallTextParser {
         }
       }
     }
+
     return { toolCalls, cleanedContent: cleanedContent.trim() };
   }
 }
