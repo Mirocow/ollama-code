@@ -872,7 +872,7 @@ async function completePlugins(
 const listCommand: SlashCommand = {
   name: 'list',
   get description() {
-    return t('List all plugins with status (default action)');
+    return t('List all plugins with status (default action). Usage: /plugins list');
   },
   kind: CommandKind.BUILT_IN,
   action: listAction,
@@ -881,7 +881,7 @@ const listCommand: SlashCommand = {
 const healthCommand: SlashCommand = {
   name: 'health',
   get description() {
-    return t('Show health metrics for all plugins');
+    return t('Show health metrics for all plugins. Usage: /plugins health');
   },
   kind: CommandKind.BUILT_IN,
   action: healthAction,
@@ -890,7 +890,7 @@ const healthCommand: SlashCommand = {
 const infoCommand: SlashCommand = {
   name: 'info',
   get description() {
-    return t('Show detailed plugin information');
+    return t('Show detailed plugin information. Usage: /plugins info <plugin-id>');
   },
   kind: CommandKind.BUILT_IN,
   action: infoAction,
@@ -900,7 +900,7 @@ const infoCommand: SlashCommand = {
 const enableCommand: SlashCommand = {
   name: 'enable',
   get description() {
-    return t('Enable a disabled plugin');
+    return t('Enable a disabled plugin. Usage: /plugins enable <plugin-id>');
   },
   kind: CommandKind.BUILT_IN,
   action: enableAction,
@@ -910,7 +910,7 @@ const enableCommand: SlashCommand = {
 const disableCommand: SlashCommand = {
   name: 'disable',
   get description() {
-    return t('Disable an enabled plugin');
+    return t('Disable an enabled plugin. Usage: /plugins disable <plugin-id>');
   },
   kind: CommandKind.BUILT_IN,
   action: disableAction,
@@ -920,7 +920,7 @@ const disableCommand: SlashCommand = {
 const reloadCommand: SlashCommand = {
   name: 'reload',
   get description() {
-    return t('Reload all plugins or a specific one');
+    return t('Reload all plugins or a specific one. Usage: /plugins reload [plugin-id]');
   },
   kind: CommandKind.BUILT_IN,
   action: reloadAction,
@@ -930,7 +930,7 @@ const reloadCommand: SlashCommand = {
 const searchCommand: SlashCommand = {
   name: 'search',
   get description() {
-    return t('Search marketplace for plugins');
+    return t('Search marketplace for plugins. Usage: /plugins search [query]');
   },
   kind: CommandKind.BUILT_IN,
   action: searchAction,
@@ -939,7 +939,7 @@ const searchCommand: SlashCommand = {
 const installCommand: SlashCommand = {
   name: 'install',
   get description() {
-    return t('Install plugin from marketplace');
+    return t('Install plugin from marketplace. Usage: /plugins install <plugin-id>');
   },
   kind: CommandKind.BUILT_IN,
   action: installAction,
@@ -948,7 +948,7 @@ const installCommand: SlashCommand = {
 const updateCommand: SlashCommand = {
   name: 'update',
   get description() {
-    return t('Update plugin(s) from marketplace');
+    return t('Update plugin(s) from marketplace. Usage: /plugins update [plugin-id]');
   },
   kind: CommandKind.BUILT_IN,
   action: updateAction,
@@ -958,7 +958,7 @@ const updateCommand: SlashCommand = {
 const uninstallCommand: SlashCommand = {
   name: 'uninstall',
   get description() {
-    return t('Uninstall a plugin');
+    return t('Uninstall a plugin. Usage: /plugins uninstall <plugin-id>');
   },
   kind: CommandKind.BUILT_IN,
   action: uninstallAction,
@@ -972,7 +972,7 @@ const uninstallCommand: SlashCommand = {
 export const pluginsCommand: SlashCommand = {
   name: 'plugins',
   get description() {
-    return t('Manage plugins');
+    return t('Manage plugins. Subcommands: list, health, info, enable, disable, reload, search, install, update, uninstall');
   },
   kind: CommandKind.BUILT_IN,
   subCommands: [

@@ -400,8 +400,7 @@ Configuration is stored in `~/.ollama-code/`:
     "hideWindowTitle": false
   },
   "tools": {
-    "useRipgrep": true,
-    "useBuiltinRipgrep": true
+    "approvalMode": "default"
   },
   "security": {
     "auth": {

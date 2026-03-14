@@ -456,7 +456,6 @@ The tool system provides a comprehensive set of tools for code operations.
 | `list_directory` | File | List directory contents |
 | `glob` | File | Find files by pattern |
 | `grep` | Search | Search file contents |
-| `ripGrep` | Search | Fast search with ripgrep |
 | `shell` | Execute | Execute shell commands |
 | `task` | Agent | Create subagents |
 | `web_fetch` | Network | Fetch web content |

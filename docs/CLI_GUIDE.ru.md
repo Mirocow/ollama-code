@@ -400,8 +400,7 @@ echo '{"type":"initialize","config":{}}' | ollama --input-format stream-json
     "hideWindowTitle": false
   },
   "tools": {
-    "useRipgrep": true,
-    "useBuiltinRipgrep": true
+    "approvalMode": "default"
   },
   "security": {
     "auth": {

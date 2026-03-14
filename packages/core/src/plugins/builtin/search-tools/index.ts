@@ -32,7 +32,7 @@ const searchToolsPlugin: PluginDefinition = {
     id: 'search-tools',
     name: 'Search Tools',
     version: '1.0.0',
-    description: 'Search operations: grep, ripgrep, web fetch, web search',
+    description: 'Search operations: grep, web fetch, web search',
     author: 'Ollama Code Team',
     tags: ['core', 'builtin', 'search', 'grep', 'web'],
     enabledByDefault: true,

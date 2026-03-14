@@ -83,14 +83,14 @@ Ollama Code provides a comprehensive suite of tools for interacting with the loc
 
 - **Tool name:** `grep_search`
 - **Display name:** Grep
-- **File:** `grep.ts` (with `ripGrep.ts` as fallback)
+- **File:** `grep.ts`
 - **Parameters:**
   - `pattern` (string, required): The regular expression pattern to search for in file contents (e.g., `"function\\s+myFunction"`, `"log.*Error"`).
   - `path` (string, optional): File or directory to search in. Defaults to current working directory.
   - `glob` (string, optional): Glob pattern to filter files (e.g. `"*.js"`, `"src/**/*.{ts,tsx}"`).
   - `limit` (number, optional): Limit output to first N matching lines. Optional - shows all matches if not specified.
 - **Behavior:**
-  - Uses ripgrep for fast search when available; otherwise falls back to a JavaScript-based search implementation.
+  - Uses multiple fallback strategies: git grep → system grep → JavaScript-based search.
   - Returns matching lines with file paths and line numbers.
   - Case-insensitive by default.
   - Respects .gitignore and .ollamaignore patterns.
