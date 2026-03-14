@@ -64,6 +64,11 @@ esbuild
         __dirname,
         'packages/cli/src/patches/is-in-ci.ts',
       ),
+      // Alias core package to source files (not dist) for proper .md embedding
+      '@ollama-code/ollama-code-core': path.resolve(
+        __dirname,
+        'packages/core/src/index.ts',
+      ),
     },
     define: {
       'process.env.CLI_VERSION': JSON.stringify(pkg.version),

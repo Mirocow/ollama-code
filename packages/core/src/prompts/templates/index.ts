@@ -11,13 +11,13 @@
  * Larger models receive more detailed instructions, smaller models get concise versions.
  */
 
-// Import templates as text (esbuild will embed them)
-// These imports are resolved at build time
-import system8b from './system-8b.md' with { type: 'text' };
-import system14b from './system-14b.md' with { type: 'text' };
-import system32b from './system-32b.md' with { type: 'text' };
-import system70b from './system-70b.md' with { type: 'text' };
-import storageInstructions from './storage-instructions.md' with { type: 'text' };
+// Import templates as text (esbuild will embed them via .md loader)
+// Note: esbuild handles .md files via loader: { '.md': 'text' } config
+import system8b from './system-8b.md';
+import system14b from './system-14b.md';
+import system32b from './system-32b.md';
+import system70b from './system-70b.md';
+import storageInstructions from './storage-instructions.md';
 
 /**
  * Model size tiers for prompt selection
