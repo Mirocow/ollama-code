@@ -530,7 +530,7 @@ async function searchAction(
   context: CommandContext,
   args: string,
 ): Promise<void> {
-  const query = 'ollama-code-plugin-' + args.trim();
+  const query = args.trim();
   const marketplace = createPluginMarketplace(process.cwd());
 
   context.ui.addItem(
