@@ -147,6 +147,8 @@ export interface CliArgs {
   channel: string | undefined;
   /** Working directory path (overrides process.cwd()) */
   path: string | undefined;
+  /** Task file to load and execute */
+  file: string | undefined;
 }
 
 function normalizeOutputFormat(
@@ -428,6 +430,12 @@ export async function parseArguments(): Promise<CliArgs> {
           description:
             'Working directory path (overrides current directory). Example: --path /home/user/myproject',
         })
+        .option('file', {
+          alias: 'f',
+          type: 'string',
+          description:
+            'Load a task file to execute. Supports relative paths, ~/ paths, or paths relative to ~/.ollama-code/tasks/',
+        })
         .deprecateOption(
           'sandbox-image',
           'Use the "tools.sandbox" setting in settings.json instead. This flag will be removed in a future version.',
@@ -486,6 +494,12 @@ export async function parseArguments(): Promise<CliArgs> {
           }
           if (argv['resume'] && !isValidUUID(argv['resume'] as string)) {
             return `Invalid --resume: "${argv['resume']}". Must be a valid UUID (e.g., "123e4567-e89b-12d3-a456-426614174000").`;
+          }
+          if (argv['file'] && argv['prompt']) {
+            return 'Cannot use both --file and --prompt together. Use --file to load a task file, or --prompt for inline prompt.';
+          }
+          if (argv['file'] && hasPositionalQuery) {
+            return 'Cannot use both --file and a positional prompt together.';
           }
           return true;
         }),
@@ -557,7 +571,67 @@ export async function parseArguments(): Promise<CliArgs> {
     (result as Record<string, unknown>)['channel'] = 'ACP';
   }
 
+  // Handle --file option: load task file content as prompt
+  if (result['file']) {
+    const taskFilePath = resolveTaskFilePath(result['file'] as string);
+    if (!fs.existsSync(taskFilePath)) {
+      writeStderrLine(`Error: Task file not found: ${taskFilePath}`);
+      process.exit(1);
+    }
+    try {
+      const fileContent = fs.readFileSync(taskFilePath, 'utf-8');
+      // Set the file content as the prompt
+      (result as Record<string, unknown>)['prompt'] = fileContent;
+      debugLogger.info(`Loaded task file: ${taskFilePath}`);
+    } catch (error) {
+      writeStderrLine(
+        `Error reading task file: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      process.exit(1);
+    }
+  }
+
   return result as unknown as CliArgs;
+}
+
+/**
+ * Resolves a task file path to an absolute path.
+ * Supports:
+ * - Absolute paths: /path/to/task.md
+ * - Home paths: ~/path/to/task.md
+ * - Relative paths: ./task.md or task.md
+ * - Task name: task-name -> ~/.ollama-code/tasks/task-name.md
+ */
+function resolveTaskFilePath(inputPath: string): string {
+  // Absolute path
+  if (path.isAbsolute(inputPath)) {
+    return inputPath;
+  }
+
+  // Home directory path (~/...)
+  if (inputPath.startsWith('~/')) {
+    return path.join(homedir(), inputPath.slice(2));
+  }
+
+  // Check if it's a file in current directory
+  const cwdPath = path.resolve(process.cwd(), inputPath);
+  if (fs.existsSync(cwdPath)) {
+    return cwdPath;
+  }
+
+  // Check if it's a file in ~/.ollama-code/tasks/
+  const tasksDir = path.join(homedir(), '.ollama-code', 'tasks');
+
+  // Try with .md extension if not provided
+  const taskName = inputPath.endsWith('.md') ? inputPath : `${inputPath}.md`;
+  const tasksPath = path.join(tasksDir, taskName);
+
+  if (fs.existsSync(tasksPath)) {
+    return tasksPath;
+  }
+
+  // Return the resolved cwd path (will fail with file not found error)
+  return cwdPath;
 }
 
 // This function is now a thin wrapper around the server's implementation.

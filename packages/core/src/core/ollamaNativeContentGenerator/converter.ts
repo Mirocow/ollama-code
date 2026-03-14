@@ -229,14 +229,14 @@ export class OllamaContentConverter {
         `Has 'functionDeclarations': ${'functionDeclarations' in (tool || {})}`,
       );
       debugLogger.info(
-        `typeof tool.tool: ${typeof (tool as Record<string, unknown>)?.tool}`,
+        `typeof tool.tool: ${typeof (tool as Record<string, unknown>)?.['tool']}`,
       );
 
       // Handle CallableTool vs Tool
       // CallableTool has a tool() method that returns Promise<Tool>
       if (
         tool &&
-        typeof (tool as Record<string, unknown>).tool === 'function'
+        typeof (tool as Record<string, unknown>)['tool'] === 'function'
       ) {
         debugLogger.info(`Tool is CallableTool, calling tool() method`);
         try {
