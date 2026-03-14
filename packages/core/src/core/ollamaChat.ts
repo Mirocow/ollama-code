@@ -80,9 +80,9 @@ export class OllamaChat {
         (acc, t) => acc + (t.functionDeclarations?.length || 0),
         0,
       );
-      console.error(`[DEBUG CHAT] Constructor received ${toolCount} tools`);
+      debugLogger.info(`Constructor received ${toolCount} tools`);
     } else {
-      console.error('[DEBUG CHAT] Constructor received NO tools!');
+      debugLogger.info('Constructor received NO tools!');
     }
 
     debugLogger.info('OllamaChat initialized', {
@@ -234,9 +234,9 @@ export class OllamaChat {
         (acc, t) => acc + (t.functionDeclarations?.length || 0),
         0,
       );
-      console.error(`[DEBUG CHAT] sendMessageStream has ${toolCount} tools available`);
+      debugLogger.info(`sendMessageStream has ${toolCount} tools available`);
     } else {
-      console.error('[DEBUG CHAT] sendMessageStream has NO tools!');
+      debugLogger.info('sendMessageStream has NO tools!');
     }
 
     const request = {

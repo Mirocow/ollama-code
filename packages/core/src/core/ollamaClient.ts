@@ -193,8 +193,10 @@ export class OllamaClient {
     const toolDeclarations = toolRegistry.getFunctionDeclarations();
     const tools: Tool[] = [{ functionDeclarations: toolDeclarations }];
 
-    // DEBUG: Log tools
-    console.error(`[DEBUG CLIENT] startChat created ${toolDeclarations.length} tool declarations`);
+    // DEBUG: Log tools only in debug mode
+    debugLogger.info(
+      `startChat created ${toolDeclarations.length} tool declarations`,
+    );
 
     const history = await getInitialChatHistory(this.config, extraHistory);
 
