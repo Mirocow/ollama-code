@@ -32,6 +32,8 @@ export const DEFAULT_PYTHON_TIMEOUT_MS = 120000;
 export type PythonAction =
   | 'run' // Run a Python script
   | 'r' // Alias for run
+  | 'exec' // Execute inline Python code
+  | 'e' // Alias for exec
   | 'test' // Run pytest
   | 't' // Alias for test
   | 'lint' // Run pylint/flake8
@@ -52,6 +54,7 @@ export type PythonAction =
 const ACTION_ALIASES: Record<string, PythonAction> = {
   init: 'venv_create',
   r: 'run',
+  e: 'exec',
   t: 'test',
   l: 'lint',
   f: 'format',
@@ -61,6 +64,7 @@ const ACTION_ALIASES: Record<string, PythonAction> = {
 export interface PythonToolParams {
   action: PythonAction;
   script?: string; // Python script path for run action
+  code?: string; // Inline Python code for exec action
   args?: string[]; // Script arguments
   packages?: string[]; // Packages for pip install
   directory?: string; // Working directory
@@ -153,6 +157,9 @@ export class PythonToolInvocation extends BaseToolInvocation<
       case 'run':
         return this.buildRunCommand(effectivePython);
 
+      case 'exec':
+        return this.buildExecCommand(effectivePython);
+
       case 'test':
         return this.buildTestCommand(effectivePython);
 
@@ -202,6 +209,14 @@ export class PythonToolInvocation extends BaseToolInvocation<
       parts.push(...this.params.args);
     }
     return parts.join(' ');
+  }
+
+  private buildExecCommand(python: string): string {
+    // Execute inline Python code using -c flag
+    const code = this.params.code || '';
+    // Escape single quotes in code for shell
+    const escapedCode = code.replace(/'/g, '\'"\'"');
+    return `${python} -c '${escapedCode}'`;
   }
 
   private buildTestCommand(python: string): string {
@@ -410,37 +425,47 @@ function getPythonToolDescription(): string {
    - Requires: \`script\` (path to .py file)
    - Optional: \`args\` (script arguments)
 
-2. **test** - Run pytest tests
+2. **exec** - Execute inline Python code (no file needed)
+   - Requires: \`code\` (Python code string)
+   - Example: { "action": "exec", "code": "print([x*3 for x in range(1,101) if x%3==0])" }
+
+3. **test** - Run pytest tests
    - Optional: \`test_pattern\` (test file/pattern)
    - Optional: \`args\` (additional pytest arguments)
 
-3. **lint** - Run pylint code analysis
+4. **lint** - Run pylint code analysis
    - Optional: \`script\` (file/directory to lint)
    - Optional: \`lint_config\` (pylint config file)
 
-4. **format** - Run black code formatter
+5. **format** - Run black code formatter
    - Optional: \`script\` (file/directory to format)
 
-5. **venv_create** - Create a virtual environment
+6. **venv_create** - Create a virtual environment
    - Optional: \`venv\` (venv path, defaults to .venv)
 
-6. **venv_activate** - Get activation command for virtual environment
+7. **venv_activate** - Get activation command for virtual environment
    - Optional: \`venv\` (venv path)
 
-7. **pip_install** - Install packages with pip
+8. **pip_install** - Install packages with pip
    - Optional: \`packages\` (list of packages)
    - Optional: \`requirements_file\` (requirements.txt path)
 
-8. **pip_list** - List installed packages
+9. **pip_list** - List installed packages
 
-9. **pip_freeze** - Generate requirements.txt
-   - Optional: \`requirements_file\` (output file path)
+10. **pip_freeze** - Generate requirements.txt
+    - Optional: \`requirements_file\` (output file path)
 
-10. **mypy** - Run mypy type checker
+11. **mypy** - Run mypy type checker
     - Optional: \`script\` (file/directory to check)
 
-11. **custom** - Run custom Python command
+12. **custom** - Run custom Python command
     - Requires: \`command\` (custom command string)
+
+**Quick Execution (exec action):**
+Use \`exec\` to run Python code directly without creating a file:
+\`\`\`json
+{ "action": "exec", "code": "import math; print(math.pi)" }
+\`\`\`
 
 **Common Parameters:**
 - \`directory\`: Working directory (defaults to project root)
@@ -452,6 +477,12 @@ function getPythonToolDescription(): string {
 **Examples:**
 
 \`\`\`json
+// Execute inline Python code (recommended for quick tasks)
+{
+  "action": "exec",
+  "code": "numbers = [x*3 for x in range(1,101) if x%3==0]; print(sorted(numbers, reverse=True)[:10])"
+}
+
 // Run a Python script
 {
   "action": "run",
@@ -504,6 +535,8 @@ export class PythonTool extends BaseDeclarativeTool<
             enum: [
               'run',
               'r',
+              'exec',
+              'e',
               'test',
               't',
               'lint',
@@ -525,6 +558,10 @@ export class PythonTool extends BaseDeclarativeTool<
           script: {
             type: 'string',
             description: 'Python script path or file to process',
+          },
+          code: {
+            type: 'string',
+            description: 'Inline Python code to execute (for exec action)',
           },
           args: {
             type: 'array',
@@ -589,6 +626,10 @@ export class PythonTool extends BaseDeclarativeTool<
 
     if (params.action === 'run' && !params.script && !params.command) {
       return 'Script path is required for run action.';
+    }
+
+    if ((params.action === 'exec' || params.action === 'e') && !params.code) {
+      return 'Code is required for exec action.';
     }
 
     if (params.action === 'custom' && !params.command) {
