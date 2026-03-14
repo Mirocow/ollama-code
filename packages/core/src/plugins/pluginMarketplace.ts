@@ -212,6 +212,13 @@ export class PluginMarketplace {
         this.transformRegistryPackage(obj),
       );
 
+      // Filter to only include ollama-code plugins
+      plugins = plugins.filter(
+        (p) =>
+          p.packageName.startsWith('ollama-code-plugin-') ||
+          p.packageName.startsWith('@ollama-code/'),
+      );
+
       // Filter and sort
       plugins = this.applyFilters(plugins, options);
       plugins = this.applySorting(plugins, sortBy, sortOrder);
