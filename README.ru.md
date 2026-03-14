@@ -165,6 +165,35 @@ npm run start -- "Объясни, как работает async/await в JavaScr
 npm run debug
 ```
 
+### Запуск файлов задач
+
+Загрузка и выполнение предопределённых файлов задач:
+
+```bash
+# Запуск задачи по имени (из ~/.ollama-code/tasks/)
+npm run cli -- --model qwen2.5-coder:14b --yolo --file tools-demo
+
+# Запуск с полным путём
+npm run cli -- --yolo --file ~/my-tasks/project-audit.md
+
+# Запуск с относительным путём
+npm run cli -- --yolo --file ./TASK.md
+
+# Комбинация с другими опциями
+npm run cli -- --model deepseek-r1:8b --yolo --file code-review
+```
+
+**Доступные файлы задач** (в `~/.ollama-code/tasks/`):
+
+| Файл задачи   | Описание                               |
+| ------------- | -------------------------------------- |
+| `tools-demo`  | Тест всех 46+ builtin инструментов     |
+| `project-audit` | Комплексный аудит проекта            |
+| `code-review` | Code review изменений                  |
+| `debug-issue` | Отладка проблемы                       |
+| `refactor-module` | Рефакторинг модуля                 |
+| `quick-fix`   | Быстрый тест функциональности          |
+
 ### Web UI
 
 Ollama Code теперь включает полнофункциональный веб-интерфейс:
@@ -817,6 +846,7 @@ Options:
   -m, --model                     Указать модель
   -s, --sandbox                   Запуск в песочнице
   -y, --yolo                      Автоматическое подтверждение всех действий
+  -f, --file                      Загрузить файл задачи для выполнения
       --approval-mode             Режим подтверждения: plan, default, auto-edit, yolo
       --experimental-lsp          Включить экспериментальную поддержку LSP
       --ollama-base-url           URL Ollama сервера (по умолчанию: http://localhost:11434)

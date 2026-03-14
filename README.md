@@ -165,6 +165,35 @@ npm run start -- "Explain how async/await works in JavaScript"
 npm run debug
 ```
 
+### Running Task Files
+
+Load and execute predefined task files:
+
+```bash
+# Run a task by name (from ~/.ollama-code/tasks/)
+npm run cli -- --model qwen2.5-coder:14b --yolo --file tools-demo
+
+# Run with full path
+npm run cli -- --yolo --file ~/my-tasks/project-audit.md
+
+# Run with relative path
+npm run cli -- --yolo --file ./TASK.md
+
+# Combine with other options
+npm run cli -- --model deepseek-r1:8b --yolo --file code-review
+```
+
+**Available Task Files** (in `~/.ollama-code/tasks/`):
+
+| Task File | Description |
+|-----------|-------------|
+| `tools-demo` | Test all 46+ builtin tools |
+| `project-audit` | Comprehensive project audit |
+| `code-review` | Review code changes |
+| `debug-issue` | Debug an issue |
+| `refactor-module` | Refactor a module |
+| `quick-fix` | Quick functionality test |
+
 ### Web UI
 
 Ollama Code now includes a full-featured web interface:
@@ -951,6 +980,7 @@ Options:
   -m, --model                     Specify model
   -s, --sandbox                   Run in sandbox
   -y, --yolo                      Auto-confirm all actions
+  -f, --file                      Load task file to execute
       --approval-mode             Approval mode: plan, default, auto-edit, yolo
       --experimental-lsp          Enable experimental LSP support
       --ollama-base-url           Ollama server URL (default: http://localhost:11434)
