@@ -31,6 +31,8 @@ export const DEFAULT_RUST_TIMEOUT_MS = 120000;
 export type RustAction =
   | 'run' // Run with cargo run
   | 'r' // Alias for run
+  | 'eval' // Execute inline Rust code (compiles and runs temp file)
+  | 'e' // Alias for eval
   | 'build' // Build with cargo build
   | 'b' // Alias for build
   | 'test' // Run tests with cargo test
@@ -64,6 +66,7 @@ export type RustAction =
 // Action aliases mapping
 const ACTION_ALIASES: Record<string, RustAction> = {
   r: 'run',
+  e: 'eval',
   b: 'build',
   t: 'test',
   c: 'check',
@@ -78,6 +81,7 @@ const ACTION_ALIASES: Record<string, RustAction> = {
 
 export interface RustToolParams {
   action: RustAction;
+  code?: string; // Inline Rust code for eval action
   package?: string; // Package name for workspace
   args?: string[]; // Additional arguments
   directory?: string; // Working directory
@@ -182,6 +186,9 @@ export class RustToolInvocation extends BaseToolInvocation<
       case 'run':
         return this.buildRunCommand();
 
+      case 'eval':
+        return this.buildEvalCommand();
+
       case 'build':
         return this.buildBuildCommand();
 
@@ -278,6 +285,18 @@ export class RustToolInvocation extends BaseToolInvocation<
     }
 
     return parts.join(' ');
+  }
+
+  private buildEvalCommand(): string {
+    // Execute inline Rust code by creating a temp file and running with rustc
+    const code = this.params.code || '';
+    // Create temp file, compile and run, then cleanup
+    // Using a heredoc approach for the temp file content
+    const escapedCode = code.replace(/'/g, '\'"\'"');
+    // Create a temp directory and file, then compile and run
+    const tempDir = '/tmp/rust_eval';
+    const tempFile = `${tempDir}/main.rs`;
+    return `mkdir -p ${tempDir} && cat > ${tempFile} <<'RUSTEOF'\n${escapedCode}\nRUSTEOF && rustc ${tempFile} -o ${tempDir}/main && ${tempDir}/main`;
   }
 
   private buildBuildCommand(): string {
@@ -628,64 +647,68 @@ function getRustToolDescription(): string {
    - Optional: \`release\` (run in release mode)
    - Optional: \`args\` (program arguments after --)
 
-2. **build** - Build the project
+2. **eval** - Execute inline Rust code (no project needed, compiles and runs temp file)
+   - Requires: \`code\` (Rust code string)
+   - Example: { "action": "eval", "code": "fn main() { println!(\\"Hello\\"); }" }
+
+3. **build** - Build the project
    - Optional: \`release\` (build in release mode)
    - Optional: \`package\` (specific package in workspace)
 
-3. **test** - Run tests
+4. **test** - Run tests
    - Optional: \`test_pattern\` (test name pattern)
    - Optional: \`package\` (specific package)
 
-4. **doc** - Generate and open documentation
+5. **doc** - Generate and open documentation
    - Optional: \`package\` (specific package)
 
-5. **check** - Check code without building (faster than build)
+6. **check** - Check code without building (faster than build)
    - Optional: \`package\` (specific package)
 
-6. **clippy** - Run Clippy linter
+7. **clippy** - Run Clippy linter
    - Optional: \`args\` (clippy arguments)
 
-7. **fmt** - Format code with rustfmt
+8. **fmt** - Format code with rustfmt
 
-8. **clean** - Remove build artifacts
+9. **clean** - Remove build artifacts
    - Optional: \`package\` (specific package)
 
-9. **cargo_new** - Create a new project
-   - Requires: \`crate_name\` (project name)
-   - Optional: \`args\` (--lib for library)
-
-10. **cargo_init** - Initialize project in current directory
+10. **cargo_new** - Create a new project
+    - Requires: \`crate_name\` (project name)
     - Optional: \`args\` (--lib for library)
 
-11. **cargo_add** - Add a dependency
+11. **cargo_init** - Initialize project in current directory
+    - Optional: \`args\` (--lib for library)
+
+12. **cargo_add** - Add a dependency
     - Requires: \`crate_name\` (crate name)
     - Optional: \`crate_version\` (version)
     - Optional: \`args\` (--dev for dev dependency)
 
-12. **cargo_remove** - Remove a dependency
+13. **cargo_remove** - Remove a dependency
     - Requires: \`crate_name\` (crate name)
 
-13. **cargo_update** - Update dependencies
+14. **cargo_update** - Update dependencies
     - Optional: \`crate_name\` (specific crate)
 
-14. **cargo_tree** - Show dependency tree
+15. **cargo_tree** - Show dependency tree
     - Optional: \`args\` (tree arguments)
 
-15. **cargo_publish** - Publish to crates.io
+16. **cargo_publish** - Publish to crates.io
     - Optional: \`args\` (publish arguments)
 
-16. **cargo_install** - Install a binary crate
+17. **cargo_install** - Install a binary crate
     - Requires: \`crate_name\` (crate name)
 
-17. **cargo_search** - Search for crates
+18. **cargo_search** - Search for crates
     - Optional: \`crate_name\` (search term)
 
-18. **cargo_info** - Show crate information
+19. **cargo_info** - Show crate information
     - Requires: \`crate_name\` (crate name)
 
-19. **cargo_lock** - Generate or update Cargo.lock
+20. **cargo_lock** - Generate or update Cargo.lock
 
-20. **custom** - Run custom Cargo command
+21. **custom** - Run custom Cargo command
     - Requires: \`command\` (custom command string)
 
 **Common Parameters:**
@@ -783,6 +806,8 @@ export class RustTool extends BaseDeclarativeTool<RustToolParams, ToolResult> {
             enum: [
               'run',
               'r',
+              'eval',
+              'e',
               'build',
               'b',
               'test',
@@ -814,6 +839,10 @@ export class RustTool extends BaseDeclarativeTool<RustToolParams, ToolResult> {
               'custom',
             ],
             description: 'The Rust action to perform',
+          },
+          code: {
+            type: 'string',
+            description: 'Inline Rust code to execute (for eval action)',
           },
           package: {
             type: 'string',
@@ -898,6 +927,10 @@ export class RustTool extends BaseDeclarativeTool<RustToolParams, ToolResult> {
 
     if (params.action === 'cargo_new' && !params.crate_name) {
       return 'Crate name is required for cargo_new action.';
+    }
+
+    if ((params.action === 'eval' || params.action === 'e') && !params.code) {
+      return 'Code is required for eval action.';
     }
 
     if (params.action === 'cargo_add' && !params.crate_name) {

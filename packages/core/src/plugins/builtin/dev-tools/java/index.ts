@@ -34,6 +34,8 @@ export type JavaBuildTool = 'maven' | 'gradle';
 export type JavaAction =
   | 'run' // Run a Java class
   | 'r' // Alias for run
+  | 'eval' // Execute inline Java code (using jshell)
+  | 'e' // Alias for eval
   | 'compile' // Compile Java files
   | 'c' // Alias for compile
   | 'test' // Run tests
@@ -73,6 +75,7 @@ export type JavaAction =
 // Action aliases mapping
 const ACTION_ALIASES: Record<string, JavaAction> = {
   r: 'run',
+  e: 'eval',
   c: 'compile',
   t: 'test',
   b: 'build',
@@ -94,6 +97,7 @@ export interface JavaToolParams {
   action: JavaAction;
   build_tool?: JavaBuildTool;
   class?: string; // Main class name for run
+  code?: string; // Inline Java code for eval action
   file?: string; // Java file path for compile
   args?: string[]; // Additional arguments
   directory?: string; // Working directory
@@ -207,6 +211,9 @@ export class JavaToolInvocation extends BaseToolInvocation<
       case 'run':
         return this.buildRunCommand();
 
+      case 'eval':
+        return this.buildEvalCommand();
+
       case 'compile':
         return this.buildCompileCommand();
 
@@ -284,6 +291,14 @@ export class JavaToolInvocation extends BaseToolInvocation<
       parts.push(...this.params.args);
     }
     return parts.join(' ');
+  }
+
+  private buildEvalCommand(): string {
+    // Execute inline Java code using jshell (Java 9+)
+    const code = this.params.code || '';
+    // jshell accepts input from stdin or file
+    // Using heredoc to pass code to jshell
+    return `echo '${code.replace(/'/g, "'\"'\"'")}' | jshell --feedback silent`;
   }
 
   private buildCompileCommand(): string {
@@ -605,73 +620,77 @@ The tool auto-detects the build tool based on project files.
    - Requires: \`class\` (fully qualified class name)
    - Optional: \`classpath\` (classpath for the class)
 
-2. **compile** - Compile Java files
+2. **eval** - Execute inline Java code (using jshell, Java 9+)
+   - Requires: \`code\` (Java code string)
+   - Example: { "action": "eval", "code": "System.out.println(\\"Hello\\");" }
+
+3. **compile** - Compile Java files
    - Optional: \`file\` (Java file or pattern, defaults to *.java)
    - Optional: \`output\` (output directory)
    - Optional: \`classpath\` (classpath for compilation)
 
-3. **test** - Run tests (auto-detects build tool)
+4. **test** - Run tests (auto-detects build tool)
    - Optional: \`build_tool\` (maven or gradle)
    - Optional: \`args\` (additional test arguments)
 
-4. **build** - Build project (auto-detects build tool)
+5. **build** - Build project (auto-detects build tool)
    - Optional: \`build_tool\` (maven or gradle)
    - Optional: \`args\` (additional build arguments)
 
-5. **clean** - Clean build artifacts (auto-detects build tool)
+6. **clean** - Clean build artifacts (auto-detects build tool)
    - Optional: \`build_tool\` (maven or gradle)
 
-6. **maven_compile** - Maven compile
+7. **maven_compile** - Maven compile
    - Optional: \`profile\` (Maven profile)
    - Optional: \`args\` (additional arguments)
 
-7. **maven_test** - Maven test
+8. **maven_test** - Maven test
    - Optional: \`profile\` (Maven profile)
    - Optional: \`args\` (additional arguments)
 
-8. **maven_package** - Maven package
+9. **maven_package** - Maven package
    - Optional: \`profile\` (Maven profile)
    - Optional: \`args\` (additional arguments)
 
-9. **maven_install** - Maven install
-   - Optional: \`profile\` (Maven profile)
-   - Optional: \`args\` (additional arguments)
-
-10. **maven_clean** - Maven clean
-
-11. **maven_dependency_tree** - Show Maven dependency tree
+10. **maven_install** - Maven install
+    - Optional: \`profile\` (Maven profile)
     - Optional: \`args\` (additional arguments)
 
-12. **maven_exec** - Execute Maven goal
+11. **maven_clean** - Maven clean
+
+12. **maven_dependency_tree** - Show Maven dependency tree
+    - Optional: \`args\` (additional arguments)
+
+13. **maven_exec** - Execute Maven goal
     - Requires: \`goal\` (Maven goal to execute)
     - Optional: \`profile\` (Maven profile)
 
-13. **gradle_build** - Gradle build
+14. **gradle_build** - Gradle build
     - Optional: \`args\` (additional arguments)
 
-14. **gradle_test** - Gradle test
+15. **gradle_test** - Gradle test
     - Optional: \`args\` (additional arguments)
 
-15. **gradle_clean** - Gradle clean
+16. **gradle_clean** - Gradle clean
     - Optional: \`args\` (additional arguments)
 
-16. **gradle_run** - Run application (requires application plugin)
+17. **gradle_run** - Run application (requires application plugin)
     - Optional: \`args\` (additional arguments)
 
-17. **gradle_tasks** - List available Gradle tasks
+18. **gradle_tasks** - List available Gradle tasks
     - Optional: \`args\` (additional arguments)
 
-18. **gradle_dependency_tree** - Show Gradle dependencies
+19. **gradle_dependency_tree** - Show Gradle dependencies
     - Optional: \`args\` (additional arguments)
 
-19. **gradle_exec** - Execute Gradle task
+20. **gradle_exec** - Execute Gradle task
     - Requires: \`goal\` (task to execute)
 
-20. **jar** - Create JAR file
+21. **jar** - Create JAR file
     - Optional: \`output\` (JAR file name)
     - Optional: \`main_class\` (main class for executable JAR)
 
-21. **custom** - Run custom Java command
+22. **custom** - Run custom Java command
     - Requires: \`command\` (custom command string)
 
 **Common Parameters:**
@@ -748,6 +767,8 @@ export class JavaTool extends BaseDeclarativeTool<JavaToolParams, ToolResult> {
             enum: [
               'run',
               'r',
+              'eval',
+              'e',
               'compile',
               'c',
               'test',
@@ -794,6 +815,10 @@ export class JavaTool extends BaseDeclarativeTool<JavaToolParams, ToolResult> {
           class: {
             type: 'string',
             description: 'Main class name for run action',
+          },
+          code: {
+            type: 'string',
+            description: 'Inline Java code to execute (for eval action)',
           },
           file: {
             type: 'string',
@@ -857,6 +882,10 @@ export class JavaTool extends BaseDeclarativeTool<JavaToolParams, ToolResult> {
 
     if (params.action === 'run' && !params.class) {
       return 'Class name is required for run action.';
+    }
+
+    if ((params.action === 'eval' || params.action === 'e') && !params.code) {
+      return 'Code is required for eval action.';
     }
 
     if (params.action === 'maven_exec' && !params.goal) {
