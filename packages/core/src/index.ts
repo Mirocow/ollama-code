@@ -858,3 +858,13 @@ export {
   LogOperation,
   type ResourceLogContext,
 } from './services/resourceLogger.js';
+
+// ============================================================================
+// Plan Management (exit_plan_mode integration)
+// ============================================================================
+
+export {
+  getActivePlan,
+  clearActivePlan,
+  type PlanData,
+} from './plugins/builtin/productivity-tools/exit-plan-mode/index.js';
