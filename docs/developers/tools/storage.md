@@ -247,7 +247,7 @@ Categorize entries for filtering:
 | Scope | Location | Use Case |
 |-------|----------|----------|
 | `global` | `~/.ollama-code/storage/` | Shared across all projects |
-| `project` | `<project>/.ollama-code/storage/` | Current project only |
+| `project` | `~/.ollama-code/projects/<project-hash>/storage/` | Current project only |
 
 ```json
 {
@@ -283,16 +283,19 @@ Every entry automatically tracks:
 ### Persistent Storage
 
 ```
-~/.ollama-code/storage/
+~/.ollama-code/storage/                    # Global (shared across projects)
 ├── roadmap.json
 ├── knowledge.json
 ├── learning.json
 └── metrics.json
 
-<project>/.ollama-code/storage/
+~/.ollama-code/projects/<project-hash>/storage/  # Project-specific
 ├── roadmap.json
-└── knowledge.json
+├── knowledge.json
+└── session.json
 ```
+
+**Project hash** is a SHA256 hash of the project's root directory path, ensuring unique storage per project.
 
 ### Session Storage
 
@@ -305,7 +308,7 @@ Held in memory, cleared when session ends.
 | **Purpose** | AI internal data | User facts & preferences |
 | **Triggered by** | AI decision | Explicit user request |
 | **Format** | JSON (structured) | Markdown (human-readable) |
-| **File** | `.ollama-code/storage/*.json` | `OLLAMA_MEMORY.md` |
+| **File** | `~/.ollama-code/projects/<hash>/storage/*.json` | `OLLAMA_MEMORY.md` |
 | **Confirmation** | ❌ Automatic | ✅ Always required |
 | **Operations** | set/get/delete/list/merge/batch | Add only |
 | **TTL support** | ✅ Yes | ❌ No |
@@ -318,7 +321,7 @@ Held in memory, cleared when session ends.
 | File | Purpose | Created By |
 |------|---------|------------|
 | `OLLAMA_MEMORY.md` | Project context & user facts (unified) | `/init` or `/memory init` |
-| `.ollama-code/storage/*.json` | AI internal structured data | `model_storage` tool |
+| `~/.ollama-code/projects/<hash>/storage/*.json` | AI internal structured data | `model_storage` tool |
 
 **Unified Memory File (`OLLAMA_MEMORY.md`):**
 - Created by `/init` with project analysis (code projects)

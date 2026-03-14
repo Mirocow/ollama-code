@@ -568,7 +568,7 @@ Do NOT use model_storage for:
 ## Scope (persistent storage only)
 
 - **global**: \`~/.ollama-code/storage/\` (shared across all projects)
-- **project**: \`<project>/storage/\` (auto-detected project root)
+- **project**: \`~/.ollama-code/projects/<project-hash>/storage/\` (auto-detected project root)
 `;
 
 // ============================================================================
@@ -618,7 +618,8 @@ async function getStorageDir(
     return path.join(getOllamaDir(), STORAGE_DIR);
   }
   const projectRoot = await findProjectRoot();
-  return path.join(getProjectStorageDir(projectRoot), STORAGE_DIR);
+  // getProjectStorageDir already returns path with /storage suffix
+  return getProjectStorageDir(projectRoot);
 }
 
 async function getNamespaceFilePath(
