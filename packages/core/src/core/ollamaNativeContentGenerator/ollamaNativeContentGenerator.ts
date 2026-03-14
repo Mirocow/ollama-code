@@ -167,6 +167,15 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
     }
     this.applyConfigOptions(ollamaRequest);
 
+    // Log tools count for debugging
+    if (ollamaRequest.tools && ollamaRequest.tools.length > 0) {
+      debugLogger.info(
+        `Sending ${ollamaRequest.tools.length} tools to Ollama API`,
+      );
+    } else {
+      debugLogger.warn('WARNING: No tools being sent to Ollama API!');
+    }
+
     // Log full request before sending (file only)
     const requestJson = JSON.stringify(ollamaRequest, null, 2);
     debugLogger.info('FULL OLLAMA REQUEST:', requestJson);
@@ -199,27 +208,31 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
 
       // Process streaming response - pass abortSignal to enable cancellation
       const streamPromise = client
-        .chat(ollamaRequest, (chunk: OllamaChatResponse) => {
-          chunkCount++;
-          if (chunkCount <= 3) {
-            debugLogger.debug(`Received chunk #${chunkCount}`);
-          }
+        .chat(
+          ollamaRequest,
+          (chunk: OllamaChatResponse) => {
+            chunkCount++;
+            if (chunkCount <= 3) {
+              debugLogger.debug(`Received chunk #${chunkCount}`);
+            }
 
-          // Convert each chunk to GenAI format and queue it
-          const genaiResponse = converter.convertOllamaChunkToGenAI(
-            chunk,
-            accumulatedToolCalls,
-            accumulatedContent,
-          );
-          chunkQueue.push(genaiResponse);
+            // Convert each chunk to GenAI format and queue it
+            const genaiResponse = converter.convertOllamaChunkToGenAI(
+              chunk,
+              accumulatedToolCalls,
+              accumulatedContent,
+            );
+            chunkQueue.push(genaiResponse);
 
-          // Resolve pending promise if any
-          if (resolveNext) {
-            const nextChunk = chunkQueue.shift()!;
-            resolveNext({ value: nextChunk, done: false });
-            resolveNext = null;
-          }
-        }, { signal: abortSignal })
+            // Resolve pending promise if any
+            if (resolveNext) {
+              const nextChunk = chunkQueue.shift()!;
+              resolveNext({ value: nextChunk, done: false });
+              resolveNext = null;
+            }
+          },
+          { signal: abortSignal },
+        )
         .then(() => {
           debugLogger.info(`Stream completed, total chunks: ${chunkCount}`);
           done = true;
@@ -252,7 +265,7 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
           debugLogger.info('Stream aborted by abortSignal');
           break;
         }
-        
+
         if (chunkQueue.length > 0) {
           yield chunkQueue.shift()!;
         } else if (!done) {
@@ -263,8 +276,10 @@ export class OllamaNativeContentGenerator implements ContentGenerator {
               const abortHandler = () => {
                 resolve(null);
               };
-              abortSignal?.addEventListener('abort', abortHandler, { once: true });
-              
+              abortSignal?.addEventListener('abort', abortHandler, {
+                once: true,
+              });
+
               resolveNext = (result) => {
                 abortSignal?.removeEventListener('abort', abortHandler);
                 if (result.done) {
