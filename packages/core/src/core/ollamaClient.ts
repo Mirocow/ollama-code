@@ -25,6 +25,7 @@ import type { ContentGenerator } from './contentGenerator.js';
 import { OllamaChat } from './ollamaChat.js';
 import {
   getCoreSystemPrompt,
+  getCoreSystemPromptWithReminders,
   getCustomSystemPrompt,
   getPlanModeSystemReminder,
   getSubagentSystemReminder,
@@ -197,7 +198,16 @@ export class OllamaClient {
     try {
       const userMemory = this.config.getUserMemory();
       const model = this.config.getModel();
-      const systemInstruction = getCoreSystemPrompt(userMemory, model);
+      const sessionId = this.config.getSessionId();
+      const isResume = !!this.config.getResumedSessionData();
+
+      // Use async version with session reminders for chat sessions
+      const systemInstruction = await getCoreSystemPromptWithReminders(
+        userMemory,
+        model,
+        sessionId,
+        isResume,
+      );
 
       return new OllamaChat(
         this.config,
@@ -436,7 +446,10 @@ export class OllamaClient {
     ) {
       yield { type: OllamaEventType.MaxSessionTurns };
       // Yield Finished event for proper cleanup
-      yield { type: OllamaEventType.Finished, value: { reason: undefined, usageMetadata: undefined } };
+      yield {
+        type: OllamaEventType.Finished,
+        value: { reason: undefined, usageMetadata: undefined },
+      };
       return new Turn(this.getChat(), prompt_id);
     }
     // Ensure turns never exceeds MAX_TURNS to prevent infinite loops
@@ -485,7 +498,10 @@ export class OllamaClient {
       if (loopDetected) {
         yield { type: OllamaEventType.LoopDetected };
         // Yield Finished event for proper cleanup
-        yield { type: OllamaEventType.Finished, value: { reason: undefined, usageMetadata: undefined } };
+        yield {
+          type: OllamaEventType.Finished,
+          value: { reason: undefined, usageMetadata: undefined },
+        };
         return turn;
       }
     }
@@ -525,7 +541,10 @@ export class OllamaClient {
         if (this.loopDetector.addAndCheck(event)) {
           yield { type: OllamaEventType.LoopDetected };
           // Yield Finished event for proper cleanup
-          yield { type: OllamaEventType.Finished, value: { reason: undefined, usageMetadata: undefined } };
+          yield {
+            type: OllamaEventType.Finished,
+            value: { reason: undefined, usageMetadata: undefined },
+          };
           return turn;
         }
       }

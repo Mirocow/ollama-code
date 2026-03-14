@@ -4,7 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ToolPlanConfirmationDetails, ToolResult } from '../../../../tools/tools.js';
+/**
+ * Exit Plan Mode Tool
+ *
+ * Saves plans to model_storage via the 'plans' namespace.
+ * Plans are linked to todos for progress tracking.
+ * Data is stored in: ~/.ollama-code/projects/<hash>/storage/<session-id>.json
+ * Under the 'plans' namespace with key 'current'.
+ */
+
+import type {
+  ToolPlanConfirmationDetails,
+  ToolResult,
+} from '../../../../tools/tools.js';
 import {
   BaseDeclarativeTool,
   BaseToolInvocation,
@@ -15,11 +27,75 @@ import type { FunctionDeclaration } from '../../../../types/content.js';
 import type { Config } from '../../../../config/config.js';
 import { ApprovalMode } from '../../../../config/config.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
+import {
+  storageGet,
+  storageSet,
+  StorageNamespaces,
+} from '../../storage-tools/index.js';
+import { linkTodosToPlan } from '../todo-write/index.js';
 
 const debugLogger = createDebugLogger('EXIT_PLAN_MODE');
 
+// Namespace for plans in storage
+const PLANS_NAMESPACE = StorageNamespaces.PLANS;
+const PLANS_KEY = 'current';
+
+// Default TTL for plans: 7 days
+const PLAN_DEFAULT_TTL = 7 * 24 * 60 * 60;
+
+export interface PlanData {
+  id: string;
+  plan: string;
+  status: 'active' | 'completed' | 'abandoned';
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  todos?: Array<{ id: string; content: string; status: string }>;
+  progress?: number;
+  sessionId: string;
+}
+
 export interface ExitPlanModeParams {
   plan: string;
+}
+
+/**
+ * Generate a unique plan ID
+ */
+function generatePlanId(): string {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 8);
+  return `plan_${timestamp}_${random}`;
+}
+
+/**
+ * Get the current active plan from storage
+ */
+export async function getActivePlan(): Promise<PlanData | null> {
+  try {
+    const data = await storageGet<PlanData>(PLANS_NAMESPACE, PLANS_KEY, {
+      scope: 'project',
+    });
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Clear the current plan
+ */
+export async function clearActivePlan(): Promise<void> {
+  try {
+    const plan = await getActivePlan();
+    if (plan) {
+      plan.status = 'abandoned';
+      plan.updatedAt = new Date().toISOString();
+      await storageSet(PLANS_NAMESPACE, PLANS_KEY, plan, { scope: 'project' });
+    }
+  } catch {
+    // Ignore errors
+  }
 }
 
 const exitPlanModeToolDescription = `Use this tool when you are in plan mode and have finished presenting your plan and are ready to code. This will prompt the user to exit plan mode.
@@ -53,12 +129,14 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
   ToolResult
 > {
   private wasApproved = false;
+  private planId: string;
 
   constructor(
     private readonly config: Config,
     params: ExitPlanModeParams,
   ) {
     super(params);
+    this.planId = generatePlanId();
   }
 
   getDescription(): string {
@@ -112,6 +190,7 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
 
   async execute(_signal: AbortSignal): Promise<ToolResult> {
     const { plan } = this.params;
+    const sessionId = this.config.getSessionId() || 'default';
 
     try {
       if (!this.wasApproved) {
@@ -123,7 +202,36 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
         };
       }
 
-      const llmMessage = `User has approved your plan. You can now start coding. Start with updating your todo list if applicable.`;
+      // Save the plan to model_storage
+      const now = new Date().toISOString();
+      const planData: PlanData = {
+        id: this.planId,
+        plan,
+        status: 'active',
+        createdAt: now,
+        updatedAt: now,
+        todos: [],
+        progress: 0,
+        sessionId,
+      };
+
+      await storageSet(PLANS_NAMESPACE, PLANS_KEY, planData, {
+        scope: 'project',
+        ttl: PLAN_DEFAULT_TTL,
+      });
+
+      // Link existing todos to this plan
+      await linkTodosToPlan(this.planId);
+
+      debugLogger.info(`[ExitPlanMode] Plan saved with ID: ${this.planId}`);
+
+      const llmMessage = `User has approved your plan. You can now start coding. Start with updating your todo list if applicable.
+
+<system-reminder>
+Plan saved: "${plan}"
+Plan ID: ${this.planId}
+TTL: 7 days
+</system-reminder>`;
       const displayMessage = 'User approved the plan.';
 
       return {

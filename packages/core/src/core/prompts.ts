@@ -20,6 +20,7 @@ import {
   fillTemplatePlaceholders,
   type TemplatePlaceholders,
 } from '../prompts/index.js';
+import { getSessionContextForPrompt } from '../services/sessionReminder.js';
 const debugLogger = createDebugLogger('PROMPTS');
 
 /**
@@ -287,7 +288,7 @@ function shouldUseTemplates(): boolean {
 }
 
 /**
- * Get template-based system prompt
+ * Get template-based system prompt (synchronous version)
  */
 function getCoreSystemPromptFromTemplate(
   userMemory?: string,
@@ -316,6 +317,30 @@ function getCoreSystemPromptFromTemplate(
       : '';
 
   return `${prompt}${memorySuffix}`;
+}
+
+/**
+ * Get template-based system prompt with session reminders (async version)
+ * Use this when session context (plans, todos) should be included
+ */
+export async function getCoreSystemPromptWithReminders(
+  userMemory?: string,
+  model?: string,
+  sessionId?: string,
+  isResume: boolean = false,
+): Promise<string> {
+  // Get the base prompt
+  const basePrompt = getCoreSystemPromptFromTemplate(userMemory, model);
+
+  // Get session reminders (plans, todos)
+  const sessionContext = await getSessionContextForPrompt(sessionId, isResume);
+
+  // Prepend session context if available
+  if (sessionContext) {
+    return `${sessionContext}\n\n${basePrompt}`;
+  }
+
+  return basePrompt;
 }
 
 export function resolvePathFromEnv(envVar?: string): {
