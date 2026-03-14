@@ -868,3 +868,25 @@ export {
   clearActivePlan,
   type PlanData,
 } from './plugins/builtin/productivity-tools/exit-plan-mode/index.js';
+
+// ============================================================================
+// Auto Storage (Model's Notebook)
+// ============================================================================
+
+export {
+  initializeAutoStorage,
+  autoSaveGeneratedText,
+  autoSaveWebContent,
+  autoSaveUserClarification,
+  autoSaveConversationContext,
+  getAutoSavedEntries,
+  clearAutoSavedEntries,
+  setAutoStorageService,
+  getAutoStorageService,
+  AUTO_STORAGE_NAMESPACE,
+  AutoStorageKeys,
+  type AutoStorageKey,
+  type AutoSavedEntry,
+  type StorageService,
+  type StorageAdapter,
+} from './utils/autoStorage.js';

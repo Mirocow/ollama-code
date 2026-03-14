@@ -29,6 +29,7 @@ import {
   UserPromptEvent,
   BUILTIN_TOOL_NAMES,
   readManyFiles,
+  autoSaveConversationContext,
 } from '@ollama-code/ollama-code-core';
 
 import * as acp from '../acp.js';
@@ -168,6 +169,20 @@ export class Session implements SessionContext {
 
     // record user message for session management
     this.config.getChatRecordingService()?.recordUserMessage(promptText);
+
+    // Auto-save user prompt as conversation context for model's "notebook"
+    // This helps the model remember important user requests across the session
+    if (promptText.length > 20) {
+      try {
+        await autoSaveConversationContext(promptText, {
+          topic: 'user-request',
+          importance: 'medium',
+          tags: ['user-prompt', 'session'],
+        });
+      } catch {
+        // Don't fail if auto-save fails
+      }
+    }
 
     // Check if the input contains a slash command
     // Extract text from the first text block if present

@@ -303,16 +303,19 @@ export async function autoSaveConversationContext(
     return null;
   }
 
+  // Build tags array, always including importance
+  const importance = metadata?.importance || 'medium';
+  const tags = metadata?.tags 
+    ? [...metadata.tags, importance]
+    : ['context', importance];
+
   const entry: AutoSavedEntry = {
     id: generateId(),
     timestamp: new Date().toISOString(),
     type: AutoStorageKeys.CONVERSATION_CONTEXT,
     content: context,
     metadata: {
-      tags: metadata?.tags || [
-        'context',
-        metadata?.importance || 'medium',
-      ],
+      tags,
     },
   };
 
