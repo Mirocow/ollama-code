@@ -204,39 +204,39 @@ npm run dev:server
 
 Universal key-value storage for AI models to persist data between sessions:
 
-| Operation   | Description                              |
-| ----------- | ---------------------------------------- |
-| `set`       | Store a value                            |
-| `get`       | Retrieve a value                         |
-| `delete`    | Remove a key                             |
-| `list`      | List all keys in namespace               |
-| `append`    | Append item to array                     |
-| `merge`     | Merge object with existing               |
-| `clear`     | Clear all data in namespace              |
+| Operation | Description                 |
+| --------- | --------------------------- |
+| `set`     | Store a value               |
+| `get`     | Retrieve a value            |
+| `delete`  | Remove a key                |
+| `list`    | List all keys in namespace  |
+| `append`  | Append item to array        |
+| `merge`   | Merge object with existing  |
+| `clear`   | Clear all data in namespace |
 
 #### Predefined Namespaces
 
-| Namespace  | Purpose                              | Default Mode |
-| ---------- | ------------------------------------ | ------------ |
-| `roadmap`  | Project roadmap, milestones, plans   | persistent   |
-| `session`  | Temporary session data               | session      |
-| `knowledge`| Learned facts, patterns, preferences | persistent   |
-| `context`  | Current task context and state       | session      |
-| `learning` | Tool aliases, corrections            | persistent   |
-| `metrics`  | Statistics, performance data         | persistent   |
+| Namespace   | Purpose                              | Default Mode |
+| ----------- | ------------------------------------ | ------------ |
+| `roadmap`   | Project roadmap, milestones, plans   | persistent   |
+| `session`   | Temporary session data               | session      |
+| `knowledge` | Learned facts, patterns, preferences | persistent   |
+| `context`   | Current task context and state       | session      |
+| `learning`  | Tool aliases, corrections            | persistent   |
+| `metrics`   | Statistics, performance data         | persistent   |
 
 #### Storage Scopes
 
 - **global**: `~/.ollama-code/storage/` (shared across all projects)
-- **project**: `<project>/.ollama-code/storage/` (project-specific data)
+- **project**: `<project>/storage/` (project-specific data)
 
 #### Tool Aliases
 
-| Alias                  | Tool            |
-| ---------------------- | --------------- |
-| `storage`, `store`     | `model_storage` |
-| `kv`, `cache`          | `model_storage` |
-| `roadmap`, `persist`   | `model_storage` |
+| Alias                | Tool            |
+| -------------------- | --------------- |
+| `storage`, `store`   | `model_storage` |
+| `kv`, `cache`        | `model_storage` |
+| `roadmap`, `persist` | `model_storage` |
 
 ---
 

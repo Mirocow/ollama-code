@@ -1014,38 +1014,38 @@ Universal key-value storage for AI model to persist structured data between sess
 
 **Parameters:**
 
-| Name        | Type   | Required | Description                                              |
-| ----------- | ------ | -------- | -------------------------------------------------------- |
-| `operation` | string | Yes      | Operation to perform (see below)                         |
-| `namespace` | string | Yes      | Storage namespace (roadmap, session, knowledge, etc.)    |
-| `key`       | string | No*      | Key to store/retrieve (required for most operations)     |
-| `value`     | any    | No*      | Value to store (any JSON-serializable type)              |
-| `scope`     | string | No       | `global` (all projects) or `project` (current project)   |
+| Name        | Type   | Required | Description                                            |
+| ----------- | ------ | -------- | ------------------------------------------------------ |
+| `operation` | string | Yes      | Operation to perform (see below)                       |
+| `namespace` | string | Yes      | Storage namespace (roadmap, session, knowledge, etc.)  |
+| `key`       | string | No\*     | Key to store/retrieve (required for most operations)   |
+| `value`     | any    | No\*     | Value to store (any JSON-serializable type)            |
+| `scope`     | string | No       | `global` (all projects) or `project` (current project) |
 
-*Required for `set`, `get`, `delete`, `append`, `merge` operations.
+\*Required for `set`, `get`, `delete`, `append`, `merge` operations.
 
 **Operations:**
 
-| Operation | Description                          |
-| --------- | ------------------------------------ |
-| `set`     | Store a value (overwrites existing)   |
-| `get`     | Retrieve a value by key               |
-| `delete`  | Remove a key                          |
-| `list`    | List all keys in namespace            |
-| `append`  | Add item to array                     |
-| `merge`   | Merge object with existing data       |
-| `clear`   | Clear all data in namespace           |
+| Operation | Description                         |
+| --------- | ----------------------------------- |
+| `set`     | Store a value (overwrites existing) |
+| `get`     | Retrieve a value by key             |
+| `delete`  | Remove a key                        |
+| `list`    | List all keys in namespace          |
+| `append`  | Add item to array                   |
+| `merge`   | Merge object with existing data     |
+| `clear`   | Clear all data in namespace         |
 
 **Namespaces:**
 
-| Namespace  | Purpose                              | Persistence     |
-| ---------- | ------------------------------------ | --------------- |
-| `roadmap`  | Project roadmap, milestones, plans   | Persistent      |
-| `session`  | Temporary session data               | Session-scoped  |
-| `knowledge`| Learned facts, patterns, preferences | Persistent      |
-| `context`  | Current task context and state       | Task-scoped     |
-| `learning` | Tool aliases, corrections            | Persistent      |
-| `metrics`  | Statistics, performance data         | Persistent      |
+| Namespace   | Purpose                              | Persistence    |
+| ----------- | ------------------------------------ | -------------- |
+| `roadmap`   | Project roadmap, milestones, plans   | Persistent     |
+| `session`   | Temporary session data               | Session-scoped |
+| `knowledge` | Learned facts, patterns, preferences | Persistent     |
+| `context`   | Current task context and state       | Task-scoped    |
+| `learning`  | Tool aliases, corrections            | Persistent     |
+| `metrics`   | Statistics, performance data         | Persistent     |
 
 **Examples:**
 
@@ -1082,8 +1082,9 @@ Universal key-value storage for AI model to persist structured data between sess
 ```
 
 **Storage Location:**
+
 - Global: `~/.ollama-code/storage/`
-- Project: `<project>/.ollama-code/storage/`
+- Project: `<project>/storage/`
 
 ---
 

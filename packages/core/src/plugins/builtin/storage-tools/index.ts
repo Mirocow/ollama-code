@@ -555,7 +555,7 @@ Universal key-value storage for AI model with persistence, TTL, and metadata sup
 ## Scope (persistent storage only)
 
 - **global**: \`~/.ollama-code/storage/\` (shared across all projects)
-- **project**: \`<project>/.ollama-code/storage/\` (auto-detected project root)
+- **project**: \`<project>/storage/\` (auto-detected project root)
 `;
 
 // ============================================================================

@@ -241,10 +241,10 @@ Universal key-value storage for AI models to persist data between sessions:
 
 #### Storage Scopes
 
-| Scope     | Path                              | Description                |
-| --------- | --------------------------------- | -------------------------- |
-| `global`  | `~/.ollama-code/storage/`         | Shared across all projects |
-| `project` | `<project>/.ollama-code/storage/` | Project-specific data      |
+| Scope     | Path                      | Description                |
+| --------- | ------------------------- | -------------------------- |
+| `global`  | `~/.ollama-code/storage/` | Shared across all projects |
+| `project` | `<project>/storage/`      | Project-specific data      |
 
 #### Tool Aliases for Storage
 
