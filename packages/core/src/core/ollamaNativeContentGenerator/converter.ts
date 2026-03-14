@@ -200,14 +200,14 @@ export class OllamaContentConverter {
     genaiTools: ToolListUnion | undefined,
   ): Promise<OllamaTool[]> {
     if (!genaiTools) {
-      console.error('[DEBUG CONVERTER] No tools provided to converter');
+      debugLogger.error('No tools provided to converter');
       return [];
     }
 
     const ollamaTools: OllamaTool[] = [];
     const toolsArray = Array.isArray(genaiTools) ? genaiTools : [genaiTools];
 
-    console.error(`[DEBUG CONVERTER] Processing ${toolsArray.length} tool objects`);
+    debugLogger.info(`Processing ${toolsArray.length} tool objects`);
 
     debugLogger.debug('Converting tools to Ollama format', {
       toolsCount: toolsArray.length,
@@ -216,16 +216,33 @@ export class OllamaContentConverter {
     for (const tool of toolsArray) {
       let actualTool: Tool;
 
+      // Debug: log tool structure
+      debugLogger.debug(`Tool type: ${typeof tool}`);
+      debugLogger.debug(`Tool keys: ${Object.keys(tool).join(', ')}`);
+      debugLogger.debug(`Has 'tool' property: ${'tool' in tool}`);
+      debugLogger.debug(
+        `Has 'functionDeclarations': ${'functionDeclarations' in tool}`,
+      );
+
       // Handle CallableTool vs Tool
       if ('tool' in tool) {
+        debugLogger.debug(`Tool is CallableTool, calling tool() method`);
         actualTool = await (tool as CallableTool).tool();
-        console.error(`[DEBUG CONVERTER] Unwrapped CallableTool`);
+        debugLogger.debug(
+          `Unwrapped CallableTool, keys: ${Object.keys(actualTool).join(', ')}`,
+        );
+        debugLogger.debug(
+          `Unwrapped has functionDeclarations: ${!!actualTool.functionDeclarations}`,
+        );
       } else {
         actualTool = tool as Tool;
+        debugLogger.debug(`Tool is direct Tool object`);
       }
 
       if (actualTool.functionDeclarations) {
-        console.error(`[DEBUG CONVERTER] Found ${actualTool.functionDeclarations.length} function declarations`);
+        debugLogger.info(
+          `Found ${actualTool.functionDeclarations.length} function declarations`,
+        );
         for (const func of actualTool.functionDeclarations) {
           if (func.name && func.description) {
             let parameters: Record<string, unknown> | undefined;
@@ -254,9 +271,14 @@ export class OllamaContentConverter {
       }
     }
 
-    console.error(`[DEBUG CONVERTER] Converted ${ollamaTools.length} tools total`);
+    debugLogger.info(`Converted ${ollamaTools.length} tools total`);
     if (ollamaTools.length > 0) {
-      console.error(`[DEBUG CONVERTER] Tool names: ${ollamaTools.map(t => t.function.name).slice(0, 10).join(', ')}${ollamaTools.length > 10 ? '...' : ''}`);
+      debugLogger.info(
+        `Tool names: ${ollamaTools
+          .map((t) => t.function.name)
+          .slice(0, 10)
+          .join(', ')}${ollamaTools.length > 10 ? '...' : ''}`,
+      );
     }
 
     debugLogger.info('Converted tools for Ollama', {
@@ -667,9 +689,7 @@ export class OllamaContentConverter {
     // chunk with done=true may not contain tool_calls, but we still need to emit
     // the previously accumulated ones.
     const shouldEmitToolCalls =
-      ollamaChunk.done &&
-      accumulatedToolCalls &&
-      accumulatedToolCalls.size > 0;
+      ollamaChunk.done && accumulatedToolCalls && accumulatedToolCalls.size > 0;
 
     debugLogger.debug('Tool calls emit check', {
       done: ollamaChunk.done,
