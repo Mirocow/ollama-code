@@ -567,8 +567,10 @@ Do NOT use model_storage for:
 
 ## Scope (persistent storage only)
 
-- **global**: \`~/.ollama-code/storage/\` (shared across all projects)
-- **project**: \`~/.ollama-code/projects/<project-hash>/storage/\` (auto-detected project root)
+- **global**: \`~/.ollama-code/storage/<session-id>.json\` (shared across all projects)
+- **project**: \`~/.ollama-code/projects/<project-hash>/storage/<session-id>.json\` (auto-detected project root)
+
+All namespaces are stored in a single session file.
 `;
 
 // ============================================================================
@@ -622,11 +624,24 @@ async function getStorageDir(
   return getProjectStorageDir(projectRoot);
 }
 
-async function getNamespaceFilePath(
-  namespace: string,
+/**
+ * Get the session storage file path
+ * File name is based on session ID: <session-id>.json
+ * If no session ID, uses 'default' as fallback
+ */
+async function getSessionFilePath(
   scope: 'global' | 'project' = 'global',
 ): Promise<string> {
-  return path.join(await getStorageDir(scope), `${namespace}.json`);
+  const storageDir = await getStorageDir(scope);
+  const sessionId = currentSessionId || 'default';
+  return path.join(storageDir, `${sessionId}.json`);
+}
+
+/**
+ * Session file structure - all namespaces in one file
+ */
+interface SessionFileData {
+  [namespace: string]: Record<string, StorageEntry>;
 }
 
 async function ensureStorageDir(scope: 'global' | 'project'): Promise<string> {
@@ -684,41 +699,16 @@ function getSessionEntries(namespace: string): Map<string, StorageEntry> {
 // Persistent Storage (files with metadata)
 // ============================================================================
 
-async function readNamespaceData(
-  namespace: string,
+/**
+ * Read the entire session file
+ */
+async function readSessionFile(
   scope: 'global' | 'project',
-): Promise<Record<string, StorageEntry>> {
-  const filePath = await getNamespaceFilePath(namespace, scope);
+): Promise<SessionFileData> {
+  const filePath = await getSessionFilePath(scope);
   try {
     const content = await fs.readFile(filePath, 'utf-8');
-    const data = JSON.parse(content);
-
-    // Проверяем и удаляем истёкшие записи, конвертируем старый формат
-    const validData: Record<string, StorageEntry> = {};
-    let hasChanges = false;
-
-    for (const [key, rawEntry] of Object.entries(data)) {
-      // Конвертируем старый формат в новый
-      const storageEntry = ensureStorageEntry(rawEntry);
-
-      if (!isExpired(storageEntry)) {
-        validData[key] = storageEntry;
-        // Если запись была сконвертирована из старого формата
-        if (storageEntry !== rawEntry) {
-          hasChanges = true;
-        }
-      } else {
-        hasChanges = true;
-        debugLogger.info(`[StorageTool] Expired entry removed: ${key}`);
-      }
-    }
-
-    // Если были изменения (конвертация или удаление истёкших), перезаписываем файл
-    if (hasChanges) {
-      await writeNamespaceData(namespace, validData, scope);
-    }
-
-    return validData;
+    return JSON.parse(content);
   } catch (err) {
     const error = err as Error & { code?: string };
     if (error.code === 'ENOENT') {
@@ -728,14 +718,66 @@ async function readNamespaceData(
   }
 }
 
+/**
+ * Write the entire session file
+ */
+async function writeSessionFile(
+  data: SessionFileData,
+  scope: 'global' | 'project',
+): Promise<void> {
+  await ensureStorageDir(scope);
+  const filePath = await getSessionFilePath(scope);
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+/**
+ * Read namespace data from session file
+ */
+async function readNamespaceData(
+  namespace: string,
+  scope: 'global' | 'project',
+): Promise<Record<string, StorageEntry>> {
+  const sessionData = await readSessionFile(scope);
+  const namespaceData = sessionData[namespace] || {};
+
+  // Check and remove expired entries, convert old format
+  const validData: Record<string, StorageEntry> = {};
+  let hasChanges = false;
+
+  for (const [key, rawEntry] of Object.entries(namespaceData)) {
+    const storageEntry = ensureStorageEntry(rawEntry);
+
+    if (!isExpired(storageEntry)) {
+      validData[key] = storageEntry;
+      if (storageEntry !== rawEntry) {
+        hasChanges = true;
+      }
+    } else {
+      hasChanges = true;
+      debugLogger.info(`[StorageTool] Expired entry removed: ${key}`);
+    }
+  }
+
+  // If there were changes, rewrite the session file
+  if (hasChanges) {
+    sessionData[namespace] = validData;
+    await writeSessionFile(sessionData, scope);
+  }
+
+  return validData;
+}
+
+/**
+ * Write namespace data to session file
+ */
 async function writeNamespaceData(
   namespace: string,
   data: Record<string, StorageEntry>,
   scope: 'global' | 'project',
 ): Promise<void> {
-  await ensureStorageDir(scope);
-  const filePath = await getNamespaceFilePath(namespace, scope);
-  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+  const sessionData = await readSessionFile(scope);
+  sessionData[namespace] = data;
+  await writeSessionFile(sessionData, scope);
 }
 
 // ============================================================================
@@ -763,7 +805,7 @@ export async function cleanupExpiredEntries(): Promise<{
   let sessionCleaned = 0;
   let persistentCleaned = 0;
 
-  // Очистка session storage
+  // Очистка session storage (in-memory)
   for (const [, nsData] of sessionStorage.entries()) {
     for (const [key, entry] of nsData.entries()) {
       if (isExpired(entry)) {
@@ -774,14 +816,11 @@ export async function cleanupExpiredEntries(): Promise<{
     }
   }
 
-  // Очистка persistent storage - сканируем все namespace файлы
+  // Очистка persistent storage - сканируем файлы сессий
   try {
     const globalStorageDir = path.join(getOllamaDir(), STORAGE_DIR);
     const projectRoot = await findProjectRoot();
-    const projectStorageDir = path.join(
-      getProjectStorageDir(projectRoot),
-      STORAGE_DIR,
-    );
+    const projectStorageDir = getProjectStorageDir(projectRoot);
 
     for (const storageDir of [globalStorageDir, projectStorageDir]) {
       const files = await fs.readdir(storageDir).catch(() => [] as string[]);
@@ -793,27 +832,36 @@ export async function cleanupExpiredEntries(): Promise<{
 
         try {
           const content = await fs.readFile(filePath, 'utf-8');
-          const data = JSON.parse(content);
-          const validData: Record<string, StorageEntry> = {};
+          const sessionData: SessionFileData = JSON.parse(content);
           let hasExpired = false;
 
-          for (const [key, rawEntry] of Object.entries(data)) {
-            const entry = ensureStorageEntry(rawEntry);
-            if (isExpired(entry)) {
-              persistentCleaned++;
-              hasExpired = true;
-              debugLogger.info(
-                `[TTL] Cleaned persistent entry: ${file.replace('.json', '')}:${key}`,
-              );
-            } else {
-              validData[key] = entry;
+          // Check each namespace in the session file
+          for (const [namespace, entries] of Object.entries(sessionData)) {
+            const validData: Record<string, StorageEntry> = {};
+
+            for (const [key, rawEntry] of Object.entries(entries)) {
+              const entry = ensureStorageEntry(rawEntry);
+              if (isExpired(entry)) {
+                persistentCleaned++;
+                hasExpired = true;
+                debugLogger.info(
+                  `[TTL] Cleaned persistent entry: ${file}:${namespace}:${key}`,
+                );
+              } else {
+                validData[key] = entry;
+              }
+            }
+
+            if (hasExpired) {
+              sessionData[namespace] = validData;
             }
           }
 
+          // Rewrite session file if there were expired entries
           if (hasExpired) {
             await fs.writeFile(
               filePath,
-              JSON.stringify(validData, null, 2),
+              JSON.stringify(sessionData, null, 2),
               'utf-8',
             );
           }

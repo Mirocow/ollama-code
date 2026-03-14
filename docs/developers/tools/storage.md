@@ -246,8 +246,10 @@ Categorize entries for filtering:
 
 | Scope | Location | Use Case |
 |-------|----------|----------|
-| `global` | `~/.ollama-code/storage/` | Shared across all projects |
-| `project` | `~/.ollama-code/projects/<project-hash>/storage/` | Current project only |
+| `global` | `~/.ollama-code/storage/<session-id>.json` | Shared across all projects |
+| `project` | `~/.ollama-code/projects/<project-hash>/storage/<session-id>.json` | Current project only |
+
+**Note:** `<session-id>` is the current session ID, or `default` if no session is set.
 
 ```json
 {
@@ -283,16 +285,30 @@ Every entry automatically tracks:
 ### Persistent Storage
 
 ```
-~/.ollama-code/storage/                    # Global (shared across projects)
-├── roadmap.json
-├── knowledge.json
-├── learning.json
-└── metrics.json
+~/.ollama-code/storage/                           # Global (shared across projects)
+├── <session-id>.json                             # Session files
+│   └── { roadmap: {...}, knowledge: {...}, ... }
+└── default.json                                  # Default session (no session ID)
 
-~/.ollama-code/projects/<project-hash>/storage/  # Project-specific
-├── roadmap.json
-├── knowledge.json
-└── session.json
+~/.ollama-code/projects/<project-hash>/storage/   # Project-specific
+├── <session-id>.json                             # Session files
+│   └── { roadmap: {...}, knowledge: {...}, ... }
+└── default.json                                  # Default session
+```
+
+**Session file structure** - all namespaces in one file:
+```json
+{
+  "roadmap": {
+    "v1.0": { "value": {...}, "metadata": {...} }
+  },
+  "knowledge": {
+    "api-patterns": { "value": {...}, "metadata": {...} }
+  },
+  "session": {
+    "current-task": { "value": {...}, "metadata": {...} }
+  }
+}
 ```
 
 **Project hash** is a SHA256 hash of the project's root directory path, ensuring unique storage per project.
