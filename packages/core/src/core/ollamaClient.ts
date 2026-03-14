@@ -191,6 +191,20 @@ export class OllamaClient {
 
     const toolRegistry = this.config.getToolRegistry();
     const toolDeclarations = toolRegistry.getFunctionDeclarations();
+
+    // DEBUG: Log tool declarations count
+    debugLogger.info(
+      `startChat: toolRegistry returned ${toolDeclarations.length} declarations`,
+    );
+    if (toolDeclarations.length > 0) {
+      debugLogger.info(
+        `First 5 tool names: ${toolDeclarations
+          .slice(0, 5)
+          .map((d) => d.name)
+          .join(', ')}`,
+      );
+    }
+
     const tools: Tool[] = [{ functionDeclarations: toolDeclarations }];
 
     // DEBUG: Log tools only in debug mode

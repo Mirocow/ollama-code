@@ -217,29 +217,55 @@ export class OllamaContentConverter {
       let actualTool: Tool;
 
       // Debug: log tool structure
-      debugLogger.debug(`Tool type: ${typeof tool}`);
-      debugLogger.debug(`Tool keys: ${Object.keys(tool).join(', ')}`);
-      debugLogger.debug(`Has 'tool' property: ${'tool' in tool}`);
-      debugLogger.debug(
-        `Has 'functionDeclarations': ${'functionDeclarations' in tool}`,
+      debugLogger.info(`Tool type: ${typeof tool}`);
+      debugLogger.info(
+        `Tool keys: ${Object.keys(tool || {}).join(', ') || 'NO KEYS'}`,
+      );
+      debugLogger.info(
+        `Tool JSON (first 1000 chars): ${JSON.stringify(tool).slice(0, 1000)}`,
+      );
+      debugLogger.info(`Has 'tool' property: ${'tool' in (tool || {})}`);
+      debugLogger.info(
+        `Has 'functionDeclarations': ${'functionDeclarations' in (tool || {})}`,
+      );
+      debugLogger.info(
+        `typeof tool.tool: ${typeof (tool as Record<string, unknown>)?.tool}`,
       );
 
       // Handle CallableTool vs Tool
-      if ('tool' in tool) {
-        debugLogger.debug(`Tool is CallableTool, calling tool() method`);
-        actualTool = await (tool as CallableTool).tool();
-        debugLogger.debug(
-          `Unwrapped CallableTool, keys: ${Object.keys(actualTool).join(', ')}`,
-        );
-        debugLogger.debug(
-          `Unwrapped has functionDeclarations: ${!!actualTool.functionDeclarations}`,
+      // CallableTool has a tool() method that returns Promise<Tool>
+      if (
+        tool &&
+        typeof (tool as Record<string, unknown>).tool === 'function'
+      ) {
+        debugLogger.info(`Tool is CallableTool, calling tool() method`);
+        try {
+          actualTool = await (tool as CallableTool).tool();
+          debugLogger.info(`Unwrapped CallableTool successfully`);
+          debugLogger.info(
+            `Unwrapped keys: ${Object.keys(actualTool || {}).join(', ')}`,
+          );
+          debugLogger.info(
+            `Unwrapped functionDeclarations: ${actualTool?.functionDeclarations?.length ?? 0}`,
+          );
+        } catch (e) {
+          debugLogger.error(`Failed to call tool() method: ${e}`);
+          continue;
+        }
+      } else if (tool && 'functionDeclarations' in tool) {
+        actualTool = tool as Tool;
+        debugLogger.info(
+          `Tool is direct Tool object with functionDeclarations`,
         );
       } else {
-        actualTool = tool as Tool;
-        debugLogger.debug(`Tool is direct Tool object`);
+        debugLogger.warn(`Tool has unknown structure, skipping`);
+        debugLogger.warn(
+          `Full tool object: ${JSON.stringify(tool, null, 2).slice(0, 2000)}`,
+        );
+        continue;
       }
 
-      if (actualTool.functionDeclarations) {
+      if (actualTool?.functionDeclarations) {
         debugLogger.info(
           `Found ${actualTool.functionDeclarations.length} function declarations`,
         );
