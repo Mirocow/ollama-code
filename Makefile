@@ -67,10 +67,10 @@ cli:
 	npx pnpm run cli -- $(ARGS)
 
 start:
-	npx pnpm run cli -- $(ARGS)
+	npx pnpm run start -- $(ARGS)
 
 debug:
-	npx pnpm run cli:debug -- $(ARGS)
+	npx pnpm run debug -- $(ARGS)
 
 debug-attach:
 	npx pnpm run debug:attach -- $(ARGS)

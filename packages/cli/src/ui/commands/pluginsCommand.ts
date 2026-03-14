@@ -11,9 +11,7 @@ import {
 } from './types.js';
 import { MessageType } from '../types.js';
 import { t } from '../../i18n/index.js';
-import {
-  createPluginMarketplace,
-} from '@ollama-code/ollama-code-core';
+import { createPluginMarketplace } from '@ollama-code/ollama-code-core';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Plugin Registry Functions
@@ -148,7 +146,10 @@ async function healthAction(context: CommandContext): Promise<void> {
 /**
  * Show detailed plugin info
  */
-async function infoAction(context: CommandContext, args: string): Promise<void> {
+async function infoAction(
+  context: CommandContext,
+  args: string,
+): Promise<void> {
   const pluginId = args.trim();
   const registry = context.services.config?.getPluginRegistry?.();
 
@@ -290,7 +291,10 @@ async function infoAction(context: CommandContext, args: string): Promise<void> 
 /**
  * Enable a plugin
  */
-async function enableAction(context: CommandContext, args: string): Promise<void> {
+async function enableAction(
+  context: CommandContext,
+  args: string,
+): Promise<void> {
   const pluginId = args.trim();
   const registry = context.services.config?.getPluginRegistry?.();
 
@@ -355,7 +359,10 @@ async function enableAction(context: CommandContext, args: string): Promise<void
 /**
  * Disable a plugin
  */
-async function disableAction(context: CommandContext, args: string): Promise<void> {
+async function disableAction(
+  context: CommandContext,
+  args: string,
+): Promise<void> {
   const pluginId = args.trim();
   const registry = context.services.config?.getPluginRegistry?.();
 
@@ -422,7 +429,10 @@ async function disableAction(context: CommandContext, args: string): Promise<voi
 /**
  * Reload plugins
  */
-async function reloadAction(context: CommandContext, args: string): Promise<void> {
+async function reloadAction(
+  context: CommandContext,
+  args: string,
+): Promise<void> {
   const pluginId = args.trim();
   const registry = context.services.config?.getPluginRegistry?.();
 
@@ -516,8 +526,11 @@ async function reloadAction(context: CommandContext, args: string): Promise<void
 /**
  * Search marketplace for plugins
  */
-async function searchAction(context: CommandContext, args: string): Promise<void> {
-  const query = args.trim();
+async function searchAction(
+  context: CommandContext,
+  args: string,
+): Promise<void> {
+  const query = 'ollama-code-plugin-' + args.trim();
   const marketplace = createPluginMarketplace(process.cwd());
 
   context.ui.addItem(
@@ -608,7 +621,10 @@ See examples/ folder for sample plugins.`),
 /**
  * Install plugin from marketplace
  */
-async function installAction(context: CommandContext, args: string): Promise<void> {
+async function installAction(
+  context: CommandContext,
+  args: string,
+): Promise<void> {
   const pluginId = args.trim();
 
   if (!pluginId) {
@@ -673,7 +689,10 @@ async function installAction(context: CommandContext, args: string): Promise<voi
 /**
  * Update plugin(s) from marketplace
  */
-async function updateAction(context: CommandContext, args: string): Promise<void> {
+async function updateAction(
+  context: CommandContext,
+  args: string,
+): Promise<void> {
   const pluginId = args.trim();
   const marketplace = createPluginMarketplace(process.cwd());
 
@@ -772,7 +791,10 @@ async function updateAction(context: CommandContext, args: string): Promise<void
 /**
  * Uninstall a plugin
  */
-async function uninstallAction(context: CommandContext, args: string): Promise<void> {
+async function uninstallAction(
+  context: CommandContext,
+  args: string,
+): Promise<void> {
   const pluginId = args.trim();
 
   if (!pluginId) {
@@ -872,7 +894,9 @@ async function completePlugins(
 const listCommand: SlashCommand = {
   name: 'list',
   get description() {
-    return t('List all plugins with status (default action). Usage: /plugins list');
+    return t(
+      'List all plugins with status (default action). Usage: /plugins list',
+    );
   },
   kind: CommandKind.BUILT_IN,
   action: listAction,
@@ -890,7 +914,9 @@ const healthCommand: SlashCommand = {
 const infoCommand: SlashCommand = {
   name: 'info',
   get description() {
-    return t('Show detailed plugin information. Usage: /plugins info <plugin-id>');
+    return t(
+      'Show detailed plugin information. Usage: /plugins info <plugin-id>',
+    );
   },
   kind: CommandKind.BUILT_IN,
   action: infoAction,
@@ -920,7 +946,9 @@ const disableCommand: SlashCommand = {
 const reloadCommand: SlashCommand = {
   name: 'reload',
   get description() {
-    return t('Reload all plugins or a specific one. Usage: /plugins reload [plugin-id]');
+    return t(
+      'Reload all plugins or a specific one. Usage: /plugins reload [plugin-id]',
+    );
   },
   kind: CommandKind.BUILT_IN,
   action: reloadAction,
@@ -939,7 +967,9 @@ const searchCommand: SlashCommand = {
 const installCommand: SlashCommand = {
   name: 'install',
   get description() {
-    return t('Install plugin from marketplace. Usage: /plugins install <plugin-id>');
+    return t(
+      'Install plugin from marketplace. Usage: /plugins install <plugin-id>',
+    );
   },
   kind: CommandKind.BUILT_IN,
   action: installAction,
@@ -948,7 +978,9 @@ const installCommand: SlashCommand = {
 const updateCommand: SlashCommand = {
   name: 'update',
   get description() {
-    return t('Update plugin(s) from marketplace. Usage: /plugins update [plugin-id]');
+    return t(
+      'Update plugin(s) from marketplace. Usage: /plugins update [plugin-id]',
+    );
   },
   kind: CommandKind.BUILT_IN,
   action: updateAction,
@@ -972,7 +1004,9 @@ const uninstallCommand: SlashCommand = {
 export const pluginsCommand: SlashCommand = {
   name: 'plugins',
   get description() {
-    return t('Manage plugins. Subcommands: list, health, info, enable, disable, reload, search, install, update, uninstall');
+    return t(
+      'Manage plugins. Subcommands: list, health, info, enable, disable, reload, search, install, update, uninstall',
+    );
   },
   kind: CommandKind.BUILT_IN,
   subCommands: [

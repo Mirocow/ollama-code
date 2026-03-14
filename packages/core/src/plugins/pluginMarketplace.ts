@@ -192,11 +192,9 @@ export class PluginMarketplace {
       includeInstalled = true,
     } = options;
 
-    debugLogger.info(`Searching marketplace: "${query}"`);
-
     try {
       // Build search query
-      const searchTerms = ['ollama-code-plugin'];
+      const searchTerms = [];
       if (query) searchTerms.push(query);
       if (keywords.length > 0)
         searchTerms.push(...keywords.map((k) => `keywords:${k}`));
