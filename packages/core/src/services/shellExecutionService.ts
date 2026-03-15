@@ -232,7 +232,9 @@ export class ShellExecutionService {
       // This is intentional - CLI tool executes user-provided shell commands.
       const child = cpSpawn(shell, shellArgs, {
         cwd,
-        stdio: ['ignore', 'pipe', 'pipe'],
+        // Use 'pipe' for stdin to support heredoc and piped commands
+        // bash -c handles heredoc internally, but needs stdin available
+        stdio: ['pipe', 'pipe', 'pipe'],
         windowsVerbatimArguments: isWindows,
         detached: !isWindows,
         windowsHide: isWindows,
@@ -354,6 +356,12 @@ export class ShellExecutionService {
 
         if (child.pid) {
           this.activeChildProcesses.add(child.pid);
+        }
+
+        // Close stdin to signal end of input (needed for heredoc/piped commands)
+        // bash -c processes heredoc internally, but stdin must be closed to complete
+        if (child.stdin) {
+          child.stdin.end();
         }
 
         child.on('exit', (code, signal) => {
