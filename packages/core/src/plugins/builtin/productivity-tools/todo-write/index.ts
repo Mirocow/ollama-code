@@ -95,60 +95,60 @@ const todoWriteToolSchemaData: FunctionDeclaration = {
 };
 
 const todoWriteToolDescription = `
-Use this tool to create and manage a structured task list for your current coding session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
-It also helps the user understand the progress of the task and overall progress of their requests.
+# Task Management Guidelines
+
+Use this tool to create and manage a structured task list for your current coding session. This helps you track progress, organize complex workflows, and demonstrate thoroughness. It also provides the user with clear visibility into the status of their requests.
 
 ## When to Use This Tool
 
-**IMPORTANT: You SHOULD use this tool proactively for ANY task with 2 or more steps.**
+**IMPORTANT: You MUST use this tool proactively for ANY task consisting of 2 or more steps.**
 
-Use this tool proactively in these scenarios:
-
-1. **Multi-step tasks** - When a task requires 2 or more distinct steps or actions
-2. **User explicitly requests todo list** - When the user directly asks you to use the todo list
-3. **User provides multiple tasks** - When users provide a list of things to be done (numbered or comma-separated)
-4. **After receiving new instructions** - Immediately capture user requirements as todos
-5. **When you start working on a task** - Mark it as in_progress BEFORE beginning work. Ideally you should only have one todo as in_progress at a time
-6. **After completing a task** - Mark it as completed and add any new follow-up tasks discovered during implementation
+Use this tool in the following scenarios:
+1. **Multi-step tasks** – When a task requires 2 or more distinct actions.
+2. **Explicit requests** – When the user specifically asks for a todo list or plan.
+3. **Multiple requirements** – When the user provides a list of items (numbered, bulleted, or comma-separated).
+4. **New instructions** – Immediately capture new user requirements as todos.
+5. **Work initiation** – Mark a task as \`in_progress\` BEFORE beginning work.
+   * *Note: Ideally, only one task should be \`in_progress\` at a time.*
+6. **Task completion** – Mark tasks as \`completed\` immediately and add any follow-up tasks discovered during implementation.
 
 ## When NOT to Use This Tool
 
-Skip using this tool ONLY when:
-1. The task is purely conversational or informational (no code changes needed)
-2. The task is a single trivial action that takes less than 10 seconds (e.g., "print hello world")
+Skip this tool ONLY if:
+1. The interaction is purely conversational or informational (no implementation needed).
+2. The task is a single, trivial action taking less than 10 seconds (e.g., "print hello world").
 
-**DO NOT skip todo_write just because a task seems "simple" - most coding tasks have hidden complexity.**
+**DO NOT skip \`todo_write\` just because a task seems "simple" — most coding tasks have hidden complexity.**
 
 ## Task States and Management
 
-1. **Task States**: Use these states to track progress:
-   - pending: Task not yet started
-   - in_progress: Currently working on (limit to ONE task at a time)
-   - completed: Task finished successfully
+### 1. Task States
+* \`pending\`: Task not yet started.
+* \`in_progress\`: Task currently being worked on (limit to **ONE** at a time).
+* \`completed\`: Task finished successfully.
 
-2. **Task Management**:
-   - Update task status in real-time as you work
-   - Mark tasks complete IMMEDIATELY after finishing (don't batch completions)
-   - Only have ONE task in_progress at any time
-   - Complete current tasks before starting new ones
-   - Remove tasks that are no longer relevant from the list entirely
+### 2. Management Rules
+* **Real-time updates**: Update task status as you work.
+* **Immediate completion**: Mark tasks as \`completed\` IMMEDIATELY after finishing (do not batch completions).
+* **Sequential flow**: Complete the current \`in_progress\` task before starting a new one.
+* **Cleanup**: Remove tasks from the list entirely if they become irrelevant.
 
-3. **Task Completion Requirements**:
-   - ONLY mark a task as completed when you have FULLY accomplished it
-   - If you encounter errors, blockers, or cannot finish, keep the task as in_progress
-   - When blocked, create a new task describing what needs to be resolved
-   - Never mark a task as completed if:
-     - Tests are failing
-     - Implementation is partial
-     - You encountered unresolved errors
-     - You couldn't find necessary files or dependencies
+### 3. Completion Requirements
+**NEVER** mark a task as completed if:
+* Tests are failing.
+* Implementation is partial.
+* There are unresolved errors.
+* Necessary files or dependencies are missing.
 
-4. **Task Breakdown**:
-   - Create specific, actionable items
-   - Break complex tasks into smaller, manageable steps
-   - Use clear, descriptive task names
+*If you encounter blockers, keep the task as \`in_progress\` and create a new task describing the resolution steps needed.*
 
-When in doubt, use this tool. Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.
+### 4. Task Breakdown
+* Define specific, actionable items.
+* Break complex tasks into small, manageable steps.
+* Use clear, descriptive names for each task.
+
+---
+When in doubt, use this tool. Proactive task management ensures all requirements are met and demonstrates a systematic approach.
 `;
 
 /**

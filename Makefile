@@ -41,6 +41,9 @@ build:
 build-cli:
 	npx pnpm run build:cli
 
+build-bundle:
+	npx pnpm run bundle
+
 build-all:
 	npx pnpm run build:all
 

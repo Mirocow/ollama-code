@@ -1,6 +1,6 @@
 {
   "version": "3.0.2",
-  "lastModified": "2026-03-13T15:07:02.329Z",
+  "lastModified": "2026-03-14T21:22:02.748Z",
   "folders": [
     {
       "id": "mmp14bjssyawf2gykr",
@@ -10,22 +10,27 @@
     {
       "id": "mmp14j23bnf4s6ik6q",
       "name": "Инструменты",
-      "sortOrder": 1
+      "sortOrder": 2
     },
     {
       "id": "mmp14nbveubejd68obu",
       "name": "Промпты",
-      "sortOrder": 2
+      "sortOrder": 3
     },
     {
       "id": "mmp14sjzn9umhrnq1u",
       "name": "Расширения",
-      "sortOrder": 3
+      "sortOrder": 4
     },
     {
       "id": "mmp14x1korligxo29gf",
       "name": "Команды",
-      "sortOrder": 4
+      "sortOrder": 5
+    },
+    {
+      "id": "mmqnv5zz39bhqs4vc6r",
+      "name": "Парсеры",
+      "sortOrder": 6
     }
   ],
   "bookmarks": [
@@ -38,6 +43,26 @@
       "lineContent": "* **Plugin Discovery Sources:**",
       "folderId": "mmp14bjssyawf2gykr",
       "sortOrder": 5
+    },
+    {
+      "id": "mmqnvaaavt28smc2vto",
+      "name": "export class ToolCallTagParser implements IToolCallTextParser {",
+      "file": "packages/core/src/model-handlers/default/parsers.ts",
+      "line": 32,
+      "character": 17,
+      "lineContent": "export class ToolCallTagParser implements IToolCallTextParser {",
+      "folderId": "mmqnv5zz39bhqs4vc6r",
+      "sortOrder": 7
+    },
+    {
+      "id": "mmqtzjkdqmx7db78ky",
+      "name": "// Static imports for builtin plugins (required for esbuild bundling)",
+      "file": "packages/core/src/plugins/pluginRegistry.ts",
+      "line": 43,
+      "character": 47,
+      "lineContent": "// Static imports for builtin plugins (required for esbuild bundling)",
+      "folderId": "mmp14j23bnf4s6ik6q",
+      "sortOrder": 1
     }
   ]
 }

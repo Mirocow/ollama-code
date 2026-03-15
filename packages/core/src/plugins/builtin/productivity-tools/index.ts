@@ -55,11 +55,6 @@ const productivityToolsPlugin: PluginDefinition = {
       description: 'Manage todo items',
     },
     {
-      alias: 'todo_write',
-      canonicalName: 'todo_write',
-      description: 'Write todo list',
-    },
-    {
       alias: 'task_list',
       canonicalName: 'todo_write',
       description: 'Task list management',
