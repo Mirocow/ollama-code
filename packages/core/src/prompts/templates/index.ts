@@ -13,6 +13,10 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// ESM-compatible __dirname
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Model size tiers for prompt selection
@@ -46,6 +50,8 @@ function getTemplatesDir(): string {
     path.join(__dirname, 'templates'),
     // When running from src directly (templates in same directory)
     __dirname,
+    // Additional fallback for bundled dist
+    path.join(__dirname, '..', 'prompts', 'templates'),
   ];
 
   for (const p of possiblePaths) {
@@ -57,7 +63,7 @@ function getTemplatesDir(): string {
 
   // Log for debugging why templates weren't found
   console.warn(
-    `[TEMPLATES] No templates found. __dirname=${__dirname}, checked: ${possiblePaths.map(p => path.join(p, 'system-8b.md')).join(', ')}`,
+    `[TEMPLATES] No templates found. __dirname=${__dirname}, checked: ${possiblePaths.map((p) => path.join(p, 'system-8b.md')).join(', ')}`,
   );
 
   // Fallback to current directory

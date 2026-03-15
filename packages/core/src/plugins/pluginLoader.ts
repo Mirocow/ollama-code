@@ -6,7 +6,7 @@
 
 /**
  * Plugin Loader
- * 
+ *
  * Handles discovery and dynamic loading of plugins from:
  * - Built-in plugins (bundled with Ollama Code)
  * - User plugins (~/.ollama-code/plugins/)
@@ -17,7 +17,11 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { createDebugLogger } from '../utils/debugLogger.js';
+
+// ESM-compatible __dirname
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import type { PluginDefinition, PluginManifest } from './types.js';
 import type { PluginManager } from './pluginManager.js';
 
@@ -45,63 +49,63 @@ export interface DiscoveredPlugin {
 export class PluginLoader {
   private pluginManager: PluginManager;
   private loadedPlugins: Map<string, DiscoveredPlugin> = new Map();
-  
+
   // Standard plugin directories
   private readonly userPluginsDir: string;
   private readonly projectPluginsDir: string;
-  
+
   constructor(pluginManager: PluginManager, projectRoot?: string) {
     this.pluginManager = pluginManager;
     this.userPluginsDir = path.join(os.homedir(), '.ollama-code', 'plugins');
-    this.projectPluginsDir = projectRoot 
+    this.projectPluginsDir = projectRoot
       ? path.join(projectRoot, '.ollama-code', 'plugins')
       : '';
   }
-  
+
   /**
    * Discover all available plugins
    */
   async discoverPlugins(): Promise<DiscoveredPlugin[]> {
     const discovered: DiscoveredPlugin[] = [];
-    
+
     // Discover built-in plugins
-    discovered.push(...await this.discoverBuiltinPlugins());
-    
+    discovered.push(...(await this.discoverBuiltinPlugins()));
+
     // Discover user plugins
-    discovered.push(...await this.discoverUserPlugins());
-    
+    discovered.push(...(await this.discoverUserPlugins()));
+
     // Discover project plugins
     if (this.projectPluginsDir) {
-      discovered.push(...await this.discoverProjectPlugins());
+      discovered.push(...(await this.discoverProjectPlugins()));
     }
-    
+
     // Discover npm plugins
-    discovered.push(...await this.discoverNpmPlugins());
-    
+    discovered.push(...(await this.discoverNpmPlugins()));
+
     debugLogger.info(`Discovered ${discovered.length} plugins`);
     return discovered;
   }
-  
+
   /**
    * Discover built-in plugins
    */
   private async discoverBuiltinPlugins(): Promise<DiscoveredPlugin[]> {
     const discovered: DiscoveredPlugin[] = [];
     const builtinDir = path.join(__dirname, 'builtin');
-    
+
     if (!fs.existsSync(builtinDir)) {
       debugLogger.debug('No built-in plugins directory found');
       return discovered;
     }
-    
+
     const entries = fs.readdirSync(builtinDir, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      
+
       const pluginPath = path.join(builtinDir, entry.name);
       const manifest = await this.loadManifest(pluginPath);
-      
+
       if (manifest) {
         discovered.push({
           path: pluginPath,
@@ -111,46 +115,46 @@ export class PluginLoader {
         });
       }
     }
-    
+
     return discovered;
   }
-  
+
   /**
    * Discover user-level plugins
    */
   private async discoverUserPlugins(): Promise<DiscoveredPlugin[]> {
     return this.discoverPluginsFromDirectory(this.userPluginsDir, 'user');
   }
-  
+
   /**
    * Discover project-level plugins
    */
   private async discoverProjectPlugins(): Promise<DiscoveredPlugin[]> {
     return this.discoverPluginsFromDirectory(this.projectPluginsDir, 'project');
   }
-  
+
   /**
    * Discover plugins from a specific directory
    */
   private async discoverPluginsFromDirectory(
-    dir: string, 
-    type: 'user' | 'project'
+    dir: string,
+    type: 'user' | 'project',
   ): Promise<DiscoveredPlugin[]> {
     const discovered: DiscoveredPlugin[] = [];
-    
+
     if (!fs.existsSync(dir)) {
       debugLogger.debug(`Plugin directory not found: ${dir}`);
       return discovered;
     }
-    
+
     const entries = fs.readdirSync(dir, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      
+
       const pluginPath = path.join(dir, entry.name);
       const manifest = await this.loadManifest(pluginPath);
-      
+
       if (manifest) {
         discovered.push({
           path: pluginPath,
@@ -161,45 +165,50 @@ export class PluginLoader {
       } else {
         discovered.push({
           path: pluginPath,
-          manifest: { entry: '', metadata: { id: entry.name, name: entry.name, version: '0.0.0' } },
+          manifest: {
+            entry: '',
+            metadata: { id: entry.name, name: entry.name, version: '0.0.0' },
+          },
           type,
           valid: false,
           error: 'Invalid or missing manifest',
         });
       }
     }
-    
+
     return discovered;
   }
-  
+
   /**
    * Discover npm packages that are Ollama Code plugins
    */
   private async discoverNpmPlugins(): Promise<DiscoveredPlugin[]> {
     const discovered: DiscoveredPlugin[] = [];
-    
+
     // Look for ollama-code-plugin-* packages in node_modules
     const nodeModulesDir = path.join(process.cwd(), 'node_modules');
-    
+
     if (!fs.existsSync(nodeModulesDir)) {
       return discovered;
     }
-    
+
     const entries = fs.readdirSync(nodeModulesDir, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      
+
       // Check for scoped packages (@scope/ollama-code-plugin-*)
       if (entry.name.startsWith('@')) {
         const scopedDir = path.join(nodeModulesDir, entry.name);
-        const scopedEntries = fs.readdirSync(scopedDir, { withFileTypes: true });
-        
+        const scopedEntries = fs.readdirSync(scopedDir, {
+          withFileTypes: true,
+        });
+
         for (const scopedEntry of scopedEntries) {
           if (scopedEntry.name.startsWith('ollama-code-plugin-')) {
             const pluginPath = path.join(scopedDir, scopedEntry.name);
             const manifest = await this.loadManifest(pluginPath);
-            
+
             if (manifest) {
               discovered.push({
                 path: pluginPath,
@@ -215,7 +224,7 @@ export class PluginLoader {
       else if (entry.name.startsWith('ollama-code-plugin-')) {
         const pluginPath = path.join(nodeModulesDir, entry.name);
         const manifest = await this.loadManifest(pluginPath);
-        
+
         if (manifest) {
           discovered.push({
             path: pluginPath,
@@ -226,38 +235,46 @@ export class PluginLoader {
         }
       }
     }
-    
+
     return discovered;
   }
-  
+
   /**
    * Load plugin manifest from directory
    */
-  private async loadManifest(pluginPath: string): Promise<PluginManifest | null> {
+  private async loadManifest(
+    pluginPath: string,
+  ): Promise<PluginManifest | null> {
     const manifestPath = path.join(pluginPath, 'plugin.json');
-    
+
     if (!fs.existsSync(manifestPath)) {
       debugLogger.debug(`No plugin.json found in ${pluginPath}`);
       return null;
     }
-    
+
     try {
       const content = fs.readFileSync(manifestPath, 'utf8');
       const manifest = JSON.parse(content) as PluginManifest;
-      
+
       // Validate manifest
-      if (!manifest.metadata?.id || !manifest.metadata?.name || !manifest.entry) {
-        debugLogger.warn(`Invalid manifest in ${pluginPath}: missing required fields`);
+      if (
+        !manifest.metadata?.id ||
+        !manifest.metadata?.name ||
+        !manifest.entry
+      ) {
+        debugLogger.warn(
+          `Invalid manifest in ${pluginPath}: missing required fields`,
+        );
         return null;
       }
-      
+
       return manifest;
     } catch (error) {
       debugLogger.error(`Error loading manifest from ${pluginPath}:`, error);
       return null;
     }
   }
-  
+
   /**
    * Load a plugin from discovered plugin info
    */
@@ -266,36 +283,38 @@ export class PluginLoader {
       debugLogger.warn(`Cannot load invalid plugin: ${discovered.path}`);
       return false;
     }
-    
+
     const { manifest, path: pluginPath } = discovered;
     const pluginId = manifest.metadata.id;
-    
+
     // Check if already loaded
     if (this.loadedPlugins.has(pluginId)) {
       debugLogger.debug(`Plugin ${pluginId} already loaded`);
       return true;
     }
-    
+
     try {
       // Load the plugin module
       const entryPath = path.join(pluginPath, manifest.entry);
-      
+
       // Dynamic import
       const pluginModule = await import(entryPath);
       const definition: PluginDefinition = pluginModule.default || pluginModule;
-      
+
       // Register with plugin manager
       await this.pluginManager.registerPlugin(definition);
       this.loadedPlugins.set(pluginId, discovered);
-      
-      debugLogger.info(`Loaded plugin: ${definition.metadata.name} (${pluginId})`);
+
+      debugLogger.info(
+        `Loaded plugin: ${definition.metadata.name} (${pluginId})`,
+      );
       return true;
     } catch (error) {
       debugLogger.error(`Failed to load plugin ${pluginId}:`, error);
       return false;
     }
   }
-  
+
   /**
    * Load all valid discovered plugins
    */
@@ -305,10 +324,10 @@ export class PluginLoader {
   }> {
     const loaded: string[] = [];
     const failed: string[] = [];
-    
+
     // Sort by dependencies (simple topological sort)
-    const sorted = this.sortByDependencies(discovered.filter(d => d.valid));
-    
+    const sorted = this.sortByDependencies(discovered.filter((d) => d.valid));
+
     for (const plugin of sorted) {
       const success = await this.loadPlugin(plugin);
       if (success) {
@@ -317,10 +336,10 @@ export class PluginLoader {
         failed.push(plugin.manifest.metadata.id);
       }
     }
-    
+
     return { loaded, failed };
   }
-  
+
   /**
    * Sort plugins by dependencies (topological sort)
    */
@@ -328,39 +347,41 @@ export class PluginLoader {
     const sorted: DiscoveredPlugin[] = [];
     const visited = new Set<string>();
     const visiting = new Set<string>();
-    
+
     const visit = (plugin: DiscoveredPlugin) => {
       const id = plugin.manifest.metadata.id;
-      
+
       if (visited.has(id)) return;
       if (visiting.has(id)) {
         debugLogger.warn(`Circular dependency detected for plugin ${id}`);
         return;
       }
-      
+
       visiting.add(id);
-      
+
       // Visit dependencies first
       const deps = plugin.manifest.metadata.dependencies || [];
       for (const dep of deps) {
-        const depPlugin = plugins.find(p => p.manifest.metadata.id === dep.pluginId);
+        const depPlugin = plugins.find(
+          (p) => p.manifest.metadata.id === dep.pluginId,
+        );
         if (depPlugin && !dep.optional) {
           visit(depPlugin);
         }
       }
-      
+
       visiting.delete(id);
       visited.add(id);
       sorted.push(plugin);
     };
-    
+
     for (const plugin of plugins) {
       visit(plugin);
     }
-    
+
     return sorted;
   }
-  
+
   /**
    * Enable all loaded plugins
    */
@@ -373,21 +394,21 @@ export class PluginLoader {
       }
     }
   }
-  
+
   /**
    * Get loaded plugin info
    */
   getLoadedPlugin(pluginId: string): DiscoveredPlugin | undefined {
     return this.loadedPlugins.get(pluginId);
   }
-  
+
   /**
    * Get all loaded plugins
    */
   getAllLoadedPlugins(): DiscoveredPlugin[] {
     return Array.from(this.loadedPlugins.values());
   }
-  
+
   /**
    * Unload a plugin
    */
@@ -395,7 +416,7 @@ export class PluginLoader {
     await this.pluginManager.unregisterPlugin(pluginId);
     this.loadedPlugins.delete(pluginId);
   }
-  
+
   /**
    * Reload a plugin
    */
@@ -405,7 +426,7 @@ export class PluginLoader {
       debugLogger.warn(`Cannot reload plugin ${pluginId}: not found`);
       return false;
     }
-    
+
     await this.unloadPlugin(pluginId);
     return this.loadPlugin(discovered);
   }
@@ -415,8 +436,8 @@ export class PluginLoader {
  * Create a plugin loader instance
  */
 export function createPluginLoader(
-  pluginManager: PluginManager, 
-  projectRoot?: string
+  pluginManager: PluginManager,
+  projectRoot?: string,
 ): PluginLoader {
   return new PluginLoader(pluginManager, projectRoot);
 }
