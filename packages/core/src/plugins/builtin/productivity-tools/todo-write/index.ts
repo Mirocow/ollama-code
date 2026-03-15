@@ -83,7 +83,7 @@ const todoWriteToolSchemaData: FunctionDeclaration = {
               enum: ['high', 'medium', 'low'],
             },
           },
-          required: ['content', 'status', 'id'],
+          required: ['content', 'status'],
           additionalProperties: false,
         },
         description: 'The updated todo list',
@@ -155,7 +155,7 @@ When in doubt, use this tool. Proactive task management ensures all requirements
  * Read todos from storage
  */
 async function readTodosFromStorage(
-  sessionId: string,
+  _sessionId: string,
 ): Promise<TodosData | null> {
   try {
     const data = await storageGet<TodosData>(TODOS_NAMESPACE, TODOS_KEY, {
@@ -184,11 +184,12 @@ async function writeTodosToStorage(
     createdAt: existingData?.createdAt || now,
     updatedAt: now,
     planId: existingData?.planId,
-    status: todos.length === 0
-      ? 'completed'
-      : todos.every(t => t.status === 'completed')
+    status:
+      todos.length === 0
         ? 'completed'
-        : 'active',
+        : todos.every((t) => t.status === 'completed')
+          ? 'completed'
+          : 'active',
   };
 
   await storageSet(TODOS_NAMESPACE, TODOS_KEY, data, { scope: 'project' });
@@ -196,14 +197,14 @@ async function writeTodosToStorage(
   // Also update plan status if linked
   if (data.planId) {
     try {
-      const plan = await storageGet<{ status: string; todos: TodoItem[]; progress: number }>(
-        StorageNamespaces.PLANS,
-        data.planId,
-        { scope: 'project' },
-      );
+      const plan = await storageGet<{
+        status: string;
+        todos: TodoItem[];
+        progress: number;
+      }>(StorageNamespaces.PLANS, data.planId, { scope: 'project' });
 
       if (plan && plan.status === 'active') {
-        const completed = todos.filter(t => t.status === 'completed').length;
+        const completed = todos.filter((t) => t.status === 'completed').length;
         const total = todos.length;
         const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -231,7 +232,7 @@ async function writeTodosToStorage(
  */
 function calculateProgress(todos: TodoItem[]): number {
   if (todos.length === 0) return 0;
-  const completed = todos.filter(t => t.status === 'completed').length;
+  const completed = todos.filter((t) => t.status === 'completed').length;
   return Math.round((completed / todos.length) * 100);
 }
 
@@ -274,7 +275,11 @@ class TodoWriteToolInvocation extends BaseToolInvocation<
       if (modified_by_user && modified_content !== undefined) {
         // User modified the content in external editor, parse it directly
         const data = JSON.parse(modified_content);
-        finalTodos = Array.isArray(data.todos) ? data.todos : Array.isArray(data.items) ? data.items : [];
+        finalTodos = Array.isArray(data.todos)
+          ? data.todos
+          : Array.isArray(data.items)
+            ? data.items
+            : [];
       } else {
         // Use the normal todo logic - simply replace with new todos
         finalTodos = todos;
@@ -303,9 +308,9 @@ Your todo list is now empty. DO NOT mention this explicitly to the user. You hav
 </system-reminder>`;
       } else {
         // Normal message for todos with items
-        const inProgress = finalTodos.find(t => t.status === 'in_progress');
-        const pending = finalTodos.filter(t => t.status === 'pending');
-        const completed = finalTodos.filter(t => t.status === 'completed');
+        const inProgress = finalTodos.find((t) => t.status === 'in_progress');
+        const pending = finalTodos.filter((t) => t.status === 'pending');
+        const completed = finalTodos.filter((t) => t.status === 'completed');
 
         llmContent = `Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
 
@@ -350,7 +355,7 @@ Todo list modification failed with error: ${errorMessage}. You may need to retry
  * Utility function to read todos for a specific session (useful for session recovery)
  */
 export async function readTodosForSession(
-  sessionId: string,
+  _sessionId: string,
 ): Promise<TodoItem[]> {
   try {
     const data = await storageGet<TodosData>(TODOS_NAMESPACE, TODOS_KEY, {
@@ -416,11 +421,15 @@ export class TodoWriteTool extends BaseDeclarativeTool<
       return 'Parameter "todos" must be an array.';
     }
 
-    // Validate individual todos
-    for (const todo of params.todos) {
+    // Validate individual todos and auto-generate IDs if missing
+    for (let i = 0; i < params.todos.length; i++) {
+      const todo = params.todos[i];
+
+      // Auto-generate ID if missing
       if (!todo.id || typeof todo.id !== 'string' || todo.id.trim() === '') {
-        return 'Each todo must have a non-empty "id" string.';
+        todo.id = `todo-${Date.now()}-${i}`;
       }
+
       if (
         !todo.content ||
         typeof todo.content !== 'string' ||
@@ -433,11 +442,19 @@ export class TodoWriteTool extends BaseDeclarativeTool<
       }
     }
 
-    // Check for duplicate IDs
+    // Check for duplicate IDs and regenerate if needed
     const ids = params.todos.map((todo) => todo.id);
     const uniqueIds = new Set(ids);
     if (ids.length !== uniqueIds.size) {
-      return 'Todo IDs must be unique within the array.';
+      // Regenerate duplicate IDs
+      const seenIds = new Set<string>();
+      for (let i = 0; i < params.todos.length; i++) {
+        const todo = params.todos[i];
+        if (seenIds.has(todo.id)) {
+          todo.id = `todo-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`;
+        }
+        seenIds.add(todo.id);
+      }
     }
 
     return null;
