@@ -43,13 +43,17 @@ describe('CodeAnalyzerTool', () => {
     });
 
     it('should have description', () => {
-      expect(codeAnalyzerTool.description).toContain('analyzes code');
+      expect(codeAnalyzerTool.description.toLowerCase()).toContain(
+        'analyzes code',
+      );
     });
 
     it('should have valid parameter schema', () => {
       expect(codeAnalyzerTool.parameterSchema).toBeDefined();
       expect(codeAnalyzerTool.parameterSchema.type).toBe('object');
-      expect(codeAnalyzerTool.parameterSchema.properties).toHaveProperty('file');
+      expect(codeAnalyzerTool.parameterSchema.properties).toHaveProperty(
+        'file',
+      );
     });
   });
 

@@ -508,3 +508,230 @@ export async function fileExists(filePath: string): Promise<boolean> {
     return false;
   }
 }
+
+// ============================================================================
+// Streaming File Reader for Large Files
+// ============================================================================
+
+/**
+ * Threshold for streaming vs reading entire file (1MB)
+ */
+export const STREAMING_THRESHOLD_BYTES = 1024 * 1024;
+
+/**
+ * Default chunk size for streaming (64KB)
+ */
+export const DEFAULT_CHUNK_SIZE = 64 * 1024;
+
+/**
+ * Result of streaming file read
+ */
+export interface StreamingFileResult {
+  size: number;
+  lines: number;
+  streamed: boolean;
+  path: string;
+}
+
+/**
+ * Stream a large file in chunks, calling the callback for each chunk.
+ * This is memory-efficient for large files as it doesn't load the entire file.
+ *
+ * @param filePath Absolute path to the file
+ * @param onChunk Callback for each chunk of content
+ * @param options Streaming options
+ * @returns StreamingFileResult with stats
+ */
+export async function streamLargeFile(
+  filePath: string,
+  onChunk: (chunk: string) => void,
+  options?: {
+    chunkSize?: number;
+    maxLines?: number;
+    signal?: AbortSignal;
+  },
+): Promise<StreamingFileResult> {
+  const chunkSize = options?.chunkSize ?? DEFAULT_CHUNK_SIZE;
+  const maxLines = options?.maxLines ?? Infinity;
+  const signal = options?.signal;
+
+  const stats = await fs.promises.stat(filePath);
+  const shouldStream = stats.size > STREAMING_THRESHOLD_BYTES;
+
+  if (!shouldStream) {
+    // Small file: read entirely
+    const content = await readFileWithEncoding(filePath);
+    onChunk(content);
+    const lines = content.split('\n').length;
+    return {
+      size: stats.size,
+      lines,
+      streamed: false,
+      path: filePath,
+    };
+  }
+
+  // Large file: stream in chunks
+  debugLogger.info(
+    `Streaming large file: ${filePath} (${(stats.size / (1024 * 1024)).toFixed(2)}MB)`,
+  );
+
+  const stream = fs.createReadStream(filePath, {
+    encoding: 'utf-8',
+    highWaterMark: chunkSize,
+  });
+
+  let totalLines = 0;
+  let aborted = false;
+
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk: string) => {
+      if (signal?.aborted || aborted) {
+        stream.destroy();
+        return;
+      }
+
+      // Count lines in chunk
+      const chunkLines = chunk.split('\n').length - 1;
+      totalLines += chunkLines;
+
+      // Check if we've reached max lines
+      if (totalLines >= maxLines) {
+        aborted = true;
+        stream.destroy();
+        onChunk(chunk);
+        return;
+      }
+
+      onChunk(chunk);
+    });
+
+    stream.on('end', () => {
+      resolve({
+        size: stats.size,
+        lines: totalLines,
+        streamed: true,
+        path: filePath,
+      });
+    });
+
+    stream.on('error', (error) => {
+      reject(error);
+    });
+
+    // Handle abort signal
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        stream.destroy();
+        resolve({
+          size: stats.size,
+          lines: totalLines,
+          streamed: true,
+          path: filePath,
+        });
+      });
+    }
+  });
+}
+
+/**
+ * Stream file lines one by one, efficient for processing large files line-by-line.
+ *
+ * @param filePath Absolute path to the file
+ * @param onLine Callback for each line
+ * @param options Streaming options
+ * @returns StreamingFileResult with stats
+ */
+export async function streamFileLines(
+  filePath: string,
+  onLine: (
+    line: string,
+    lineNumber: number,
+  ) => boolean | void | Promise<boolean | void>,
+  options?: {
+    startLine?: number;
+    maxLines?: number;
+    signal?: AbortSignal;
+  },
+): Promise<StreamingFileResult> {
+  const startLine = options?.startLine ?? 0;
+  const maxLines = options?.maxLines ?? Infinity;
+  const signal = options?.signal;
+
+  const stats = await fs.promises.stat(filePath);
+
+  const stream = fs.createReadStream(filePath, {
+    encoding: 'utf-8',
+    highWaterMark: DEFAULT_CHUNK_SIZE,
+  });
+
+  let currentLine = 0;
+  let linesProcessed = 0;
+  let buffer = '';
+  let shouldStop = false;
+
+  return new Promise((resolve, reject) => {
+    const processBuffer = async () => {
+      const lines = buffer.split('\n');
+      // Keep the last incomplete line in buffer
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (signal?.aborted || shouldStop) {
+          stream.destroy();
+          return;
+        }
+
+        if (currentLine >= startLine) {
+          const result = await onLine(line, currentLine);
+          linesProcessed++;
+
+          if (result === false || linesProcessed >= maxLines) {
+            shouldStop = true;
+            stream.destroy();
+            return;
+          }
+        }
+        currentLine++;
+      }
+    };
+
+    stream.on('data', async (chunk: string) => {
+      buffer += chunk;
+      await processBuffer();
+    });
+
+    stream.on('end', async () => {
+      // Process remaining buffer
+      if (buffer.length > 0 && !shouldStop) {
+        if (currentLine >= startLine) {
+          await onLine(buffer, currentLine);
+          linesProcessed++;
+        }
+      }
+
+      resolve({
+        size: stats.size,
+        lines: currentLine + 1,
+        streamed: true,
+        path: filePath,
+      });
+    });
+
+    stream.on('error', (error) => {
+      reject(error);
+    });
+
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        stream.destroy();
+        resolve({
+          size: stats.size,
+          lines: currentLine,
+          streamed: true,
+          path: filePath,
+        });
+      });
+    }
+  });
+}
