@@ -11,6 +11,7 @@ import process from 'node:process';
 
 // External dependencies
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
+import minimatch from 'minimatch';
 
 // Types
 import type {
@@ -444,6 +445,7 @@ export class Config {
     respectOllamaCodeIgnore: boolean;
     enableRecursiveFileSearch: boolean;
     enableFuzzySearch: boolean;
+    customExcludes?: string[];
   };
   private fileDiscoveryService: FileDiscoveryService | null = null;
   private gitService: GitService | undefined = undefined;
@@ -1285,17 +1287,60 @@ export class Config {
 
   /**
    * Gets custom file exclusion patterns from configuration.
-   * TODO: This is a placeholder implementation. In the future, this could
-   * read from settings files, CLI arguments, or environment variables.
+   * These patterns are used to filter out files from search and file operations.
+   *
+   * Sources (in priority order):
+   * 1. fileFiltering.customExcludes from settings
+   * 2. Default patterns (node_modules, .git, logs, etc.)
+   *
+   * @returns Array of glob patterns to exclude
+   * @example
+   * // Returns patterns like ['*.log', 'node_modules/**', '.git/**']
+   * const excludes = config.getCustomExcludes();
    */
   getCustomExcludes(): string[] {
-    // Placeholder implementation - returns empty array for now
-    // Future implementation could read from:
-    // - User settings file
-    // - Project-specific configuration
-    // - Environment variables
-    // - CLI arguments
-    return [];
+    // Default exclusion patterns
+    const defaultExcludes = [
+      'node_modules/**',
+      '.git/**',
+      '*.log',
+      '.DS_Store',
+      'Thumbs.db',
+      '.env',
+      '.env.local',
+      '.env.*.local',
+      'dist/**',
+      'build/**',
+      '.next/**',
+      'coverage/**',
+      '.nyc_output/**',
+      '*.pyc',
+      '__pycache__/**',
+      '.venv/**',
+      'venv/**',
+    ];
+
+    // Get custom excludes from file filtering settings
+    const customExcludes = this.fileFiltering?.customExcludes ?? [];
+
+    // Merge and deduplicate
+    return [...new Set([...customExcludes, ...defaultExcludes])];
+  }
+
+  /**
+   * Check if a file should be excluded based on custom patterns.
+   * Uses minimatch for glob pattern matching.
+   *
+   * @param filePath - Path to check (relative or absolute)
+   * @returns true if file should be excluded
+   */
+  shouldExcludeFile(filePath: string): boolean {
+    const excludes = this.getCustomExcludes();
+
+    // Normalize path separators
+    const normalizedPath = filePath.replace(/\\/g, '/');
+
+    return excludes.some((pattern) => minimatch(normalizedPath, pattern));
   }
 
   getCheckpointingEnabled(): boolean {

@@ -1134,10 +1134,23 @@ export class ExtensionManager {
     this.config.refreshHierarchicalMemory();
   }
 
-  async refreshTools(): Promise<void> {
+  async refreshTools(changedServerNames?: string[]): Promise<void> {
     if (!this.config) return;
-    // FIXME: restart all mcp servers now, this can be optimized by only restarting changed ones at here
-    this.refreshMemory();
+
+    if (changedServerNames && changedServerNames.length > 0) {
+      // Optimized: only restart changed MCP servers
+      await this.config
+        .getToolRegistry()
+        .restartModifiedMcpServers(changedServerNames);
+      // Refresh skills and subagents
+      this.config.getSkillManager()?.refreshCache();
+      this.config.getSubagentManager().refreshCache();
+      // Refresh context files
+      this.config.refreshHierarchicalMemory();
+    } else {
+      // No specific changes detected, refresh everything
+      this.refreshMemory();
+    }
   }
 }
 

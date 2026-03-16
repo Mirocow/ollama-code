@@ -306,6 +306,42 @@ export class ToolRegistry {
   }
 
   /**
+   * Restarts specific MCP servers by name and re-discovers their tools.
+   * This is more efficient than restarting all servers when only some have changed.
+   *
+   * @param serverNames - Array of server names to restart
+   * @example
+   * // Restart only the 'database' and 'api' servers
+   * await registry.restartMcpServersByName(['database', 'api']);
+   */
+  async restartMcpServersByName(serverNames: string[]): Promise<void> {
+    if (serverNames.length === 0) {
+      return;
+    }
+
+    // Remove tools from specified servers in parallel
+    await Promise.all(
+      serverNames.map((serverName) => this.discoverToolsForServer(serverName)),
+    );
+  }
+
+  /**
+   * Restarts MCP servers that have been modified based on extension update info.
+   * This optimizes refresh by only restarting servers that actually changed.
+   *
+   * @param modifiedServerNames - Array of server names that were modified
+   */
+  async restartModifiedMcpServers(
+    modifiedServerNames: string[],
+  ): Promise<void> {
+    if (modifiedServerNames.length === 0) {
+      return;
+    }
+
+    await this.restartMcpServersByName(modifiedServerNames);
+  }
+
+  /**
    * Discover or re-discover tools for a single MCP server.
    * @param serverName - The name of the server to discover tools from.
    */

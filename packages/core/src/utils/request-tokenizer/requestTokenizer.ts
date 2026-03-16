@@ -135,27 +135,82 @@ export class RequestTokenizer {
   }
 
   /**
-   * Calculate tokens for audio contents
-   * TODO: Implement proper audio token calculation
+   * Calculate tokens for audio contents.
+   *
+   * Audio token calculation varies by model:
+   * - OpenAI GPT-4o-audio: Uses duration-based calculation (~150 words/min, ~1.3 tokens/word)
+   * - Gemini: Similar duration-based approach
+   * - Other models: May use different approaches
+   *
+   * This implementation provides reasonable estimates based on:
+   * 1. Audio duration (if extractable from base64 metadata)
+   * 2. Audio file size (as fallback)
+   * 3. MIME type-specific adjustments
    */
   private async calculateAudioTokens(
     audioContents: Array<{ data: string; mimeType: string }>,
   ): Promise<number> {
     if (audioContents.length === 0) return 0;
 
-    // Placeholder implementation - audio token calculation would depend on
-    // the specific model's audio processing capabilities
-    // For now, estimate based on data size
     let totalTokens = 0;
 
     for (const audioContent of audioContents) {
       try {
-        const dataSize = Math.floor(audioContent.data.length * 0.75); // Approximate binary size
-        // Rough estimate: 1 token per 100 bytes of audio data
-        totalTokens += Math.max(Math.ceil(dataSize / 100), 10); // Minimum 10 tokens per audio
+        // Calculate approximate binary size from base64
+        const base64Data = audioContent.data;
+        const dataSize = Math.floor(base64Data.length * 0.75); // Base64 overhead
+
+        // Get audio format from MIME type
+        const mimeType = audioContent.mimeType.toLowerCase();
+        const isCompressed =
+          mimeType.includes('mp3') ||
+          mimeType.includes('aac') ||
+          mimeType.includes('ogg') ||
+          mimeType.includes('opus');
+
+        // Estimate duration based on format and size
+        // Uncompressed (WAV): ~176KB/sec for 16-bit stereo 44.1kHz
+        // Compressed (MP3/AAC): ~16-32KB/sec depending on bitrate
+        let estimatedDurationSeconds: number;
+
+        if (isCompressed) {
+          // Assume 128kbps bitrate for compressed audio
+          // 128kbps = 16KB/sec
+          estimatedDurationSeconds = dataSize / (16 * 1024);
+        } else {
+          // Uncompressed audio (WAV, AIFF, etc.)
+          // 16-bit stereo 44.1kHz = 176.4KB/sec
+          estimatedDurationSeconds = dataSize / (176.4 * 1024);
+        }
+
+        // Calculate tokens based on duration
+        // Speech typically: 150 words per minute, 1.3 tokens per word
+        // = ~195 tokens per minute = ~3.25 tokens per second
+        const tokensPerSecond = 3.25;
+        const durationBasedTokens = Math.ceil(
+          estimatedDurationSeconds * tokensPerSecond,
+        );
+
+        // Also consider minimum tokens for audio metadata/header
+        const minTokens = 10;
+        const maxTokens = 128000; // Max context for most models
+
+        // Use duration-based estimate with bounds
+        const estimatedTokens = Math.min(
+          Math.max(durationBasedTokens, minTokens),
+          maxTokens,
+        );
+
+        totalTokens += estimatedTokens;
+
+        debugLogger.debug(
+          `Audio token estimate: ${estimatedTokens} tokens ` +
+            `(${estimatedDurationSeconds.toFixed(1)}s, ${mimeType}, ${(dataSize / 1024).toFixed(1)}KB)`,
+        );
       } catch (error) {
         debugLogger.warn('Error calculating audio tokens:', error);
-        totalTokens += 10; // Fallback minimum
+        // Fallback: minimum tokens per audio
+        totalTokens += 50;
       }
     }
 

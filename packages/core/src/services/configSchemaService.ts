@@ -27,12 +27,23 @@ const logger = createLogger('config-schema');
 /**
  * Approval mode enum
  */
-export const ApprovalModeSchema = z.enum(['plan', 'default', 'auto-edit', 'yolo']);
+export const ApprovalModeSchema = z.enum([
+  'plan',
+  'default',
+  'auto-edit',
+  'yolo',
+]);
 
 /**
  * Log level enum
  */
-export const LogLevelSchema = z.enum(['debug', 'info', 'warn', 'error', 'fatal']);
+export const LogLevelSchema = z.enum([
+  'debug',
+  'info',
+  'warn',
+  'error',
+  'fatal',
+]);
 
 /**
  * Output format enum
@@ -47,12 +58,22 @@ export const InputFormatSchema = z.enum(['text', 'stream-json']);
 /**
  * File encoding enum
  */
-export const FileEncodingSchema = z.enum(['utf8', 'utf16le', 'latin1', 'ascii', 'base64']);
+export const FileEncodingSchema = z.enum([
+  'utf8',
+  'utf16le',
+  'latin1',
+  'ascii',
+  'base64',
+]);
 
 /**
  * Web search provider type
  */
-export const WebSearchProviderTypeSchema = z.enum(['tavily', 'google', 'dashscope']);
+export const WebSearchProviderTypeSchema = z.enum([
+  'tavily',
+  'google',
+  'dashscope',
+]);
 
 /**
  * Auth type enum
@@ -92,6 +113,7 @@ export const FileFilteringOptionsSchema = z.object({
   respectOllamaCodeIgnore: z.boolean().optional().default(true),
   enableRecursiveFileSearch: z.boolean().optional().default(true),
   enableFuzzySearch: z.boolean().optional().default(true),
+  customExcludes: z.array(z.string()).optional().default([]),
 });
 
 /**
@@ -298,7 +320,12 @@ export const ConfigSchema = z.object({
   outputFormat: OutputFormatSchema.optional().default('text'),
   inputFormat: InputFormatSchema.optional().default('text'),
   includePartialMessages: z.boolean().optional().default(false),
-  truncateToolOutputThreshold: z.number().int().positive().optional().default(25000),
+  truncateToolOutputThreshold: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .default(25000),
   truncateToolOutputLines: z.number().int().positive().optional().default(1000),
   enableToolOutputTruncation: z.boolean().optional().default(true),
 
@@ -393,13 +420,19 @@ export class ConfigSchemaService {
   private config: ConfigSchemaType;
   private sources: ConfigSources = {};
   private layers: ConfigLayerWithValue[] = [];
-  private changeListeners: Set<(key: string, value: unknown, source: ConfigSource) => void> = new Set();
+  private changeListeners: Set<
+    (key: string, value: unknown, source: ConfigSource) => void
+  > = new Set();
   private configPath: string;
   private userConfigPath: string;
 
   constructor(private readonly targetDir: string) {
     this.configPath = path.join(targetDir, '.ollama-code', 'config.json');
-    this.userConfigPath = path.join(os.homedir(), '.ollama-code', 'settings.json');
+    this.userConfigPath = path.join(
+      os.homedir(),
+      '.ollama-code',
+      'settings.json',
+    );
 
     // Initialize with defaults
     this.config = this.getDefaults(targetDir);
@@ -423,6 +456,7 @@ export class ConfigSchemaService {
         respectOllamaCodeIgnore: true,
         enableRecursiveFileSearch: true,
         enableFuzzySearch: true,
+        customExcludes: [],
       },
       defaultFileEncoding: 'utf8',
       shellExecution: {
@@ -474,7 +508,11 @@ export class ConfigSchemaService {
    *
    * Layers are merged in priority order (higher priority wins).
    */
-  addLayer(values: Partial<ConfigSchemaType>, source: ConfigSource, priority: number = 0): void {
+  addLayer(
+    values: Partial<ConfigSchemaType>,
+    source: ConfigSource,
+    priority: number = 0,
+  ): void {
     this.layers.push({ values, source, priority });
     this.layers.sort((a, b) => b.priority - a.priority);
     logger.debug('Added config layer', { source: source.kind, priority });
@@ -515,7 +553,11 @@ export class ConfigSchemaService {
    * Load default values
    */
   private async loadDefaults(): Promise<void> {
-    this.addLayer(this.getDefaults(this.targetDir), defaultSource('initial'), 0);
+    this.addLayer(
+      this.getDefaults(this.targetDir),
+      defaultSource('initial'),
+      0,
+    );
   }
 
   /**
@@ -523,7 +565,9 @@ export class ConfigSchemaService {
    */
   private async loadUserSettings(): Promise<void> {
     if (!fs.existsSync(this.userConfigPath)) {
-      logger.debug('User settings file not found', { path: this.userConfigPath });
+      logger.debug('User settings file not found', {
+        path: this.userConfigPath,
+      });
       return;
     }
 
@@ -577,16 +621,28 @@ export class ConfigSchemaService {
     };
 
     const envValues: Partial<ConfigSchemaType> = {};
-    const contentGeneratorValue: { baseUrl?: string; apiKey?: string; timeout?: number; model?: string } = {};
+    const contentGeneratorValue: {
+      baseUrl?: string;
+      apiKey?: string;
+      timeout?: number;
+      model?: string;
+    } = {};
 
     for (const [envKey, configKey] of Object.entries(envMappings)) {
       const value = env[envKey];
       if (value !== undefined) {
         // Handle special cases
         if (configKey === 'debugMode') {
-          (envValues as Record<string, unknown>)[configKey] = value === 'true' || value === '1';
-        } else if (configKey === 'maxSessionTurns' || configKey === 'sessionTokenLimit') {
-          (envValues as Record<string, unknown>)[configKey] = parseInt(value, 10);
+          (envValues as Record<string, unknown>)[configKey] =
+            value === 'true' || value === '1';
+        } else if (
+          configKey === 'maxSessionTurns' ||
+          configKey === 'sessionTokenLimit'
+        ) {
+          (envValues as Record<string, unknown>)[configKey] = parseInt(
+            value,
+            10,
+          );
         } else if (configKey === 'contentGenerator') {
           // Handle content generator specific env vars
           if (envKey.includes('BASE_URL')) {
@@ -613,7 +669,9 @@ export class ConfigSchemaService {
 
     if (Object.keys(envValues).length > 0) {
       this.addLayer(envValues, { kind: 'env' }, 30);
-      logger.debug('Loaded environment config', { count: Object.keys(envValues).length });
+      logger.debug('Loaded environment config', {
+        count: Object.keys(envValues).length,
+      });
     }
   }
 
@@ -636,7 +694,10 @@ export class ConfigSchemaService {
             typeof (this.config as Record<string, unknown>)[key] === 'object'
           ) {
             (this.config as Record<string, unknown>)[key] = {
-              ...((this.config as Record<string, unknown>)[key] as Record<string, unknown>),
+              ...((this.config as Record<string, unknown>)[key] as Record<
+                string,
+                unknown
+              >),
               ...value,
             };
           } else {
@@ -647,7 +708,9 @@ export class ConfigSchemaService {
       }
     }
 
-    logger.debug('Merged configuration layers', { layerCount: this.layers.length });
+    logger.debug('Merged configuration layers', {
+      layerCount: this.layers.length,
+    });
   }
 
   /**
@@ -691,7 +754,10 @@ export class ConfigSchemaService {
   /**
    * Update multiple configuration values
    */
-  update(values: Partial<ConfigSchemaType>, source: ConfigSource = { kind: 'programmatic' }): void {
+  update(
+    values: Partial<ConfigSchemaType>,
+    source: ConfigSource = { kind: 'programmatic' },
+  ): void {
     for (const [key, value] of Object.entries(values)) {
       if (value !== undefined) {
         this.set(key as keyof ConfigSchemaType, value, source);
@@ -758,7 +824,11 @@ export class ConfigSchemaService {
 
     // Merge and save
     const merged = { ...existing, ...values };
-    await fs.promises.writeFile(this.configPath, JSON.stringify(merged, null, 2), 'utf-8');
+    await fs.promises.writeFile(
+      this.configPath,
+      JSON.stringify(merged, null, 2),
+      'utf-8',
+    );
 
     logger.info('Saved project config', { path: this.configPath });
   }
@@ -781,7 +851,11 @@ export class ConfigSchemaService {
 
     // Merge and save
     const merged = { ...existing, ...values };
-    await fs.promises.writeFile(this.userConfigPath, JSON.stringify(merged, null, 2), 'utf-8');
+    await fs.promises.writeFile(
+      this.userConfigPath,
+      JSON.stringify(merged, null, 2),
+      'utf-8',
+    );
 
     logger.info('Saved user config', { path: this.userConfigPath });
   }
@@ -791,20 +865,78 @@ export class ConfigSchemaService {
    */
   static getSchemaMeta(): ConfigFieldMeta[] {
     return [
-      { key: 'model', description: 'AI model to use', envKey: 'OLLAMA_CODE_MODEL', cliFlag: '--model' },
-      { key: 'debugMode', description: 'Enable debug logging', envKey: 'OLLAMA_CODE_DEBUG', cliFlag: '--debug' },
-      { key: 'approvalMode', description: 'Approval mode for tool execution', cliFlag: '--approval-mode' },
-      { key: 'outputFormat', description: 'Output format', envKey: 'OLLAMA_CODE_OUTPUT_FORMAT', cliFlag: '--output' },
-      { key: 'maxSessionTurns', description: 'Maximum turns per session', envKey: 'OLLAMA_CODE_MAX_TURNS', cliFlag: '--max-turns' },
-      { key: 'sessionTokenLimit', description: 'Token limit per session', envKey: 'OLLAMA_CODE_TOKEN_LIMIT', cliFlag: '--token-limit' },
-      { key: 'proxy', description: 'HTTP proxy URL', envKey: 'OLLAMA_CODE_PROXY', cliFlag: '--proxy' },
-      { key: 'cwd', description: 'Current working directory', cliFlag: '--cwd' },
-      { key: 'targetDir', description: 'Target project directory', cliFlag: '--target-dir' },
-      { key: 'checkpointing', description: 'Enable git checkpointing', cliFlag: '--checkpointing' },
-      { key: 'chatRecording', description: 'Record chat history', cliFlag: '--chat-recording' },
-      { key: 'interactive', description: 'Interactive mode', cliFlag: '--interactive' },
+      {
+        key: 'model',
+        description: 'AI model to use',
+        envKey: 'OLLAMA_CODE_MODEL',
+        cliFlag: '--model',
+      },
+      {
+        key: 'debugMode',
+        description: 'Enable debug logging',
+        envKey: 'OLLAMA_CODE_DEBUG',
+        cliFlag: '--debug',
+      },
+      {
+        key: 'approvalMode',
+        description: 'Approval mode for tool execution',
+        cliFlag: '--approval-mode',
+      },
+      {
+        key: 'outputFormat',
+        description: 'Output format',
+        envKey: 'OLLAMA_CODE_OUTPUT_FORMAT',
+        cliFlag: '--output',
+      },
+      {
+        key: 'maxSessionTurns',
+        description: 'Maximum turns per session',
+        envKey: 'OLLAMA_CODE_MAX_TURNS',
+        cliFlag: '--max-turns',
+      },
+      {
+        key: 'sessionTokenLimit',
+        description: 'Token limit per session',
+        envKey: 'OLLAMA_CODE_TOKEN_LIMIT',
+        cliFlag: '--token-limit',
+      },
+      {
+        key: 'proxy',
+        description: 'HTTP proxy URL',
+        envKey: 'OLLAMA_CODE_PROXY',
+        cliFlag: '--proxy',
+      },
+      {
+        key: 'cwd',
+        description: 'Current working directory',
+        cliFlag: '--cwd',
+      },
+      {
+        key: 'targetDir',
+        description: 'Target project directory',
+        cliFlag: '--target-dir',
+      },
+      {
+        key: 'checkpointing',
+        description: 'Enable git checkpointing',
+        cliFlag: '--checkpointing',
+      },
+      {
+        key: 'chatRecording',
+        description: 'Record chat history',
+        cliFlag: '--chat-recording',
+      },
+      {
+        key: 'interactive',
+        description: 'Interactive mode',
+        cliFlag: '--interactive',
+      },
       { key: 'sdkMode', description: 'SDK mode', cliFlag: '--sdk-mode' },
-      { key: 'ideMode', description: 'IDE integration mode', cliFlag: '--ide-mode' },
+      {
+        key: 'ideMode',
+        description: 'IDE integration mode',
+        cliFlag: '--ide-mode',
+      },
     ];
   }
 
@@ -822,10 +954,18 @@ export class ConfigSchemaService {
 
     if (argv['model']) cliValues.model = argv['model'] as string;
     if (argv['debug']) cliValues.debugMode = true;
-    if (argv['approval-mode']) cliValues.approvalMode = argv['approval-mode'] as z.infer<typeof ApprovalModeSchema>;
-    if (argv['output']) cliValues.outputFormat = argv['output'] as z.infer<typeof OutputFormatSchema>;
-    if (argv['max-turns']) cliValues.maxSessionTurns = argv['max-turns'] as number;
-    if (argv['token-limit']) cliValues.sessionTokenLimit = argv['token-limit'] as number;
+    if (argv['approval-mode'])
+      cliValues.approvalMode = argv['approval-mode'] as z.infer<
+        typeof ApprovalModeSchema
+      >;
+    if (argv['output'])
+      cliValues.outputFormat = argv['output'] as z.infer<
+        typeof OutputFormatSchema
+      >;
+    if (argv['max-turns'])
+      cliValues.maxSessionTurns = argv['max-turns'] as number;
+    if (argv['token-limit'])
+      cliValues.sessionTokenLimit = argv['token-limit'] as number;
     if (argv['proxy']) cliValues.proxy = argv['proxy'] as string;
     if (argv['cwd']) cliValues.cwd = argv['cwd'] as string;
     if (argv['checkpointing']) cliValues.checkpointing = true;
@@ -852,12 +992,16 @@ let configSchemaService: ConfigSchemaService | null = null;
 /**
  * Get the global config schema service instance
  */
-export function getConfigSchemaService(targetDir?: string): ConfigSchemaService {
+export function getConfigSchemaService(
+  targetDir?: string,
+): ConfigSchemaService {
   if (!configSchemaService && targetDir) {
     configSchemaService = new ConfigSchemaService(targetDir);
   }
   if (!configSchemaService) {
-    throw new Error('ConfigSchemaService not initialized. Call getConfigSchemaService with targetDir first.');
+    throw new Error(
+      'ConfigSchemaService not initialized. Call getConfigSchemaService with targetDir first.',
+    );
   }
   return configSchemaService;
 }
@@ -865,7 +1009,9 @@ export function getConfigSchemaService(targetDir?: string): ConfigSchemaService 
 /**
  * Initialize the global config schema service
  */
-export async function initConfigSchemaService(targetDir: string): Promise<ConfigSchemaService> {
+export async function initConfigSchemaService(
+  targetDir: string,
+): Promise<ConfigSchemaService> {
   configSchemaService = new ConfigSchemaService(targetDir);
   await configSchemaService.load();
   return configSchemaService;
