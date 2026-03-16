@@ -890,3 +890,19 @@ export {
   type StorageService,
   type StorageAdapter,
 } from './utils/autoStorage.js';
+
+// ============================================================================
+// Multi-File Buffer Manager
+// ============================================================================
+
+export {
+  MultiFileBufferManager,
+  getBufferManager,
+  resetBufferManager,
+  type FileBuffer,
+  type BufferListEntry,
+  type BufferEvent,
+  type BufferEventType,
+  type BufferEventListener,
+  type BufferManagerOptions,
+} from './services/MultiFileBufferManager.js';

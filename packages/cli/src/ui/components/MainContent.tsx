@@ -5,7 +5,7 @@
  */
 
 import { Box, Static } from 'ink';
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useAppContext } from '../contexts/AppContext.js';
 import { OverflowProvider } from '../contexts/OverflowContext.js';
 import { useUIState } from '../contexts/UIStateContext.js';
@@ -14,6 +14,7 @@ import { AppHeader } from './AppHeader.js';
 import { HistoryItemDisplay } from './HistoryItemDisplay.js';
 import { Notifications } from './Notifications.js';
 import { ShowMoreLines } from './ShowMoreLines.js';
+import { VirtualizedHistoryList } from './VirtualizedHistoryList.js';
 
 // Limit Gemini messages to a very high number of lines to mitigate performance
 // issues in the worst case if we somehow get an enormous response from Gemini.
@@ -79,6 +80,7 @@ function getPendingItemKey(item: HistoryItemWithoutId, index: number): string {
 /**
  * MainContent component - renders the main content area with history and pending items
  * Memoized to prevent unnecessary re-renders
+ * Uses VirtualizedHistoryList for performance with long conversations
  */
 const MainContentComponent = () => {
   const { version } = useAppContext();
@@ -99,26 +101,67 @@ const MainContentComponent = () => {
     isEditorDialogOpen,
     activePtyId,
     embeddedShellFocused,
+    terminalHeight,
   } = uiState;
+
+  // Calculate max visible items based on terminal height
+  // Reserve lines for: header (2), pending items area (~5), scroll indicators (2)
+  const maxVisibleHistoryItems = Math.max(5, (terminalHeight || 24) - 9);
+
+  // Render function for history items - memoized to prevent unnecessary re-renders
+  const renderHistoryItem = useCallback(
+    (item: (typeof history)[0], _index: number) => (
+      <HistoryItemDisplay
+        key={item.id}
+        terminalWidth={terminalWidth}
+        mainAreaWidth={mainAreaWidth}
+        availableTerminalHeight={staticAreaMaxItemHeight}
+        availableTerminalHeightGemini={MAX_GEMINI_MESSAGE_LINES}
+        item={item}
+        isPending={false}
+        commands={slashCommands}
+      />
+    ),
+    [terminalWidth, mainAreaWidth, staticAreaMaxItemHeight, slashCommands]
+  );
 
   return (
     <>
       {/* AppHeader is outside Static to allow dynamic updates (e.g., context progress bar) */}
       <AppHeader version={version} />
-      <Static key={`${historyRemountKey}-${currentModel}`} items={history}>
-        {(item) => (
-          <HistoryItemDisplay
-            key={item.id}
-            terminalWidth={terminalWidth}
-            mainAreaWidth={mainAreaWidth}
-            availableTerminalHeight={staticAreaMaxItemHeight}
-            availableTerminalHeightGemini={MAX_GEMINI_MESSAGE_LINES}
-            item={item}
-            isPending={false}
-            commands={slashCommands}
-          />
-        )}
-      </Static>
+      
+      {/* Virtualized history list for performance with long conversations */}
+      {history.length > maxVisibleHistoryItems ? (
+        <VirtualizedHistoryList
+          items={history}
+          maxVisibleItems={maxVisibleHistoryItems}
+          isFocused={!isEditorDialogOpen}
+          remountKey={`${historyRemountKey}-${currentModel}`}
+          terminalWidth={terminalWidth}
+          mainAreaWidth={mainAreaWidth}
+          staticAreaMaxItemHeight={staticAreaMaxItemHeight}
+          maxGeminiMessageLines={MAX_GEMINI_MESSAGE_LINES}
+          commands={slashCommands}
+          renderItem={renderHistoryItem}
+        />
+      ) : (
+        // Use Static for short lists (no virtualization needed)
+        <Static key={`${historyRemountKey}-${currentModel}`} items={history}>
+          {(item) => (
+            <HistoryItemDisplay
+              key={item.id}
+              terminalWidth={terminalWidth}
+              mainAreaWidth={mainAreaWidth}
+              availableTerminalHeight={staticAreaMaxItemHeight}
+              availableTerminalHeightGemini={MAX_GEMINI_MESSAGE_LINES}
+              item={item}
+              isPending={false}
+              commands={slashCommands}
+            />
+          )}
+        </Static>
+      )}
+      
       <OverflowProvider>
         <Box flexDirection="column">
           {pendingHistoryItems.map((item, i) => (
