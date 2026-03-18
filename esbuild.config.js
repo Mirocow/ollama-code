@@ -46,6 +46,11 @@ const external = [
   'bindings',
   'node-pre-gyp',
   '@mapbox/node-pre-gyp',
+  // React - must be external to avoid "Invalid hook call" error with ink
+  'react',
+  'react-dom',
+  'react-reconciler',
+  'scheduler',
 ];
 
 esbuild

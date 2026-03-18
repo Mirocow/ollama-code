@@ -38,6 +38,11 @@ const PACKAGES_TO_LINK = [
   'bindings',
   'node-pre-gyp',
   '@mapbox/node-pre-gyp',
+  // React - must be external to avoid hook errors with ink
+  'react',
+  'react-dom',
+  'react-reconciler',
+  'scheduler',
 ];
 
 const NATIVE_MODULES = ['hnswlib-node'];
