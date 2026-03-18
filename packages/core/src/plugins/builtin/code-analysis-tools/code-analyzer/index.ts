@@ -19,6 +19,10 @@ import {
 import { ToolErrorType } from '../../../../tools/tool-error.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import {
+  streamFileLines,
+  STREAMING_THRESHOLD_BYTES,
+} from '../../../../utils/fileUtils.js';
 
 // ============================================================================
 // Types
@@ -417,7 +421,9 @@ function analyzePatterns(content: string): PatternResult[] {
   const patterns: PatternResult[] = [];
 
   for (const { name, pattern, type, description } of DESIGN_PATTERNS) {
-    const matches = [...content.matchAll(new RegExp(pattern.source, pattern.flags))];
+    const matches = [
+      ...content.matchAll(new RegExp(pattern.source, pattern.flags)),
+    ];
     if (matches.length > 0) {
       const lines = content.split('\n');
       const locations = matches.slice(0, 5).map((match) => {
@@ -448,7 +454,8 @@ function analyzePatterns(content: string): PatternResult[] {
 function analyzeDependencies(content: string): DependencyInfo[] {
   const dependencies: DependencyInfo[] = [];
 
-  const importPattern = /import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
+  const importPattern =
+    /import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
   let match;
   while ((match = importPattern.exec(content)) !== null) {
     const beforeMatch = content.substring(0, match.index);
@@ -487,7 +494,11 @@ function analyzeDependencies(content: string): DependencyInfo[] {
 function calculateScore(
   metrics: ComplexityMetrics,
   issues: CodeIssue[],
-): { score: number; grade: 'A' | 'B' | 'C' | 'D' | 'F'; recommendations: string[] } {
+): {
+  score: number;
+  grade: 'A' | 'B' | 'C' | 'D' | 'F';
+  recommendations: string[];
+} {
   let score = 100;
   const recommendations: string[] = [];
 
@@ -530,25 +541,238 @@ function calculateScore(
 }
 
 // ============================================================================
+// Streaming Analysis Functions
+// ============================================================================
+
+/**
+ * Streaming complexity analysis for large files
+ */
+async function analyzeComplexityStreaming(
+  filePath: string,
+  _language: string,
+): Promise<{ metrics: ComplexityMetrics; issues: CodeIssue[] }> {
+  const issues: CodeIssue[] = [];
+  const metrics: ComplexityMetrics = {
+    linesOfCode: 0,
+    linesOfComments: 0,
+    cyclomaticComplexity: 1,
+    cognitiveComplexity: 1,
+    maintainabilityIndex: 100,
+    functions: 0,
+    classes: 0,
+    imports: 0,
+  };
+
+  await streamFileLines(filePath, (line, _lineNumber) => {
+    const trimmedLine = line.trim();
+
+    // Count lines of code vs comments
+    if (trimmedLine.length > 0 && !trimmedLine.startsWith('//')) {
+      metrics.linesOfCode++;
+    }
+    if (
+      trimmedLine.startsWith('//') ||
+      trimmedLine.startsWith('#') ||
+      trimmedLine.startsWith('/*') ||
+      trimmedLine.startsWith('*')
+    ) {
+      metrics.linesOfComments++;
+    }
+
+    // Count control flow for complexity
+    const controlPatterns = [
+      /\bif\s*\(/,
+      /\belse\s+if\s*\(/,
+      /\bfor\s*\(/,
+      /\bwhile\s*\(/,
+      /\bswitch\s*\(/,
+      /\bcase\s+/,
+      /\bcatch\s*\(/,
+      /\?\s*:/,
+    ];
+
+    for (const pattern of controlPatterns) {
+      if (pattern.test(line)) {
+        metrics.cyclomaticComplexity++;
+      }
+    }
+
+    // Count && and ||
+    const logicalOperators = (line.match(/&&|\|\|/g) || []).length;
+    metrics.cyclomaticComplexity += logicalOperators;
+
+    // Count functions
+    const functionPatterns = [
+      /\bfunction\s+\w+/,
+      /\bconst\s+\w+\s*=\s*(?:async\s*)?\(/,
+      /\b\w+\s*:\s*(?:async\s*)?\([^)]*\)\s*=>/,
+      /\basync\s+\w+\s*\(/,
+      /\bdef\s+\w+/,
+    ];
+
+    for (const pattern of functionPatterns) {
+      if (pattern.test(line)) {
+        metrics.functions++;
+      }
+    }
+
+    // Count classes
+    if (/\bclass\s+\w+/.test(line) || /\binterface\s+\w+/.test(line)) {
+      metrics.classes++;
+    }
+
+    // Count imports
+    if (/\bimport\s+.*from/.test(line) || /\brequire\s*\(/.test(line)) {
+      metrics.imports++;
+    }
+
+    return true;
+  });
+
+  metrics.cognitiveComplexity = Math.round(metrics.cyclomaticComplexity * 1.2);
+
+  // Calculate maintainability index
+  const volume = metrics.linesOfCode * 10; // Approximation
+  metrics.maintainabilityIndex = Math.max(
+    0,
+    Math.min(
+      100,
+      171 -
+        5.2 * Math.log(volume) -
+        0.23 * metrics.cyclomaticComplexity -
+        16.2 * Math.log(metrics.linesOfCode),
+    ),
+  );
+  metrics.maintainabilityIndex = Math.round(metrics.maintainabilityIndex);
+
+  // Add issues for complexity
+  if (metrics.cyclomaticComplexity > 20) {
+    issues.push({
+      type: 'complexity',
+      severity: 'error',
+      message: `High cyclomatic complexity (${metrics.cyclomaticComplexity}). Consider breaking down into smaller functions.`,
+      rule: 'complexity-max',
+      fix: 'Extract complex logic into separate functions or methods.',
+    });
+  } else if (metrics.cyclomaticComplexity > 10) {
+    issues.push({
+      type: 'complexity',
+      severity: 'warning',
+      message: `Moderate cyclomatic complexity (${metrics.cyclomaticComplexity}). Consider simplifying the logic.`,
+      rule: 'complexity-warn',
+    });
+  }
+
+  if (metrics.linesOfCode > 500) {
+    issues.push({
+      type: 'complexity',
+      severity: 'warning',
+      message: `File is too long (${metrics.linesOfCode} lines). Consider splitting into multiple files.`,
+      rule: 'max-lines',
+    });
+  }
+
+  return { metrics, issues };
+}
+
+/**
+ * Streaming security analysis for large files
+ */
+async function analyzeSecurityStreaming(
+  filePath: string,
+): Promise<CodeIssue[]> {
+  const issues: CodeIssue[] = [];
+
+  await streamFileLines(filePath, (line, _lineNumber) => {
+    for (const { pattern, message, severity } of SECURITY_PATTERNS) {
+      const regex = new RegExp(pattern.source, pattern.flags);
+      if (regex.test(line)) {
+        issues.push({
+          type: 'security',
+          severity,
+          message,
+          line: lineNumber + 1,
+          rule: 'security-' + pattern.source.substring(0, 20),
+          fix: 'Use secure alternatives and sanitize all user inputs.',
+        });
+      }
+    }
+    return true;
+  });
+
+  return issues;
+}
+
+/**
+ * Streaming dependency analysis for large files
+ */
+async function analyzeDependenciesStreaming(
+  filePath: string,
+): Promise<DependencyInfo[]> {
+  const dependencies: DependencyInfo[] = [];
+
+  await streamFileLines(filePath, (line, _lineNumber) => {
+    const importPattern =
+      /import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/;
+    const match = line.match(importPattern);
+    if (match) {
+      dependencies.push({
+        name: match[1],
+        type: 'import',
+        source: match[0],
+        line: lineNumber + 1,
+        isLocal: match[1].startsWith('.') || match[1].startsWith('/'),
+        isUsed: true,
+      });
+    }
+
+    const requirePattern = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/;
+    const requireMatch = line.match(requirePattern);
+    if (requireMatch) {
+      dependencies.push({
+        name: requireMatch[1],
+        type: 'require',
+        source: requireMatch[0],
+        line: lineNumber + 1,
+        isLocal:
+          requireMatch[1].startsWith('.') || requireMatch[1].startsWith('/'),
+        isUsed: true,
+      });
+    }
+
+    return true;
+  });
+
+  return dependencies;
+}
+
+// ============================================================================
 // Main Analysis Function
 // ============================================================================
 
-function analyzeCode(
+async function analyzeCode(
   filePath: string,
   analysisTypes: AnalysisType[],
-): CodeAnalysisResult {
+): Promise<CodeAnalysisResult> {
   if (!fs.existsSync(filePath)) {
     throw new Error(`File not found: ${filePath}`);
   }
 
-  const content = fs.readFileSync(filePath, 'utf-8');
+  const stats = fs.statSync(filePath);
   const language = detectLanguage(filePath);
   const allIssues: CodeIssue[] = [];
 
-  const runComplexity = analysisTypes.includes('complexity') || analysisTypes.includes('all');
-  const runSecurity = analysisTypes.includes('security') || analysisTypes.includes('all');
-  const runPatterns = analysisTypes.includes('patterns') || analysisTypes.includes('all');
-  const runDependencies = analysisTypes.includes('dependencies') || analysisTypes.includes('all');
+  const runComplexity =
+    analysisTypes.includes('complexity') || analysisTypes.includes('all');
+  const runSecurity =
+    analysisTypes.includes('security') || analysisTypes.includes('all');
+  const runPatterns =
+    analysisTypes.includes('patterns') || analysisTypes.includes('all');
+  const runDependencies =
+    analysisTypes.includes('dependencies') || analysisTypes.includes('all');
+
+  // Use streaming for large files (>1MB)
+  const useStreaming = stats.size > STREAMING_THRESHOLD_BYTES;
 
   let metrics: ComplexityMetrics = {
     linesOfCode: 0,
@@ -561,24 +785,51 @@ function analyzeCode(
     imports: 0,
   };
 
-  if (runComplexity) {
-    const complexityResult = analyzeComplexity(content, language);
-    metrics = complexityResult.metrics;
-    allIssues.push(...complexityResult.issues);
-  }
-
-  if (runSecurity) {
-    allIssues.push(...analyzeSecurity(content));
-  }
-
   let patterns: PatternResult[] = [];
-  if (runPatterns) {
-    patterns = analyzePatterns(content);
-  }
-
   let dependencies: DependencyInfo[] = [];
-  if (runDependencies) {
-    dependencies = analyzeDependencies(content);
+
+  if (useStreaming) {
+    // Streaming analysis for large files
+    if (runComplexity) {
+      const complexityResult = await analyzeComplexityStreaming(
+        filePath,
+        language,
+      );
+      metrics = complexityResult.metrics;
+      allIssues.push(...complexityResult.issues);
+    }
+
+    if (runSecurity) {
+      allIssues.push(...(await analyzeSecurityStreaming(filePath)));
+    }
+
+    if (runDependencies) {
+      dependencies = await analyzeDependenciesStreaming(filePath);
+    }
+
+    // Skip pattern analysis for very large files (memory intensive)
+    patterns = [];
+  } else {
+    // Standard in-memory analysis for small files
+    const content = fs.readFileSync(filePath, 'utf-8');
+
+    if (runComplexity) {
+      const complexityResult = analyzeComplexity(content, language);
+      metrics = complexityResult.metrics;
+      allIssues.push(...complexityResult.issues);
+    }
+
+    if (runSecurity) {
+      allIssues.push(...analyzeSecurity(content));
+    }
+
+    if (runPatterns) {
+      patterns = analyzePatterns(content);
+    }
+
+    if (runDependencies) {
+      dependencies = analyzeDependencies(content);
+    }
   }
 
   const summary = calculateScore(metrics, allIssues);
@@ -615,7 +866,7 @@ class CodeAnalyzerInvocation extends BaseToolInvocation<
     _updateOutput?: (output: ToolResultDisplay) => void,
   ): Promise<ToolResult> {
     try {
-      const result = analyzeCode(
+      const result = await analyzeCode(
         this.params.file,
         this.params.analysis || ['complexity', 'security', 'patterns'],
       );
@@ -642,7 +893,8 @@ ${result.summary.recommendations.map((r) => `- ${r}`).join('\n')}`;
         returnDisplay: `Analyzed ${result.file}: Score ${result.summary.score}/100 (${result.summary.grade}), ${result.issues.length} issues found`,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
         llmContent: `Error analyzing file: ${errorMessage}`,
         returnDisplay: errorMessage,
@@ -667,7 +919,7 @@ export class CodeAnalyzerTool extends BaseDeclarativeTool<
   ToolResult
 > {
   static readonly Name = 'code_analyzer';
-  
+
   constructor() {
     super(
       CodeAnalyzerTool.Name,

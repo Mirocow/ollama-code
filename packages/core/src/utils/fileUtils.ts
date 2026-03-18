@@ -300,6 +300,122 @@ export interface ProcessedFileReadResult {
   isTruncated?: boolean; // For text files, indicates if content was truncated
   originalLineCount?: number; // For text files
   linesShown?: [number, number]; // For text files [startLine, endLine] (1-based for display)
+  streamed?: boolean; // Indicates if streaming was used for large files
+}
+
+/**
+ * Process a large text file using streaming.
+ * Memory-efficient for files >1MB.
+ */
+async function processTextFileStreaming(
+  filePath: string,
+  fileSize: number,
+  rootDirectory: string,
+  offset?: number,
+  limit?: number,
+  configLineLimit?: number,
+  configCharLimit?: number,
+): Promise<ProcessedFileReadResult> {
+  const relativePathForDisplay = path
+    .relative(rootDirectory, filePath)
+    .replace(/\\/g, '/');
+
+  const startLine = offset || 0;
+  const effectiveLimit =
+    limit === undefined ? (configLineLimit ?? 1000) : limit;
+
+  const selectedLines: string[] = [];
+  let totalLines = 0;
+  let linesCollected = 0;
+  let currentCharCount = 0;
+  let charLimitReached = false;
+
+  try {
+    await streamFileLines(
+      filePath,
+      (line, lineNumber) => {
+        totalLines = lineNumber + 1;
+
+        // Skip lines before offset
+        if (lineNumber < startLine) {
+          return true;
+        }
+
+        // Check if we've collected enough lines
+        if (linesCollected >= effectiveLimit) {
+          return false; // Stop streaming
+        }
+
+        // Check character limit
+        const trimmedLine = line.trimEnd();
+        const newCharCount =
+          currentCharCount + trimmedLine.length + (linesCollected > 0 ? 1 : 0);
+
+        if (
+          Number.isFinite(configCharLimit) &&
+          newCharCount > configCharLimit!
+        ) {
+          // Truncate the current line
+          const remaining = Math.max(
+            (configCharLimit ?? 0) -
+              currentCharCount -
+              (linesCollected > 0 ? 1 : 0),
+            10,
+          );
+          selectedLines.push(
+            trimmedLine.substring(0, remaining) + '... [truncated]',
+          );
+          charLimitReached = true;
+          return false; // Stop streaming
+        }
+
+        selectedLines.push(trimmedLine);
+        currentCharCount = newCharCount;
+        linesCollected++;
+
+        return true;
+      },
+      { startLine, maxLines: effectiveLimit },
+    );
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      llmContent: `Error streaming file ${relativePathForDisplay}: ${errorMessage}`,
+      returnDisplay: `Error streaming file: ${errorMessage}`,
+      error: `Error streaming file ${filePath}: ${errorMessage}`,
+      errorType: ToolErrorType.READ_CONTENT_FAILURE,
+      streamed: true,
+    };
+  }
+
+  const originalLineCount = totalLines;
+  const actualStartLine = Math.min(startLine, originalLineCount);
+  const actualEndLine = actualStartLine + linesCollected;
+
+  const contentRangeTruncated =
+    startLine > 0 || actualEndLine < originalLineCount;
+  const isTruncated = contentRangeTruncated || charLimitReached;
+
+  let returnDisplay = '';
+  if (isTruncated) {
+    returnDisplay = `Read lines ${
+      actualStartLine + 1
+    }-${actualEndLine} of ${originalLineCount} from ${relativePathForDisplay} (streamed)`;
+    if (charLimitReached) {
+      returnDisplay += ' (truncated)';
+    }
+  } else {
+    returnDisplay = `Read ${relativePathForDisplay} (streamed)`;
+  }
+
+  return {
+    llmContent: selectedLines.join('\n'),
+    returnDisplay,
+    isTruncated,
+    originalLineCount,
+    linesShown: [actualStartLine + 1, actualEndLine],
+    streamed: true,
+  };
 }
 
 /**
@@ -377,6 +493,24 @@ export async function processSingleFileContent(
         };
       }
       case 'text': {
+        // Check if file should use streaming (>1MB)
+        const shouldStream = stats.size > STREAMING_THRESHOLD_BYTES;
+
+        if (shouldStream) {
+          debugLogger.info(
+            `Using streaming for large file: ${filePath} (${(stats.size / (1024 * 1024)).toFixed(2)}MB)`,
+          );
+          return processTextFileStreaming(
+            filePath,
+            stats.size,
+            rootDirectory,
+            offset,
+            limit,
+            config.getTruncateToolOutputLines(),
+            config.getTruncateToolOutputThreshold(),
+          );
+        }
+
         // Use BOM-aware reader to avoid leaving a BOM character in content and to support UTF-16/32 transparently
         const content = await readFileWithEncoding(filePath);
         const lines = content.split('\n').map((line) => line.trimEnd());
@@ -585,25 +719,27 @@ export async function streamLargeFile(
   let aborted = false;
 
   return new Promise((resolve, reject) => {
-    stream.on('data', (chunk: string) => {
+    stream.on('data', (chunk: string | Buffer) => {
+      const chunkStr = chunk.toString('utf-8');
+
       if (signal?.aborted || aborted) {
         stream.destroy();
         return;
       }
 
       // Count lines in chunk
-      const chunkLines = chunk.split('\n').length - 1;
+      const chunkLines = chunkStr.split('\n').length - 1;
       totalLines += chunkLines;
 
       // Check if we've reached max lines
       if (totalLines >= maxLines) {
         aborted = true;
         stream.destroy();
-        onChunk(chunk);
+        onChunk(chunkStr);
         return;
       }
 
-      onChunk(chunk);
+      onChunk(chunkStr);
     });
 
     stream.on('end', () => {
@@ -696,8 +832,8 @@ export async function streamFileLines(
       }
     };
 
-    stream.on('data', async (chunk: string) => {
-      buffer += chunk;
+    stream.on('data', async (chunk: string | Buffer) => {
+      buffer += chunk.toString('utf-8');
       await processBuffer();
     });
 
