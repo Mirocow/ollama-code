@@ -7,6 +7,13 @@
 /**
  * Initialize default MD files in storage
  * These files are user-editable and synced to model storage
+ *
+ * Now includes Memory Bank pattern from kilo.ai:
+ * - projectbrief.md: The "North Star" - what are we building
+ * - systemPatterns.md: The "Architecture" - design patterns
+ * - techContext.md: The "Constraints" - tech stack
+ * - activeContext.md: The "RAM" - current focus
+ * - progress.md: The "Map" - completed features
  */
 
 import * as fs from 'node:fs/promises';
@@ -195,6 +202,340 @@ This file contains solutions to errors encountered during development.
 [Additional notes]
 
 <!-- Update as you progress -->
+`,
+  },
+
+  // ============================================================
+  // Memory Bank Files (based on kilo.ai Memory Bank pattern)
+  // ============================================================
+
+  'memory-bank/projectbrief.md': {
+    description: 'The "North Star" - what are we building, for whom',
+    content: `<!--
+@memory-bank: true
+@file: projectbrief
+@update-frequency: rarely
+@ai-editable: false
+@user-editable: true
+
+The "North Star" - immutable core of the project.
+Update this file rarely - only when project scope fundamentally changes.
+-->
+
+# Project Brief
+
+## What Are We Building?
+
+[Describe what you are building - be specific and clear]
+
+## Who Is It For?
+
+[Describe your target users/audience]
+
+## Core Value Proposition
+
+[What unique value does this project provide?]
+
+## Goals
+
+- [Goal 1 - specific, measurable outcome]
+- [Goal 2]
+- [Goal 3]
+
+## Non-Goals
+
+What we are NOT building (important for scope):
+
+- [Non-goal 1]
+- [Non-goal 2]
+
+## Success Criteria
+
+How will we know when we've succeeded?
+
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+
+## Notes
+
+[Any additional context, constraints, or important information]
+
+---
+*This file defines the project's purpose. Update rarely.*
+`,
+  },
+
+  'memory-bank/systemPatterns.md': {
+    description: 'The "Architecture" - design patterns and decisions',
+    content: `<!--
+@memory-bank: true
+@file: systemPatterns
+@update-frequency: sometimes
+@ai-editable: true
+@user-editable: true
+
+The "Architecture" - design patterns, architectural decisions, rules of the road.
+Update when making significant architectural decisions.
+-->
+
+# System Patterns
+
+## Design Patterns
+
+### [Pattern Name 1]
+
+**When to use:**
+[When this pattern is appropriate]
+
+**Implementation:**
+\`\`\`
+[Example code or description]
+\`\`\`
+
+## Architectural Decisions
+
+### Decision: [Decision Name]
+
+**What was decided:**
+[The decision made]
+
+**Why:**
+[Rationale - this is crucial for future reference]
+
+**Consequences:**
+[What this means for the project]
+
+## Rules of the Road
+
+1. [Rule 1 - coding guideline]
+2. [Rule 2]
+3. [Rule 3]
+
+## Code Conventions
+
+### Naming
+- Variables: \`camelCase\`
+- Constants: \`SCREAMING_SNAKE_CASE\`
+- Classes: \`PascalCase\`
+- Files: \`[convention]\`
+
+### File Structure
+\`\`\`
+src/
+├── components/   # [purpose]
+├── services/     # [purpose]
+├── utils/        # [purpose]
+└── types/        # [purpose]
+\`\`\`
+
+### Testing
+- Framework: [testing framework]
+- Location: [where tests go]
+- Coverage goal: [X]%
+
+---
+*This file captures how the system is built. Update when making architectural decisions.*
+`,
+  },
+
+  'memory-bank/techContext.md': {
+    description: 'The "Constraints" - tech stack, dependencies, versions',
+    content: `<!--
+@memory-bank: true
+@file: techContext
+@update-frequency: sometimes
+@ai-editable: true
+@user-editable: true
+
+The "Constraints" - tech stack, dependencies, versions, environment setup.
+Update when adding/removing major dependencies.
+-->
+
+# Technical Context
+
+## Tech Stack
+
+| Category | Technology | Version |
+|----------|------------|---------|
+| Language | [e.g., TypeScript] | [version] |
+| Runtime | [e.g., Node.js] | [version] |
+| Framework | [e.g., React] | [version] |
+| Database | [e.g., PostgreSQL] | [version] |
+
+## Key Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| [package-name] | [version] | [what it does] |
+
+## Environment Setup
+
+### Prerequisites
+- [Requirement 1, e.g., Node.js >= 18]
+- [Requirement 2]
+
+### Installation
+\`\`\`bash
+# Clone and setup
+git clone [repo]
+cd [project]
+npm install
+\`\`\`
+
+### Configuration
+\`\`\`bash
+# Environment variables needed
+cp .env.example .env
+# Edit .env with your values
+\`\`\`
+
+## Build & Run
+
+\`\`\`bash
+# Development
+npm run dev
+
+# Build
+npm run build
+
+# Test
+npm test
+\`\`\`
+
+## Deployment
+
+[Deployment process and requirements]
+
+## Development Tools
+
+| Tool | Purpose |
+|------|---------|
+| [IDE] | [purpose] |
+| [Linter] | [purpose] |
+| [Formatter] | [purpose] |
+
+---
+*This file captures technical constraints. Update when changing tech stack.*
+`,
+  },
+
+  'memory-bank/activeContext.md': {
+    description: 'The "RAM" - current focus, decisions, next steps',
+    content: `<!--
+@memory-bank: true
+@file: activeContext
+@update-frequency: constantly
+@ai-editable: true
+@user-editable: true
+
+The "RAM" - current focus, active decisions, open questions, immediate next step.
+This file changes CONSTANTLY - update after every significant change.
+-->
+
+# Active Context
+
+## Current Focus
+
+[What are you working on RIGHT NOW? Be specific.]
+
+## Active Tasks
+
+| Task | Status | Priority | Notes |
+|------|--------|----------|-------|
+| [Task description] | 🔄 in_progress | high | [notes] |
+| [Another task] | ⏳ pending | medium | [notes] |
+| [Blocked task] | 🚫 blocked | high | blocked by: [what] |
+
+## Recent Decisions
+
+- **[Date]**: [Decision made] - because [reason]
+
+## Open Questions
+
+- [ ] [Question 1?]
+- [ ] [Question 2?]
+
+## Next Steps
+
+1. [Immediate next step - be specific]
+2. [Following step]
+3. [After that]
+
+## Current Blockers
+
+| Blocker | Impact | Possible Solution |
+|---------|--------|-------------------|
+| [What's blocked] | [Impact] | [How to resolve] |
+
+---
+*Last Updated: ${new Date().toISOString()}*
+*This file changes constantly. Keep it updated!*
+`,
+  },
+
+  'memory-bank/progress.md': {
+    description: 'The "Map" - completed features, issues, roadmap',
+    content: `<!--
+@memory-bank: true
+@file: progress
+@update-frequency: frequently
+@ai-editable: true
+@user-editable: true
+
+The "Map" - completed features, known issues, roadmap.
+Update when completing tasks or discovering issues.
+-->
+
+# Progress
+
+## Completed ✅
+
+| Feature | Completed | Notes |
+|---------|-----------|-------|
+| [Feature name] | [Date] | [Brief notes] |
+
+## In Progress 🔄
+
+| Feature | Started | Progress | Blocker |
+|---------|---------|----------|---------|
+| [Feature name] | [Date] | [X]% | [if any] |
+
+## Known Issues
+
+| Issue | Severity | Status | Workaround |
+|-------|----------|--------|------------|
+| [Issue description] | medium | open | [workaround if any] |
+
+## Roadmap
+
+### Current Milestone: [Milestone Name]
+
+- [ ] [Task 1]
+- [ ] [Task 2]
+- [ ] [Task 3]
+
+### Upcoming
+
+1. **[Next Milestone]** - [Brief description]
+2. **[Future Milestone]** - [Brief description]
+
+## Milestones
+
+| Milestone | Target | Status |
+|-----------|--------|--------|
+| [Milestone 1] | [Date] | ✅ completed |
+| [Milestone 2] | [Date] | 🔄 in_progress |
+| [Milestone 3] | [Date] | 📋 planned |
+
+## Metrics
+
+| Metric | Value | Target |
+|--------|-------|--------|
+| Test Coverage | [X]% | [Y]% |
+| Open Issues | [X] | [Y] |
+
+---
+*This file tracks the journey. Update when completing tasks or discovering issues.*
 `,
   },
 };

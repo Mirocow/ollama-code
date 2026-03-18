@@ -6,13 +6,14 @@
 
 /**
  * Resume Context Loader Service
- * 
+ *
  * Loads context from storage when resuming a session:
  * - Active plans and their progress
  * - Current tasks from todos
  * - Session context and progress
  * - Knowledge relevant to current work
- * 
+ * - Memory Bank files (NEW: kilo.ai Memory Bank pattern)
+ *
  * Provides hints to the model about what was being worked on.
  */
 
@@ -21,6 +22,9 @@ import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import { getOllamaDir } from '../utils/paths.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
+
+// Memory Bank imports
+import { getMemoryBank } from '../memory-bank/index.js';
 
 const debugLogger = createDebugLogger('RESUME_CONTEXT');
 
@@ -41,8 +45,23 @@ export interface ResumedContext {
   sessionContext: SessionContextData | null;
   /** Relevant knowledge entries */
   relevantKnowledge: KnowledgeEntry[];
+  /** Memory Bank context (NEW) */
+  memoryBankContext: MemoryBankContext | null;
   /** Hint for the model */
   modelHint: string;
+}
+
+export interface MemoryBankContext {
+  /** Whether memory bank is initialized */
+  initialized: boolean;
+  /** Project brief summary */
+  projectBrief?: string;
+  /** Active context summary */
+  activeContext?: string;
+  /** Progress summary */
+  progress?: string;
+  /** Formatted hint for model */
+  hint: string;
 }
 
 export interface PlanSummary {
@@ -125,6 +144,9 @@ export class ResumeContextLoader extends EventEmitter {
     debugLogger.info('[ResumeContext] Loading resume context...');
 
     try {
+      // Load Memory Bank first (NEW - kilo.ai pattern)
+      const memoryBankContext = await this.loadMemoryBankContext();
+      
       // Load all relevant data from storage
       const [plans, todos, sessionContext, knowledge] = await Promise.all([
         this.loadPlans(),
@@ -134,13 +156,13 @@ export class ResumeContextLoader extends EventEmitter {
       ]);
 
       // Check if there's anything to resume
-      if (plans.length === 0 && todos.length === 0 && !sessionContext) {
+      if (plans.length === 0 && todos.length === 0 && !sessionContext && !memoryBankContext?.initialized) {
         debugLogger.info('[ResumeContext] No context found to resume');
         return null;
       }
 
-      // Build model hint
-      const modelHint = this.buildModelHint(plans, todos, sessionContext, knowledge);
+      // Build model hint (now includes memory bank)
+      const modelHint = this.buildModelHint(plans, todos, sessionContext, knowledge, memoryBankContext);
 
       const context: ResumedContext = {
         sessionId: sessionId || 'unknown',
@@ -149,6 +171,7 @@ export class ResumeContextLoader extends EventEmitter {
         todos,
         sessionContext,
         relevantKnowledge: knowledge,
+        memoryBankContext,
         modelHint,
       };
 
@@ -157,12 +180,49 @@ export class ResumeContextLoader extends EventEmitter {
         todos: todos.length,
         hasContext: !!sessionContext,
         knowledge: knowledge.length,
+        memoryBankInitialized: memoryBankContext?.initialized,
       });
 
       this.emit('context_loaded', context);
       return context;
     } catch (error) {
       debugLogger.error('[ResumeContext] Failed to load context:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Load Memory Bank context (kilo.ai pattern)
+   */
+  private async loadMemoryBankContext(): Promise<MemoryBankContext | null> {
+    try {
+      const memoryBank = getMemoryBank();
+      
+      // Check if memory bank is initialized
+      const isInitialized = await memoryBank.isInitialized();
+      
+      if (!isInitialized) {
+        debugLogger.info('[ResumeContext] Memory Bank not initialized');
+        return {
+          initialized: false,
+          hint: 'Memory Bank not initialized. Initialize it for long-term context.',
+        };
+      }
+
+      // Load quick start context (essential files only)
+      const quickStart = await memoryBank.quickStartRead();
+      
+      const hint = memoryBank.getStartupPrompt();
+      
+      return {
+        initialized: true,
+        projectBrief: quickStart.projectBrief?.what || quickStart.projectBrief?.notes,
+        activeContext: quickStart.activeContext?.currentFocus,
+        progress: quickStart.progress?.completed?.map(c => c.name).join(', '),
+        hint,
+      };
+    } catch (error) {
+      debugLogger.error('[ResumeContext] Failed to load Memory Bank:', error);
       return null;
     }
   }
@@ -404,6 +464,7 @@ export class ResumeContextLoader extends EventEmitter {
     todos: TodoSummary[],
     sessionContext: SessionContextData | null,
     knowledge: KnowledgeEntry[],
+    memoryBankContext?: MemoryBankContext | null,
   ): string {
     const lines: string[] = [
       '<resume-context>',
@@ -412,6 +473,30 @@ export class ResumeContextLoader extends EventEmitter {
       'Your previous work context has been loaded from persistent storage:',
       '',
     ];
+
+    // Memory Bank section (NEW - first priority)
+    if (memoryBankContext?.initialized) {
+      lines.push('### 📚 Memory Bank');
+      lines.push('*Your long-term memory has been restored. Key context:*');
+      lines.push('');
+      
+      if (memoryBankContext.projectBrief) {
+        lines.push(`**Project**: ${this.truncate(memoryBankContext.projectBrief, 100)}`);
+      }
+      if (memoryBankContext.activeContext) {
+        lines.push(`**Current Focus**: ${memoryBankContext.activeContext}`);
+      }
+      if (memoryBankContext.progress) {
+        lines.push(`**Completed**: ${this.truncate(memoryBankContext.progress, 100)}`);
+      }
+      lines.push('');
+      lines.push('*Memory Bank Protocol: Update activeContext.md and progress.md at end of session*');
+      lines.push('');
+    } else if (memoryBankContext && !memoryBankContext.initialized) {
+      lines.push('### 📚 Memory Bank');
+      lines.push(memoryBankContext.hint);
+      lines.push('');
+    }
 
     // Plans section
     if (plans.length > 0) {

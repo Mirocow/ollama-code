@@ -224,6 +224,132 @@ export class StorageHintsService extends EventEmitter {
   }
 
   /**
+   * Get Memory Bank reminder hint
+   */
+  getMemoryBankReminder(): StorageHint {
+    return {
+      type: 'periodic_reminder',
+      priority: 'medium',
+      message: this.formatMemoryBankReminderMessage(),
+      suggestedActions: [
+        'Update activeContext.md with current focus',
+        'Update progress.md with completed items',
+        'Check systemPatterns.md before making architectural changes',
+      ],
+    };
+  }
+
+  /**
+   * Get Memory Bank session end reminder
+   */
+  getMemoryBankSessionEndHint(): StorageHint {
+    return {
+      type: 'session_end',
+      priority: 'high',
+      message: this.formatMemoryBankSessionEndMessage(),
+      suggestedActions: [
+        'model_storage operation=merge namespace=memory-bank key="activeContext" value="{...}"',
+        'model_storage operation=merge namespace=memory-bank key="progress" value="{...}"',
+      ],
+    };
+  }
+
+  /**
+   * Get Memory Bank best practices prompt section
+   */
+  getMemoryBankBestPracticesPrompt(): string {
+    return `
+## Memory Bank Protocol
+
+The Memory Bank is your "long-term brain" - structured markdown files that persist across sessions.
+
+### Core Files
+
+| File | Purpose | Update Frequency |
+|------|---------|------------------|
+| projectbrief.md | The "North Star" - what, who, why | Rarely |
+| systemPatterns.md | The "Architecture" - patterns, decisions | Sometimes |
+| techContext.md | The "Constraints" - stack, dependencies | Sometimes |
+| activeContext.md | The "RAM" - current focus, next steps | Constantly |
+| progress.md | The "Map" - completed, issues, roadmap | Frequently |
+
+### Protocol
+
+1. **Startup Read**: Memory Bank is loaded at session start
+2. **Execution Reference**: Check systemPatterns.md before suggesting solutions
+3. **Write-Back**: Update activeContext.md and progress.md at end of task/session
+
+### When to Update
+
+- **activeContext.md**: After every significant change, decision, or when blocked
+- **progress.md**: When completing tasks, discovering issues, or planning next steps
+- **systemPatterns.md**: When making architectural decisions
+- **techContext.md**: When adding/removing dependencies
+
+### Example Updates
+
+\`\`\`json
+// Update active context
+model_storage operation=merge namespace=memory-bank key="activeContext" value='{
+  "currentFocus": "Implementing authentication flow",
+  "nextSteps": ["Add OAuth support", "Write tests"],
+  "lastUpdated": "<timestamp>"
+}'
+
+// Mark task complete
+model_storage operation=merge namespace=memory-bank key="progress" value='{
+  "completed": [{"name": "Auth flow", "completedAt": "<date>"}]
+}'
+\`\`\`
+
+### Location
+
+Memory Bank files are stored in: \`~/.ollama-code/storage/md/memory-bank/\`
+
+You can edit them directly - changes will be detected automatically.
+`;
+  }
+
+  private formatMemoryBankReminderMessage(): string {
+    return `📚 **Memory Bank Reminder**
+
+Keep your Memory Bank updated for persistent context:
+
+- **activeContext.md**: What are you working on RIGHT NOW?
+- **progress.md**: What have you completed?
+
+Update these files at the end of each task or session.
+
+Use \`model_storage operation=merge namespace=memory-bank key="activeContext"\` to update.`;
+  }
+
+  private formatMemoryBankSessionEndMessage(): string {
+    return `📤 **Session Ending - Update Your Memory Bank**
+
+Before ending, update your Memory Bank files:
+
+1. **activeContext.md** - Current focus and next steps
+2. **progress.md** - What was completed this session
+
+\`\`\`json
+// Update active context
+model_storage operation=merge namespace=memory-bank key="activeContext" value='{
+  "currentFocus": "...",
+  "nextSteps": ["...", "..."],
+  "lastUpdated": "<timestamp>"
+}'
+
+// Update progress  
+model_storage operation=merge namespace=memory-bank key="progress" value='{
+  "completed": [...],
+  "knownIssues": [...]
+}'
+\`\`\`
+
+**Your Memory Bank persists across sessions. Keep it updated!**`;
+  }
+
+  /**
    * Get storage best practices prompt section
    */
   getStorageBestPracticesPrompt(): string {
