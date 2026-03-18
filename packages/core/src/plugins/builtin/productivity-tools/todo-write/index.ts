@@ -197,6 +197,7 @@ Skip this tool ONLY if:
 * \`pending\`: Task not yet started.
 * \`in_progress\`: Task currently being worked on (limit to **ONE** at a time).
 * \`completed\`: Task finished successfully.
+* \`blocked\`: Task blocked by dependencies (auto-set).
 
 ### 2. Management Rules
 * **Real-time updates**: Update task status as you work.
@@ -217,6 +218,47 @@ Skip this tool ONLY if:
 * Define specific, actionable items.
 * Break complex tasks into small, manageable steps.
 * Use clear, descriptive names for each task.
+
+## Verification System
+
+Tasks can have automatic verification steps:
+
+\`\`\`json
+{
+  "id": "task-1",
+  "content": "Create authentication",
+  "verification": {
+    "steps": [
+      {"type": "file_exists", "params": {"path": "src/auth.ts"}},
+      {"type": "test_pass", "params": {"testPath": "auth.test.ts"}}
+    ],
+    "required": true
+  }
+}
+\`\`\`
+
+Verification types: \`file_exists\`, \`file_contains\`, \`command_success\`, \`test_pass\`, \`lint_pass\`, \`type_check\`, \`build_success\`
+
+Use \`verify=true\` when marking completed to run verification.
+
+## Dependencies
+
+Tasks can depend on other tasks:
+
+\`\`\`json
+{
+  "id": "task-2",
+  "content": "Write tests",
+  "dependencies": ["task-1"]
+}
+\`\`\`
+
+If dependencies not satisfied, status becomes \`blocked\`.
+
+## Storage Integration
+
+Todos are automatically saved to \`model_storage\` namespace \`todos\` and persist across sessions.
+Use \`exit_plan_mode\` to link todos to an active plan.
 
 ---
 When in doubt, use this tool. Proactive task management ensures all requirements are met and demonstrates a systematic approach.

@@ -2184,17 +2184,22 @@ const storageToolsPlugin: PluginDefinition = {
     {
       priority: 1,
       content:
-        'model_storage: AI-internal key-value storage. Use for roadmaps, knowledge base, session data, metrics. NOT for user-requested memory saves (use save_memory for that). Supports TTL, metadata, batch operations.',
+        'model_storage: AI-internal key-value storage with semantic search. Use for roadmaps, knowledge base, session data. Operations: set/get/delete/list, search (semantic), findSimilar, addWithEmbedding. NOT for user-requested memory saves (use save_memory).',
     },
     {
       priority: 2,
       content:
-        'TOOL CHOICE: AI needs to store roadmap/knowledge/patterns → model_storage. User says "Remember X" → save_memory. model_storage is automatic (no confirmation), JSON format, full CRUD. save_memory requires confirmation, Markdown format, add only.',
+        'STORAGE BEST PRACTICES: (1) Use search instead of list to save context. (2) Use addWithEmbedding for important patterns to enable semantic search. (3) Save session progress in context namespace for resume. (4) Link todos to plans for tracking.',
     },
     {
       priority: 3,
       content:
-        'NAMESPACES: roadmap (plans), session (temp, cleared on exit), knowledge (learned patterns), context (current task), learning (tool corrections), metrics (stats). Use TTL for temporary data, tags for categorization.',
+        'SESSION WORKFLOW: Start → search "current task progress" in context. End → save session_progress. Use knowledge namespace with embeddings for discovered patterns. Use learning namespace for error solutions.',
+    },
+    {
+      priority: 4,
+      content:
+        'NAMESPACES: roadmap (plans), session (temp), knowledge (patterns with embeddings), context (current task), learning (error solutions), plans (active plans, TTL 7d), todos (tasks). SEMANTIC SEARCH requires nomic-embed-text model.',
     },
   ],
 

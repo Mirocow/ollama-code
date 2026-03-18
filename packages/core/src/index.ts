@@ -870,6 +870,23 @@ export {
 } from './plugins/builtin/productivity-tools/exit-plan-mode/index.js';
 
 // ============================================================================
+// Session Reminder (storage-based context)
+// ============================================================================
+
+export {
+  getSessionReminders,
+  getSessionContextForPrompt,
+  formatRemindersForPrompt,
+  getActivePlan as getStorageActivePlan,
+  getActiveTodos,
+  type SessionReminder,
+  type ReminderType,
+  type ReminderPriority,
+  type PlanData as StoragePlanData,
+  type TodosData,
+} from './services/sessionReminder.js';
+
+// ============================================================================
 // Auto Storage (Model's Notebook)
 // ============================================================================
 

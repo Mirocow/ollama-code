@@ -8,6 +8,7 @@ import { useState, useCallback } from 'react';
 import { SessionService, type Config } from '@ollama-code/ollama-code-core';
 import { buildResumedHistoryItems } from '../utils/resumeHistoryUtils.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
+import { getSessionContextForPrompt } from '@ollama-code/ollama-code-core';
 
 export interface UseResumeCommandOptions {
   config: Config | null;
@@ -57,6 +58,22 @@ export function useResumeCommand(
 
       // Start new session in UI context.
       startNewSession(sessionId);
+
+      // Get storage context reminder for resumed session
+      try {
+        const storageReminder = await getSessionContextForPrompt(sessionId, true);
+        if (storageReminder) {
+          // Prepend storage reminder to the resumed session
+          const reminderItem = {
+            type: 'user' as const,
+            text: storageReminder,
+          };
+          historyManager.loadHistory([reminderItem]);
+        }
+      } catch (error) {
+        // Ignore errors getting storage reminder
+        console.warn('[Resume] Failed to get storage reminder:', error);
+      }
 
       // Reset UI history.
       const uiHistoryItems = buildResumedHistoryItems(sessionData, config);
