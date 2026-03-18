@@ -519,7 +519,9 @@ export interface TodoResultDisplay {
   todos: Array<{
     id: string;
     content: string;
-    status: 'pending' | 'in_progress' | 'completed';
+    status: 'pending' | 'in_progress' | 'completed' | 'blocked';
+    priority?: 'high' | 'medium' | 'low';
+    notes?: string;
   }>;
 }
 

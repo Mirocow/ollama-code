@@ -9,6 +9,7 @@
  *
  * Saves plans to model_storage via the 'plans' namespace.
  * Plans are linked to todos for progress tracking.
+ * Enhanced with knowledge base integration and verification support.
  * Data is stored in: ~/.ollama-code/projects/<hash>/storage/<session-id>.json
  * Under the 'plans' namespace with key 'current'.
  */
@@ -33,6 +34,7 @@ import {
   StorageNamespaces,
 } from '../../storage-tools/index.js';
 import { linkTodosToPlan } from '../todo-write/index.js';
+import { getKnowledgeBase } from '../../../../knowledge/knowledge-base.js';
 
 const debugLogger = createDebugLogger('EXIT_PLAN_MODE');
 
@@ -43,20 +45,51 @@ const PLANS_KEY = 'current';
 // Default TTL for plans: 7 days
 const PLAN_DEFAULT_TTL = 7 * 24 * 60 * 60;
 
+export interface PlanVerification {
+  autoVerify: boolean;
+  checkCommands: string[];
+  requiredFiles: string[];
+  testCommands: string[];
+}
+
+export interface PlanCheckpoint {
+  id: string;
+  step: number;
+  description: string;
+  timestamp: string;
+  verified: boolean;
+  files: string[];
+  notes?: string;
+}
+
 export interface PlanData {
   id: string;
   plan: string;
-  status: 'active' | 'completed' | 'abandoned';
+  status: 'active' | 'completed' | 'abandoned' | 'paused';
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
   todos?: Array<{ id: string; content: string; status: string }>;
   progress?: number;
   sessionId: string;
+  // Enhanced fields
+  verification?: PlanVerification;
+  checkpoints?: PlanCheckpoint[];
+  tags?: string[];
+  knowledgeId?: string; // Link to knowledge base entry
 }
 
 export interface ExitPlanModeParams {
   plan: string;
+  // Enhanced parameters
+  verification?: {
+    autoVerify?: boolean;
+    checkCommands?: string[];
+    requiredFiles?: string[];
+    testCommands?: string[];
+  };
+  tags?: string[];
+  saveToKnowledge?: boolean;
 }
 
 /**
@@ -116,6 +149,39 @@ const exitPlanModeToolSchemaData: FunctionDeclaration = {
         type: 'string',
         description:
           'The plan you came up with, that you want to run by the user for approval. Supports markdown. The plan should be pretty concise.',
+      },
+      verification: {
+        type: 'object',
+        properties: {
+          autoVerify: {
+            type: 'boolean',
+            description: 'Automatically verify plan completion',
+          },
+          checkCommands: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Commands to run for verification',
+          },
+          requiredFiles: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Files that must exist for plan to be complete',
+          },
+          testCommands: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Test commands to run',
+          },
+        },
+      },
+      tags: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Tags for categorizing the plan',
+      },
+      saveToKnowledge: {
+        type: 'boolean',
+        description: 'Save plan to knowledge base for semantic search',
       },
     },
     required: ['plan'],
@@ -189,7 +255,7 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
   }
 
   async execute(_signal: AbortSignal): Promise<ToolResult> {
-    const { plan } = this.params;
+    const { plan, verification, tags, saveToKnowledge } = this.params;
     const sessionId = this.config.getSessionId() || 'default';
 
     try {
@@ -213,6 +279,13 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
         todos: [],
         progress: 0,
         sessionId,
+        tags,
+        verification: verification ? {
+          autoVerify: verification.autoVerify ?? false,
+          checkCommands: verification.checkCommands || [],
+          requiredFiles: verification.requiredFiles || [],
+          testCommands: verification.testCommands || [],
+        } : undefined,
       };
 
       await storageSet(PLANS_NAMESPACE, PLANS_KEY, planData, {
@@ -223,14 +296,58 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
       // Link existing todos to this plan
       await linkTodosToPlan(this.planId);
 
+      // Save to knowledge base if requested
+      let knowledgeInfo = '';
+      if (saveToKnowledge) {
+        try {
+          const kb = getKnowledgeBase();
+          await kb.initialize();
+          
+          const entry = await kb.add(plan, 'plans', {
+            key: this.planId,
+            tags: tags || ['plan'],
+          });
+          
+          // Update plan with knowledge ID
+          planData.knowledgeId = entry.id;
+          await storageSet(PLANS_NAMESPACE, PLANS_KEY, planData, {
+            scope: 'project',
+            ttl: PLAN_DEFAULT_TTL,
+          });
+          
+          knowledgeInfo = '\n- Saved to knowledge base for semantic search';
+          debugLogger.info(`[ExitPlanMode] Plan saved to knowledge base with ID: ${entry.id}`);
+        } catch (error) {
+          debugLogger.warn('[ExitPlanMode] Failed to save to knowledge base:', error);
+        }
+      }
+
       debugLogger.info(`[ExitPlanMode] Plan saved with ID: ${this.planId}`);
+
+      // Build verification info
+      let verificationInfo = '';
+      if (verification) {
+        const parts: string[] = [];
+        if (verification.requiredFiles?.length) {
+          parts.push(`Required files: ${verification.requiredFiles.length}`);
+        }
+        if (verification.checkCommands?.length) {
+          parts.push(`Check commands: ${verification.checkCommands.length}`);
+        }
+        if (verification.testCommands?.length) {
+          parts.push(`Test commands: ${verification.testCommands.length}`);
+        }
+        if (parts.length > 0) {
+          verificationInfo = `\n- Verification: ${parts.join(', ')}`;
+        }
+      }
 
       const llmMessage = `User has approved your plan. You can now start coding. Start with updating your todo list if applicable.
 
 <system-reminder>
 Plan saved: "${plan}"
 Plan ID: ${this.planId}
-TTL: 7 days
+TTL: 7 days${verificationInfo}${knowledgeInfo}
 </system-reminder>`;
       const displayMessage = 'User approved the plan.';
 

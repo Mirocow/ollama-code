@@ -51,6 +51,17 @@ import { createDebugLogger } from '../../../utils/debugLogger.js';
 import { uiTelemetryService } from '../../../services/uiTelemetryService.js';
 import { getOllamaDir, getProjectStorageDir } from '../../../utils/paths.js';
 
+// Knowledge integration imports
+import {
+  performSearch,
+  performFindSimilar,
+  performAddWithEmbedding,
+  performKnowledgeStats,
+} from '../../../knowledge/storage-integration.js';
+
+// Streaming imports
+import { STREAMING_THRESHOLD_BYTES } from '../../../utils/fileUtils.js';
+
 const debugLogger = createDebugLogger('STORAGE_TOOL');
 
 // ============================================================================
@@ -382,12 +393,14 @@ NAMESPACES (predefined):
 
 OPERATIONS:
 - set/get/delete/list/append/merge/clear/exists/stats/batch
+- search/findSimilar/addWithEmbedding/knowledgeStats (NEW: semantic search)
 
 FEATURES:
 - TTL (Time-To-Live): Auto-expire data after specified seconds
 - Tags: Categorize entries for filtering
 - Metadata: Track createdAt, updatedAt, version
-- Scope: global (all projects) or project-specific`,
+- Scope: global (all projects) or project-specific
+- Semantic Search: AI-powered search using embeddings (NEW)`,
   parametersJsonSchema: {
     type: 'object',
     properties: {
@@ -406,6 +419,11 @@ FEATURES:
           'batch',
           'backup',
           'restore',
+          // Knowledge operations (NEW)
+          'search',
+          'findSimilar',
+          'addWithEmbedding',
+          'knowledgeStats',
         ],
         description: 'Operation to perform on storage',
       },
@@ -447,6 +465,50 @@ FEATURES:
       includeMetadata: {
         type: 'boolean',
         description: 'Include metadata in get/list results (default: false)',
+      },
+      // NEW: Search parameters
+      query: {
+        type: 'string',
+        description: 'Search query for semantic/keyword search',
+      },
+      namespaces: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Namespaces to search in (for search operation)',
+      },
+      mode: {
+        type: 'string',
+        enum: ['semantic', 'keyword', 'hybrid'],
+        description: 'Search mode: semantic (embeddings), keyword (text match), or hybrid',
+      },
+      limit: {
+        type: 'number',
+        description: 'Maximum number of results to return (default: 10)',
+      },
+      threshold: {
+        type: 'number',
+        description: 'Similarity threshold for semantic search (0-1, default: 0.7)',
+      },
+      sameNamespace: {
+        type: 'boolean',
+        description: 'For findSimilar: only search in same namespace',
+      },
+      autoExtractEntities: {
+        type: 'boolean',
+        description: 'Automatically extract entities when adding with embedding',
+      },
+      // Streaming parameters
+      streamLines: {
+        type: 'boolean',
+        description: 'For get operation: return content line by line for large string values',
+      },
+      startLine: {
+        type: 'number',
+        description: 'For streamLines: starting line number (0-based)',
+      },
+      maxLines: {
+        type: 'number',
+        description: 'For streamLines: maximum lines to return',
       },
       actions: {
         type: 'array',
@@ -592,7 +654,14 @@ interface StorageParams {
     | 'stats'
     | 'batch'
     | 'backup'
-    | 'restore';
+    | 'restore'
+    // Knowledge operations (NEW)
+    | 'search'
+    | 'findSimilar'
+    | 'addWithEmbedding'
+    | 'verifyTodo'
+    | 'verifyPlan'
+    | 'knowledgeStats';
   namespace: string;
   key?: string;
   value?: unknown;
@@ -608,6 +677,25 @@ interface StorageParams {
     value?: unknown;
     ttl?: number;
     tags?: string[];
+  }>;
+  // Search parameters (NEW)
+  query?: string;
+  namespaces?: string[];
+  mode?: 'semantic' | 'keyword' | 'hybrid';
+  limit?: number;
+  threshold?: number;
+  sameNamespace?: boolean;
+  autoExtractEntities?: boolean;
+  // Streaming parameters
+  streamLines?: boolean;
+  startLine?: number;
+  maxLines?: number;
+  verificationSteps?: Array<{
+    id: string;
+    description: string;
+    type: string;
+    params: Record<string, unknown>;
+    status: string;
   }>;
 }
 
@@ -999,7 +1087,15 @@ async function performSet(params: StorageParams): Promise<ToolResult> {
 }
 
 async function performGet(params: StorageParams): Promise<ToolResult> {
-  const { namespace, key, scope = 'global', includeMetadata = false } = params;
+  const { 
+    namespace, 
+    key, 
+    scope = 'global', 
+    includeMetadata = false,
+    streamLines = false,
+    startLine = 0,
+    maxLines = 1000,
+  } = params;
 
   if (!key) {
     return {
@@ -1027,6 +1123,45 @@ async function performGet(params: StorageParams): Promise<ToolResult> {
     };
   }
 
+  // Handle streaming for large string values
+  if (streamLines && typeof entry.value === 'string') {
+    const content = entry.value;
+    const lines = content.split('\n');
+    const totalLines = lines.length;
+    const endLine = Math.min(startLine + maxLines, totalLines);
+    const selectedLines = lines.slice(startLine, endLine);
+    
+    const isTruncated = endLine < totalLines || startLine > 0;
+    
+    let returnDisplay = `Retrieved lines ${startLine + 1}-${endLine} of ${totalLines}`;
+    if (isTruncated) {
+      returnDisplay += ' (streamed)';
+    }
+    
+    return {
+      llmContent: selectedLines.join('\n'),
+      returnDisplay,
+    };
+  }
+
+  // Handle large JSON values with streaming-like behavior
+  const valueStr = typeof entry.value === 'string' 
+    ? entry.value 
+    : JSON.stringify(entry.value, null, 2);
+  
+  // Check if value is large and should be truncated
+  if (valueStr.length > STREAMING_THRESHOLD_BYTES && !streamLines) {
+    const lines = valueStr.split('\n');
+    const totalLines = lines.length;
+    const endLine = Math.min(maxLines, totalLines);
+    const selectedLines = lines.slice(0, endLine);
+    
+    return {
+      llmContent: selectedLines.join('\n') + `\n\n... [truncated, use streamLines=true with startLine/maxLines to read more]`,
+      returnDisplay: `Retrieved: ${key} (truncated, ${totalLines} lines total)`,
+    };
+  }
+
   if (includeMetadata) {
     return {
       llmContent: JSON.stringify(
@@ -1039,7 +1174,7 @@ async function performGet(params: StorageParams): Promise<ToolResult> {
   }
 
   return {
-    llmContent: JSON.stringify(entry.value, null, 2),
+    llmContent: typeof entry.value === 'string' ? entry.value : JSON.stringify(entry.value, null, 2),
     returnDisplay: `Retrieved: ${key}`,
   };
 }
@@ -1766,6 +1901,15 @@ class StorageToolInvocation extends BaseToolInvocation<
           return await performBackup(this.params);
         case 'restore':
           return await performRestore(this.params);
+        // Knowledge operations (NEW)
+        case 'search':
+          return await performSearch(this.params);
+        case 'findSimilar':
+          return await performFindSimilar(this.params);
+        case 'addWithEmbedding':
+          return await performAddWithEmbedding(this.params, performSet);
+        case 'knowledgeStats':
+          return await performKnowledgeStats();
         default:
           return {
             llmContent: `Error: Unknown operation "${operation}"`,
@@ -1832,6 +1976,13 @@ export class StorageTool extends BaseDeclarativeTool<
       'exists',
       'stats',
       'batch',
+      'backup',
+      'restore',
+      // Knowledge operations
+      'search',
+      'findSimilar',
+      'addWithEmbedding',
+      'knowledgeStats',
     ];
     if (!validOperations.includes(operation)) {
       return `Invalid operation "${operation}". Valid operations: ${validOperations.join(', ')}`;
@@ -1839,7 +1990,7 @@ export class StorageTool extends BaseDeclarativeTool<
 
     // Key is required for most operations
     if (
-      ['set', 'get', 'delete', 'append', 'merge', 'exists'].includes(
+      ['set', 'get', 'delete', 'append', 'merge', 'exists', 'findSimilar', 'addWithEmbedding'].includes(
         operation,
       ) &&
       !params.key
@@ -1847,9 +1998,9 @@ export class StorageTool extends BaseDeclarativeTool<
       return `Parameter "key" is required for ${operation} operation.`;
     }
 
-    // Value is required for set/append/merge
+    // Value is required for set/append/merge/addWithEmbedding
     if (
-      ['set', 'append', 'merge'].includes(operation) &&
+      ['set', 'append', 'merge', 'addWithEmbedding'].includes(operation) &&
       params.value === undefined
     ) {
       return `Parameter "value" is required for ${operation} operation.`;
