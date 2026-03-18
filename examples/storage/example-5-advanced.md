@@ -1,9 +1,11 @@
 # Пример 5: Продвинутые возможности
 
 ## Описание
+
 Комплексный пример использования всех возможностей storage: batch операции, TTL, backup/restore.
 
 ## Запуск
+
 ```bash
 ollama-code --file ./examples/storage/example-5-advanced.md
 ```
@@ -14,133 +16,168 @@ ollama-code --file ./examples/storage/example-5-advanced.md
 
 ### 1. Batch операции
 
-Выполни несколько операций за раз:
+Используй model_storage для выполнения нескольких операций за раз:
 
-```json
-model_storage operation=batch namespace=knowledge actions=[
-  {"operation": "set", "key": "api_version", "value": "2.0.0"},
-  {"operation": "set", "key": "api_base_url", "value": "https://api.example.com"},
-  {"operation": "set", "key": "api_timeout", "value": 30000},
-  {"operation": "set", "key": "api_retries", "value": 3}
-]
-```
+- operation: batch
+- namespace: knowledge
+- actions: массив из 4 операций set:
+  - key: api_version, value: "2.0.0"
+  - key: api_base_url, value: "https://api.example.com"
+  - key: api_timeout, value: 30000
+  - key: api_retries, value: 3
 
 ### 2. TTL (время жизни)
 
-Сохрани временные данные с автоматическим удалением:
+Сохрани временные данные с автоматическим удалением через 5 минут:
 
-```json
-model_storage operation=set namespace=session key="temp_auth_code" value='{"code": "123456", "purpose": "email_verification"}' ttl=300 tags=["temporary", "auth"]
-```
+- operation: set
+- namespace: session
+- key: temp_auth_code
+- value: объект с code="123456" и purpose="email_verification"
+- ttl: 300 (секунд)
+- tags: ["temporary", "auth"]
 
 Проверь TTL в метаданных:
-```json
-model_storage operation=get namespace=session key="temp_auth_code" includeMetadata=true
-```
+
+- operation: get
+- namespace: session
+- key: temp_auth_code
+- includeMetadata: true
 
 ### 3. Merge (слияние объектов)
 
-```json
-model_storage operation=set namespace=knowledge key="api_config" value='{"version": "1.0", "timeout": 5000}'
+Сначала сохрани базовый конфиг:
 
-model_storage operation=merge namespace=knowledge key="api_config" value='{"version": "2.0", "retries": 3}'
-```
+- operation: set
+- namespace: knowledge
+- key: api_config
+- value: {"version": "1.0", "timeout": 5000}
+
+Затем объедини с новыми значениями:
+
+- operation: merge
+- namespace: knowledge
+- key: api_config
+- value: {"version": "2.0", "retries": 3}
 
 ### 4. Append (добавление в массив)
 
-```json
-model_storage operation=set namespace=knowledge key="api_endpoints" value='["/users", "/posts"]'
+Создай массив endpoints:
 
-model_storage operation=append namespace=knowledge key="api_endpoints" value='/comments'
+- operation: set
+- namespace: knowledge
+- key: api_endpoints
+- value: ["/users", "/posts"]
 
-model_storage operation=append namespace=knowledge key="api_endpoints" value='/likes'
-```
+Добавь новые endpoints:
+
+- operation: append
+- namespace: knowledge
+- key: api_endpoints
+- value: "/comments"
+
+- operation: append
+- namespace: knowledge
+- key: api_endpoints
+- value: "/likes"
 
 ### 5. Создание backup
 
-```json
-model_storage operation=backup
-```
+Используй model_storage:
+
+- operation: backup
 
 ### 6. Список backup'ов
 
-```json
-model_storage operation=restore
-```
+Используй model_storage:
+
+- operation: restore (без параметра timestamp покажет список доступных backup'ов)
 
 ### 7. Статистика
 
-```json
-model_storage operation=stats namespace=knowledge
-model_storage operation=knowledgeStats
-```
+Используй model_storage:
+
+- operation: stats
+- namespace: knowledge
 
 ### 8. Поиск похожих записей
 
-```json
-model_storage operation=findSimilar namespace=knowledge key="api_config" limit=3
-```
+Используй model_storage:
+
+- operation: findSimilar
+- namespace: knowledge
+- key: api_config
+- limit: 3
 
 ### 9. Глобальный vs Project scope
 
 Глобальные данные (доступны во всех проектах):
-```json
-model_storage operation=set scope=global namespace=knowledge key="preferred_editor" value='{"editor": "cursor", "theme": "dark"}'
-```
+
+- operation: set
+- scope: global
+- namespace: knowledge
+- key: preferred_editor
+- value: {"editor": "cursor", "theme": "dark"}
 
 Данные проекта (только для текущего проекта):
-```json
-model_storage operation=set scope=project namespace=roadmap key="v1_release" value='{"date": "2025-02-01", "features": ["auth", "api"]}'
-```
+
+- operation: set
+- scope: project
+- namespace: roadmap
+- key: v1_release
+- value: {"date": "2025-02-01", "features": ["auth", "api"]}
 
 ### 10. Exists проверка
 
-```json
-model_storage operation=exists namespace=knowledge key="api_config"
-model_storage operation=exists namespace=knowledge key="nonexistent_key"
-```
+Используй model_storage:
+
+- operation: exists
+- namespace: knowledge
+- key: api_config
+
+- operation: exists
+- namespace: knowledge
+- key: nonexistent_key
 
 ---
 
 ## Полный сценарий: Начало рабочего дня
 
-```json
-// 1. Проверить контекст
-model_storage operation=search query="текущая задача прогресс" namespaces=["context"] limit=3
+1. Проверить контекст:
 
-// 2. Загрузить активные задачи
-model_storage operation=get namespace=todos key="items"
+   - operation: search, query: "текущая задача прогресс", namespaces: ["context"], limit: 3
 
-// 3. Проверить активный план
-model_storage operation=get namespace=plans key="current"
+2. Загрузить активные задачи:
 
-// 4. Поиск нужных паттернов
-model_storage operation=search query="как реализовать аутентификацию" namespaces=["knowledge"] limit=5
+   - operation: get, namespace: todos, key: items
 
-// 5. Статистика knowledge base
-model_storage operation=knowledgeStats
-```
+3. Проверить активный план:
+
+   - operation: get, namespace: plans, key: current
+
+4. Поиск нужных паттернов:
+
+   - operation: search, query: "как реализовать аутентификацию", namespaces: ["knowledge"], limit: 5
+
+5. Статистика knowledge base:
+   - operation: knowledgeStats
 
 ## Полный сценарий: Конец рабочего дня
 
-```json
-// 1. Сохранить прогресс
-model_storage operation=set namespace=context key="session_progress" value='{
-  "task": "Текущая задача",
-  "completed": ["step1", "step2"],
-  "nextSteps": ["step3"],
-  "notes": "Важные заметки"
-}'
+1. Сохранить прогресс:
 
-// 2. Сохранить найденные паттерны
-model_storage operation=addWithEmbedding namespace=knowledge key="learned_pattern_1" value='...' tags=["pattern"]
+   - operation: set, namespace: context, key: session_progress, value: объект с task, completed, nextSteps, notes
 
-// 3. Обновить roadmap
-model_storage operation=merge namespace=roadmap key="v1_progress" value='{"completed": ["feature1"]}'
+2. Сохранить найденные паттерны:
 
-// 4. Создать backup
-model_storage operation=backup
-```
+   - operation: addWithEmbedding, namespace: knowledge, key: learned_pattern_1, value: текст паттерна, tags: ["pattern"]
+
+3. Обновить roadmap:
+
+   - operation: merge, namespace: roadmap, key: v1_progress, value: {"completed": ["feature1"]}
+
+4. Создать backup:
+   - operation: backup
 
 ---
 

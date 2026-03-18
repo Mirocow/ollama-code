@@ -1,9 +1,11 @@
 # Пример 2: Планирование с Верификацией
 
 ## Описание
+
 Этот пример показывает как создавать планы с автоматической верификацией выполнения задач.
 
 ## Запуск
+
 ```bash
 ollama-code --file ./examples/storage/example-2-planning.md
 ```
@@ -14,118 +16,56 @@ ollama-code --file ./examples/storage/example-2-planning.md
 
 ### 1. Создай план с верификацией
 
-Создай план для реализации API endpoint с проверкой:
+Используй инструмент exit_plan_mode для создания плана реализации Users API:
 
-```json
-exit_plan_mode plan="## Реализация Users API
+**План должен включать:**
 
-### Фаза 1: Модель данных
-- [ ] Создать User interface
-- [ ] Добавить валидацию полей
+- Фаза 1: Модель данных (User interface, валидация полей)
+- Фаза 2: API Endpoints (GET /api/users, POST /api/users, GET /api/users/:id)
+- Фаза 3: Тестирование (Unit тесты, Integration тесты)
 
-### Фаза 2: API Endpoints  
-- [ ] GET /api/users - список пользователей
-- [ ] POST /api/users - создание пользователя
-- [ ] GET /api/users/:id - получение по ID
+**Параметры верификации:**
 
-### Фаза 3: Тестирование
-- [ ] Unit тесты для сервисов
-- [ ] Integration тесты для endpoints" verification={
-  "autoVerify": true,
-  "requiredFiles": ["src/models/User.ts", "src/routes/users.ts", "tests/users.test.ts"],
-  "checkCommands": ["npm run build", "npm run lint"],
-  "testCommands": ["npm test -- users"]
-} tags=["api", "users", "feature"] saveToKnowledge=true
-```
+- autoVerify: true
+- requiredFiles: ["src/models/User.ts", "src/routes/users.ts", "tests/users.test.ts"]
+- checkCommands: ["npm run build", "npm run lint"]
+- testCommands: ["npm test -- users"]
 
-### 2. Создай задачу с верификацией
+**Дополнительные параметры:**
 
-```json
-todo_write todos=[{
-  "id": "create-user-model",
-  "content": "Создать модель User с валидацией",
-  "status": "pending",
-  "priority": "high",
-  "verification": {
-    "steps": [
-      {
-        "id": "check-file",
-        "description": "Файл User.ts существует",
-        "type": "file_exists",
-        "params": {"path": "src/models/User.ts"},
-        "status": "pending"
-      },
-      {
-        "id": "check-interface",
-        "description": "Содержит interface User",
-        "type": "file_contains",
-        "params": {"path": "src/models/User.ts", "content": "interface User"},
-        "status": "pending"
-      },
-      {
-        "id": "check-validation",
-        "description": "Содержит функцию validate",
-        "type": "file_contains",
-        "params": {"path": "src/models/User.ts", "content": "validate"},
-        "status": "pending"
-      }
-    ],
-    "status": "pending",
-    "required": true
-  }
-}]
-```
+- tags: ["api", "users", "feature"]
+- saveToKnowledge: true
+
+### 2. Создай задачи с верификацией
+
+Используй инструмент todo_write для создания задачи:
+
+- id: create-user-model
+- content: "Создать модель User с валидацией"
+- status: pending
+- priority: high
+
+**Шаги верификации для задачи:**
+
+1. Проверить что файл src/models/User.ts существует (тип: file_exists)
+2. Проверить что файл содержит "interface User" (тип: file_contains)
+3. Проверить что файл содержит функцию "validate" (тип: file_contains)
 
 ### 3. Создай зависимые задачи
 
-```json
-todo_write todos=[
-  {
-    "id": "create-user-model",
-    "content": "Создать модель User",
-    "status": "pending",
-    "priority": "high"
-  },
-  {
-    "id": "create-user-service",
-    "content": "Создать UserService",
-    "status": "pending",
-    "priority": "high",
-    "dependencies": ["create-user-model"]
-  },
-  {
-    "id": "create-user-routes",
-    "content": "Создать API routes",
-    "status": "pending",
-    "priority": "high",
-    "dependencies": ["create-user-service"]
-  },
-  {
-    "id": "write-tests",
-    "content": "Написать тесты",
-    "status": "pending",
-    "priority": "medium",
-    "dependencies": ["create-user-routes"],
-    "verification": {
-      "steps": [{
-        "id": "run-tests",
-        "description": "Тесты проходят успешно",
-        "type": "test_pass",
-        "params": {"testPath": "tests/users.test.ts"},
-        "status": "pending"
-      }],
-      "required": true
-    }
-  }
-]
-```
+Используй todo_write для создания цепочки зависимых задач:
+
+1. create-user-model (priority: high, нет зависимостей)
+2. create-user-service (priority: high, зависит от create-user-model)
+3. create-user-routes (priority: high, зависит от create-user-service)
+4. write-tests (priority: medium, зависит от create-user-routes, с верификацией через test_pass)
 
 ### 4. Проверь связь плана и задач
 
-```json
-model_storage operation=get namespace=plans key="current"
-model_storage operation=get namespace=todos key="items"
-```
+Используй model_storage:
+
+- operation: get, namespace: plans, key: current
+- operation: get, namespace: todos, key: items
 
 ---
 
@@ -138,13 +78,8 @@ model_storage operation=get namespace=todos key="items"
 
 ## Как работает верификация
 
-При отметке задачи как `completed` с `verify=true`:
+При отметке задачи как `completed` с параметром `verify=true`:
+
 1. Выполняются все шаги верификации
 2. Если шаг провален и `required=true` - задача остаётся `in_progress`
 3. Результат верификации сохраняется в `verification.result`
-
-## Пример отметки с верификацией
-
-```json
-todo_write todos=[{"id": "create-user-model", "status": "completed"}] verify=true
-```

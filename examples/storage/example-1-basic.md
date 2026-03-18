@@ -1,9 +1,11 @@
 # Пример 1: Базовое использование Storage
 
 ## Описание
+
 Этот пример демонстрирует основные операции storage: сохранение, чтение, поиск и удаление данных с использованием семантического поиска.
 
 ## Запуск
+
 ```bash
 ollama-code --file ./examples/storage/example-1-basic.md
 ```
@@ -16,59 +18,46 @@ ollama-code --file ./examples/storage/example-1-basic.md
 
 ### 1. Сохранение данных
 
-Сохрани следующую информацию о проекте:
+Используй инструмент model_storage для сохранения информации о проекте:
 
-```json
-model_storage operation=set namespace=knowledge key="project_info" value='{
-  "name": "ollama-code",
-  "description": "AI-powered code editor with semantic storage",
-  "version": "2.0.0",
-  "features": ["semantic search", "verification", "streaming"],
-  "technologies": ["TypeScript", "Node.js", "Ollama"]
-}' tags=["project", "info"]
-```
+- operation: set
+- namespace: knowledge
+- key: project_info
+- value: объект с полями name="ollama-code", description="AI-powered code editor with semantic storage", version="2.0.0", features=["semantic search", "verification", "streaming"], technologies=["TypeScript", "Node.js", "Ollama"]
+- tags: ["project", "info"]
 
 ### 2. Сохранение с эмбеддингами
 
-Сохрани паттерн аутентификации для семантического поиска:
+Используй модель для сохранения паттерна аутентификации с эмбеддингами:
 
-```json
-model_storage operation=addWithEmbedding namespace=knowledge key="auth_jwt_pattern" value='
-## JWT Аутентификация
-
-### Последовательность действий:
-1. Пользователь отправляет credentials на /api/auth/login
-2. Сервер валидирует и генерирует JWT токен
-3. Токен возвращается в httpOnly cookie
-4. Последующие запросы содержат токен в Authorization header
-
-### Важные моменты:
-- Всегда использовать HTTPS
-- Устанавливать secure flag в production
-- Реализовать refresh token механизм
-- Хранить refresh token в httpOnly cookie
-' tags=["auth", "jwt", "security", "pattern"]
-```
+- operation: addWithEmbedding
+- namespace: knowledge
+- key: auth_jwt_pattern
+- value: текст про JWT аутентификацию с последовательностью действий и важными моментами
+- tags: ["auth", "jwt", "security", "pattern"]
 
 ### 3. Семантический поиск
 
-Выполни поиск по смыслу (не по ключевым словам):
+Выполни поиск по смыслу:
 
-```json
-model_storage operation=search query="как безопасно авторизовать пользователя" namespaces=["knowledge"] limit=5
-```
+- operation: search
+- query: "как безопасно авторизовать пользователя"
+- namespaces: ["knowledge"]
+- limit: 5
 
 ### 4. Чтение данных
 
-```json
-model_storage operation=get namespace=knowledge key="project_info"
-```
+Используй:
+
+- operation: get
+- namespace: knowledge
+- key: project_info
 
 ### 5. Статистика
 
-```json
-model_storage operation=knowledgeStats
-```
+Используй:
+
+- operation: knowledgeStats
 
 ---
 
@@ -82,6 +71,6 @@ model_storage operation=knowledgeStats
 
 ## Советы
 
-- Используй `addWithEmbedding` для важных паттернов, чтобы они были доступны для семантического поиска
+- Используй operation=addWithEmbedding для важных паттернов, чтобы они были доступны для семантического поиска
 - Используй теги для категоризации данных
-- Проверяй `knowledgeStats` для мониторинга использования storage
+- Проверяй operation=knowledgeStats для мониторинга использования storage

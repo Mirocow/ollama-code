@@ -1,9 +1,11 @@
 # Пример 6: Resume - Восстановление контекста сессии
 
 ## Описание
+
 Этот пример показывает как работает восстановление контекста при использовании флага `--resume` или команды `/resume`.
 
 ## Запуск
+
 ```bash
 # Если есть предыдущая сессия
 ollama-code --resume
@@ -14,165 +16,95 @@ ollama-code --resume
 
 ---
 
-## Сценарий
+## Задание
 
 ### 1. Перед завершением предыдущей сессии
 
-Модель автоматически сохраняет контекст:
+Модель автоматически сохраняет контекст. Давай сохраним прогресс вручную:
 
-```json
-// Автоматически при завершении
-model_storage operation=set namespace=context key="session_progress" value='{
-  "task": "Реализация системы аутентификации",
-  "phase": "implementation",
-  "progress": 65,
-  "completed": ["User model", "JWT service", "Auth middleware"],
-  "pending": ["Refresh tokens", "Tests", "Documentation"],
-  "filesInvolved": ["src/auth/*.ts", "src/models/User.ts", "tests/auth/*.test.ts"],
-  "lastFile": "src/auth/middleware.ts",
-  "nextSteps": ["Добавить refresh token логику", "Написать unit тесты"]
-}'
-```
+Используй model_storage:
 
-### 2. При возобновлении сессии
+- operation: set
+- namespace: context
+- key: session_progress
+- value: объект с полями:
+  - task: "Реализация системы аутентификации"
+  - phase: "implementation"
+  - progress: 65
+  - completed: ["User model", "JWT service", "Auth middleware"]
+  - pending: ["Refresh tokens", "Tests", "Documentation"]
+  - filesInvolved: ["src/auth/*.ts", "src/models/User.ts"]
+  - lastFile: "src/auth/middleware.ts"
+  - nextSteps: ["Добавить refresh token логику", "Написать unit тесты"]
 
-Модель автоматически загружает контекст:
+### 2. Создай план
 
-```
-<resume-context>
-📂 **Session Resumed - Context Restored from Storage**
+Используй exit_plan_mode:
 
-Your previous work context has been loaded from persistent storage:
+- plan: текст плана с фазами реализации auth системы
+- verification: autoVerify=true, requiredFiles, testCommands
+- tags: ["auth", "feature"]
+- saveToKnowledge: true
 
-### 📋 Active Plans
-🔄 **auth_feature**: 65% complete (4/6 steps)
+### 3. Создай задачи
 
-### 📝 Pending Tasks
-🔄 `implement-refresh`: Реализовать refresh token логику
-⏳ `write-tests`: Написать unit тесты для auth
-⏳ `add-docs`: Добавить документацию API
+Используй todo_write:
 
-### 🎯 Current Work
-**Task**: Реализация системы аутентификации
-**Progress**: 65%
-**Next Steps**:
-  - Добавить refresh token логику
-  - Написать unit тесты
+- todos: массив задач с id, content, status, priority
+- одна задача в статусе in_progress (implement-refresh)
+- одна задача pending с dependency на implement-refresh
 
-### Recommended Actions
-```json
-model_storage operation=get namespace=plans key="current"
-model_storage operation=get namespace=todos key="items"
-model_storage operation=search query="auth implementation" namespaces=["knowledge"] limit=5
-```
+### 4. Сохрани знания
 
-</resume-context>
-```
+Используй model_storage:
 
-### 3. Продолжение работы
+- operation: addWithEmbedding
+- namespace: knowledge
+- key: auth_jwt_pattern
+- value: текст про JWT паттерн с последовательностью действий
+- tags: ["auth", "jwt", "security"]
 
-После загрузки контекста модель продолжит работу:
+### 5. Проверь что сохранилось
 
-```json
-// Модель проверяет текущее состояние
-model_storage operation=get namespace=context key="session_progress"
+Используй model_storage:
 
-// Проверяет связанные знания
-model_storage operation=search query="JWT refresh token implementation" namespaces=["knowledge"] limit=3
+- operation: get, namespace: context, key: session_progress
+- operation: get, namespace: plans, key: current
+- operation: get, namespace: todos, key: items
 
-// Продолжает с прерванного места
-read_file path="src/auth/middleware.ts"
-```
+### 6. Поиск по знаниям
+
+Используй model_storage:
+
+- operation: search
+- query: "как работает JWT аутентификация"
+- namespaces: ["knowledge"]
+- limit: 3
+
+### 7. Создай backup
+
+Используй model_storage:
+
+- operation: backup
 
 ---
 
 ## Автоматические напоминания
 
-### При высоком использовании контекста
-
-```
-<storage-warning priority="high">
-⚠️ Context usage is high (~80k tokens). Consider:
-1. Store discovered patterns to knowledge namespace
-2. Use semantic search instead of keeping reference material
-3. Clear completed items from context
-</storage-warning>
-```
-
-### Периодические напоминания
-
-```
-<storage-hint>
-💡 Storage reminder: Save valuable discoveries:
-- model_storage operation=addWithEmbedding namespace=knowledge key="discovery" value="..."
-- model_storage operation=merge namespace=context key="progress" value="{...}"
-</storage-hint>
-```
-
----
-
-## Структура сохранённых данных
-
-### plans namespace
-```json
-{
-  "id": "plan_xyz123",
-  "plan": "## Реализация Auth\n...",
-  "status": "active",
-  "progress": 65,
-  "todos": [...],
-  "verification": {
-    "requiredFiles": ["src/auth/index.ts"],
-    "testCommands": ["npm test -- auth"]
-  },
-  "knowledgeId": "kb_abc456"
-}
-```
-
-### todos namespace
-```json
-{
-  "items": [
-    {
-      "id": "implement-refresh",
-      "content": "Реализовать refresh token логику",
-      "status": "in_progress",
-      "priority": "high"
-    },
-    {
-      "id": "write-tests",
-      "content": "Написать unit тесты",
-      "status": "pending",
-      "dependencies": ["implement-refresh"]
-    }
-  ],
-  "planId": "plan_xyz123"
-}
-```
-
-### context namespace
-```json
-{
-  "task": "Реализация системы аутентификации",
-  "phase": "implementation",
-  "progress": 65,
-  "filesInvolved": ["src/auth/*.ts"],
-  "nextSteps": ["Добавить refresh token логику"]
-}
-```
+При высоком использовании контекста система может показать предупреждение о необходимости сохранить данные в storage.
 
 ---
 
 ## Ожидаемый результат
 
-1. ✅ Контекст автоматически загружен из storage
-2. ✅ Модель видит активные планы и задачи
-3. ✅ Продолжает работу с прерванного места
-4. ✅ Не требует повторного объяснения задачи
+1. ✅ Контекст сохранён в storage
+2. ✅ План связан с задачами через planId
+3. ✅ Знания доступны для семантического поиска
+4. ✅ При новом запуске с --resume данные загрузятся автоматически
 
 ## Советы
 
-- Используйте `model_storage` регулярно для сохранения прогресса
-- Добавляйте важные паттерны с `addWithEmbedding` для семантического поиска
+- Используйте model_storage регулярно для сохранения прогресса
+- Добавляйте важные паттерны с addWithEmbedding для семантического поиска
 - Устанавливайте теги для категоризации
-- Связывайте todos с планами через `exit_plan_mode`
+- Связывайте todos с планами через exit_plan_mode
