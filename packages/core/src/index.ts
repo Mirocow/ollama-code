@@ -887,6 +887,33 @@ export {
 } from './services/sessionReminder.js';
 
 // ============================================================================
+// Storage Watcher (MD file monitoring)
+// ============================================================================
+
+export {
+  StorageWatcher,
+  getStorageWatcher,
+  startStorageWatcher,
+  stopStorageWatcher,
+  type StorageChangeEvent,
+  type MDFileInfo,
+  type StorageWatcherConfig,
+} from './services/storageWatcher.js';
+
+// ============================================================================
+// Storage Hints (model guidance)
+// ============================================================================
+
+export {
+  StorageHintsService,
+  getStorageHintsService,
+  startStorageHints,
+  stopStorageHints,
+  type StorageHint,
+  type StorageHintsConfig,
+} from './services/storageHints.js';
+
+// ============================================================================
 // Auto Storage (Model's Notebook)
 // ============================================================================
 

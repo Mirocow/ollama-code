@@ -2184,22 +2184,27 @@ const storageToolsPlugin: PluginDefinition = {
     {
       priority: 1,
       content:
-        'model_storage: AI-internal key-value storage with semantic search. Use for roadmaps, knowledge base, session data. Operations: set/get/delete/list, search (semantic), findSimilar, addWithEmbedding. NOT for user-requested memory saves (use save_memory).',
+        '⚠️ STORAGE-FIRST: Use model_storage instead of context whenever possible. Storage persists across sessions, context does not. Store: patterns, conventions, decisions, solutions, progress. Keep in context ONLY: current file, immediate task, last few messages.',
     },
     {
       priority: 2,
       content:
-        'STORAGE BEST PRACTICES: (1) Use search instead of list to save context. (2) Use addWithEmbedding for important patterns to enable semantic search. (3) Save session progress in context namespace for resume. (4) Link todos to plans for tracking.',
+        '🧹 CONTEXT HYGIENE: Context is expensive and temporary. Every valuable discovery should be stored immediately using addWithEmbedding. Use search to retrieve instead of keeping in context. Clean up completed tasks from context.',
     },
     {
       priority: 3,
       content:
-        'SESSION WORKFLOW: Start → search "current task progress" in context. End → save session_progress. Use knowledge namespace with embeddings for discovered patterns. Use learning namespace for error solutions.',
+        '📝 USER-EDITABLE KNOWLEDGE: Users can edit MD files in ~/.ollama-code/storage/md/ - you will be notified of changes. This allows users to directly modify your knowledge base.',
     },
     {
       priority: 4,
       content:
-        'NAMESPACES: roadmap (plans), session (temp), knowledge (patterns with embeddings), context (current task), learning (error solutions), plans (active plans, TTL 7d), todos (tasks). SEMANTIC SEARCH requires nomic-embed-text model.',
+        '🔄 SESSION WORKFLOW: Start=load from storage(search context, get plans/todos). Work=store discoveries immediately. End=save session_progress, findings, update roadmap. NEVER end session without saving.',
+    },
+    {
+      priority: 5,
+      content:
+        '💡 DISCOVERED SOMETHING? STORE IT NOW! Patterns, conventions, user decisions, error solutions - all go to storage with addWithEmbedding for semantic search. Knowledge namespace for patterns, learning for solutions, context for session state.',
     },
   ],
 
@@ -2230,6 +2235,29 @@ const storageToolsPlugin: PluginDefinition = {
 
       // Initialize storage metrics on load
       await initializeStorageMetrics();
+
+      // Start storage watcher for MD files
+      try {
+        const { startStorageWatcher } = await import('../../../services/storageWatcher.js');
+        const watcher = await startStorageWatcher({ enabled: true });
+        
+        watcher.on('change', (event) => {
+          debugLogger.info('[StorageTool] Storage changed:', event.type, event.path);
+        });
+        
+        debugLogger.info('[StorageTool] Storage watcher started');
+      } catch (err) {
+        debugLogger.warn('[StorageTool] Failed to start storage watcher:', err);
+      }
+
+      // Start storage hints service
+      try {
+        const { startStorageHints } = await import('../../../services/storageHints.js');
+        startStorageHints({ enabled: true });
+        debugLogger.info('[StorageTool] Storage hints service started');
+      } catch (err) {
+        debugLogger.warn('[StorageTool] Failed to start storage hints:', err);
+      }
     },
 
     onEnable: async (context) => {
