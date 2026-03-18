@@ -425,6 +425,9 @@ export const useSlashCommandProcessor = (
                     case 'resume':
                       actions.openResumeDialog();
                       return { type: 'handled' };
+                    case 'auth':
+                      actions.openAuthDialog();
+                      return { type: 'handled' };
                     case 'help':
                       return { type: 'handled' };
                     default: {
