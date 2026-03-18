@@ -23,20 +23,15 @@ import {
 import type { FunctionDeclaration } from '../../../../types/content.js';
 import type { Config } from '../../../../config/config.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
-import {
-  storageGet,
-  storageSet,
-  StorageNamespaces,
-} from '../../storage-tools/index.js';
-import {
-  VerificationExecutor,
-} from '../../../../knowledge/verification.js';
+import { storageGet, storageSet } from '../../storage-tools/index.js';
+import { VerificationExecutor } from '../../../../knowledge/verification.js';
 import type { VerificationResult } from '../../../../knowledge/types.js';
 
 const debugLogger = createDebugLogger('TODO_WRITE');
 
-// Namespace for todos in storage
+// Namespace for todos in storage (inline to avoid circular import issues)
 const TODOS_NAMESPACE = 'todos';
+const PLANS_NAMESPACE = 'plans';
 const TODOS_KEY = 'items';
 
 /**
@@ -45,7 +40,15 @@ const TODOS_KEY = 'items';
 export interface TodoVerificationStep {
   id: string;
   description: string;
-  type: 'file_exists' | 'file_contains' | 'command_success' | 'test_pass' | 'lint_pass' | 'type_check' | 'build_success' | 'custom';
+  type:
+    | 'file_exists'
+    | 'file_contains'
+    | 'command_success'
+    | 'test_pass'
+    | 'lint_pass'
+    | 'type_check'
+    | 'build_success'
+    | 'custom';
   params: Record<string, unknown>;
   status: 'pending' | 'running' | 'passed' | 'failed' | 'skipped';
   autoVerify?: boolean; // Auto-run on status change to 'completed'
@@ -123,12 +126,27 @@ const todoWriteToolSchemaData: FunctionDeclaration = {
                       description: { type: 'string' },
                       type: {
                         type: 'string',
-                        enum: ['file_exists', 'file_contains', 'command_success', 'test_pass', 'lint_pass', 'type_check', 'build_success', 'custom'],
+                        enum: [
+                          'file_exists',
+                          'file_contains',
+                          'command_success',
+                          'test_pass',
+                          'lint_pass',
+                          'type_check',
+                          'build_success',
+                          'custom',
+                        ],
                       },
                       params: { type: 'object' },
                       status: {
                         type: 'string',
-                        enum: ['pending', 'running', 'passed', 'failed', 'skipped'],
+                        enum: [
+                          'pending',
+                          'running',
+                          'passed',
+                          'failed',
+                          'skipped',
+                        ],
                       },
                     },
                   },
@@ -314,7 +332,7 @@ async function writeTodosToStorage(
         status: string;
         todos: TodoItem[];
         progress: number;
-      }>(StorageNamespaces.PLANS, data.planId, { scope: 'project' });
+      }>(PLANS_NAMESPACE, data.planId, { scope: 'project' });
 
       if (plan && plan.status === 'active') {
         const completed = todos.filter((t) => t.status === 'completed').length;
@@ -322,7 +340,7 @@ async function writeTodosToStorage(
         const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
         await storageSet(
-          StorageNamespaces.PLANS,
+          PLANS_NAMESPACE,
           data.planId,
           {
             ...plan,
@@ -352,7 +370,10 @@ function calculateProgress(todos: TodoItem[]): number {
 /**
  * Check if todo dependencies are satisfied
  */
-function checkDependencies(todo: TodoItem, allTodos: TodoItem[]): {
+function checkDependencies(
+  todo: TodoItem,
+  allTodos: TodoItem[],
+): {
   satisfied: boolean;
   blockedBy: string[];
 } {
@@ -361,9 +382,9 @@ function checkDependencies(todo: TodoItem, allTodos: TodoItem[]): {
   }
 
   const blockedBy: string[] = [];
-  
+
   for (const depId of todo.dependencies) {
-    const dep = allTodos.find(t => t.id === depId);
+    const dep = allTodos.find((t) => t.id === depId);
     if (!dep || dep.status !== 'completed') {
       blockedBy.push(depId);
     }
@@ -410,36 +431,41 @@ async function processTodos(
   const processedTodos: TodoItem[] = [];
 
   for (const todo of todos) {
-    const existing = existingTodos.find(t => t.id === todo.id);
+    const existing = existingTodos.find((t) => t.id === todo.id);
     const statusChanged = existing && existing.status !== todo.status;
     const nowCompleted = todo.status === 'completed';
     const nowInProgress = todo.status === 'in_progress';
 
     // Check dependencies
     const { satisfied, blockedBy } = checkDependencies(todo, todos);
-    
+
     if (!satisfied && nowInProgress) {
       // Block if dependencies not satisfied
       todo.status = 'blocked';
       todo.notes = `Blocked by: ${blockedBy.join(', ')}`;
-      debugLogger.info(`[TodoWrite] Todo ${todo.id} blocked by dependencies: ${blockedBy.join(', ')}`);
+      debugLogger.info(
+        `[TodoWrite] Todo ${todo.id} blocked by dependencies: ${blockedBy.join(', ')}`,
+      );
     }
 
     // Run verification if:
     // 1. Todo is being marked as completed AND
     // 2. Has verification steps AND
     // 3. Either verify=true OR verification.required=true
-    const shouldVerify = 
-      nowCompleted && 
+    const shouldVerify =
+      nowCompleted &&
       todo.verification?.steps?.length &&
       (options.verify || todo.verification.required) &&
       statusChanged;
 
     if (shouldVerify) {
       debugLogger.info(`[TodoWrite] Running verification for todo ${todo.id}`);
-      
-      const { passed, result } = await runVerification(todo, options.workingDirectory);
-      
+
+      const { passed, result } = await runVerification(
+        todo,
+        options.workingDirectory,
+      );
+
       todo.verification = {
         steps: todo.verification!.steps,
         status: passed ? 'passed' : 'failed',
@@ -451,7 +477,9 @@ async function processTodos(
         // Verification failed and required - keep as in_progress
         todo.status = 'in_progress';
         todo.notes = `Verification failed: ${result?.summary || 'Unknown error'}`;
-        debugLogger.warn(`[TodoWrite] Todo ${todo.id} verification failed, keeping in_progress`);
+        debugLogger.warn(
+          `[TodoWrite] Todo ${todo.id} verification failed, keeping in_progress`,
+        );
       }
     }
 
@@ -485,7 +513,8 @@ class TodoWriteToolInvocation extends BaseToolInvocation<
 
   getDescription(): string {
     const { verify, verifyTodoId } = this.params;
-    let desc = this.operationType === 'create' ? 'Create todos' : 'Update todos';
+    let desc =
+      this.operationType === 'create' ? 'Create todos' : 'Update todos';
     if (verify) desc += ' (with verification)';
     if (verifyTodoId) desc += ` - verify ${verifyTodoId}`;
     return desc;
@@ -499,7 +528,8 @@ class TodoWriteToolInvocation extends BaseToolInvocation<
   }
 
   async execute(_signal: AbortSignal): Promise<ToolResult> {
-    const { todos, modified_by_user, modified_content, verify, verifyTodoId } = this.params;
+    const { todos, modified_by_user, modified_content, verify, verifyTodoId } =
+      this.params;
     const sessionId = this.config.getSessionId() || 'default';
     const workingDirectory = this.config.getTargetDir();
 
@@ -524,7 +554,7 @@ class TodoWriteToolInvocation extends BaseToolInvocation<
       }
 
       // Process todos with verification and dependency checks
-      if (verify || finalTodos.some(t => t.verification?.required)) {
+      if (verify || finalTodos.some((t) => t.verification?.required)) {
         finalTodos = await processTodos(finalTodos, existingTodos, {
           verify,
           verifyTodoId,

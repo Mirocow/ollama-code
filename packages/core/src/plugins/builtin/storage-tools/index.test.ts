@@ -142,7 +142,7 @@ describe('StorageTool', () => {
         const getResult = await getInvocation.execute(
           new AbortController().signal,
         );
-        expect(getResult.llmContent).toBe('"hello world"');
+        expect(getResult.llmContent).toBe('hello world');
       });
 
       it('should set and get an object value', async () => {

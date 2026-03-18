@@ -18,21 +18,16 @@
  * - knowledge base for semantic context search
  */
 
-import {
-  storageGet,
-  StorageNamespaces,
-} from '../plugins/builtin/storage-tools/index.js';
+import { storageGet } from '../plugins/builtin/storage-tools/index.js';
 import type { TodoItem } from '../plugins/builtin/productivity-tools/todo-write/index.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
-import {
-  getResumeContextLoader,
-} from './resumeContextLoader.js';
+import { getResumeContextLoader } from './resumeContextLoader.js';
 
 const debugLogger = createDebugLogger('SESSION_REMINDER');
 
-// Namespaces
-const PLANS_NAMESPACE = StorageNamespaces.PLANS;
-const TODOS_NAMESPACE = StorageNamespaces.TODOS;
+// Namespaces (inline to avoid circular import issues)
+const PLANS_NAMESPACE = 'plans';
+const TODOS_NAMESPACE = 'todos';
 const PLANS_KEY = 'current';
 const TODOS_KEY = 'items';
 
@@ -334,30 +329,35 @@ export async function getSessionContextForPrompt(
   isResume: boolean = false,
 ): Promise<string> {
   const parts: string[] = [];
-  
+
   // Get traditional reminders
   const reminders = await getSessionReminders(sessionId, isResume);
   if (reminders.length > 0) {
     parts.push(formatRemindersForPrompt(reminders));
   }
-  
+
   // When resuming, also load full context from ResumeContextLoader
   if (isResume && sessionId) {
     try {
       const loader = getResumeContextLoader();
       const context = await loader.loadResumeContext(sessionId);
-      
+
       if (context) {
         parts.push('');
         parts.push(context.modelHint);
-        
-        debugLogger.info('[SessionReminder] Loaded resume context from ResumeContextLoader');
+
+        debugLogger.info(
+          '[SessionReminder] Loaded resume context from ResumeContextLoader',
+        );
       }
     } catch (error) {
-      debugLogger.warn('[SessionReminder] Failed to load resume context:', error);
+      debugLogger.warn(
+        '[SessionReminder] Failed to load resume context:',
+        error,
+      );
     }
   }
-  
+
   return parts.join('\n');
 }
 

@@ -28,18 +28,14 @@ import type { FunctionDeclaration } from '../../../../types/content.js';
 import type { Config } from '../../../../config/config.js';
 import { ApprovalMode } from '../../../../config/config.js';
 import { createDebugLogger } from '../../../../utils/debugLogger.js';
-import {
-  storageGet,
-  storageSet,
-  StorageNamespaces,
-} from '../../storage-tools/index.js';
+import { storageGet, storageSet } from '../../storage-tools/index.js';
 import { linkTodosToPlan } from '../todo-write/index.js';
 import { getKnowledgeBase } from '../../../../knowledge/knowledge-base.js';
 
 const debugLogger = createDebugLogger('EXIT_PLAN_MODE');
 
-// Namespace for plans in storage
-const PLANS_NAMESPACE = StorageNamespaces.PLANS;
+// Namespace for plans in storage (inline to avoid circular import issues)
+const PLANS_NAMESPACE = 'plans';
 const PLANS_KEY = 'current';
 
 // Default TTL for plans: 7 days
@@ -298,12 +294,14 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
         progress: 0,
         sessionId,
         tags,
-        verification: verification ? {
-          autoVerify: verification.autoVerify ?? false,
-          checkCommands: verification.checkCommands || [],
-          requiredFiles: verification.requiredFiles || [],
-          testCommands: verification.testCommands || [],
-        } : undefined,
+        verification: verification
+          ? {
+              autoVerify: verification.autoVerify ?? false,
+              checkCommands: verification.checkCommands || [],
+              requiredFiles: verification.requiredFiles || [],
+              testCommands: verification.testCommands || [],
+            }
+          : undefined,
       };
 
       await storageSet(PLANS_NAMESPACE, PLANS_KEY, planData, {
@@ -320,23 +318,28 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
         try {
           const kb = getKnowledgeBase();
           await kb.initialize();
-          
+
           const entry = await kb.add(plan, 'plans', {
             key: this.planId,
             tags: tags || ['plan'],
           });
-          
+
           // Update plan with knowledge ID
           planData.knowledgeId = entry.id;
           await storageSet(PLANS_NAMESPACE, PLANS_KEY, planData, {
             scope: 'project',
             ttl: PLAN_DEFAULT_TTL,
           });
-          
+
           knowledgeInfo = '\n- Saved to knowledge base for semantic search';
-          debugLogger.info(`[ExitPlanMode] Plan saved to knowledge base with ID: ${entry.id}`);
+          debugLogger.info(
+            `[ExitPlanMode] Plan saved to knowledge base with ID: ${entry.id}`,
+          );
         } catch (error) {
-          debugLogger.warn('[ExitPlanMode] Failed to save to knowledge base:', error);
+          debugLogger.warn(
+            '[ExitPlanMode] Failed to save to knowledge base:',
+            error,
+          );
         }
       }
 
