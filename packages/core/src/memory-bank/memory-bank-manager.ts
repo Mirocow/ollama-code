@@ -506,6 +506,15 @@ model_storage operation=merge namespace=memory-bank key="progress" value='{
       case MemoryBankFileType.PROGRESS:
         return this.generateProgressTemplate(header);
 
+      case MemoryBankFileType.TODO:
+        return this.generateTodoTemplate(header);
+
+      case MemoryBankFileType.TASKS:
+        return this.generateTasksTemplate(header);
+
+      case MemoryBankFileType.CONTEXT:
+        return this.generateContextTemplate(header);
+
       default:
         return `${header}\n\n# ${config.displayName}\n\n<!-- Add content here -->\n`;
     }
@@ -777,6 +786,166 @@ npm run build
 
 ---
 *This file tracks the journey. Update when completing tasks or discovering issues.*
+`;
+  }
+
+  private generateTodoTemplate(header: string): string {
+    return `${header}
+
+# TODO List
+
+> The "Plan" - What needs to be done, what's in progress, what's completed
+
+## 🔴 High Priority
+
+- [ ] [Task description - what needs to be done?]
+- [ ] [Another high priority task]
+
+## 🟡 Medium Priority
+
+- [ ] [Task description]
+- [ ] [Another medium priority task]
+
+## 🟢 Low Priority
+
+- [ ] [Task description]
+- [ ] [Another low priority task]
+
+## 🔄 In Progress
+
+| Task | Started | Progress | Blockers |
+|------|---------|----------|----------|
+| [Current task] | ${new Date().toISOString().split('T')[0]} | 0% | [Any blockers?] |
+
+## ✅ Completed
+
+| Task | Completed | Notes |
+|------|-----------|-------|
+| [Finished task] | ${new Date().toISOString().split('T')[0]} | [Brief notes] |
+
+---
+*Use "create work plan" or "обнови план" to update this file.*
+*Last Updated: ${new Date().toISOString()}*
+`;
+  }
+
+  private generateTasksTemplate(header: string): string {
+    return `${header}
+
+# Tasks Queue
+
+> The "Queue" - Current tasks with priorities, estimates, and dependencies
+
+## Current Sprint
+
+| # | Task | Priority | Estimate | Status | Dependencies |
+|---|------|----------|----------|--------|--------------|
+| 1 | [First task] | high | 2h | 📋 pending | none |
+| 2 | [Second task] | medium | 1h | 📋 pending | #1 |
+
+## Backlog
+
+| # | Task | Priority | Estimate | Notes |
+|---|------|----------|----------|-------|
+| 1 | [Backlog task] | low | ? | [Additional context] |
+
+## Questions for Clarification
+
+> Tasks that need more information before starting
+
+- [ ] **[Task]**: [What question needs to be answered?]
+  - *Asked: [date]*
+  - *Answer: [pending/answered]*
+
+## Task Templates
+
+### New Feature
+\`\`\`
+- [ ] Design the feature
+- [ ] Implement core logic
+- [ ] Add tests
+- [ ] Update documentation
+- [ ] Review and merge
+\`\`\`
+
+### Bug Fix
+\`\`\`
+- [ ] Reproduce the issue
+- [ ] Identify root cause
+- [ ] Implement fix
+- [ ] Add regression test
+- [ ] Verify fix
+\`\`\`
+
+---
+*Last Updated: ${new Date().toISOString()}*
+`;
+  }
+
+  private generateContextTemplate(header: string): string {
+    return `${header}
+
+# Project Context
+
+> The "State" - What was studied, current session info, project understanding
+
+## Project Overview
+
+**Status:** 📋 Not studied yet
+**Last Session:** ${new Date().toISOString()}
+
+## What Was Studied
+
+> AI fills this section after analyzing the project
+
+### Project Type
+[What kind of project is this? Web app, CLI tool, library, etc.]
+
+### Key Technologies
+- [Technology 1]
+- [Technology 2]
+
+### Project Structure
+\`\`\`
+[Key directories and their purposes]
+\`\`\`
+
+## Current Session
+
+### Task Received
+[What did the user ask for?]
+
+### Understanding
+[AI's understanding of what needs to be done]
+
+### Approach
+[How the AI plans to approach this task]
+
+## Session History
+
+| Session | Date | What Was Done | Outcome |
+|---------|------|---------------|---------|
+| 1 | ${new Date().toISOString().split('T')[0]} | Project initialized | Ready to start |
+
+## Questions for the Model
+
+> When starting a new session, ask yourself:
+
+1. **What is the current state of the project?**
+   - [Check progress.md and activeContext.md]
+
+2. **What was I working on last?**
+   - [Check activeContext.md -> Current Focus]
+
+3. **What are the next steps?**
+   - [Check activeContext.md -> Next Steps]
+
+4. **Are there any blockers?**
+   - [Check activeContext.md -> Current Blockers]
+
+---
+*This file helps AI understand the project context. Update frequently.*
+*Last Updated: ${new Date().toISOString()}*
 `;
   }
 

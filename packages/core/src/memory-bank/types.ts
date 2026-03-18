@@ -28,6 +28,9 @@ export enum MemoryBankFileType {
   TECH_CONTEXT = 'techContext',
   ACTIVE_CONTEXT = 'activeContext',
   PROGRESS = 'progress',
+  TODO = 'todo',
+  TASKS = 'tasks',
+  CONTEXT = 'context',
 }
 
 export interface MemoryBankFileMeta {
@@ -99,6 +102,36 @@ export const MEMORY_BANK_FILE_CONFIGS: Record<MemoryBankFileType, MemoryBankFile
     aiEditable: true,
     userEditable: true,
     readOrder: 5,
+  },
+  [MemoryBankFileType.TODO]: {
+    type: MemoryBankFileType.TODO,
+    filename: 'todo',
+    displayName: 'TODO List',
+    description: 'The "Plan" - tasks to do, in progress, completed. Use "create work plan" to generate.',
+    updateFrequency: 'constantly',
+    aiEditable: true,
+    userEditable: true,
+    readOrder: 6,
+  },
+  [MemoryBankFileType.TASKS]: {
+    type: MemoryBankFileType.TASKS,
+    filename: 'tasks',
+    displayName: 'Tasks',
+    description: 'The "Queue" - current tasks queue with priorities and status',
+    updateFrequency: 'constantly',
+    aiEditable: true,
+    userEditable: true,
+    readOrder: 7,
+  },
+  [MemoryBankFileType.CONTEXT]: {
+    type: MemoryBankFileType.CONTEXT,
+    filename: 'context',
+    displayName: 'Context',
+    description: 'The "State" - project context, what was studied, current session info',
+    updateFrequency: 'constantly',
+    aiEditable: true,
+    userEditable: true,
+    readOrder: 8,
   },
 };
 
