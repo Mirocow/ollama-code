@@ -7,10 +7,10 @@
 import type {
   Config,
   ToolCallRequestInfo,
-
   Content,
   Part,
-  PartListUnion} from '@ollama-code/ollama-code-core';
+  PartListUnion,
+} from '@ollama-code/ollama-code-core';
 import { isSlashCommand } from './ui/utils/commandUtils.js';
 import type { LoadedSettings } from './config/settings.js';
 import {
@@ -23,7 +23,6 @@ import {
   OutputFormat,
   InputFormat,
   uiTelemetryService,
-  parseAndFormatApiError,
   createDebugLogger,
 } from '@ollama-code/ollama-code-core';
 import type { CLIUserMessage, PermissionMode } from './nonInteractive/types.js';
@@ -290,13 +289,9 @@ export async function runNonInteractive(
             outputFormat === OutputFormat.TEXT &&
             event.type === OllamaEventType.Error
           ) {
-            const errorText = parseAndFormatApiError(
-              event.value.error,
-              config.getContentGeneratorConfig()?.authType,
-            );
-            process.stderr.write(`${errorText}\n`);
-            // Throw error to exit with non-zero code
-            throw new Error(errorText);
+            // For TEXT mode, throw the error to be handled by the catch block
+            // Don't print here to avoid duplicate error messages
+            throw event.value.error;
           }
         }
 
