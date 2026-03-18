@@ -13,7 +13,12 @@
 import { symlinkSync, existsSync, lstatSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const PACKAGES_TO_LINK = ['ink-gradient', 'gradient-string', 'tinygradient'];
+const PACKAGES_TO_LINK = [
+  'ink-gradient',
+  'gradient-string',
+  'tinygradient',
+  'hnswlib-node',
+];
 
 function findPnpmPackage(packageName) {
   const pnpmDir = resolve('node_modules/.pnpm');
