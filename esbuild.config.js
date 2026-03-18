@@ -26,6 +26,7 @@ const pkg = require(path.resolve(__dirname, 'package.json'));
 rmSync(path.resolve(__dirname, 'dist'), { recursive: true, force: true });
 
 const external = [
+  // Native modules - node-pty
   '@lydell/node-pty',
   'node-pty',
   '@lydell/node-pty-darwin-arm64',
@@ -33,6 +34,7 @@ const external = [
   '@lydell/node-pty-linux-x64',
   '@lydell/node-pty-win32-arm64',
   '@lydell/node-pty-win32-x64',
+  // Native modules - clipboard
   '@teddyzhu/clipboard',
   '@teddyzhu/clipboard-darwin-arm64',
   '@teddyzhu/clipboard-darwin-x64',
@@ -46,11 +48,45 @@ const external = [
   'bindings',
   'node-pre-gyp',
   '@mapbox/node-pre-gyp',
-  // React - must be external to avoid "Invalid hook call" error with ink
+  // React ecosystem - must be external to avoid "Invalid hook call" error
+  // ink requires React from node_modules, so we can't bundle it
   'react',
   'react-dom',
   'react-reconciler',
   'scheduler',
+  'react-is',
+  // Ink and its dependencies - they use React hooks
+  'ink',
+  'ink-spinner',
+  'ink-text-input',
+  'ink-select-input',
+  'ink-box',
+  'ink-link',
+  'ink-gradient',
+  'ansi-escapes',
+  'ansi-styles',
+  'chalk',
+  'cli-boxes',
+  'cli-cursor',
+  'cli-spinners',
+  'indent-string',
+  'is-ci',
+  'lodash.throttle',
+  'log-update',
+  'memoize-one',
+  'patch-console',
+  'pretty-format',
+  'react-devtools-core',
+  'signal-exit',
+  'slice-ansi',
+  'string-width',
+  'strip-ansi',
+  'supports-hyperlinks',
+  'type-fest',
+  'widest-line',
+  'wrap-ansi',
+  'yocto-queue',
+  'yocto-spinner',
 ];
 
 esbuild

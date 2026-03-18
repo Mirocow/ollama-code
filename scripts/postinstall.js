@@ -38,11 +38,42 @@ const PACKAGES_TO_LINK = [
   'bindings',
   'node-pre-gyp',
   '@mapbox/node-pre-gyp',
-  // React - must be external to avoid hook errors with ink
+  // React ecosystem - must be linked for ink
   'react',
   'react-dom',
   'react-reconciler',
   'scheduler',
+  'react-is',
+  // Ink and its dependencies
+  'ink',
+  'ink-spinner',
+  'ink-text-input',
+  'ink-select-input',
+  'ink-box',
+  'ink-link',
+  'ansi-escapes',
+  'ansi-styles',
+  'chalk',
+  'cli-boxes',
+  'cli-cursor',
+  'cli-spinners',
+  'indent-string',
+  'is-ci',
+  'lodash.throttle',
+  'log-update',
+  'memoize-one',
+  'patch-console',
+  'pretty-format',
+  'signal-exit',
+  'slice-ansi',
+  'string-width',
+  'strip-ansi',
+  'supports-hyperlinks',
+  'type-fest',
+  'widest-line',
+  'wrap-ansi',
+  'yocto-queue',
+  'yocto-spinner',
 ];
 
 const NATIVE_MODULES = ['hnswlib-node'];
@@ -60,19 +91,23 @@ function findPnpmPackage(packageName) {
   // Handle scoped packages: @scope/name -> @scope+name@version
   const pnpmName = packageName.replace('/', '+');
 
-  const entries = readdirSync(pnpmDir, { withFileTypes: true });
-  for (const entry of entries) {
-    if (entry.isDirectory() && entry.name.startsWith(`${pnpmName}@`)) {
-      const packagePath = resolve(
-        pnpmDir,
-        entry.name,
-        'node_modules',
-        packageName,
-      );
-      if (existsSync(packagePath)) {
-        return packagePath;
+  try {
+    const entries = readdirSync(pnpmDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory() && entry.name.startsWith(`${pnpmName}@`)) {
+        const packagePath = resolve(
+          pnpmDir,
+          entry.name,
+          'node_modules',
+          packageName,
+        );
+        if (existsSync(packagePath)) {
+          return packagePath;
+        }
       }
     }
+  } catch {
+    // Ignore errors
   }
   return null;
 }
