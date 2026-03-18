@@ -3,6 +3,7 @@
 ## Подготовка
 
 ### 1. Убедитесь, что Ollama запущена
+
 ```bash
 # Проверка статуса Ollama
 curl http://localhost:11434/api/tags
@@ -12,6 +13,7 @@ ollama pull nomic-embed-text
 ```
 
 ### 2. Сборка проекта
+
 ```bash
 cd /home/z/my-project/ollama-code
 npx pnpm install
@@ -23,33 +25,43 @@ cd packages/core && npx tsc --build
 ## Тест 1: Базовые CRUD операции
 
 ### Создание записи
+
 ```json
 model_storage operation=set namespace=knowledge key="test_key" value='{"name":"test","value":123}'
 ```
+
 **Ожидаемый результат:** `Stored test_key in knowledge (persistent/global)`
 
 ### Чтение записи
+
 ```json
 model_storage operation=get namespace=knowledge key="test_key"
 ```
+
 **Ожидаемый результат:** JSON с сохранёнными данными
 
 ### Проверка существования
+
 ```json
 model_storage operation=exists namespace=knowledge key="test_key"
 ```
+
 **Ожидаемый результат:** `Exists: test_key`
 
 ### Список ключей
+
 ```json
 model_storage operation=list namespace=knowledge
 ```
+
 **Ожидаемый результат:** Список всех ключей в namespace
 
 ### Удаление записи
+
 ```json
 model_storage operation=delete namespace=knowledge key="test_key"
 ```
+
 **Ожидаемый результат:** `Deleted: test_key`
 
 ---
@@ -57,6 +69,7 @@ model_storage operation=delete namespace=knowledge key="test_key"
 ## Тест 2: Семантический поиск
 
 ### 2.1 Добавление данных с эмбеддингами
+
 ```json
 model_storage operation=addWithEmbedding namespace=knowledge key="auth_jwt" value='
 ## JWT Аутентификация
@@ -70,6 +83,7 @@ model_storage operation=addWithEmbedding namespace=knowledge key="auth_jwt" valu
 ```
 
 ### 2.2 Добавление ещё одной записи
+
 ```json
 model_storage operation=addWithEmbedding namespace=knowledge key="auth_oauth" value='
 ## OAuth2 Авторизация
@@ -83,21 +97,27 @@ model_storage operation=addWithEmbedding namespace=knowledge key="auth_oauth" va
 ```
 
 ### 2.3 Поиск по смыслу
+
 ```json
 model_storage operation=search query="как авторизовать пользователя через социальные сети" namespaces=["knowledge"] limit=5
 ```
+
 **Ожидаемый результат:** Запись auth_oauth должна быть выше по релевантности
 
 ### 2.4 Поиск похожих записей
+
 ```json
 model_storage operation=findSimilar namespace=knowledge key="auth_jwt" limit=3
 ```
+
 **Ожидаемый результат:** auth_oauth должна появиться как похожая запись
 
 ### 2.5 Статистика knowledge base
+
 ```json
 model_storage operation=knowledgeStats
 ```
+
 **Ожидаемый результат:** Количество записей, размер, список namespace
 
 ---
@@ -105,6 +125,7 @@ model_storage operation=knowledgeStats
 ## Тест 3: Streaming для больших файлов
 
 ### 3.1 Создание большой записи
+
 ```json
 model_storage operation=set namespace=logs key="app_log" value='[2025-01-15 10:00:01] INFO: Starting application
 [2025-01-15 10:00:02] INFO: Database connected
@@ -125,15 +146,19 @@ model_storage operation=set namespace=logs key="app_log" value='[2025-01-15 10:0
 ```
 
 ### 3.2 Чтение с streaming (первые 5 строк)
+
 ```json
 model_storage operation=get namespace=logs key="app_log" streamLines=true startLine=0 maxLines=5
 ```
+
 **Ожидаемый результат:** Первые 5 строк лога
 
 ### 3.3 Продолжение чтения (следующие 5 строк)
+
 ```json
 model_storage operation=get namespace=logs key="app_log" streamLines=true startLine=5 maxLines=5
 ```
+
 **Ожидаемый результат:** Строки 6-10
 
 ---
@@ -141,15 +166,19 @@ model_storage operation=get namespace=logs key="app_log" streamLines=true startL
 ## Тест 4: TTL (время жизни)
 
 ### 4.1 Создание записи с TTL
+
 ```json
 model_storage operation=set namespace=session key="temp_token" value='{"token":"abc123"}' ttl=60
 ```
+
 **Ожидаемый результат:** `Stored temp_token in session (TTL: 60s)`
 
 ### 4.2 Проверка TTL в метаданных
+
 ```json
 model_storage operation=get namespace=session key="temp_token" includeMetadata=true
 ```
+
 **Ожидаемый результат:** JSON с полем `expiresAt`
 
 ---
@@ -157,15 +186,18 @@ model_storage operation=get namespace=session key="temp_token" includeMetadata=t
 ## Тест 5: Теги и фильтрация
 
 ### 5.1 Создание записей с тегами
+
 ```json
 model_storage operation=set namespace=knowledge key="pattern_api" value='{"pattern":"API response"}' tags=["api", "pattern"]
 model_storage operation=set namespace=knowledge key="pattern_db" value='{"pattern":"Database query"}' tags=["database", "pattern"]
 ```
 
 ### 5.2 Получение с метаданными
+
 ```json
 model_storage operation=list namespace=knowledge includeMetadata=true
 ```
+
 **Ожидаемый результат:** Список с тегами для каждой записи
 
 ---
@@ -180,6 +212,7 @@ model_storage operation=batch namespace=knowledge actions=[
   {"operation": "delete", "key": "batch_1"}
 ]
 ```
+
 **Ожидаемый результат:** `Batch: 3/4 succeeded` (3 set + 1 delete)
 
 ---
@@ -187,17 +220,21 @@ model_storage operation=batch namespace=knowledge actions=[
 ## Тест 7: Merge и Append
 
 ### 7.1 Merge (слияние объектов)
+
 ```json
 model_storage operation=set namespace=knowledge key="config" value='{"theme":"dark","lang":"en"}'
 model_storage operation=merge namespace=knowledge key="config" value='{"lang":"ru","notifications":true}'
 ```
+
 **Ожидаемый результат:** `{"theme":"dark","lang":"ru","notifications":true}`
 
 ### 7.2 Append (добавление в массив)
+
 ```json
 model_storage operation=set namespace=knowledge key="history" value='["item1"]'
 model_storage operation=append namespace=knowledge key="history" value='item2'
 ```
+
 **Ожидаемый результат:** `["item1", "item2"]`
 
 ---
@@ -205,18 +242,23 @@ model_storage operation=append namespace=knowledge key="history" value='item2'
 ## Тест 8: Backup и Restore
 
 ### 8.1 Создание backup
+
 ```json
 model_storage operation=backup
 ```
+
 **Ожидаемый результат:** Путь к файлу backup
 
 ### 8.2 Список backup'ов
+
 ```json
 model_storage operation=restore
 ```
+
 **Ожидаемый результат:** Список доступных backup файлов
 
 ### 8.3 Восстановление из backup
+
 ```json
 model_storage operation=restore key="backup-2025-01-15T10-30-00.json"
 ```
@@ -226,6 +268,7 @@ model_storage operation=restore key="backup-2025-01-15T10-30-00.json"
 ## Тест 9: Верификация задач (Todo)
 
 ### 9.1 Создание задачи с верификацией
+
 ```json
 todo_write todos=[{
   "id": "create-auth-file",
@@ -256,9 +299,11 @@ todo_write todos=[{
 ```
 
 ### 9.2 Отметка выполненной с верификацией
+
 ```json
 todo_write todos=[{"id": "create-auth-file", "content": "...", "status": "completed"}] verify=true
 ```
+
 **Ожидаемый результат:** Если файл не существует, статус останется `in_progress` с примечанием об ошибке
 
 ---
@@ -302,6 +347,7 @@ exit_plan_mode plan="## Реализация системы уведомлени
   "testCommands": ["npm test -- notifications"]
 } tags=["feature", "notifications", "v2"] saveToKnowledge=true
 ```
+
 **Ожидаемый результат:** План сохранён с `knowledgeId` для семантического поиска
 
 ---
@@ -309,11 +355,13 @@ exit_plan_mode plan="## Реализация системы уведомлени
 ## Тест 12: Scope (global vs project)
 
 ### 12.1 Глобальные данные
+
 ```json
 model_storage operation=set scope=global namespace=knowledge key="user_prefs" value='{"theme":"dark"}'
 ```
 
 ### 12.2 Данные проекта
+
 ```json
 model_storage operation=set scope=project namespace=roadmap key="release_v1" value='{"date":"2025-02-01"}'
 ```
@@ -351,6 +399,7 @@ ls -la ~/.ollama-code/storage/backups/
 ## Отладка
 
 При проблемах проверьте логи:
+
 ```bash
 # Установка уровня логирования
 export DEBUG=STORAGE_TOOL:debug,KNOWLEDGE_BASE:debug
