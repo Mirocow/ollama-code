@@ -9,6 +9,7 @@
  * Postinstall script to:
  * 1. Create symlinks for packages that are bundled but need runtime access
  * 2. Rebuild native modules for the current Node.js version
+ * 3. Copy native module binaries to locations where bundled code can find them
  */
 
 import {
@@ -17,8 +18,9 @@ import {
   lstatSync,
   readdirSync,
   mkdirSync,
+  copyFileSync,
 } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, basename } from 'node:path';
 import { execSync } from 'node:child_process';
 
 // ============================================================================
@@ -167,12 +169,114 @@ function rebuildNativeModule(moduleName) {
 
   if (!moduleDir) {
     console.warn(`⚠ ${moduleName} not found in pnpm structure`);
-    return false;
+    return null;
   }
 
   console.log(`  Found at: ${moduleDir}`);
 
-  return rebuildWithNpm(moduleDir, moduleName);
+  const success = rebuildWithNpm(moduleDir, moduleName);
+  return success ? moduleDir : null;
+}
+
+// ============================================================================
+// Native Binary Copy Functions
+// ============================================================================
+
+/**
+ * Find compiled .node files in a module directory
+ */
+function findNodeBinaries(moduleDir) {
+  const binaries = [];
+  const searchDirs = [
+    'build/Release',
+    'build/Debug',
+    'build/default',
+    'prebuilds',
+    'lib/binding',
+  ];
+
+  for (const subDir of searchDirs) {
+    const dir = resolve(moduleDir, subDir);
+    if (existsSync(dir)) {
+      try {
+        const entries = readdirSync(dir, {
+          withFileTypes: true,
+          recursive: true,
+        });
+        for (const entry of entries) {
+          if (entry.isFile() && entry.name.endsWith('.node')) {
+            binaries.push(resolve(entry.path || dir, entry.name));
+          }
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+  }
+
+  return binaries;
+}
+
+/**
+ * Copy native module binaries to project root for bundled code to find them
+ */
+function copyNativeBinaries(moduleName, moduleDir) {
+  console.log(`\nCopying native binaries for ${moduleName}...`);
+
+  const binaries = findNodeBinaries(moduleDir);
+
+  if (binaries.length === 0) {
+    console.warn(`⚠ No .node binaries found in ${moduleDir}`);
+    return false;
+  }
+
+  console.log(
+    `  Found binaries: ${binaries.map((b) => basename(b)).join(', ')}`,
+  );
+
+  let copied = 0;
+
+  for (const binary of binaries) {
+    const relativePath = binary.substring(moduleDir.length);
+    const targetPath = resolve('.' + relativePath);
+
+    try {
+      // Ensure target directory exists
+      const targetDir = dirname(targetPath);
+      if (!existsSync(targetDir)) {
+        mkdirSync(targetDir, { recursive: true });
+      }
+
+      copyFileSync(binary, targetPath);
+      console.log(`  ✓ Copied ${basename(binary)} to ${targetPath}`);
+      copied++;
+    } catch (error) {
+      console.warn(`  ✗ Failed to copy ${basename(binary)}: ${error.message}`);
+    }
+  }
+
+  // Also copy to lib/binding/node-vNNN-platform-arch/ for bindings module
+  const nodeVersion = process.versions.modules;
+  const platform = process.platform;
+  const arch = process.arch;
+  const bindingDir = `lib/binding/node-v${nodeVersion}-${platform}-${arch}`;
+
+  if (!existsSync(bindingDir)) {
+    mkdirSync(bindingDir, { recursive: true });
+  }
+
+  for (const binary of binaries) {
+    const targetPath = resolve(bindingDir, basename(binary));
+    try {
+      copyFileSync(binary, targetPath);
+      console.log(`  ✓ Copied ${basename(binary)} to ${targetPath}`);
+      copied++;
+    } catch (error) {
+      console.warn(`  ✗ Failed to copy to binding dir: ${error.message}`);
+    }
+  }
+
+  return copied > 0;
 }
 
 // ============================================================================
@@ -204,10 +308,13 @@ console.log('\nStep 2: Rebuilding native modules...\n');
 
 let rebuildSuccess = 0;
 let rebuildFail = 0;
+const rebuiltModules = [];
 
 for (const moduleName of NATIVE_MODULES) {
-  if (rebuildNativeModule(moduleName)) {
+  const moduleDir = rebuildNativeModule(moduleName);
+  if (moduleDir) {
     rebuildSuccess++;
+    rebuiltModules.push({ name: moduleName, dir: moduleDir });
   } else {
     rebuildFail++;
   }
@@ -216,6 +323,13 @@ for (const moduleName of NATIVE_MODULES) {
 console.log(
   `\nNative modules: ${rebuildSuccess} rebuilt, ${rebuildFail} failed`,
 );
+
+// Step 3: Copy native binaries to locations where bundled code can find them
+console.log('\nStep 3: Copying native binaries...\n');
+
+for (const { name, dir } of rebuiltModules) {
+  copyNativeBinaries(name, dir);
+}
 
 // Summary
 console.log('\n=== Postinstall Complete ===');
