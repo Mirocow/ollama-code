@@ -11,7 +11,9 @@ import { Colors } from '../colors.js';
 export interface TodoItem {
   id: string;
   content: string;
-  status: 'pending' | 'in_progress' | 'completed';
+  status: 'pending' | 'in_progress' | 'completed' | 'blocked';
+  priority?: 'high' | 'medium' | 'low';
+  notes?: string;
 }
 
 interface TodoDisplayProps {
@@ -22,6 +24,7 @@ const STATUS_ICONS = {
   pending: '○',
   in_progress: '◐',
   completed: '●',
+  blocked: '⊘',
 } as const;
 
 export const TodoDisplay: React.FC<TodoDisplayProps> = ({ todos }) => {
@@ -46,13 +49,16 @@ const TodoItemRow: React.FC<TodoItemRowProps> = ({ todo }) => {
   const statusIcon = STATUS_ICONS[todo.status];
   const isCompleted = todo.status === 'completed';
   const isInProgress = todo.status === 'in_progress';
+  const isBlocked = todo.status === 'blocked';
 
   // Use the same color for both status icon and text, like RadioButtonSelect
   const itemColor = isCompleted
     ? Colors.Foreground
     : isInProgress
       ? Colors.AccentGreen
-      : Colors.Foreground;
+      : isBlocked
+        ? Colors.AccentRed
+        : Colors.Foreground;
 
   return (
     <Box flexDirection="row" minHeight={1}>
@@ -65,6 +71,7 @@ const TodoItemRow: React.FC<TodoItemRowProps> = ({ todo }) => {
       <Box flexGrow={1}>
         <Text color={itemColor} strikethrough={isCompleted} wrap="wrap">
           {todo.content}
+          {isBlocked && todo.notes && ` (${todo.notes})`}
         </Text>
       </Box>
     </Box>

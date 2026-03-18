@@ -61,10 +61,14 @@ export function useResumeCommand(
 
       // Get storage context reminder for resumed session
       try {
-        const storageReminder = await getSessionContextForPrompt(sessionId, true);
+        const storageReminder = await getSessionContextForPrompt(
+          sessionId,
+          true,
+        );
         if (storageReminder) {
           // Prepend storage reminder to the resumed session
           const reminderItem = {
+            id: Date.now(),
             type: 'user' as const,
             text: storageReminder,
           };
@@ -72,6 +76,7 @@ export function useResumeCommand(
         }
       } catch (error) {
         // Ignore errors getting storage reminder
+        // eslint-disable-next-line no-console
         console.warn('[Resume] Failed to get storage reminder:', error);
       }
 

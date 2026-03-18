@@ -658,7 +658,6 @@ export class PluginRegistry {
       'git-tools',
       'lsp-tools',
       'mcp-tools',
-      'utility-tools',
     ];
   }
 
@@ -944,10 +943,8 @@ export async function initializePluginRegistry(
       getAllEnv: () =>
         ({ ...process.env }) as Record<string, string | undefined>,
       // Cross-plugin tool execution
-      executeTool: async (
-        toolName: string,
-        params: Record<string, unknown>,
-      ) => pluginManager.executeToolByName(toolName, params),
+      executeTool: async (toolName: string, params: Record<string, unknown>) =>
+        pluginManager.executeToolByName(toolName, params),
       findTool: (toolName: string) => pluginManager.findToolByName(toolName),
     };
     setPluginToolContextProvider(contextProvider);
