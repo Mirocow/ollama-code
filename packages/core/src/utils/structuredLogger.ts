@@ -81,7 +81,6 @@ class StructuredLogger {
     this.output = options?.output ?? this.defaultOutput;
   }
 
-   
   private defaultOutput(entry: StructuredLogEntry): void {
     const output = JSON.stringify(entry);
     switch (entry.level) {
@@ -197,11 +196,37 @@ class StructuredLogger {
     try {
       const result = await fn();
       const duration = Date.now() - start;
-      this.debug(module, `${operation} completed`, { duration });
+      this.output(
+        this.createEntry(
+          'debug',
+          module,
+          `${operation} completed`,
+          undefined,
+          duration,
+        ),
+      );
       return result;
     } catch (error) {
       const duration = Date.now() - start;
-      this.error(module, `${operation} failed`, error, { duration });
+      const entry = this.createEntry(
+        'error',
+        module,
+        `${operation} failed`,
+        undefined,
+        duration,
+      );
+
+      if (error instanceof Error) {
+        entry.error = {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        };
+      } else if (error !== undefined) {
+        entry.data = { error: String(error) };
+      }
+
+      this.output(entry);
       throw error;
     }
   }

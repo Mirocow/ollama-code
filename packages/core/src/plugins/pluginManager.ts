@@ -48,7 +48,9 @@ export class PluginManager {
   private sessionId: string = '';
   private modelId: string | undefined;
   // Tool registry reference for cross-plugin tool execution
-  private toolRegistry: import('../tools/tool-registry.js').ToolRegistry | null = null;
+  private toolRegistry:
+    | import('../tools/tool-registry.js').ToolRegistry
+    | null = null;
 
   // Health monitoring
   private healthMetrics: Map<string, PluginHealth> = new Map();
@@ -62,7 +64,9 @@ export class PluginManager {
   /**
    * Set tool registry for cross-plugin tool execution
    */
-  setToolRegistry(registry: import('../tools/tool-registry.js').ToolRegistry): void {
+  setToolRegistry(
+    registry: import('../tools/tool-registry.js').ToolRegistry,
+  ): void {
     this.toolRegistry = registry;
   }
 
@@ -481,9 +485,7 @@ export class PluginManager {
         try {
           // Build invocation and execute
           const invocation = tool.build(params);
-          const result = await invocation.execute(
-            new AbortController().signal,
-          );
+          const result = await invocation.execute(new AbortController().signal);
           return {
             success: !result.error,
             data: result,
@@ -492,8 +494,7 @@ export class PluginManager {
         } catch (error) {
           return {
             success: false,
-            error:
-              error instanceof Error ? error.message : String(error),
+            error: error instanceof Error ? error.message : String(error),
           };
         }
       }
@@ -514,8 +515,7 @@ export class PluginManager {
       } catch (error) {
         return {
           success: false,
-          error:
-            error instanceof Error ? error.message : String(error),
+          error: error instanceof Error ? error.message : String(error),
         };
       }
     }
@@ -641,13 +641,10 @@ export class PluginManager {
       // Model ID access - available to ALL plugins
       getModelId: () => this.modelId,
       // Execute another tool by name or alias - available to ALL plugins
-      executeTool: async (toolName: string, params: Record<string, unknown>) => {
-        return this.executeToolByName(toolName, params);
-      },
+      executeTool: async (toolName: string, params: Record<string, unknown>) =>
+        this.executeToolByName(toolName, params),
       // Find a tool by name or alias - available to ALL plugins
-      findTool: (toolName: string) => {
-        return this.findToolByName(toolName);
-      },
+      findTool: (toolName: string) => this.findToolByName(toolName),
     };
 
     return {

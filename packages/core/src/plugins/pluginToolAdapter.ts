@@ -52,7 +52,10 @@ export interface PluginToolContextProvider {
   /** Get all environment variables */
   getAllEnv(): Record<string, string | undefined>;
   /** Execute another tool by name or alias */
-  executeTool(toolName: string, params: Record<string, unknown>): Promise<import('./types.js').ToolExecutionResult>;
+  executeTool(
+    toolName: string,
+    params: Record<string, unknown>,
+  ): Promise<import('./types.js').ToolExecutionResult>;
   /** Find a tool by name or alias */
   findTool(toolName: string): string | undefined;
 }
@@ -272,12 +275,11 @@ class PluginToolInvocation extends BaseToolInvocation<
             getPromptRegistry: () => provider.getPromptRegistry(),
             getSessionId: () => provider.getSessionId(),
             getModelId: () => provider.getModelId(),
-            executeTool: async (toolName: string, params: Record<string, unknown>) => {
-              return provider.executeTool(toolName, params);
-            },
-            findTool: (toolName: string) => {
-              return provider.findTool(toolName);
-            },
+            executeTool: async (
+              toolName: string,
+              params: Record<string, unknown>,
+            ) => provider.executeTool(toolName, params),
+            findTool: (toolName: string) => provider.findTool(toolName),
           },
         },
         // Storage - available to ALL tools by default
@@ -341,7 +343,9 @@ class PluginToolInvocation extends BaseToolInvocation<
           getSessionId: () => '',
           getModelId: () => undefined,
           executeTool: async () => {
-            throw new Error('Tool execution not available - no context provider set.');
+            throw new Error(
+              'Tool execution not available - no context provider set.',
+            );
           },
           findTool: () => undefined,
         },

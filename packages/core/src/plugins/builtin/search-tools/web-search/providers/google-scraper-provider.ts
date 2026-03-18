@@ -68,7 +68,10 @@ export class GoogleScraperProvider extends BaseWebSearchProvider {
   /**
    * Parse DuckDuckGo search results from HTML.
    */
-  private parseResults(html: string, maxResults: number): WebSearchResultItem[] {
+  private parseResults(
+    html: string,
+    maxResults: number,
+  ): WebSearchResultItem[] {
     const results: WebSearchResultItem[] = [];
 
     // Pattern for result links: <a class="result__a" href="//duckduckgo.com/l/?uddg=URL">
@@ -80,7 +83,7 @@ export class GoogleScraperProvider extends BaseWebSearchProvider {
       /<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi;
 
     // Extract all links with URLs and titles
-    const links: { url: string; title: string }[] = [];
+    const links: Array<{ url: string; title: string }> = [];
     let match;
 
     while ((match = linkPattern.exec(html)) !== null) {
@@ -91,11 +94,11 @@ export class GoogleScraperProvider extends BaseWebSearchProvider {
         // Get title from the anchor content
         const startIdx = match.index;
         const context = html.substring(startIdx, startIdx + 500);
-        const titleMatch = context.match(/class="result__a"[^>]*>([\s\S]*?)<\/a>/);
+        const titleMatch = context.match(
+          /class="result__a"[^>]*>([\s\S]*?)<\/a>/,
+        );
 
-        const title = titleMatch
-          ? this.cleanHtml(titleMatch[1])
-          : 'No title';
+        const title = titleMatch ? this.cleanHtml(titleMatch[1]) : 'No title';
 
         if (url && url.startsWith('http')) {
           links.push({ url, title });
