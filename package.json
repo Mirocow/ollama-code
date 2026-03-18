@@ -154,7 +154,8 @@
       "@lydell/node-pty",
       "sharp",
       "unrs-resolver",
-      "@tailwindcss/oxide"
+      "@tailwindcss/oxide",
+      "hnswlib-node"
     ]
   },
   "files": [
