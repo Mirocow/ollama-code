@@ -42,6 +42,7 @@ const external = [
   '@teddyzhu/clipboard-win32-arm64-msvc',
   'chalk',
   'ansi-escapes',
+  'ink-gradient',
 ];
 
 esbuild

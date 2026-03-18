@@ -7,6 +7,7 @@
 import type React from 'react';
 import { memo } from 'react';
 import { Box, Text } from 'ink';
+import Gradient from 'ink-gradient';
 import {
   AuthType,
   shortenPath,
@@ -340,6 +341,13 @@ export const Header: React.FC<HeaderProps> = memo(
           ? shortenedPath.slice(0, maxPathLength)
           : shortenedPath;
 
+    // Use theme gradient colors if available, otherwise use text colors
+    const gradientColors = theme.ui.gradient || [
+      theme.text.secondary,
+      theme.text.link,
+      theme.text.accent,
+    ];
+
     return (
       <Box
         flexDirection="row"
@@ -351,7 +359,9 @@ export const Header: React.FC<HeaderProps> = memo(
         {showLogo && (
           <>
             <Box flexShrink={0}>
-              <Text color={theme.text.accent}>{displayLogo}</Text>
+              <Gradient colors={gradientColors}>
+                <Text>{displayLogo}</Text>
+              </Gradient>
             </Box>
             {/* Fixed gap between logo and info panel */}
             <Box width={logoGap} />
