@@ -691,7 +691,7 @@ async function analyzeSecurityStreaming(
           type: 'security',
           severity,
           message,
-          line: lineNumber + 1,
+          line: _lineNumber + 1,
           rule: 'security-' + pattern.source.substring(0, 20),
           fix: 'Use secure alternatives and sanitize all user inputs.',
         });
@@ -720,7 +720,7 @@ async function analyzeDependenciesStreaming(
         name: match[1],
         type: 'import',
         source: match[0],
-        line: lineNumber + 1,
+        line: _lineNumber + 1,
         isLocal: match[1].startsWith('.') || match[1].startsWith('/'),
         isUsed: true,
       });
@@ -733,7 +733,7 @@ async function analyzeDependenciesStreaming(
         name: requireMatch[1],
         type: 'require',
         source: requireMatch[0],
-        line: lineNumber + 1,
+        line: _lineNumber + 1,
         isLocal:
           requireMatch[1].startsWith('.') || requireMatch[1].startsWith('/'),
         isUsed: true,

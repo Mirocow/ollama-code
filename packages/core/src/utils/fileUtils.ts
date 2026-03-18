@@ -871,3 +871,345 @@ export async function streamFileLines(
     }
   });
 }
+
+// ============================================================================
+// Higher-Level Streaming Utilities
+// ============================================================================
+
+/**
+ * Stream file and collect lines (with optional limit)
+ * Memory-efficient for large files
+ */
+export async function streamAndCollectLines(
+  filePath: string,
+  maxLines?: number,
+  options?: {
+    startLine?: number;
+    signal?: AbortSignal;
+  },
+): Promise<string[]> {
+  const lines: string[] = [];
+  const startLine = options?.startLine ?? 0;
+
+  await streamFileLines(
+    filePath,
+    (line, lineNumber) => {
+      if (lineNumber >= startLine) {
+        lines.push(line);
+      }
+
+      if (maxLines && lines.length >= maxLines) {
+        return false; // Stop
+      }
+
+      return true;
+    },
+    options,
+  );
+
+  return lines;
+}
+
+/**
+ * Stream file and search for pattern
+ * Returns line numbers where pattern is found
+ */
+export async function streamAndSearch(
+  filePath: string,
+  pattern: string | RegExp,
+  options?: {
+    maxMatches?: number;
+    signal?: AbortSignal;
+  },
+): Promise<number[]> {
+  const regex =
+    typeof pattern === 'string' ? new RegExp(pattern, 'g') : pattern;
+  const matches: number[] = [];
+  const maxMatches = options?.maxMatches ?? Infinity;
+
+  await streamFileLines(
+    filePath,
+    (line, lineNumber) => {
+      if (regex.test(line)) {
+        matches.push(lineNumber + 1); // 1-based line numbers
+      }
+
+      if (matches.length >= maxMatches) {
+        return false; // Stop
+      }
+
+      return true;
+    },
+    { signal: options?.signal },
+  );
+
+  return matches;
+}
+
+/**
+ * Stream file and find first N matching lines
+ */
+export async function streamAndFindFirst(
+  filePath: string,
+  pattern: string | RegExp,
+  maxMatches: number = 10,
+  options?: {
+    contextLines?: number;
+    signal?: AbortSignal;
+  },
+): Promise<Array<{ line: string; lineNumber: number }>> {
+  const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
+  const matches: Array<{ line: string; lineNumber: number }> = [];
+
+  await streamFileLines(
+    filePath,
+    (line, lineNumber) => {
+      if (regex.test(line)) {
+        matches.push({
+          line,
+          lineNumber: lineNumber + 1, // 1-based
+        });
+
+        if (matches.length >= maxMatches) {
+          return false; // Stop
+        }
+      }
+      return true;
+    },
+    { signal: options?.signal },
+  );
+
+  return matches;
+}
+
+/**
+ * Stream file with progress callback
+ */
+export async function streamWithProgress(
+  filePath: string,
+  onChunk: (
+    chunk: string,
+    progress: {
+      bytesProcessed: number;
+      totalBytes: number;
+      percentage: number;
+    },
+  ) => boolean | void,
+  options?: {
+    chunkSize?: number;
+    progressInterval?: number;
+    signal?: AbortSignal;
+  },
+): Promise<StreamingFileResult> {
+  const chunkSize = options?.chunkSize ?? DEFAULT_CHUNK_SIZE;
+  const progressInterval = options?.progressInterval ?? 1000;
+
+  const stats = await fs.promises.stat(filePath);
+  const totalBytes = stats.size;
+  let bytesProcessed = 0;
+  let lastProgressTime = Date.now();
+  let lines = 0;
+
+  const stream = fs.createReadStream(filePath, {
+    encoding: 'utf-8',
+    highWaterMark: chunkSize,
+  });
+
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk: string | Buffer) => {
+      if (options?.signal?.aborted) {
+        stream.destroy();
+        return;
+      }
+
+      const chunkStr = chunk.toString('utf-8');
+      bytesProcessed += chunkStr.length;
+      lines += chunkStr.split('\n').length - 1;
+
+      const now = Date.now();
+      if (now - lastProgressTime >= progressInterval) {
+        const percentage = Math.round((bytesProcessed / totalBytes) * 100);
+        const result = onChunk(chunkStr, {
+          bytesProcessed,
+          totalBytes,
+          percentage,
+        });
+        if (result === false) {
+          stream.destroy();
+          return;
+        }
+        lastProgressTime = now;
+      } else {
+        onChunk(chunkStr, {
+          bytesProcessed,
+          totalBytes,
+          percentage: Math.round((bytesProcessed / totalBytes) * 100),
+        });
+      }
+    });
+
+    stream.on('end', () => {
+      resolve({
+        size: stats.size,
+        lines,
+        streamed: true,
+        path: filePath,
+      });
+    });
+
+    stream.on('error', reject);
+
+    if (options?.signal) {
+      options.signal.addEventListener('abort', () => {
+        stream.destroy();
+        resolve({
+          size: stats.size,
+          lines,
+          streamed: true,
+          path: filePath,
+        });
+      });
+    }
+  });
+}
+
+/**
+ * Read last N lines of a file efficiently (tail)
+ */
+export async function tailFile(
+  filePath: string,
+  linesCount: number = 100,
+  options?: {
+    signal?: AbortSignal;
+  },
+): Promise<{ lines: string[]; totalLines: number }> {
+  const stats = await fs.promises.stat(filePath);
+  const fileSize = stats.size;
+
+  // For small files, read all and slice
+  if (fileSize < STREAMING_THRESHOLD_BYTES) {
+    const content = await readFileWithEncoding(filePath);
+    const allLines = content.split('\n');
+    return {
+      lines: allLines.slice(-linesCount),
+      totalLines: allLines.length,
+    };
+  }
+
+  // For large files, stream and keep last N lines in memory
+  const lines: string[] = [];
+
+  await streamFileLines(
+    filePath,
+    (line) => {
+      lines.push(line);
+      if (lines.length > linesCount * 2) {
+        // Keep only last 2x lines to avoid memory bloat
+        lines.splice(0, lines.length - linesCount * 2);
+      }
+      return true;
+    },
+    { signal: options?.signal },
+  );
+
+  return {
+    lines: lines.slice(-linesCount),
+    totalLines: lines.length,
+  };
+}
+
+/**
+ * Search in file with context lines (grep-like)
+ */
+export async function searchInFile(
+  filePath: string,
+  pattern: string | RegExp,
+  options?: {
+    contextLines?: number;
+    maxMatches?: number;
+    signal?: AbortSignal;
+  },
+): Promise<Array<{ lineNumber: number; line: string; context?: string[] }>> {
+  const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
+  const contextLines = options?.contextLines ?? 0;
+  const maxMatches = options?.maxMatches ?? 100;
+
+  const matches: Array<{
+    lineNumber: number;
+    line: string;
+    context?: string[];
+  }> = [];
+  const lineBuffer: string[] = [];
+  const bufferSize = contextLines * 2 + 1;
+  let matchCount = 0;
+
+  await streamFileLines(
+    filePath,
+    (line, lineNumber) => {
+      // Add to sliding window
+      lineBuffer.push(line);
+      if (lineBuffer.length > bufferSize) {
+        lineBuffer.shift();
+      }
+
+      if (regex.test(line)) {
+        const context =
+          contextLines > 0 && lineBuffer.length > 1
+            ? lineBuffer.slice(0, -1)
+            : undefined;
+
+        matches.push({
+          lineNumber: lineNumber + 1, // 1-based
+          line,
+          context,
+        });
+
+        matchCount++;
+        if (matchCount >= maxMatches) {
+          return false; // Stop
+        }
+      }
+
+      return true;
+    },
+    { signal: options?.signal },
+  );
+
+  return matches;
+}
+
+/**
+ * Read a range of lines from a file
+ */
+export async function readFileLines(
+  filePath: string,
+  startLine: number,
+  endLine: number,
+  options?: {
+    signal?: AbortSignal;
+  },
+): Promise<{ lines: string[]; totalLines: number }> {
+  const lines: string[] = [];
+  let totalLines = 0;
+
+  await streamFileLines(
+    filePath,
+    (line, lineNumber) => {
+      totalLines = lineNumber + 1;
+
+      if (lineNumber >= startLine && lineNumber <= endLine) {
+        lines.push(line);
+      }
+
+      // Stop after reading the range
+      if (lineNumber > endLine) {
+        return false;
+      }
+
+      return true;
+    },
+    { signal: options?.signal },
+  );
+
+  return { lines, totalLines };
+}
