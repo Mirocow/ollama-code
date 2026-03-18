@@ -1,226 +1,171 @@
-# Storage-Centric AI Behavior Guidelines
+# Storage Behavior Guidelines
 
-## Core Principle
+## Model Reminders for Storage Usage
 
-**Storage is your memory. Context is your workspace.**
-
-Keep workspace clean. Store everything valuable in persistent storage.
+This document defines when and how the model should be reminded to use storage.
 
 ---
 
-## The Storage-First Mindset
+## Session Start Behavior
 
-### Every piece of information should go through this decision tree:
+When a session starts (including resume), the model should check storage:
 
 ```
-Is it needed RIGHT NOW for the current operation?
-├─ YES → Keep in context (temporarily)
-└─ NO → Is it valuable for future?
-    ├─ YES → STORE IT NOW in model_storage
-    └─ NO → Discard (don't clutter context)
-```
-
-### What Goes Where
-
-| Type | Storage? | Context? | Why |
-|------|----------|----------|-----|
-| Project conventions | ✅ knowledge | ❌ | Reused every session |
-| Current error message | ❌ | ✅ | Needed now for debugging |
-| User preferences | ✅ knowledge | ❌ | Persistent across sessions |
-| Active file contents | ❌ | ✅ | Currently being edited |
-| Discovered patterns | ✅ knowledge | ❌ | Valuable for future |
-| Last 3 messages | ❌ | ✅ | Immediate context |
-| Solution to error | ✅ learning | ❌ | Valuable for future |
-| Current task description | ✅ context | ✅ | Both (for resume) |
-
----
-
-## Storage Operations Cheat Sheet
-
-### Start of Session
-```json
-// 1. Check previous context
-model_storage operation=search query="current task progress" namespaces=["context"] limit=3
-
-// 2. Load active work
-model_storage operation=get namespace=plans key="current"
-model_storage operation=get namespace=todos key="items"
-
-// 3. Get relevant knowledge
-model_storage operation=search query="project conventions patterns" namespaces=["knowledge"] limit=5
-```
-
-### During Work
-```json
-// When you learn something:
-model_storage operation=addWithEmbedding namespace=knowledge key="discovered_pattern" value="..." tags=["pattern"]
-
-// When user makes a decision:
-model_storage operation=set namespace=knowledge key="user_decision_X" value='{"decision":"...","reason":"..."}'
-
-// When solving an error:
-model_storage operation=addWithEmbedding namespace=learning key="error_solution_X" value="..." tags=["error","solution"]
-```
-
-### End of Session
-```json
-// 1. Save progress
-model_storage operation=set namespace=context key="session_progress" value='{
-  "completed": ["task1", "task2"],
-  "inProgress": "task3",
-  "nextSteps": ["task4"],
-  "findings": ["pattern X is useful"]
-}'
-
-// 2. Update roadmap
-model_storage operation=merge namespace=roadmap key="v1_progress" value='{"completed":["feature1"]}'
-
-// 3. Store important findings
-model_storage operation=addWithEmbedding namespace=knowledge key="session_YYYY_MM_DD" value="..." tags=["session"]
+<!-- Auto-injected on session start -->
+<storage-reminder>
+Your persistent storage is available. Consider checking:
+1. model_storage operation=search query="current work" namespaces=["context", "plans"] limit=3
+2. model_storage operation=get namespace=todos key="items"
+3. model_storage operation=list namespace=knowledge
+</storage-reminder>
 ```
 
 ---
 
-## Context Management Rules
+## Periodic Reminders
 
-### Rule 1: Immediate Storage
-When you discover something valuable, store it IMMEDIATELY.
-
-❌ BAD: "I'll remember this pattern for later"
-✅ GOOD: Store in `knowledge` namespace now
-
-### Rule 2: Search Before Asking
-Before asking user for information, check storage first.
-
-❌ BAD: "What are the project conventions?"
-✅ GOOD: `model_storage operation=search query="project conventions"`
-
-### Rule 3: Summarize and Store
-Periodically summarize old context and store the summary.
+Every N messages (configurable, default: 10), inject a subtle reminder:
 
 ```
-After every 10+ exchanges:
-1. Summarize what was discussed
-2. Extract valuable patterns
-3. Store in appropriate namespace
-4. Clear summarized content from context
-```
-
-### Rule 4: Clean Completed Items
-Remove completed tasks from context but keep in storage.
-
-```json
-// Mark todo as complete
-todo_write todos=[{"id": "X", "status": "completed"}]
-
-// Context can now forget this task
-// It's safely stored in todos namespace
+<storage-hint>
+💡 Consider saving valuable discoveries to storage:
+- Patterns found: `model_storage operation=addWithEmbedding namespace=knowledge`
+- Progress: `model_storage operation=merge namespace=context key="progress"`
+- Use search instead of context: `model_storage operation=search query="..."`
+</storage-hint>
 ```
 
 ---
 
-## User-Editable Knowledge Files
+## Context Size Warnings
 
-### Location
-Users can edit knowledge directly in:
-```
-~/.ollama-code/storage/md/
-├── knowledge/
-│   ├── project_conventions.md
-│   ├── api_patterns.md
-│   └── user_preferences.md
-├── roadmap/
-│   └── v1_milestones.md
-├── plans/
-│   └── current.md
-└── learning/
-    └── error_solutions.md
-```
+When context approaches limits:
 
-### When User Updates Files
-The system will notify you:
 ```
-📝 Storage Updated by User
-- knowledge/project_conventions.md - modified
-```
-
-**Action**: Check the changes and update your understanding accordingly.
-
----
-
-## Anti-Patterns to Avoid
-
-### ❌ Hoarding in Context
-```
-BAD: Keeping 50KB of reference documentation in context
-GOOD: Store in knowledge, search when needed
-```
-
-### ❌ Not Saving Discoveries
-```
-BAD: Discovering a pattern, using it once, forgetting it
-GOOD: Store with embedding for future semantic search
-```
-
-### ❌ Repeating Information
-```
-BAD: Asking "How should I format the API response?" every session
-GOOD: Store convention once, reference from storage
-```
-
-### ❌ Losing Session Context
-```
-BAD: Ending session without saving progress
-GOOD: Always save session_progress before ending
+<storage-warning priority="high">
+⚠️ Context usage is high. Consider:
+1. Store discovered patterns: model_storage operation=addWithEmbedding namespace=knowledge key="pattern_name" value="..." tags=["pattern"]
+2. Save progress: model_storage operation=set namespace=context key="session_progress" value="{...}"
+3. Clear completed items from context
+4. Use semantic search instead of keeping reference material
+</storage-warning>
 ```
 
 ---
 
-## Storage Notifications
+## Task Completion Triggers
 
-The system can notify you about:
-
-1. **Context Overflow**: When context gets too large
-2. **Storage Updates**: When user edits MD files
-3. **Periodic Reminders**: Every N minutes to check storage usage
-4. **Knowledge Opportunities**: When you discover something store-worthy
-
-Pay attention to these notifications!
-
----
-
-## Quick Reference Card
+When a significant task is completed:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                 STORAGE-FIRST WORKFLOW                  │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  START ──► Load context from storage                    │
-│    │                                                    │
-│    ▼                                                    │
-│  WORK ──► Store discoveries immediately                 │
-│    │      Use semantic search instead of context        │
-│    │                                                    │
-│    ▼                                                    │
-│  PERIODIC ──► Summarize old context                     │
-│    │          Store patterns found                      │
-│    │                                                    │
-│    ▼                                                    │
-│  END ──► Save session progress                          │
-│          Store final findings                           │
-│          Update roadmap                                 │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+<storage-suggestion>
+Task completed. Consider saving:
+- What was done: model_storage operation=set namespace=context key="last_completed" value="{...}"
+- Patterns discovered: model_storage operation=addWithEmbedding namespace=knowledge key="discovery" value="..."
+- Update roadmap: model_storage operation=merge namespace=roadmap key="progress" value="{...}"
+</storage-suggestion>
 ```
 
 ---
 
-## Remember
+## Storage Operations Quick Reference
 
-> **Storage is persistent. Context is temporary.**
+### For Context Reduction
 
-Every valuable piece of information should find its way to storage.
-Context should only contain what's needed for the CURRENT operation.
+| Instead of... | Use... |
+|---------------|--------|
+| Keeping all knowledge in context | `search query="topic"` |
+| Remembering user preferences | `set namespace=knowledge key="user_prefs"` |
+| Tracking todo state | `set namespace=todos key="items"` |
+| Storing session progress | `set namespace=context key="progress"` |
 
-When in doubt: STORE IT!
+### For Knowledge Management
+
+| Scenario | Operation |
+|----------|-----------|
+| Learn a pattern | `addWithEmbedding namespace=knowledge key="pattern_name" value="..." tags=["pattern"]` |
+| Find similar patterns | `findSimilar namespace=knowledge key="pattern_name"` |
+| Search by meaning | `search query="authentication flow" namespaces=["knowledge"]` |
+| Get statistics | `knowledgeStats` |
+
+### For Task Management
+
+| Scenario | Operation |
+|----------|-----------|
+| Start planning | `exit_plan_mode plan="..." saveToKnowledge=true` |
+| Create todos | `todo_write todos=[{...}]` |
+| Check progress | `get namespace=plans key="current"` |
+| Link to plan | `todo_write` + `exit_plan_mode` automatically link |
+
+---
+
+## Best Practices to Emphasize
+
+### 1. Store Early, Store Often
+Don't wait until the end of a task. Store discoveries as they happen:
+
+```
+// After discovering a pattern:
+model_storage operation=addWithEmbedding namespace=knowledge key="auth_jwt_flow" value="..." tags=["auth", "security"]
+```
+
+### 2. Use Semantic Search
+Instead of keeping reference material in context:
+
+```
+// BAD: Keep entire documentation in context
+// GOOD: Store and search when needed
+model_storage operation=search query="how to configure database connection" namespaces=["knowledge"] limit=5
+```
+
+### 3. Tag Appropriately
+Tags enable filtering and categorization:
+
+```
+model_storage operation=set namespace=knowledge key="eslint_config" value="..." tags=["config", "linting", "important"]
+```
+
+### 4. Set TTL for Temporary Data
+Don't let storage grow indefinitely:
+
+```
+model_storage operation=set namespace=session key="temp_cache" value="..." ttl=3600 // 1 hour
+```
+
+---
+
+## Integration with Tools
+
+### todo_write
+- Automatically saves to `todos` namespace
+- Supports verification steps
+- Links to active plans
+
+### exit_plan_mode
+- Saves to `plans` namespace with 7-day TTL
+- Optional `saveToKnowledge` for semantic search
+- Links with todos for progress tracking
+
+### save_memory
+- Use for user-facing memory (user can edit)
+- Stored as Markdown files
+- NOT for AI-internal data
+
+---
+
+## Error Handling
+
+If storage operations fail:
+1. Continue the task without storage
+2. Note the failure in context
+3. Retry on next opportunity
+4. Don't block user work
+
+---
+
+## Semantic Search Fallback
+
+If Ollama embeddings unavailable:
+- `search` falls back to keyword matching
+- Still useful but less precise
+- Warn user if semantic search is unavailable

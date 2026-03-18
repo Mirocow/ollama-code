@@ -15,6 +15,7 @@
  * Integrates with:
  * - model_storage (plans namespace) for active plans
  * - model_storage (todos namespace) for active todos
+ * - knowledge base for semantic context search
  */
 
 import {
@@ -23,6 +24,9 @@ import {
 } from '../plugins/builtin/storage-tools/index.js';
 import type { TodoItem } from '../plugins/builtin/productivity-tools/todo-write/index.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
+import {
+  getResumeContextLoader,
+} from './resumeContextLoader.js';
 
 const debugLogger = createDebugLogger('SESSION_REMINDER');
 
@@ -323,11 +327,48 @@ export function formatRemindersForPrompt(reminders: SessionReminder[]): string {
  * Get formatted session context for system prompt
  *
  * Main entry point for injecting reminders into prompts
+ * When resuming, also loads context from ResumeContextLoader
  */
 export async function getSessionContextForPrompt(
   sessionId?: string,
   isResume: boolean = false,
 ): Promise<string> {
+  const parts: string[] = [];
+  
+  // Get traditional reminders
   const reminders = await getSessionReminders(sessionId, isResume);
-  return formatRemindersForPrompt(reminders);
+  if (reminders.length > 0) {
+    parts.push(formatRemindersForPrompt(reminders));
+  }
+  
+  // When resuming, also load full context from ResumeContextLoader
+  if (isResume && sessionId) {
+    try {
+      const loader = getResumeContextLoader();
+      const context = await loader.loadResumeContext(sessionId);
+      
+      if (context) {
+        parts.push('');
+        parts.push(context.modelHint);
+        
+        debugLogger.info('[SessionReminder] Loaded resume context from ResumeContextLoader');
+      }
+    } catch (error) {
+      debugLogger.warn('[SessionReminder] Failed to load resume context:', error);
+    }
+  }
+  
+  return parts.join('\n');
+}
+
+/**
+ * Get quick summary for UI display
+ */
+export async function getSessionQuickSummary(): Promise<string> {
+  try {
+    const loader = getResumeContextLoader();
+    return await loader.getQuickSummary();
+  } catch {
+    return 'No active context found';
+  }
 }
