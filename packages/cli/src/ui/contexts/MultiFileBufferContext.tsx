@@ -14,9 +14,9 @@ import {
 } from 'react';
 import {
   MultiFileBufferManager,
-  FileBuffer,
-  BufferListEntry,
-  BufferEvent,
+  type FileBuffer,
+  type BufferListEntry,
+  type BufferEvent,
   getBufferManager,
 } from '@ollama-code/ollama-code-core';
 
@@ -24,15 +24,12 @@ import {
 interface BufferState {
   buffers: BufferListEntry[];
   activeBuffer: FileBuffer | null;
-  previousBuffer: FileBuffer | null;
+  previousBufferState: FileBuffer | null;
   bufferCount: number;
   hasDirtyBuffers: boolean;
   isLoading: boolean;
   error: string | null;
 }
-
-// Alias for hasDirtyBuffers (for API consistency)
-const hasDirtyBuffersAlias = 'hasDirtyBuffers';
 
 // Action types for the reducer
 type BufferAction =
@@ -48,7 +45,7 @@ type BufferAction =
 const initialState: BufferState = {
   buffers: [],
   activeBuffer: null,
-  previousBuffer: null,
+  previousBufferState: null,
   bufferCount: 0,
   hasDirtyBuffers: false,
   isLoading: false,
@@ -72,7 +69,7 @@ function bufferReducer(state: BufferState, action: BufferAction): BufferState {
     case 'SET_PREVIOUS_BUFFER':
       return {
         ...state,
-        previousBuffer: action.buffer,
+        previousBufferState: action.buffer,
       };
     case 'SET_DIRTY_STATUS':
       return {
@@ -101,17 +98,25 @@ interface MultiFileBufferContextType {
   // State
   buffers: BufferListEntry[];
   activeBuffer: FileBuffer | null;
-  previousBuffer: FileBuffer | null;
+  previousBufferState: FileBuffer | null;
   bufferCount: number;
   hasDirtyBuffers: boolean;
   isLoading: boolean;
   error: string | null;
 
   // Buffer operations
-  openBuffer: (filePath: string, content?: string) => Promise<FileBuffer | null>;
-  closeBuffer: (bufferNumber: number, force?: boolean) => { success: boolean; error?: string };
+  openBuffer: (
+    filePath: string,
+    content?: string,
+  ) => Promise<FileBuffer | null>;
+  closeBuffer: (
+    bufferNumber: number,
+    force?: boolean,
+  ) => { success: boolean; error?: string };
   closeCurrentBuffer: (force?: boolean) => { success: boolean; error?: string };
-  saveBuffer: (filePath?: string) => Promise<{ success: boolean; error?: string }>;
+  saveBuffer: (
+    filePath?: string,
+  ) => Promise<{ success: boolean; error?: string }>;
   saveAllBuffers: () => Promise<{ success: boolean; errors: string[] }>;
 
   // Navigation
@@ -143,9 +148,9 @@ interface MultiFileBufferContextType {
   manager: MultiFileBufferManager;
 }
 
-const MultiFileBufferContext = createContext<MultiFileBufferContextType | undefined>(
-  undefined,
-);
+const MultiFileBufferContext = createContext<
+  MultiFileBufferContextType | undefined
+>(undefined);
 
 interface MultiFileBufferProviderProps {
   children: React.ReactNode;
@@ -235,7 +240,9 @@ export const MultiFileBufferProvider = ({
   );
 
   const saveBuffer = useCallback(
-    async (filePath?: string): Promise<{ success: boolean; error?: string }> => {
+    async (
+      filePath?: string,
+    ): Promise<{ success: boolean; error?: string }> => {
       dispatch({ type: 'SET_LOADING', isLoading: true });
       try {
         const result = await managerRef.current.saveBuffer(filePath);
@@ -317,17 +324,13 @@ export const MultiFileBufferProvider = ({
   );
 
   // Utilities
-  const getBufferByNumber = useCallback((bufferNumber: number) => {
-    return managerRef.current.getBufferByNumber(bufferNumber);
-  }, []);
+  const getBufferByNumber = useCallback((bufferNumber: number) => managerRef.current.getBufferByNumber(bufferNumber), []);
 
-  const getBufferByPath = useCallback((filePath: string) => {
-    return managerRef.current.getBufferByPath(filePath);
-  }, []);
+  const getBufferByPath = useCallback((filePath: string) => managerRef.current.getBufferByPath(filePath), []);
 
-  const getBufferList = useCallback(() => {
-    return managerRef.current.getBufferList();
-  }, []);
+  const getBufferList = useCallback(() => managerRef.current.getBufferList(), []);
+
+  const getDirtyBuffers = useCallback(() => managerRef.current.getDirtyBuffers(), []);
 
   const reloadBuffer = useCallback(
     async (
@@ -371,6 +374,7 @@ export const MultiFileBufferProvider = ({
     getBufferByNumber,
     getBufferByPath,
     getBufferList,
+    getDirtyBuffers,
     reloadBuffer,
     clearError,
 
@@ -398,4 +402,5 @@ export const useMultiFileBuffers = (): MultiFileBufferContextType => {
   return context;
 };
 
-export { MultiFileBufferManager, FileBuffer, BufferListEntry, BufferEvent };
+export { MultiFileBufferManager };
+export type { FileBuffer, BufferListEntry, BufferEvent };

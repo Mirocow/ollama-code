@@ -30,7 +30,7 @@ export interface MultiFileStatusBarProps {
 /**
  * Status bar component that displays current buffer information.
  * Similar to vim's status line.
- * 
+ *
  * Shows:
  * - Buffer number
  * - File name
@@ -101,7 +101,8 @@ export const MultiFileStatusBar: React.FC<MultiFileStatusBarProps> = ({
   const leftText = leftParts.join(' ');
   const rightText = rightParts.join(' | ');
   const separatorLength = 3; // '...'
-  const pathWidth = width - leftText.length - rightText.length - separatorLength - 4;
+  const pathWidth =
+    width - leftText.length - rightText.length - separatorLength - 4;
 
   return (
     <Box
@@ -113,7 +114,9 @@ export const MultiFileStatusBar: React.FC<MultiFileStatusBarProps> = ({
       {/* Left side - buffer info */}
       <Box flexGrow={1}>
         <Text
-          color={activeBuffer?.isDirty ? theme.status.warning : theme.text.accent}
+          color={
+            activeBuffer?.isDirty ? theme.status.warning : theme.text.accent
+          }
           bold
         >
           {leftText}
@@ -190,20 +193,15 @@ export interface BufferNavigationHintProps {
 export const BufferNavigationHint: React.FC<BufferNavigationHintProps> = ({
   show = true,
 }) => {
-  const { activeBuffer, buffers } = useMultiFileBuffers();
+  const { activeBuffer } = useMultiFileBuffers();
 
   if (!show || !activeBuffer) return null;
-
-  const _bufferList = buffers.map((b) => ({
-    num: b.bufferNumber,
-    name: path.basename(b.filePath),
-    isActive: b.bufferNumber === activeBuffer.bufferNumber,
-  }));
 
   return (
     <Box flexDirection="column">
       <Text color={theme.text.secondary}>
-        Buffer {activeBuffer.bufferNumber}: {path.basename(activeBuffer.filePath)}
+        Buffer {activeBuffer.bufferNumber}:{' '}
+        {path.basename(activeBuffer.filePath)}
         {activeBuffer.isDirty ? ' [modified]' : ''}
       </Text>
       <Text color={theme.text.secondary} dimColor>
@@ -247,5 +245,3 @@ function truncateText(text: string, maxLength: number): string {
   }
   return text.slice(0, maxLength - 3) + '...';
 }
-
-export { MultiFileStatusBar };

@@ -14,7 +14,6 @@ import {
 import type { Suggestion } from '../components/SuggestionsDisplay.js';
 import { useRecentFiles } from './useRecentFiles.js';
 import { useContextKeywords } from './useContextKeywords.js';
-import type { HistoryItemWithoutId } from '../types.js';
 
 /**
  * Options for the useSmartSuggestions hook
@@ -62,7 +61,11 @@ export interface UseSmartSuggestionsReturn {
   /** Update conversation history context */
   setConversationHistory: (history: string[]) => void;
   /** Update project structure context */
-  updateProjectStructure: (rootPath: string, directories: string[], fileTypes: Map<string, number>) => void;
+  updateProjectStructure: (
+    rootPath: string,
+    directories: string[],
+    fileTypes: Map<string, number>,
+  ) => void;
   /** Record user input for learning */
   recordUserInput: (input: string, matched?: boolean) => void;
   /** Get suggestion by index */
@@ -77,13 +80,13 @@ export interface UseSmartSuggestionsReturn {
 
 /**
  * Hook for generating smart, context-aware suggestions
- * 
+ *
  * This hook combines:
  * - Recent file tracking
  * - Conversation keyword extraction
  * - Command history analysis
  * - Project structure awareness
- * 
+ *
  * @example
  * ```tsx
  * const {
@@ -91,17 +94,17 @@ export interface UseSmartSuggestionsReturn {
  *   generateSuggestions,
  *   setCurrentFile,
  * } = useSmartSuggestions();
- * 
+ *
  * // Set current file context
  * setCurrentFile('/src/components/Button.tsx');
- * 
+ *
  * // Generate suggestions for user input
  * const sugs = generateSuggestions('fix');
  * console.log(sugs);
  * ```
  */
 export function useSmartSuggestions(
-  options: UseSmartSuggestionsOptions = {}
+  options: UseSmartSuggestionsOptions = {},
 ): UseSmartSuggestionsReturn {
   const {
     maxSuggestions = 10,
@@ -119,14 +122,16 @@ export function useSmartSuggestions(
   const engine = getSuggestionEngine();
 
   // Use sub-hooks for context
-  const { recentFiles, recordFileAccess } = useRecentFiles({ limit: 20 });
-  const { keywords, recentTopics, extractKeywords, recordTopic } = useContextKeywords();
+  const { recordFileAccess } = useRecentFiles({ limit: 20 });
+  const { extractKeywords, recordTopic } = useContextKeywords();
 
   // Local state
   const [suggestions, setSuggestions] = useState<ScoredSuggestion[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentFile, setCurrentFileState] = useState<string | undefined>();
-  const [conversationHistory, setConversationHistoryState] = useState<string[]>([]);
+  const [conversationHistory, setConversationHistoryState] = useState<string[]>(
+    [],
+  );
 
   // Refs
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -158,7 +163,9 @@ export function useSmartSuggestions(
       recentFiles: enableFileSuggestions ? store.recentFiles : [],
       recentTopics: enableTopicSuggestions ? store.recentTopics : [],
       commandHistory: enableCommandSuggestions ? store.commandHistory : [],
-      projectStructure: enableProjectSuggestions ? store.projectStructure ?? undefined : undefined,
+      projectStructure: enableProjectSuggestions
+        ? (store.projectStructure ?? undefined)
+        : undefined,
       userInput: lastInputRef.current,
       conversationHistory,
       ...customContext,
@@ -180,67 +187,76 @@ export function useSmartSuggestions(
   /**
    * Generate suggestions for given input
    */
-  const generateSuggestions = useCallback((input: string): ScoredSuggestion[] => {
-    lastInputRef.current = input;
+  const generateSuggestions = useCallback(
+    (input: string): ScoredSuggestion[] => {
+      lastInputRef.current = input;
 
-    // Check cache
-    const cacheKey = input.toLowerCase();
-    const cached = cacheRef.current.get(cacheKey);
-    if (cached) {
-      return cached.slice(0, maxSuggestions);
-    }
+      // Check cache
+      const cacheKey = input.toLowerCase();
+      const cached = cacheRef.current.get(cacheKey);
+      if (cached) {
+        return cached.slice(0, maxSuggestions);
+      }
 
-    // Build context and generate suggestions
-    const context: SuggestionContext = {
-      ...buildContext(),
-      userInput: input,
-    };
+      // Build context and generate suggestions
+      const context: SuggestionContext = {
+        ...buildContext(),
+        userInput: input,
+      };
 
-    const allSuggestions = engine.generateSuggestions(context);
+      const allSuggestions = engine.generateSuggestions(context);
 
-    // Filter by minimum score and limit
-    const filtered = allSuggestions
-      .filter(s => s.score >= minScore)
-      .slice(0, maxSuggestions);
+      // Filter by minimum score and limit
+      const filtered = allSuggestions
+        .filter((s) => s.score >= minScore)
+        .slice(0, maxSuggestions);
 
-    // Cache results
-    cacheRef.current.set(cacheKey, filtered);
+      // Cache results
+      cacheRef.current.set(cacheKey, filtered);
 
-    return filtered;
-  }, [buildContext, engine, maxSuggestions, minScore]);
+      return filtered;
+    },
+    [buildContext, engine, maxSuggestions, minScore],
+  );
 
   /**
    * Debounced suggestion generation
    */
-  const debouncedGenerate = useCallback((input: string) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    debounceTimerRef.current = setTimeout(() => {
-      if (!isMountedRef.current) return;
-
-      setIsGenerating(true);
-      const newSuggestions = generateSuggestions(input);
-
-      if (isMountedRef.current) {
-        setSuggestions(newSuggestions);
-        setIsGenerating(false);
+  const debouncedGenerate = useCallback(
+    (input: string) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
-    }, debounceDelay);
-  }, [generateSuggestions, debounceDelay]);
+
+      debounceTimerRef.current = setTimeout(() => {
+        if (!isMountedRef.current) return;
+
+        setIsGenerating(true);
+        const newSuggestions = generateSuggestions(input);
+
+        if (isMountedRef.current) {
+          setSuggestions(newSuggestions);
+          setIsGenerating(false);
+        }
+      }, debounceDelay);
+    },
+    [generateSuggestions, debounceDelay],
+  );
 
   /**
    * Update current file context
    */
-  const setCurrentFile = useCallback((file: string | undefined) => {
-    setCurrentFileState(file);
-    if (file) {
-      recordFileAccess(file, 'current');
-    }
-    // Clear cache when context changes
-    cacheRef.current.clear();
-  }, [recordFileAccess]);
+  const setCurrentFile = useCallback(
+    (file: string | undefined) => {
+      setCurrentFileState(file);
+      if (file) {
+        recordFileAccess(file, 'current');
+      }
+      // Clear cache when context changes
+      cacheRef.current.clear();
+    },
+    [recordFileAccess],
+  );
 
   /**
    * Update conversation history context
@@ -254,57 +270,65 @@ export function useSmartSuggestions(
   /**
    * Update project structure context
    */
-  const updateProjectStructure = useCallback((
-    rootPath: string,
-    directories: string[],
-    fileTypes: Map<string, number>
-  ) => {
-    store.updateProjectStructure({
-      rootPath,
-      directories,
-      fileTypes,
-      lastScanned: Date.now(),
-    });
-    // Clear cache when context changes
-    cacheRef.current.clear();
-  }, [store]);
+  const updateProjectStructure = useCallback(
+    (
+      rootPath: string,
+      directories: string[],
+      fileTypes: Map<string, number>,
+    ) => {
+      store.updateProjectStructure({
+        rootPath,
+        directories,
+        fileTypes,
+        lastScanned: Date.now(),
+      });
+      // Clear cache when context changes
+      cacheRef.current.clear();
+    },
+    [store],
+  );
 
   /**
    * Record user input for learning
    */
-  const recordUserInput = useCallback((input: string, matched: boolean = false) => {
-    // Extract keywords and record as topic
-    const extractedKeywords = extractKeywords(input, 'user');
-    if (extractedKeywords.length > 0) {
-      recordTopic(
-        input.slice(0, 50),
-        extractedKeywords.map(k => k.word),
-        []
-      );
-    }
+  const recordUserInput = useCallback(
+    (input: string, matched: boolean = false) => {
+      // Extract keywords and record as topic
+      const extractedKeywords = extractKeywords(input, 'user');
+      if (extractedKeywords.length > 0) {
+        recordTopic(
+          input.slice(0, 50),
+          extractedKeywords.map((k) => k.word),
+          [],
+        );
+      }
 
-    // Record as command usage if it looks like a command
-    if (input.startsWith('/')) {
-      const parts = input.slice(1).split(' ');
-      const command = parts[0];
-      const args = parts.slice(1).join(' ');
-      store.recordCommandUsage(command, args, matched);
-    }
-  }, [extractKeywords, recordTopic, store]);
+      // Record as command usage if it looks like a command
+      if (input.startsWith('/')) {
+        const parts = input.slice(1).split(' ');
+        const command = parts[0];
+        const args = parts.slice(1).join(' ');
+        store.recordCommandUsage(command, args, matched);
+      }
+    },
+    [extractKeywords, recordTopic, store],
+  );
 
   /**
    * Get suggestion by index
    */
-  const getSuggestionByIndex = useCallback((index: number): ScoredSuggestion | undefined => {
-    return suggestions[index];
-  }, [suggestions]);
+  const getSuggestionByIndex = useCallback(
+    (index: number): ScoredSuggestion | undefined => suggestions[index],
+    [suggestions],
+  );
 
   /**
    * Get top N suggestions
    */
-  const getTopSuggestions = useCallback((n: number): ScoredSuggestion[] => {
-    return suggestions.slice(0, n);
-  }, [suggestions]);
+  const getTopSuggestions = useCallback(
+    (n: number): ScoredSuggestion[] => suggestions.slice(0, n),
+    [suggestions],
+  );
 
   /**
    * Clear suggestion cache
@@ -327,15 +351,13 @@ export function useSmartSuggestions(
   /**
    * Basic suggestions without scores (for compatibility)
    */
-  const basicSuggestions = useMemo((): Suggestion[] => {
-    return suggestions.map(s => ({
+  const basicSuggestions = useMemo((): Suggestion[] => suggestions.map((s) => ({
       label: s.label,
       value: s.value,
       description: s.description,
       matchedIndex: s.matchedIndex,
       commandKind: s.commandKind,
-    }));
-  }, [suggestions]);
+    })), [suggestions]);
 
   /**
    * Context object for external use
@@ -350,13 +372,11 @@ export function useSmartSuggestions(
   /**
    * Cleanup on unmount
    */
-  useEffect(() => {
-    return () => {
+  useEffect(() => () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
-    };
-  }, []);
+    }, []);
 
   return {
     suggestions,
@@ -377,7 +397,7 @@ export function useSmartSuggestions(
 
 /**
  * Hook for integrating smart suggestions with existing completion systems
- * 
+ *
  * @example
  * ```tsx
  * const { enhancedSuggestions, enhanceSuggestions } = useSmartCompletion({
@@ -388,11 +408,14 @@ export function useSmartSuggestions(
  */
 export function useSmartCompletion(options: {
   baseSuggestions: Suggestion[];
-  userInput: string;
   maxSuggestions?: number;
 }) {
-  const { baseSuggestions, userInput, maxSuggestions = 10 } = options;
-  const { suggestions: smartSuggestions, setCurrentFile, recordUserInput } = useSmartSuggestions();
+  const { baseSuggestions, maxSuggestions = 10 } = options;
+  const {
+    suggestions: smartSuggestions,
+    setCurrentFile,
+    recordUserInput,
+  } = useSmartSuggestions();
 
   /**
    * Enhance base suggestions with smart suggestions
@@ -439,14 +462,14 @@ export function useSmartCompletion(options: {
 
 /**
  * Hook for tracking suggestion selection patterns
- * 
+ *
  * @example
  * ```tsx
  * const { recordSelection, getFrequentlySelected } = useSuggestionPatterns();
- * 
+ *
  * // When user selects a suggestion
  * recordSelection(suggestion.value);
- * 
+ *
  * // Get frequently selected suggestions
  * const frequent = getFrequentlySelected();
  * ```
@@ -454,25 +477,29 @@ export function useSmartCompletion(options: {
 export function useSuggestionPatterns() {
   const store = useSuggestionEngineStore();
 
-  const recordSelection = useCallback((value: string) => {
-    // Extract file path if it looks like one
-    if (value.includes('/') || value.includes('.')) {
-      store.recordFileAccess(value, 'selected');
-    }
+  const recordSelection = useCallback(
+    (value: string) => {
+      // Extract file path if it looks like one
+      if (value.includes('/') || value.includes('.')) {
+        store.recordFileAccess(value, 'selected');
+      }
 
-    // Check if it's a command
-    if (value.startsWith('/')) {
-      const parts = value.slice(1).split(' ');
-      store.recordCommandUsage(parts[0], parts.slice(1).join(' '), true);
-    }
-  }, [store]);
+      // Check if it's a command
+      if (value.startsWith('/')) {
+        const parts = value.slice(1).split(' ');
+        store.recordCommandUsage(parts[0], parts.slice(1).join(' '), true);
+      }
+    },
+    [store],
+  );
 
-  const getFrequentlySelected = useCallback((limit: number = 5) => {
-    return store.recentFiles
-      .filter(f => f.context === 'selected')
-      .sort((a, b) => b.accessCount - a.accessCount)
-      .slice(0, limit);
-  }, [store.recentFiles]);
+  const getFrequentlySelected = useCallback(
+    (limit: number = 5) => store.recentFiles
+        .filter((f) => f.context === 'selected')
+        .sort((a, b) => b.accessCount - a.accessCount)
+        .slice(0, limit),
+    [store.recentFiles],
+  );
 
   return {
     recordSelection,

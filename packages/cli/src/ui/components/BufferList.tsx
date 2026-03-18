@@ -28,7 +28,7 @@ export interface BufferListProps {
 
 /**
  * Display a list of open buffers similar to vim's :ls command.
- * 
+ *
  * Shows:
  * - Buffer number
  * - File name/path
@@ -44,7 +44,7 @@ export const BufferList: React.FC<BufferListProps> = ({
   focus: _focus = true,
   width = 80,
 }) => {
-  const { buffers, activeBuffer, previousBuffer } = useMultiFileBuffers();
+  const { buffers, activeBuffer, previousBufferState } = useMultiFileBuffers();
 
   // Sort buffers by buffer number
   const sortedBuffers = useMemo(
@@ -84,7 +84,7 @@ export const BufferList: React.FC<BufferListProps> = ({
         {visibleBuffers.map((buffer) => {
           const isActive = buffer.bufferNumber === activeBuffer?.bufferNumber;
           const isPrevious =
-            buffer.bufferNumber === previousBuffer?.bufferNumber;
+            buffer.bufferNumber === previousBufferState?.bufferNumber;
 
           // Build status indicators
           const indicators: string[] = [];
@@ -253,5 +253,3 @@ export const BufferSwitcher: React.FC<BufferSwitcherProps> = ({
     </Box>
   );
 };
-
-export { BufferList };

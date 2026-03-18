@@ -55,7 +55,7 @@ export interface BufferNavigationResult {
 
 /**
  * Hook that provides keyboard shortcuts for buffer navigation.
- * 
+ *
  * Supports vim-like commands:
  * - :bn or :buffer-next - next buffer
  * - :bp or :buffer-previous - previous buffer
@@ -68,11 +68,12 @@ export interface BufferNavigationResult {
  * - :q! - force quit
  * - Ctrl-^ - alternate buffer (switch to previous)
  */
-export function useBufferNavigation(
-  options: BufferNavigationOptions = {},
-): {
+export function useBufferNavigation(options: BufferNavigationOptions = {}): {
   /** Execute a buffer command programmatically */
-  executeCommand: (command: BufferCommand, bufferNumber?: number) => BufferNavigationResult;
+  executeCommand: (
+    command: BufferCommand,
+    bufferNumber?: number,
+  ) => Promise<BufferNavigationResult>;
   /** Get keyboard help text */
   getHelpText: () => string;
   /** Whether there are pending unsaved changes */
@@ -106,7 +107,10 @@ export function useBufferNavigation(
 
   // Execute a buffer command
   const executeCommand = useCallback(
-    (command: BufferCommand, bufferNumber?: number): BufferNavigationResult => {
+    async (
+      command: BufferCommand,
+      bufferNumber?: number,
+    ): Promise<BufferNavigationResult> => {
       let result: BufferNavigationResult = { success: true };
 
       try {
@@ -161,7 +165,7 @@ export function useBufferNavigation(
           }
 
           case 'save': {
-            const saveResult = saveBuffer();
+            const saveResult = await saveBuffer();
             if (saveResult.success) {
               result.message = activeBuffer
                 ? `Saved: ${activeBuffer.filePath}`
@@ -173,7 +177,7 @@ export function useBufferNavigation(
           }
 
           case 'saveAll': {
-            const saveAllResult = saveAllBuffers();
+            const saveAllResult = await saveAllBuffers();
             if (saveAllResult.success) {
               result.message = 'All buffers saved';
             } else {
@@ -280,8 +284,7 @@ export function useBufferNavigation(
   useKeypress(handleInput, { isActive: enableVimCommands });
 
   // Get help text for keyboard shortcuts
-  const getHelpText = useCallback((): string => {
-    return `Buffer Commands:
+  const getHelpText = useCallback((): string => `Buffer Commands:
   :bn / :buffer-next    Next buffer
   :bp / :buffer-prev    Previous buffer
   :bd [N]               Delete buffer N (current if no N)
@@ -291,8 +294,7 @@ export function useBufferNavigation(
   :ls / :buffers        List all buffers
   :q                    Quit current buffer
   :q!                   Force quit (discard changes)
-  Ctrl-^                Alternate buffer (previous)`;
-  }, []);
+  Ctrl-^                Alternate buffer (previous)`, []);
 
   // Compute derived state
   const hasUnsavedChanges = hasDirtyBuffers;
@@ -354,5 +356,3 @@ export function parseBufferCommand(
 
   return null;
 }
-
-export { useBufferNavigation };

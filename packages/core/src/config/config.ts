@@ -11,7 +11,7 @@ import process from 'node:process';
 
 // External dependencies
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
-import minimatch from 'minimatch';
+import { Minimatch } from 'minimatch';
 
 // Types
 import type {
@@ -1340,7 +1340,9 @@ export class Config {
     // Normalize path separators
     const normalizedPath = filePath.replace(/\\/g, '/');
 
-    return excludes.some((pattern) => minimatch(normalizedPath, pattern));
+    return excludes.some((pattern) =>
+      new Minimatch(pattern).match(normalizedPath),
+    );
   }
 
   getCheckpointingEnabled(): boolean {
