@@ -2,7 +2,9 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+
  */
+export const dynamic = 'force-dynamic';
 
 /**
  * Sessions Export API Route
@@ -96,7 +98,8 @@ export async function GET(request: NextRequest) {
           ];
 
           for (const msg of session.messages) {
-            const role = msg.role === 'user' ? '👤 **User**' : '🤖 **Assistant**';
+            const role =
+              msg.role === 'user' ? '👤 **User**' : '🤖 **Assistant**';
             lines.push(role);
             lines.push('');
             lines.push(msg.content);
@@ -107,7 +110,9 @@ export async function GET(request: NextRequest) {
               for (const tc of msg.toolCalls) {
                 lines.push(`- \`${tc.name}\``);
                 if (tc.result) {
-                  lines.push(`  - Result: ${JSON.stringify(tc.result).slice(0, 100)}...`);
+                  lines.push(
+                    `  - Result: ${JSON.stringify(tc.result).slice(0, 100)}...`,
+                  );
                 }
               }
               lines.push('');

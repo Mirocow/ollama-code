@@ -52,14 +52,14 @@ execSync('npx pnpm run generate', {
 // 2. core (foundation package)
 // 3. cli (depends on core, test-utils) - @ollama-code/ollama-code is the CLI package
 // 4. webui (shared UI components)
-// 5. web-app (Next.js application, depends on webui and core)
+// 5. web-app (Next.js application, depends on webui and core) - skipped due to native module issues
 // 6. sdk (no internal dependencies)
 const buildOrder = [
   '@ollama-code/ollama-code-test-utils',
   '@ollama-code/ollama-code-core',
   '@ollama-code/ollama-code',
   '@ollama-code/webui',
-  '@ollama-code/web-app',
+  // '@ollama-code/web-app', // Temporarily disabled due to native module (keytar, node-pty) issues during build
   '@ollama-code/sdk',
 ];
 

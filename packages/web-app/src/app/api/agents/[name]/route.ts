@@ -2,7 +2,9 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+
  */
+export const dynamic = 'force-dynamic';
 
 /**
  * Agent Detail API Route
@@ -37,9 +39,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ agent });
   } catch (error) {
     console.error('Failed to get agent:', error);
-    return NextResponse.json(
-      { error: 'Failed to get agent' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Failed to get agent' }, { status: 500 });
   }
 }

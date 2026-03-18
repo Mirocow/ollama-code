@@ -2,7 +2,9 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+
  */
+export const dynamic = 'force-dynamic';
 
 /**
  * Session Detail API Route
@@ -107,7 +109,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       updatedAt: Date.now(),
     };
 
-    await fs.writeFile(filePath, JSON.stringify(updatedSession, null, 2), 'utf-8');
+    await fs.writeFile(
+      filePath,
+      JSON.stringify(updatedSession, null, 2),
+      'utf-8',
+    );
 
     return NextResponse.json({ success: true, session: updatedSession });
   } catch (error) {

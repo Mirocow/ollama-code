@@ -2,7 +2,9 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+
  */
+export const dynamic = 'force-dynamic';
 
 /**
  * Memory API Route
@@ -82,7 +84,9 @@ export async function GET(request: NextRequest) {
         const stats = await fs.stat(globalPath);
         const content = await fs.readFile(globalPath, 'utf-8');
         if (content.trim()) {
-          contentParts.push(`--- Context from: ${globalPath} ---\n${content.trim()}\n--- End of Context ---`);
+          contentParts.push(
+            `--- Context from: ${globalPath} ---\n${content.trim()}\n--- End of Context ---`,
+          );
         }
         files.push({
           path: globalPath,
@@ -107,7 +111,9 @@ export async function GET(request: NextRequest) {
         const stats = await fs.stat(projectPath);
         const content = await fs.readFile(projectPath, 'utf-8');
         if (content.trim()) {
-          contentParts.push(`--- Context from: ${memoryFile} ---\n${content.trim()}\n--- End of Context ---`);
+          contentParts.push(
+            `--- Context from: ${memoryFile} ---\n${content.trim()}\n--- End of Context ---`,
+          );
         }
         files.push({
           path: projectPath,

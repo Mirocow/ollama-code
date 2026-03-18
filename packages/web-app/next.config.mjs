@@ -19,6 +19,18 @@ const nextConfig = {
     },
   },
 
+  // Server external packages - native modules that should not be bundled
+  serverExternalPackages: [
+    'keytar',
+    'node-pty',
+    '@lydell/node-pty',
+    '@lydell/node-pty-darwin-x64',
+    '@lydell/node-pty-darwin-arm64',
+    '@lydell/node-pty-linux-x64',
+    '@lydell/node-pty-win32-x64',
+    '@lydell/node-pty-win32-arm64',
+  ],
+
   // Webpack configuration for handling ESM modules and native modules
   webpack: (config, { isServer }) => {
     config.resolve.extensionAlias = {
@@ -38,28 +50,14 @@ const nextConfig = {
       'keytar',
     ];
 
-    // For server-side, use empty mock for native modules that aren't available
-    // For client-side, completely ignore these modules
-    if (!isServer) {
-      // Client-side: completely ignore native modules
-      config.resolve.alias = {
-        ...config.resolve.alias,
-      };
-      nativeModules.forEach((mod) => {
-        config.resolve.alias[mod] = false;
-      });
-    } else {
-      // Server-side: mark as external to be resolved at runtime
-      // This allows the modules to be loaded if available, or fail gracefully
-      config.externals = config.externals || [];
-      if (Array.isArray(config.externals)) {
-        config.externals.push(
-          ...nativeModules.map((mod) => ({
-            [mod]: `commonjs ${mod}`,
-          })),
-        );
-      }
-    }
+    // Completely ignore native modules via alias (both client and server)
+    // Setting to false tells webpack to return an empty module
+    config.resolve.alias = {
+      ...config.resolve.alias,
+    };
+    nativeModules.forEach((mod) => {
+      config.resolve.alias[mod] = false;
+    });
 
     return config;
   },

@@ -2,7 +2,9 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+
  */
+export const dynamic = 'force-dynamic';
 
 /**
  * Tools API Route
@@ -10,7 +12,6 @@
  * Returns list of available tools from Core ToolRegistry
  */
 
-import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getCoreService } from '@/server/coreService';
 

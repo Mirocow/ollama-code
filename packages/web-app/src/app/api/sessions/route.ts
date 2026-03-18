@@ -2,7 +2,9 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+
  */
+export const dynamic = 'force-dynamic';
 
 /**
  * Sessions API Route
@@ -14,7 +16,6 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { getOllamaUrl } from '@/lib/settings';
 
 /**
  * Session storage directory
@@ -127,7 +128,10 @@ export async function POST(request: NextRequest) {
     const session: SessionData = await request.json();
 
     if (!session.id) {
-      return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Session ID is required' },
+        { status: 400 },
+      );
     }
 
     await ensureSessionsDir();
@@ -196,7 +200,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: true, deleted });
     }
 
-    return NextResponse.json({ error: 'Specify ?all=true or ?olderThan=days' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Specify ?all=true or ?olderThan=days' },
+      { status: 400 },
+    );
   } catch (error) {
     console.error('Failed to delete sessions:', error);
     return NextResponse.json(

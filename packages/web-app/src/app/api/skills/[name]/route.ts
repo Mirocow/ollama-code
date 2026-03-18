@@ -2,7 +2,9 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+
  */
+export const dynamic = 'force-dynamic';
 
 /**
  * Skill Detail API Route
@@ -37,9 +39,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ skill });
   } catch (error) {
     console.error('Failed to get skill:', error);
-    return NextResponse.json(
-      { error: 'Failed to get skill' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Failed to get skill' }, { status: 500 });
   }
 }

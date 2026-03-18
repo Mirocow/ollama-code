@@ -2,7 +2,9 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+
  */
+export const dynamic = 'force-dynamic';
 
 /**
  * Agents/Subagents API Route
@@ -53,10 +55,7 @@ export async function POST(request: NextRequest) {
     const { name, description, model, systemPrompt, tools } = body;
 
     if (!name) {
-      return NextResponse.json(
-        { error: 'Name is required' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
     const service = await ensureCoreService();
@@ -89,10 +88,7 @@ export async function PUT(request: NextRequest) {
     const { name, ...config } = body;
 
     if (!name) {
-      return NextResponse.json(
-        { error: 'Name is required' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
     const service = await ensureCoreService();

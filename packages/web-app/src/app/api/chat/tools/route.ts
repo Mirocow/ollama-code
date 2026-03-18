@@ -2,7 +2,9 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+
  */
+export const dynamic = 'force-dynamic';
 
 /**
  * Chat Tools API Route
@@ -65,7 +67,11 @@ interface ChatRequest {
  * Get Ollama URL
  */
 function getOllamaUrl(): string {
-  return process.env.OLLAMA_URL || process.env.OLLAMA_HOST || 'http://localhost:11434';
+  return (
+    process.env.OLLAMA_URL ||
+    process.env.OLLAMA_HOST ||
+    'http://localhost:11434'
+  );
 }
 
 /**
@@ -84,7 +90,8 @@ async function getToolDefinitions(): Promise<ToolDefinition[]> {
         description: tool.description,
         parameters: {
           type: 'object',
-          properties: (tool.inputSchema?.properties as Record<string, unknown>) || {},
+          properties:
+            (tool.inputSchema?.properties as Record<string, unknown>) || {},
           required: (tool.inputSchema?.required as string[]) || [],
         },
       },
@@ -110,7 +117,7 @@ async function executeToolCall(
 
     // Get the tool
     const tool = toolRegistry.getTool(name);
-    
+
     if (!tool) {
       return { error: `Tool "${name}" not found` };
     }
@@ -225,7 +232,7 @@ export async function POST(request: NextRequest) {
                       const toolResults: ChatMessage[] = [];
                       for (const toolCall of toolCalls) {
                         const args = JSON.parse(toolCall.function.arguments);
-                        
+
                         controller.enqueue(
                           encoder.encode(
                             JSON.stringify({
@@ -267,32 +274,39 @@ export async function POST(request: NextRequest) {
                         tool_calls: toolCalls,
                       };
 
-                      const followUpResponse = await fetch(`${ollamaUrl}/api/chat`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          model,
-                          messages: [
-                            ...messages,
-                            assistantMessage,
-                            ...toolResults,
-                          ],
-                          stream: true,
-                        }),
-                        signal: abortController.signal,
-                      });
+                      const followUpResponse = await fetch(
+                        `${ollamaUrl}/api/chat`,
+                        {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            model,
+                            messages: [
+                              ...messages,
+                              assistantMessage,
+                              ...toolResults,
+                            ],
+                            stream: true,
+                          }),
+                          signal: abortController.signal,
+                        },
+                      );
 
                       if (followUpResponse.ok) {
-                        const followUpReader = followUpResponse.body?.getReader();
+                        const followUpReader =
+                          followUpResponse.body?.getReader();
                         if (followUpReader) {
                           while (true) {
                             const { done: followUpDone, value: followUpValue } =
                               await followUpReader.read();
                             if (followUpDone) break;
 
-                            const followUpChunk = decoder.decode(followUpValue, {
-                              stream: true,
-                            });
+                            const followUpChunk = decoder.decode(
+                              followUpValue,
+                              {
+                                stream: true,
+                              },
+                            );
                             const followUpLines = followUpChunk
                               .split('\n')
                               .filter(Boolean);
@@ -340,7 +354,8 @@ export async function POST(request: NextRequest) {
               encoder.encode(
                 JSON.stringify({
                   type: 'error',
-                  error: error instanceof Error ? error.message : 'Unknown error',
+                  error:
+                    error instanceof Error ? error.message : 'Unknown error',
                 }) + '\n',
               ),
             );

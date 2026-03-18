@@ -2,7 +2,9 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+
  */
+export const dynamic = 'force-dynamic';
 
 /**
  * Filesystem API Route
@@ -10,7 +12,7 @@
  * Provides secure file system access for the web UI.
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
@@ -45,10 +47,7 @@ export async function GET(request: NextRequest) {
   const securePath = resolveSecurePath(requestPath);
 
   if (!securePath) {
-    return NextResponse.json(
-      { error: 'Invalid path' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
   }
 
   try {
@@ -77,7 +76,7 @@ export async function GET(request: NextRequest) {
             type: entry.isDirectory() ? 'directory' : 'file',
             size,
           };
-        })
+        }),
       );
 
       // Sort: directories first, then files alphabetically
@@ -110,13 +109,13 @@ export async function GET(request: NextRequest) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return NextResponse.json(
         { error: 'File or directory not found' },
-        { status: 404 }
+        { status: 404 },
       );
     }
     console.error('Filesystem error:', error);
     return NextResponse.json(
       { error: 'Failed to access path' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -129,18 +128,12 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const requestPath = request.nextUrl.searchParams.get('path');
   if (!requestPath) {
-    return NextResponse.json(
-      { error: 'Path is required' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Path is required' }, { status: 400 });
   }
 
   const securePath = resolveSecurePath(requestPath);
   if (!securePath) {
-    return NextResponse.json(
-      { error: 'Invalid path' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
   }
 
   try {
@@ -152,7 +145,7 @@ export async function PUT(request: NextRequest) {
     console.error('Write error:', error);
     return NextResponse.json(
       { error: 'Failed to write file' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -165,18 +158,12 @@ export async function PUT(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const requestPath = request.nextUrl.searchParams.get('path');
   if (!requestPath) {
-    return NextResponse.json(
-      { error: 'Path is required' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Path is required' }, { status: 400 });
   }
 
   const securePath = resolveSecurePath(requestPath);
   if (!securePath) {
-    return NextResponse.json(
-      { error: 'Invalid path' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
   }
 
   try {
@@ -192,10 +179,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, path: requestPath });
   } catch (error) {
     console.error('Create error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create' }, { status: 500 });
   }
 }
 
@@ -207,18 +191,12 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const requestPath = request.nextUrl.searchParams.get('path');
   if (!requestPath) {
-    return NextResponse.json(
-      { error: 'Path is required' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Path is required' }, { status: 400 });
   }
 
   const securePath = resolveSecurePath(requestPath);
   if (!securePath) {
-    return NextResponse.json(
-      { error: 'Invalid path' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
   }
 
   try {
@@ -233,9 +211,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true, path: requestPath });
   } catch (error) {
     console.error('Delete error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
   }
 }

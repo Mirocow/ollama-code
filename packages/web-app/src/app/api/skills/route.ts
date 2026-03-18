@@ -2,7 +2,9 @@
  * @license
  * Copyright 2025 Ollama Code Team
  * SPDX-License-Identifier: Apache-2.0
+
  */
+export const dynamic = 'force-dynamic';
 
 /**
  * Skills API Route
@@ -10,7 +12,6 @@
  * Manages skills through Core SkillManager
  */
 
-import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getCoreService } from '@/server/coreService';
 
