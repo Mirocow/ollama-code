@@ -574,6 +574,9 @@ export async function parseArguments(): Promise<CliArgs> {
   // Handle --file option: load task file content as prompt
   if (result['file']) {
     const taskFilePath = resolveTaskFilePath(result['file'] as string);
+    debugLogger.info(
+      `Resolving task file: ${result['file']} -> ${taskFilePath}`,
+    );
     if (!fs.existsSync(taskFilePath)) {
       writeStderrLine(`Error: Task file not found: ${taskFilePath}`);
       process.exit(1);
@@ -582,7 +585,9 @@ export async function parseArguments(): Promise<CliArgs> {
       const fileContent = fs.readFileSync(taskFilePath, 'utf-8');
       // Set the file content as the prompt
       (result as Record<string, unknown>)['prompt'] = fileContent;
-      debugLogger.info(`Loaded task file: ${taskFilePath}`);
+      debugLogger.info(
+        `Loaded task file: ${taskFilePath} (${fileContent.length} chars)`,
+      );
     } catch (error) {
       writeStderrLine(
         `Error reading task file: ${error instanceof Error ? error.message : String(error)}`,
@@ -763,10 +768,14 @@ export async function loadCliConfig(
   // 3. If no query or prompt is provided, check isTTY: TTY means interactive, non-TTY means non-interactive
   const hasQuery = !!argv.query;
   const hasPrompt = !!argv.prompt;
+  debugLogger.info(
+    `Interactive determination: hasQuery=${hasQuery}, hasPrompt=${hasPrompt}, outputFormat=${outputFormat}, promptInteractive=${argv.promptInteractive}`,
+  );
   let interactive: boolean;
   if (argv.promptInteractive) {
     // Priority 1: Explicit -i flag means interactive
     interactive = true;
+    debugLogger.info('Interactive mode: promptInteractive flag set');
   } else if (
     (outputFormat === OutputFormat.STREAM_JSON ||
       outputFormat === OutputFormat.JSON) &&
@@ -774,14 +783,20 @@ export async function loadCliConfig(
   ) {
     // Priority 2: JSON/stream-json output with query/prompt means non-interactive
     interactive = false;
+    debugLogger.info('Non-interactive mode: JSON output with query/prompt');
   } else if (!hasQuery && !hasPrompt) {
     // Priority 3: No query or prompt means interactive only if TTY (format arguments ignored)
     interactive = process.stdin.isTTY ?? false;
+    debugLogger.info(
+      `Interactive mode: no query/prompt, TTY=${process.stdin.isTTY}`,
+    );
   } else {
     // Default: If we have query/prompt but output format is TEXT, assume non-interactive
     // (fallback for edge cases where query/prompt is provided with TEXT output)
     interactive = false;
+    debugLogger.info('Non-interactive mode: has query/prompt with TEXT output');
   }
+  debugLogger.info(`Final interactive mode: ${interactive}`);
   // In non-interactive mode, exclude tools that require a prompt.
   // However, if stream-json input is used, control can be requested via JSON messages,
   // so tools should not be excluded in that case.
