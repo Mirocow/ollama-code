@@ -13,7 +13,9 @@ import type {
   ToolCallResponseInfo,
   SessionMetrics,
   McpToolProgressData,
- Part, PartListUnion } from '@ollama-code/ollama-code-core';
+  Part,
+  PartListUnion,
+} from '@ollama-code/ollama-code-core';
 import {
   OutputFormat,
   ToolErrorType,
@@ -657,4 +659,92 @@ export function toolResultContent(
     return response.error.message;
   }
   return undefined;
+}
+
+/**
+ * Extracts potential tool call JSON objects from text.
+ * Handles cases where model outputs JSON as text instead of making actual tool calls.
+ *
+ * @param text - Text to parse for JSON tool calls
+ * @param availableTools - List of available tool names to match against
+ * @returns Array of extracted tool call objects with name and args
+ */
+export function extractJsonToolCallsFromText(
+  text: string,
+  availableTools: string[],
+): Array<{ name: string; args: Record<string, unknown> }> {
+  const extractedCalls: Array<{ name: string; args: Record<string, unknown> }> =
+    [];
+
+  if (!text || !availableTools.length) {
+    return extractedCalls;
+  }
+
+  // Pattern 1: JSON code blocks ```json ... ```
+  const jsonBlockRegex = /```json\s*\n?([\s\S]*?)\n?```/g;
+  // Pattern 2: Inline JSON objects
+  const inlineJsonRegex =
+    /\{[\s\S]*?"(?:operation|namespace|key|value)"[\s\S]*?\}/g;
+
+  const jsonCandidates: string[] = [];
+
+  // Extract from code blocks
+  let match;
+  while ((match = jsonBlockRegex.exec(text)) !== null) {
+    jsonCandidates.push(match[1].trim());
+  }
+
+  // Extract inline JSON
+  while ((match = inlineJsonRegex.exec(text)) !== null) {
+    jsonCandidates.push(match[0].trim());
+  }
+
+  // Try to parse each candidate
+  for (const candidate of jsonCandidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+
+      // Check if it looks like a tool call
+      if (parsed && typeof parsed === 'object') {
+        // Pattern 1: Has operation field (model_storage style)
+        if (parsed.operation && typeof parsed.operation === 'string') {
+          // Map operation to tool name
+          const toolName = 'model_storage';
+          if (availableTools.includes(toolName)) {
+            extractedCalls.push({
+              name: toolName,
+              args: parsed,
+            });
+          }
+        }
+        // Pattern 2: Has tool name as key (e.g., "model_storage": {...})
+        else if (Object.keys(parsed).some((k) => availableTools.includes(k))) {
+          for (const key of Object.keys(parsed)) {
+            if (availableTools.includes(key)) {
+              extractedCalls.push({
+                name: key,
+                args:
+                  typeof parsed[key] === 'object'
+                    ? parsed[key]
+                    : { value: parsed[key] },
+              });
+            }
+          }
+        }
+        // Pattern 3: Has name field
+        else if (parsed.name && typeof parsed.name === 'string') {
+          if (availableTools.includes(parsed.name)) {
+            extractedCalls.push({
+              name: parsed.name,
+              args: parsed.args || parsed.parameters || parsed,
+            });
+          }
+        }
+      }
+    } catch {
+      // Not valid JSON, skip
+    }
+  }
+
+  return extractedCalls;
 }

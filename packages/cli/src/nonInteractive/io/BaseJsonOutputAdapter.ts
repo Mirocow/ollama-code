@@ -13,9 +13,9 @@ import type {
   ServerOllamaStreamEvent,
   TaskResultDisplay,
   McpToolProgressData,
-
   Part,
-  GenerateContentResponseUsageMetadata} from '@ollama-code/ollama-code-core';
+  GenerateContentResponseUsageMetadata,
+} from '@ollama-code/ollama-code-core';
 import {
   OllamaEventType,
   ToolErrorType,
@@ -125,6 +125,7 @@ export interface JsonOutputAdapterInterface extends MessageEmitter {
 
   getSessionId(): string;
   getModel(): string;
+  getLastAssistantMessage(): CLIAssistantMessage | null;
 }
 
 /**
@@ -568,6 +569,16 @@ export abstract class BaseJsonOutputAdapter {
    */
   getModel(): string {
     return this.config.getModel();
+  }
+
+  /**
+   * Gets the last assistant message for text extraction.
+   * Used for extracting JSON tool calls from text output.
+   *
+   * @returns Last assistant message or null
+   */
+  getLastAssistantMessage(): CLIAssistantMessage | null {
+    return this.lastAssistantMessage;
   }
 
   // ========== Main Agent APIs ==========

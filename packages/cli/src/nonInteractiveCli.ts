@@ -49,6 +49,7 @@ import {
   createToolProgressHandler,
   createTaskToolProgressHandler,
   computeUsageFromMetrics,
+  extractJsonToolCallsFromText,
 } from './utils/nonInteractiveHelpers.js';
 
 /**
@@ -314,6 +315,52 @@ export async function runNonInteractive(
         // Finalize assistant message
         adapter.finalizeAssistantMessage();
         totalApiDurationMs += Date.now() - apiStartTime;
+
+        // If model didn't make tool calls but might have output JSON as text,
+        // try to extract and convert them
+        if (toolCallRequests.length === 0) {
+          const lastMessage = adapter.getLastAssistantMessage?.();
+          if (lastMessage?.message?.content) {
+            const textBlocks = lastMessage.message.content.filter(
+              (b): b is { type: 'text'; text: string } => b.type === 'text',
+            );
+            const combinedText = textBlocks.map((b) => b.text).join('\n');
+
+            const toolRegistry = config.getToolRegistry();
+            const availableTools = toolRegistry?.getAllToolNames() || [];
+
+            const extractedCalls = extractJsonToolCallsFromText(
+              combinedText,
+              availableTools,
+            );
+
+            if (
+              extractedCalls.length > 0 &&
+              outputFormat === OutputFormat.TEXT
+            ) {
+              writeStderrLine(
+                `📝 Extracted ${extractedCalls.length} tool call(s) from text output`,
+              );
+
+              // Convert extracted calls to ToolCallRequestInfo
+              for (const call of extractedCalls) {
+                const syntheticRequest: ToolCallRequestInfo = {
+                  callId: `extracted_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                  name: call.name,
+                  args: call.args,
+                  isClientInitiated: true,
+                  prompt_id: '',
+                  response_id: undefined,
+                };
+                toolCallRequests.push(syntheticRequest);
+
+                if (outputFormat === OutputFormat.TEXT) {
+                  writeStderrLine(`   → ${call.name} (from text)`);
+                }
+              }
+            }
+          }
+        }
 
         // Show completion status
         if (outputFormat === OutputFormat.TEXT) {
