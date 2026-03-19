@@ -76,6 +76,20 @@ for (const pkg of buildOrder) {
   });
 }
 
+// Bundle CLI with esbuild (creates dist/cli.js)
+console.log('\n📦 Bundling CLI with esbuild...');
+execSync('npx pnpm run bundle', {
+  stdio: 'inherit',
+  cwd: root,
+  env: {
+    ...process.env,
+    NODE_OPTIONS: '--max-old-space-size=8192',
+    CI: 'true',
+    TERM: 'dumb',
+  },
+});
+console.log('✅ CLI bundle complete: dist/cli.js\n');
+
 // also build container image if sandboxing is enabled
 // skip (-s) npm install + build since we did that above
 try {
