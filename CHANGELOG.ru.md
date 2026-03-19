@@ -1,5 +1,117 @@
 # Журнал изменений
 
+## 0.17.11
+
+_Авто-извлечение JSON Tool Calls из текста_
+
+### Новые возможности
+
+#### Автоматическое извлечение JSON Tool Calls
+
+Когда модели выводят JSON как текст вместо реальных tool calls, система теперь автоматически обнаруживает и выполняет их:
+
+| До                                           | После                                    |
+| -------------------------------------------- | ---------------------------------------- |
+| Модель выводит JSON как текст → игнорируется | JSON обнаружен → выполнен как tool calls |
+| "Model responded (no tool calls)"            | "📝 Извлечено N tool call(s) из текста"  |
+
+**Поддерживаемые JSON-паттерны:**
+
+| Паттерн       | Пример                                        |
+| ------------- | --------------------------------------------- |
+| Code blocks   | ` ```json { "operation": "set", ... } ``` `   |
+| Inline JSON   | `{ "operation": "addWithEmbedding", ... }`    |
+| Tool name key | `{ "model_storage": { "operation": "get" } }` |
+
+**Пример вывода:**
+
+```
+✅ Model responded in 323.0s (no tool calls)
+📝 Extracted 2 tool call(s) from text output
+   → model_storage (from text)
+   → model_storage (from text)
+🔧 Executing 2 tool call(s)...
+```
+
+### Изменённые файлы
+
+| Файл                                                          | Изменения                                        |
+| ------------------------------------------------------------- | ------------------------------------------------ |
+| `packages/cli/src/utils/nonInteractiveHelpers.ts`             | Добавлена функция `extractJsonToolCallsFromText` |
+| `packages/cli/src/nonInteractive/io/BaseJsonOutputAdapter.ts` | Добавлен метод `getLastAssistantMessage`         |
+| `packages/cli/src/nonInteractiveCli.ts`                       | Авто-извлечение и выполнение JSON tool calls     |
+
+### Коммиты
+
+```
+5288877e3 feat: auto-extract JSON tool calls from text output
+```
+
+---
+
+## 0.17.10
+
+_Улучшения Non-Interactive Mode и исправления Storage Tool_
+
+### Исправления ошибок
+
+#### Исправлен двойной вывод "Loaded task file"
+
+При запуске с опцией `--file` сообщение выводилось дважды (в родительском и дочернем процессе):
+
+| Проблема                    | Решение                                                           |
+| --------------------------- | ----------------------------------------------------------------- |
+| Сообщение в обоих процессах | Вывод только в дочернем процессе (`OLLAMA_CODE_NO_RELAUNCH=true`) |
+
+#### Исправлена ошибка "fetch failed" в addWithEmbedding
+
+Операция `addWithEmbedding` падала, когда Ollama не был запущен:
+
+| Проблема                                          | Решение                                                          |
+| ------------------------------------------------- | ---------------------------------------------------------------- |
+| Генерация эмбеддинга падала → вся операция падала | Сначала сохранить данные, затем попытка эмбеддинга (опционально) |
+| Никаких подсказок модели при ошибке               | Добавлена подсказка "Continue with next step"                    |
+
+**До:**
+
+```
+Add with embedding failed: fetch failed
+```
+
+**После:**
+
+```
+Added "auth_jwt_pattern" to "knowledge" (embedding failed: Ollama not running?). Data saved successfully. Continue with the next step in your task.
+```
+
+### Улучшения
+
+#### Подсказки модели в результатах инструментов
+
+Результаты инструментов теперь содержат инструкции, чтобы модель не сдавалась:
+
+| Ситуация            | Подсказка                                                              |
+| ------------------- | ---------------------------------------------------------------------- |
+| Успех               | "Continue with the next step in your task."                            |
+| Эмбеддинг не удался | "Data saved successfully. Continue with the next step in your task."   |
+| Критическая ошибка  | "Try using operation 'set' instead. Then continue with the next step." |
+
+### Изменённые файлы
+
+| Файл                                                 | Изменения                                           |
+| ---------------------------------------------------- | --------------------------------------------------- |
+| `packages/cli/src/config/config.ts`                  | Вывод "Loaded task file" только в дочернем процессе |
+| `packages/core/src/knowledge/storage-integration.ts` | Устойчивый addWithEmbedding с подсказками модели    |
+
+### Коммиты
+
+```
+8f2a26e23 fix: resolve double 'Loaded task file' output and embedding failure error
+b96016ca6 fix: improve tool result messages to guide model after errors
+```
+
+---
+
 ## 0.17.5
 
 _Исправление: Загрузка шаблонов и опция --file_
@@ -10,11 +122,11 @@ _Исправление: Загрузка шаблонов и опция --file_
 
 Исправлена ошибка "Unknown file extension .md" при запуске bundle CLI:
 
-| Проблема | Решение |
-| -------- | ------- |
+| Проблема                           | Решение                                             |
+| ---------------------------------- | --------------------------------------------------- |
 | Статические импорты `.md` в bundle | Заменены на `fs.readFileSync()` во время выполнения |
-| Неправильные пути к шаблонам | Добавлено определение путей для bundle/dist режимов |
-| Отсутствующие шаблоны | Fallback-шаблоны при отсутствии файлов |
+| Неправильные пути к шаблонам       | Добавлено определение путей для bundle/dist режимов |
+| Отсутствующие шаблоны              | Fallback-шаблоны при отсутствии файлов              |
 
 **Разрешение путей к шаблонам:**
 
@@ -42,22 +154,22 @@ npm run cli -- --file ./TASK.md
 
 **Поддерживаемые форматы путей:**
 
-| Формат | Пример | Описание |
-| ------ | ------ | -------- |
-| Имя | `tools-demo` | Ищет в `~/.ollama-code/tasks/` |
-| Home | `~/tasks/test.md` | Расширяется до домашней директории |
-| Относительный | `./TASK.md` | Относительно текущей директории |
-| Абсолютный | `/path/to/task.md` | Полный путь |
+| Формат        | Пример             | Описание                           |
+| ------------- | ------------------ | ---------------------------------- |
+| Имя           | `tools-demo`       | Ищет в `~/.ollama-code/tasks/`     |
+| Home          | `~/tasks/test.md`  | Расширяется до домашней директории |
+| Относительный | `./TASK.md`        | Относительно текущей директории    |
+| Абсолютный    | `/path/to/task.md` | Полный путь                        |
 
 ### Изменённые файлы
 
-| Файл | Изменения |
-| ---- | --------- |
-| `packages/core/src/prompts/templates/index.ts` | Runtime загрузка шаблонов с fallback |
-| `packages/cli/src/config/config.ts` | Добавлен парсинг опции --file |
-| `scripts/copy_bundle_assets.js` | Копирование шаблонов в dist/prompts/templates/ |
-| `README.md` | Добавлена секция "Running Task Files" |
-| `README.ru.md` | Добавлена секция "Запуск файлов задач" |
+| Файл                                           | Изменения                                      |
+| ---------------------------------------------- | ---------------------------------------------- |
+| `packages/core/src/prompts/templates/index.ts` | Runtime загрузка шаблонов с fallback           |
+| `packages/cli/src/config/config.ts`            | Добавлен парсинг опции --file                  |
+| `scripts/copy_bundle_assets.js`                | Копирование шаблонов в dist/prompts/templates/ |
+| `README.md`                                    | Добавлена секция "Running Task Files"          |
+| `README.ru.md`                                 | Добавлена секция "Запуск файлов задач"         |
 
 ### Коммиты
 
