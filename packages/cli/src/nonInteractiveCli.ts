@@ -266,6 +266,14 @@ export async function runNonInteractive(
 
         const toolCallRequests: ToolCallRequestInfo[] = [];
         const apiStartTime = Date.now();
+
+        // Show turn progress in TEXT mode
+        if (outputFormat === OutputFormat.TEXT) {
+          writeStderrLine(
+            `\n🔄 Turn ${turnCount}: Waiting for model response...`,
+          );
+        }
+
         const responseStream = geminiClient.sendMessageStream(
           currentMessages[0]?.parts || [],
           abortController.signal,
@@ -299,6 +307,20 @@ export async function runNonInteractive(
         // Finalize assistant message
         adapter.finalizeAssistantMessage();
         totalApiDurationMs += Date.now() - apiStartTime;
+
+        // Show completion status
+        if (outputFormat === OutputFormat.TEXT) {
+          const duration = ((Date.now() - apiStartTime) / 1000).toFixed(1);
+          if (toolCallRequests.length > 0) {
+            writeStderrLine(
+              `✅ Model responded in ${duration}s with ${toolCallRequests.length} tool call(s)`,
+            );
+          } else {
+            writeStderrLine(
+              `✅ Model responded in ${duration}s (no tool calls)`,
+            );
+          }
+        }
 
         if (toolCallRequests.length > 0) {
           const toolResponseParts: Part[] = [];
