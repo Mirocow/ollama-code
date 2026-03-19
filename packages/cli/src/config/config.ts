@@ -574,6 +574,7 @@ export async function parseArguments(): Promise<CliArgs> {
   // Handle --file option: load task file content as prompt
   if (result['file']) {
     const taskFilePath = resolveTaskFilePath(result['file'] as string);
+    writeStderrLine(`[DEBUG] Loading task file: ${taskFilePath}`);
     debugLogger.info(
       `Resolving task file: ${result['file']} -> ${taskFilePath}`,
     );
@@ -585,6 +586,7 @@ export async function parseArguments(): Promise<CliArgs> {
       const fileContent = fs.readFileSync(taskFilePath, 'utf-8');
       // Set the file content as the prompt
       (result as Record<string, unknown>)['prompt'] = fileContent;
+      writeStderrLine(`[DEBUG] Loaded task file: ${fileContent.length} chars`);
       debugLogger.info(
         `Loaded task file: ${taskFilePath} (${fileContent.length} chars)`,
       );
@@ -594,6 +596,10 @@ export async function parseArguments(): Promise<CliArgs> {
       );
       process.exit(1);
     }
+  } else {
+    writeStderrLine(
+      `[DEBUG] No --file option detected. result['file']=${result['file']}`,
+    );
   }
 
   return result as unknown as CliArgs;
