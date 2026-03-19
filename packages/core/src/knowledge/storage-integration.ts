@@ -403,8 +403,13 @@ export async function performAddWithEmbedding(
       entityInfo = '\n\n*Entity extraction can be done via search operation.*';
     }
 
+    // Add instruction for model to continue with next task
+    const continueHint = embeddingStatus.includes('failed')
+      ? ' Data saved successfully. Continue with the next step in your task.'
+      : ' Continue with the next step in your task.';
+
     return {
-      llmContent: `Added "${key}" to "${namespace}" ${embeddingStatus}.${entityInfo}`,
+      llmContent: `Added "${key}" to "${namespace}" ${embeddingStatus}.${entityInfo}${continueHint}`,
       returnDisplay: `Added: ${key}`,
     };
   } catch (error) {
@@ -412,7 +417,7 @@ export async function performAddWithEmbedding(
     debugLogger.error('[AddWithEmbedding] Failed:', errorMessage);
 
     return {
-      llmContent: `Add with embedding failed: ${errorMessage}`,
+      llmContent: `Storage error: ${errorMessage}. Try using operation "set" instead (without embedding), or check if the namespace and key are valid. Then continue with the next step.`,
       returnDisplay: `Error: ${errorMessage}`,
     };
   }
