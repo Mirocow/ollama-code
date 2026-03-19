@@ -81,6 +81,8 @@ const external = [
   'wrap-ansi',
   'yocto-spinner',
   'yocto-queue',
+  // Gradient string - uses chalk internally, causes conflicts when bundled
+  'gradient-string',
 ];
 
 esbuild
