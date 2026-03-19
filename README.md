@@ -227,6 +227,31 @@ npm run dev:server
 
 ---
 
+## What's New in v0.17.11
+
+### Auto-Extract JSON Tool Calls from Text
+
+When models output JSON as text instead of making actual tool calls, the system now automatically detects and executes them:
+
+| Before                               | After                                          |
+| ------------------------------------ | ---------------------------------------------- |
+| Model outputs JSON as text → ignored | JSON detected → executed as tool calls         |
+| "Model responded (no tool calls)"    | "📝 Extracted N tool call(s) from text output" |
+
+**Example:**
+
+```
+✅ Model responded in 323.0s (no tool calls)
+📝 Extracted 2 tool call(s) from text output
+   → model_storage (from text)
+   → model_storage (from text)
+🔧 Executing 2 tool call(s)...
+```
+
+This makes the system more robust for models that "give up" and output JSON as text instead of making actual tool calls.
+
+---
+
 ## What's New in v0.17.10
 
 ### Non-Interactive Mode & Storage Tool Improvements

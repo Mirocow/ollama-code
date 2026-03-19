@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.17.11
+
+_Auto-Extract JSON Tool Calls from Text_
+
+### New Features
+
+#### Automatic JSON Tool Call Extraction
+
+When models output JSON as text instead of making actual tool calls, the system now automatically detects and extracts those JSON blocks and executes them:
+
+| Before                               | After                                          |
+| ------------------------------------ | ---------------------------------------------- |
+| Model outputs JSON as text → ignored | JSON detected → executed as tool calls         |
+| "Model responded (no tool calls)"    | "📝 Extracted 2 tool call(s) from text output" |
+
+**Supported JSON Patterns:**
+
+| Pattern       | Example                                       |
+| ------------- | --------------------------------------------- |
+| Code blocks   | ` ```json { "operation": "set", ... } ``` `   |
+| Inline JSON   | `{ "operation": "addWithEmbedding", ... }`    |
+| Tool name key | `{ "model_storage": { "operation": "get" } }` |
+
+**Example Output:**
+
+```
+✅ Model responded in 323.0s (no tool calls)
+📝 Extracted 2 tool call(s) from text output
+   → model_storage (from text)
+   → model_storage (from text)
+🔧 Executing 2 tool call(s)...
+```
+
+### Files Modified
+
+| File                                                          | Changes                                       |
+| ------------------------------------------------------------- | --------------------------------------------- |
+| `packages/cli/src/utils/nonInteractiveHelpers.ts`             | Added `extractJsonToolCallsFromText` function |
+| `packages/cli/src/nonInteractive/io/BaseJsonOutputAdapter.ts` | Added `getLastAssistantMessage` method        |
+| `packages/cli/src/nonInteractiveCli.ts`                       | Auto-extract and execute JSON tool calls      |
+
+### Commits
+
+```
+5288877e3 feat: auto-extract JSON tool calls from text output
+```
+
+---
+
 ## 0.17.10
 
 _Non-Interactive Mode Improvements & Storage Tool Fixes_
