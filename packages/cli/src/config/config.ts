@@ -179,6 +179,13 @@ export async function parseArguments(): Promise<CliArgs> {
     rawArgv = rawArgv.slice(1);
   }
 
+  // Handle standalone '--' that can be passed by npm/pnpm scripts
+  // When using 'pnpm run cli -- --file ...', the '--' is passed as a separate argument
+  // and yargs treats everything after '--' as positional args, not options
+  if (rawArgv.length > 0 && rawArgv[0] === '--') {
+    rawArgv = rawArgv.slice(1);
+  }
+
   const yargsInstance = yargs(rawArgv)
     .locale('en')
     .scriptName('ollama-code')
@@ -574,7 +581,6 @@ export async function parseArguments(): Promise<CliArgs> {
   // Handle --file option: load task file content as prompt
   if (result['file']) {
     const taskFilePath = resolveTaskFilePath(result['file'] as string);
-    writeStderrLine(`[DEBUG] Loading task file: ${taskFilePath}`);
     debugLogger.info(
       `Resolving task file: ${result['file']} -> ${taskFilePath}`,
     );
@@ -586,7 +592,6 @@ export async function parseArguments(): Promise<CliArgs> {
       const fileContent = fs.readFileSync(taskFilePath, 'utf-8');
       // Set the file content as the prompt
       (result as Record<string, unknown>)['prompt'] = fileContent;
-      writeStderrLine(`[DEBUG] Loaded task file: ${fileContent.length} chars`);
       debugLogger.info(
         `Loaded task file: ${taskFilePath} (${fileContent.length} chars)`,
       );
@@ -596,10 +601,6 @@ export async function parseArguments(): Promise<CliArgs> {
       );
       process.exit(1);
     }
-  } else {
-    writeStderrLine(
-      `[DEBUG] No --file option detected. result['file']=${result['file']}`,
-    );
   }
 
   return result as unknown as CliArgs;
@@ -774,14 +775,6 @@ export async function loadCliConfig(
   // 3. If no query or prompt is provided, check isTTY: TTY means interactive, non-TTY means non-interactive
   const hasQuery = !!argv.query;
   const hasPrompt = !!argv.prompt;
-
-  // Debug output for troubleshooting --file mode
-  if (argv.file) {
-    writeStderrLine(
-      `[DEBUG] --file mode: hasQuery=${hasQuery}, hasPrompt=${hasPrompt}, promptLength=${argv.prompt?.length || 0}`,
-    );
-  }
-
   debugLogger.info(
     `Interactive determination: hasQuery=${hasQuery}, hasPrompt=${hasPrompt}, outputFormat=${outputFormat}, promptInteractive=${argv.promptInteractive}`,
   );
