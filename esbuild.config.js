@@ -98,7 +98,9 @@ esbuild
     format: 'esm',
     target: 'node20',
     external,
-    packages: 'bundle',
+    // Don't bundle any node_modules packages - load them at runtime
+    // This fixes React hooks issues with ink
+    packages: 'external',
     inject: [path.resolve(__dirname, 'scripts/esbuild-shims.js')],
     banner: {
       js: `// Force strict mode and setup for ESM
