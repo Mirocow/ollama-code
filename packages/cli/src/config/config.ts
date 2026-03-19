@@ -169,9 +169,6 @@ function normalizeOutputFormat(
 export async function parseArguments(): Promise<CliArgs> {
   let rawArgv = hideBin(process.argv);
 
-  // Debug: show raw arguments
-  writeStderrLine(`[DEBUG] parseArguments: rawArgv=${JSON.stringify(rawArgv)}`);
-
   // hack: if the first argument is the CLI entry point, remove it
   if (
     rawArgv.length > 0 &&
@@ -188,10 +185,6 @@ export async function parseArguments(): Promise<CliArgs> {
   if (rawArgv.length > 0 && rawArgv[0] === '--') {
     rawArgv = rawArgv.slice(1);
   }
-
-  writeStderrLine(
-    `[DEBUG] parseArguments: after cleanup rawArgv=${JSON.stringify(rawArgv)}`,
-  );
 
   const yargsInstance = yargs(rawArgv)
     .locale('en')
@@ -534,11 +527,6 @@ export async function parseArguments(): Promise<CliArgs> {
   yargsInstance.wrap(yargsInstance.terminalWidth());
   const result = await yargsInstance.parse();
 
-  // Debug: show parsed result
-  writeStderrLine(
-    `[DEBUG] yargs result: file=${result['file']}, f=${result['f']}, _=${JSON.stringify(result._)}`,
-  );
-
   // If yargs handled --help/--version it will have exited; nothing to do here.
 
   // Handle case where MCP subcommands are executed - they should exit the process
@@ -592,9 +580,7 @@ export async function parseArguments(): Promise<CliArgs> {
 
   // Handle --file option: load task file content as prompt
   if (result['file']) {
-    writeStderrLine(`[DEBUG] --file option detected: ${result['file']}`);
     const taskFilePath = resolveTaskFilePath(result['file'] as string);
-    writeStderrLine(`[DEBUG] Resolved path: ${taskFilePath}`);
     debugLogger.info(
       `Resolving task file: ${result['file']} -> ${taskFilePath}`,
     );
@@ -606,7 +592,7 @@ export async function parseArguments(): Promise<CliArgs> {
       const fileContent = fs.readFileSync(taskFilePath, 'utf-8');
       // Set the file content as the prompt
       (result as Record<string, unknown>)['prompt'] = fileContent;
-      writeStderrLine(`[DEBUG] Loaded ${fileContent.length} chars as prompt`);
+      writeStderrLine(`📄 Loaded task file: ${taskFilePath}`);
       debugLogger.info(
         `Loaded task file: ${taskFilePath} (${fileContent.length} chars)`,
       );
@@ -616,10 +602,6 @@ export async function parseArguments(): Promise<CliArgs> {
       );
       process.exit(1);
     }
-  } else {
-    writeStderrLine(
-      `[DEBUG] No --file option. result['file']=${result['file']}`,
-    );
   }
 
   return result as unknown as CliArgs;
@@ -794,11 +776,6 @@ export async function loadCliConfig(
   // 3. If no query or prompt is provided, check isTTY: TTY means interactive, non-TTY means non-interactive
   const hasQuery = !!argv.query;
   const hasPrompt = !!argv.prompt;
-
-  // Debug: show why interactive mode is chosen
-  writeStderrLine(
-    `[DEBUG] Interactive check: hasQuery=${hasQuery}, hasPrompt=${hasPrompt}, promptLen=${argv.prompt?.length || 0}`,
-  );
 
   debugLogger.info(
     `Interactive determination: hasQuery=${hasQuery}, hasPrompt=${hasPrompt}, outputFormat=${outputFormat}, promptInteractive=${argv.promptInteractive}`,

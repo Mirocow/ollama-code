@@ -577,6 +577,16 @@ export async function main() {
       }
     }
 
+    // Show execution info for non-interactive mode
+    const model = config.getModel() || 'default';
+    writeStderrLine(`🚀 Starting non-interactive execution...`);
+    writeStderrLine(`   Model: ${model}`);
+    writeStderrLine(`   Session: ${config.getSessionId().slice(0, 8)}...`);
+    if (input && input.length > 0) {
+      const preview = input.length > 100 ? input.slice(0, 100) + '...' : input;
+      writeStderrLine(`   Prompt: ${preview.split('\n')[0]}...`);
+    }
+
     // For non-stream-json mode, initialize config here
     if (inputFormat !== InputFormat.STREAM_JSON) {
       await config.initialize();
