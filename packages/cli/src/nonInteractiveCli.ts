@@ -39,6 +39,7 @@ import {
   handleCancellationError,
   handleMaxTurnsExceededError,
 } from './utils/errors.js';
+import { writeStderrLine } from './utils/stdioHelpers.js';
 
 const debugLogger = createDebugLogger('NON_INTERACTIVE_CLI');
 import {
@@ -302,8 +303,20 @@ export async function runNonInteractive(
         if (toolCallRequests.length > 0) {
           const toolResponseParts: Part[] = [];
 
+          // Show progress for tool calls in TEXT mode
+          if (outputFormat === OutputFormat.TEXT) {
+            writeStderrLine(
+              `🔧 Executing ${toolCallRequests.length} tool call(s)...`,
+            );
+          }
+
           for (const requestInfo of toolCallRequests) {
             const finalRequestInfo = requestInfo;
+
+            // Show tool being executed in TEXT mode
+            if (outputFormat === OutputFormat.TEXT) {
+              writeStderrLine(`   → ${finalRequestInfo.name}`);
+            }
 
             const inputFormat =
               typeof config.getInputFormat === 'function'
