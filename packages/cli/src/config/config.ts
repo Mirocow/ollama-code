@@ -768,6 +768,14 @@ export async function loadCliConfig(
   // 3. If no query or prompt is provided, check isTTY: TTY means interactive, non-TTY means non-interactive
   const hasQuery = !!argv.query;
   const hasPrompt = !!argv.prompt;
+
+  // Debug output for troubleshooting --file mode
+  if (argv.file) {
+    writeStderrLine(
+      `[DEBUG] --file mode: hasQuery=${hasQuery}, hasPrompt=${hasPrompt}, promptLength=${argv.prompt?.length || 0}`,
+    );
+  }
+
   debugLogger.info(
     `Interactive determination: hasQuery=${hasQuery}, hasPrompt=${hasPrompt}, outputFormat=${outputFormat}, promptInteractive=${argv.promptInteractive}`,
   );
