@@ -185,14 +185,14 @@ npm run cli -- --model deepseek-r1:8b --yolo --file code-review
 
 **Available Task Files** (in `~/.ollama-code/tasks/`):
 
-| Task File | Description |
-|-----------|-------------|
-| `tools-demo` | Test all 46+ builtin tools |
-| `project-audit` | Comprehensive project audit |
-| `code-review` | Review code changes |
-| `debug-issue` | Debug an issue |
-| `refactor-module` | Refactor a module |
-| `quick-fix` | Quick functionality test |
+| Task File         | Description                 |
+| ----------------- | --------------------------- |
+| `tools-demo`      | Test all 46+ builtin tools  |
+| `project-audit`   | Comprehensive project audit |
+| `code-review`     | Review code changes         |
+| `debug-issue`     | Debug an issue              |
+| `refactor-module` | Refactor a module           |
+| `quick-fix`       | Quick functionality test    |
 
 ### Web UI
 
@@ -227,17 +227,49 @@ npm run dev:server
 
 ---
 
+## What's New in v0.17.10
+
+### Non-Interactive Mode & Storage Tool Improvements
+
+**Bug Fixes:**
+
+| Issue                              | Solution                                                     |
+| ---------------------------------- | ------------------------------------------------------------ |
+| Double "Loaded task file" output   | Only print in child process (`OLLAMA_CODE_NO_RELAUNCH=true`) |
+| "fetch failed" in addWithEmbedding | Save data first, embedding is optional                       |
+| Model gives up after error         | Added guidance hints in tool results                         |
+
+**Resilient Storage Operations:**
+
+```json
+// Before: Failed completely if Ollama not running
+{ "operation": "addWithEmbedding", ... } // ❌ fetch failed
+
+// After: Saves data even without embeddings
+{ "operation": "addWithEmbedding", ... } // ✅ Data saved (embedding skipped)
+```
+
+**Model Guidance in Tool Results:**
+
+| Situation        | Hint Added                                  |
+| ---------------- | ------------------------------------------- |
+| Success          | "Continue with the next step in your task." |
+| Embedding failed | "Data saved successfully. Continue..."      |
+| Error            | "Try using 'set' operation instead..."      |
+
+---
+
 ## What's New in v0.17.5
 
 ### Fixed: Template Loading & --file Option
 
 **Bug Fixes:**
 
-| Issue | Solution |
-| ----- | -------- |
+| Issue                              | Solution                                                 |
+| ---------------------------------- | -------------------------------------------------------- |
 | "Unknown file extension .md" error | Replaced static imports with runtime `fs.readFileSync()` |
-| Wrong template paths in bundle | Added multiple path detection for bundled/dist modes |
-| Missing templates | Fallback templates when files not found |
+| Wrong template paths in bundle     | Added multiple path detection for bundled/dist modes     |
+| Missing templates                  | Fallback templates when files not found                  |
 
 **New --file Option:**
 
@@ -254,12 +286,12 @@ npm run cli -- --file ./TASK.md
 
 **Supported Path Formats:**
 
-| Format | Example | Description |
-| ------ | ------- | ----------- |
-| Name | `tools-demo` | Looks in `~/.ollama-code/tasks/` |
-| Home | `~/tasks/test.md` | Expanded to home directory |
-| Relative | `./TASK.md` | Relative to current directory |
-| Absolute | `/path/to/task.md` | Full path |
+| Format   | Example            | Description                      |
+| -------- | ------------------ | -------------------------------- |
+| Name     | `tools-demo`       | Looks in `~/.ollama-code/tasks/` |
+| Home     | `~/tasks/test.md`  | Expanded to home directory       |
+| Relative | `./TASK.md`        | Relative to current directory    |
+| Absolute | `/path/to/task.md` | Full path                        |
 
 ---
 

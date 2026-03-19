@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.17.10
+
+_Non-Interactive Mode Improvements & Storage Tool Fixes_
+
+### Bug Fixes
+
+#### Fixed Double "Loaded task file" Output
+
+When running with `--file` option, the message was printed twice (parent and child process):
+
+| Issue                             | Solution                                                     |
+| --------------------------------- | ------------------------------------------------------------ |
+| Message printed in both processes | Only print in child process (`OLLAMA_CODE_NO_RELAUNCH=true`) |
+
+#### Fixed "fetch failed" Error in addWithEmbedding
+
+The `addWithEmbedding` operation failed when Ollama wasn't running:
+
+| Issue                                                 | Solution                                       |
+| ----------------------------------------------------- | ---------------------------------------------- |
+| Embedding generation failed → entire operation failed | Save data first, then try embedding (optional) |
+| No guidance for model on error                        | Added "Continue with next step" hint           |
+
+**Before:**
+
+```
+Add with embedding failed: fetch failed
+```
+
+**After:**
+
+```
+Added "auth_jwt_pattern" to "knowledge" (embedding failed: Ollama not running?). Data saved successfully. Continue with the next step in your task.
+```
+
+### Improvements
+
+#### Model Guidance in Tool Results
+
+Tool results now include instructions to prevent model from giving up:
+
+| Situation        | Hint                                                                   |
+| ---------------- | ---------------------------------------------------------------------- |
+| Success          | "Continue with the next step in your task."                            |
+| Embedding failed | "Data saved successfully. Continue with the next step in your task."   |
+| Critical error   | "Try using operation 'set' instead. Then continue with the next step." |
+
+### Files Modified
+
+| File                                                 | Changes                                        |
+| ---------------------------------------------------- | ---------------------------------------------- |
+| `packages/cli/src/config/config.ts`                  | Only print "Loaded task file" in child process |
+| `packages/core/src/knowledge/storage-integration.ts` | Resilient addWithEmbedding with model guidance |
+
+### Commits
+
+```
+8f2a26e23 fix: resolve double 'Loaded task file' output and embedding failure error
+b96016ca6 fix: improve tool result messages to guide model after errors
+```
+
+---
+
 ## 0.17.5
 
 _Fix: Template Loading & --file Option_
@@ -10,11 +73,11 @@ _Fix: Template Loading & --file Option_
 
 Resolved "Unknown file extension .md" error when running bundled CLI:
 
-| Issue | Solution |
-| ----- | -------- |
-| Static `.md` imports in bundle | Replaced with `fs.readFileSync()` at runtime |
-| Wrong template paths | Added multiple path detection for bundled/dist modes |
-| Missing templates | Fallback templates when files not found |
+| Issue                          | Solution                                             |
+| ------------------------------ | ---------------------------------------------------- |
+| Static `.md` imports in bundle | Replaced with `fs.readFileSync()` at runtime         |
+| Wrong template paths           | Added multiple path detection for bundled/dist modes |
+| Missing templates              | Fallback templates when files not found              |
 
 **Template Path Resolution:**
 
@@ -42,22 +105,22 @@ npm run cli -- --file ./TASK.md
 
 **Supported Path Formats:**
 
-| Format | Example | Description |
-| ------ | ------- | ----------- |
-| Name | `tools-demo` | Looks in `~/.ollama-code/tasks/` |
-| Home | `~/tasks/test.md` | Expanded to home directory |
-| Relative | `./TASK.md` | Relative to current directory |
-| Absolute | `/path/to/task.md` | Full path |
+| Format   | Example            | Description                      |
+| -------- | ------------------ | -------------------------------- |
+| Name     | `tools-demo`       | Looks in `~/.ollama-code/tasks/` |
+| Home     | `~/tasks/test.md`  | Expanded to home directory       |
+| Relative | `./TASK.md`        | Relative to current directory    |
+| Absolute | `/path/to/task.md` | Full path                        |
 
 ### Files Modified
 
-| File | Changes |
-| ---- | ------- |
-| `packages/core/src/prompts/templates/index.ts` | Runtime template loading with fallbacks |
-| `packages/cli/src/config/config.ts` | Added --file option parsing |
-| `scripts/copy_bundle_assets.js` | Copy templates to dist/prompts/templates/ |
-| `README.md` | Added "Running Task Files" section |
-| `README.ru.md` | Added "Запуск файлов задач" section |
+| File                                           | Changes                                   |
+| ---------------------------------------------- | ----------------------------------------- |
+| `packages/core/src/prompts/templates/index.ts` | Runtime template loading with fallbacks   |
+| `packages/cli/src/config/config.ts`            | Added --file option parsing               |
+| `scripts/copy_bundle_assets.js`                | Copy templates to dist/prompts/templates/ |
+| `README.md`                                    | Added "Running Task Files" section        |
+| `README.ru.md`                                 | Added "Запуск файлов задач" section       |
 
 ### Commits
 
