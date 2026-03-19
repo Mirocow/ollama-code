@@ -51,6 +51,7 @@ import {
   computeUsageFromMetrics,
   extractJsonToolCallsFromText,
 } from './utils/nonInteractiveHelpers.js';
+import { generateTaskInstructions } from './utils/taskStepsParser.js';
 
 /**
  * Emits a final message for slash command results.
@@ -252,8 +253,15 @@ export async function runNonInteractive(
         initialPartList = [{ text: input }];
       }
 
-      const initialParts = normalizePartList(initialPartList);
-      let currentMessages: Content[] = [{ role: 'user', parts: initialParts }];
+      // Add behavior rules to ALL prompts (from file, inline, interactive, etc.)
+      // Model will analyze the task itself and plan accordingly
+      const behaviorRules = generateTaskInstructions();
+
+      // Normalize existing parts and prepend behavior rules
+      const existingParts = normalizePartList(initialPartList);
+      const enhancedParts: Part[] = [{ text: behaviorRules }, ...existingParts];
+
+      let currentMessages: Content[] = [{ role: 'user', parts: enhancedParts }];
 
       let isFirstTurn = true;
       while (true) {

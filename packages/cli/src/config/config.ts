@@ -590,10 +590,12 @@ export async function parseArguments(): Promise<CliArgs> {
     }
     try {
       const fileContent = fs.readFileSync(taskFilePath, 'utf-8');
+
       // Set the file content as the prompt
+      // Note: Behavior rules will be added in nonInteractiveCli.ts for ALL prompt sources
       (result as Record<string, unknown>)['prompt'] = fileContent;
-      // Only print if we're in the final process (not the parent that will relaunch)
-      // OLLAMA_CODE_NO_RELAUNCH is set for the child process that will actually run
+
+      // Only print if we're in the final process
       if (process.env['OLLAMA_CODE_NO_RELAUNCH']) {
         writeStderrLine(`📄 Loaded task file: ${taskFilePath}`);
       }

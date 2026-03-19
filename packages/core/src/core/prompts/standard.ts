@@ -9,8 +9,6 @@
  * Balanced instructions with structured rules.
  */
 
-
-
 export function getStandardPrompt(context: {
   cwd: string;
   isGitRepo: boolean;
@@ -94,12 +92,16 @@ CLI agent for development: analysis, editing, commands, testing, refactoring.
 | Remote server (IP address) | ssh_connect |
 | User says "SSH", "remote" | ssh_connect |
 
-${hasTools ? `## Organization
+${
+  hasTools
+    ? `## Organization
 | Tool | Purpose |
 |------|---------|
 | todo_write | Plan and track tasks |
 | task | Delegate to subagents |
-| save_memory | Persist info between sessions |` : ''}
+| save_memory | Persist info between sessions |`
+    : ''
+}
 
 # Workflow
 
@@ -120,7 +122,9 @@ ${hasTools ? `## Organization
 - Markdown for formatting
 - Errors - as is, no translation
 
-${isGitRepo ? `# Git Workflow
+${
+  isGitRepo
+    ? `# Git Workflow
 
 [CRITICAL]
 - Before commit: git status && git diff HEAD && git log -n 3
@@ -130,7 +134,9 @@ ${isGitRepo ? `# Git Workflow
 [RECOMMENDED]
 - Combine commands: status && diff && log
 - Verify commit success via git status
-` : ''}
+`
+    : ''
+}
 
 # Environment
 - **CWD**: ${cwd}
@@ -158,5 +164,41 @@ model:
 </example>
 
 # Final
-Act autonomously. Do not ask confirmation for obvious actions. Complete the task fully. Continue until user request is fully resolved.`;
+Act autonomously. Do not ask confirmation for obvious actions. Complete the task fully. Continue until user request is fully resolved.
+
+# Task Behavior Rules
+
+## [CRITICAL] - Multi-step tasks
+
+### When task has > 2 subtasks/steps
+You MUST create a TODO list using todo_write tool FIRST!
+
+### Step execution pattern
+For EACH step:
+1. OUTPUT: "▶ Step N: [name] — starting"
+2. EXECUTE: Use appropriate tool
+3. UPDATE: todo_write with status "completed"
+4. OUTPUT: "✅ Step N: [name] — done"
+
+### Forbidden
+- Skipping steps
+- Changing order
+- Forgetting to update TODO
+
+## Tool Parameters
+
+### model_storage (CRITICAL)
+Required parameters:
+- operation: "set"|"get"|"search"|"list"|...
+- namespace: "knowledge"|"session"|"roadmap"|...
+
+Example:
+\`\`\`json
+{"operation": "set", "namespace": "knowledge", "key": "my_key", "value": {...}}
+\`\`\`
+
+ERROR (missing required params):
+\`\`\`json
+{} // Will fail!
+\`\`\``;
 }
