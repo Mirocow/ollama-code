@@ -711,22 +711,40 @@ export function extractJsonToolCallsFromText(
           // Map operation to tool name
           const toolName = 'model_storage';
           if (availableTools.includes(toolName)) {
-            extractedCalls.push({
-              name: toolName,
-              args: parsed,
-            });
+            // Validate required parameters for model_storage
+            // 'namespace' is always required
+            if (parsed.namespace !== undefined) {
+              extractedCalls.push({
+                name: toolName,
+                args: parsed,
+              });
+            } else {
+              debugLogger.debug(
+                '[extractJsonToolCallsFromText] Skipping incomplete model_storage call - missing namespace',
+                { parsed },
+              );
+            }
           }
         }
         // Pattern 2: Has tool name as key (e.g., "model_storage": {...})
         else if (Object.keys(parsed).some((k) => availableTools.includes(k))) {
           for (const key of Object.keys(parsed)) {
             if (availableTools.includes(key)) {
+              const args =
+                typeof parsed[key] === 'object'
+                  ? parsed[key]
+                  : { value: parsed[key] };
+              // Validate required parameters for model_storage
+              if (key === 'model_storage' && args.namespace === undefined) {
+                debugLogger.debug(
+                  '[extractJsonToolCallsFromText] Skipping incomplete model_storage call - missing namespace',
+                  { args },
+                );
+                continue;
+              }
               extractedCalls.push({
                 name: key,
-                args:
-                  typeof parsed[key] === 'object'
-                    ? parsed[key]
-                    : { value: parsed[key] },
+                args,
               });
             }
           }
@@ -734,9 +752,21 @@ export function extractJsonToolCallsFromText(
         // Pattern 3: Has name field
         else if (parsed.name && typeof parsed.name === 'string') {
           if (availableTools.includes(parsed.name)) {
+            const args = parsed.args || parsed.parameters || parsed;
+            // Validate required parameters for model_storage
+            if (
+              parsed.name === 'model_storage' &&
+              args.namespace === undefined
+            ) {
+              debugLogger.debug(
+                '[extractJsonToolCallsFromText] Skipping incomplete model_storage call - missing namespace',
+                { args },
+              );
+              continue;
+            }
             extractedCalls.push({
               name: parsed.name,
-              args: parsed.args || parsed.parameters || parsed,
+              args,
             });
           }
         }
