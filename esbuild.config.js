@@ -48,21 +48,20 @@ const external = [
   'bindings',
   'node-pre-gyp',
   '@mapbox/node-pre-gyp',
-  // React ecosystem - must be external to avoid "Invalid hook call" error
-  // ink requires React from node_modules, so we can't bundle it
+  // React ecosystem - CRITICAL: must be external to avoid "Invalid hook call" error
+  // ink uses React from node_modules, so bundling React causes two React instances
   'react',
   'react-dom',
+  'react-dom/client',
   'react-reconciler',
   'scheduler',
   'react-is',
-  // Ink and its dependencies - they use React hooks
+  'prop-types',
+  // Ink CLI framework - uses React hooks
   'ink',
   'ink-spinner',
   'ink-text-input',
   'ink-select-input',
-  'ink-box',
-  'ink-link',
-  'ink-gradient',
   'ansi-escapes',
   'ansi-styles',
   'chalk',
@@ -71,22 +70,17 @@ const external = [
   'cli-spinners',
   'indent-string',
   'is-ci',
-  'lodash.throttle',
   'log-update',
-  'memoize-one',
   'patch-console',
   'pretty-format',
-  'react-devtools-core',
   'signal-exit',
   'slice-ansi',
   'string-width',
   'strip-ansi',
-  'supports-hyperlinks',
-  'type-fest',
   'widest-line',
   'wrap-ansi',
-  'yocto-queue',
   'yocto-spinner',
+  'yocto-queue',
 ];
 
 esbuild
@@ -98,14 +92,15 @@ esbuild
     format: 'esm',
     target: 'node20',
     external,
-    // Don't bundle any node_modules packages - load them at runtime
-    // This fixes React hooks issues with ink
-    packages: 'external',
+    packages: 'bundle',
     inject: [path.resolve(__dirname, 'scripts/esbuild-shims.js')],
     banner: {
-      js: `// Force strict mode and setup for ESM
-"use strict";`,
+      js: `"use strict";`,
     },
+    // JSX configuration - use automatic runtime for React 17+
+    // This tells esbuild to import React functions from 'react' package
+    jsx: 'automatic',
+    jsxImportSource: 'react',
     alias: {
       'is-in-ci': path.resolve(
         __dirname,
@@ -134,6 +129,7 @@ esbuild
     if (process.env.DEV === 'true') {
       writeFileSync('./dist/esbuild.json', JSON.stringify(metafile, null, 2));
     }
+    console.log('Build complete: dist/cli.js');
   })
   .catch((error) => {
     console.error('esbuild build failed:', error);
