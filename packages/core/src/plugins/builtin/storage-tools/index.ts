@@ -45,7 +45,6 @@ import {
 import type { FunctionDeclaration } from '../../../types/content.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import * as os from 'node:os';
 import { ToolErrorType } from '../../../tools/tool-error.js';
 import { createDebugLogger } from '../../../utils/debugLogger.js';
 import { uiTelemetryService } from '../../../services/uiTelemetryService.js';
@@ -65,6 +64,13 @@ import {
   streamFileLines,
 } from '../../../utils/fileUtils.js';
 
+// Project detection imports
+import {
+  findProjectRootOrFallback,
+  clearProjectRootCache as clearProjectRootCacheFromDetection,
+  getProjectInfo as getProjectInfoFromDetection,
+} from '../../../utils/projectDetection.js';
+
 const debugLogger = createDebugLogger('STORAGE_TOOL');
 
 // ============================================================================
@@ -72,7 +78,6 @@ const debugLogger = createDebugLogger('STORAGE_TOOL');
 // ============================================================================
 
 export const STORAGE_DIR = 'storage';
-const PROJECT_ROOT_CACHE_TTL = 60000; // 1 minute cache for project root
 
 // Предопределённые namespace'ы для разных типов данных
 export const StorageNamespaces = {
@@ -88,20 +93,6 @@ export const StorageNamespaces = {
 
 // Namespace'ы с сессионным хранением по умолчанию
 const SESSION_NAMESPACES = new Set(['session', 'context']);
-
-// Маркеры для определения корня проекта
-const PROJECT_MARKERS = [
-  '.git',
-  'package.json',
-  'pyproject.toml',
-  'Cargo.toml',
-  'go.mod',
-  'pom.xml',
-  'build.gradle',
-  'settings.gradle',
-  'composer.json',
-  '.ollama-code',
-];
 
 export type StorageNamespace =
   (typeof StorageNamespaces)[keyof typeof StorageNamespaces];
@@ -137,100 +128,35 @@ const sessionStorage: Map<string, Map<string, StorageEntry>> = new Map();
 // ID текущей сессии
 let currentSessionId: string | null = null;
 
-// Кэш корня проекта
-let cachedProjectRoot: string | null = null;
-let projectRootCacheTime = 0;
-
 // Background TTL cleanup
 const TTL_CLEANUP_INTERVAL = 60000; // 1 minute
 let ttlCleanupInterval: ReturnType<typeof setInterval> | null = null;
 let isCleanupRunning = false;
 
 // ============================================================================
-// Утилиты для определения проекта
+// Утилиты для определения проекта (делегируем в projectDetection.ts)
 // ============================================================================
 
 /**
- * Найти корень проекта по маркерам
- */
-async function findProjectRoot(
-  startDir: string = process.cwd(),
-): Promise<string> {
-  // Проверяем кэш
-  const now = Date.now();
-  if (
-    cachedProjectRoot &&
-    now - projectRootCacheTime < PROJECT_ROOT_CACHE_TTL
-  ) {
-    return cachedProjectRoot;
-  }
-
-  let currentDir = startDir;
-  const root = os.homedir();
-
-  while (currentDir !== root && currentDir !== '/') {
-    for (const marker of PROJECT_MARKERS) {
-      const markerPath = path.join(currentDir, marker);
-      try {
-        await fs.access(markerPath);
-        cachedProjectRoot = currentDir;
-        projectRootCacheTime = now;
-        debugLogger.info(
-          `[StorageTool] Project root found: ${currentDir} (marker: ${marker})`,
-        );
-        return currentDir;
-      } catch {
-        // Marker not found, continue searching
-      }
-    }
-    currentDir = path.dirname(currentDir);
-  }
-
-  // Если не нашли маркеры, используем cwd
-  cachedProjectRoot = startDir;
-  projectRootCacheTime = now;
-  debugLogger.info(
-    `[StorageTool] No project markers found, using cwd: ${startDir}`,
-  );
-  return startDir;
-}
-
-/**
- * Определить тип проекта
- */
-async function detectProjectType(
-  projectRoot: string,
-): Promise<ProjectInfo['type']> {
-  const typeMarkers: Array<{ file: string; type: ProjectInfo['type'] }> = [
-    { file: 'package.json', type: 'node' },
-    { file: 'pyproject.toml', type: 'python' },
-    { file: 'requirements.txt', type: 'python' },
-    { file: 'setup.py', type: 'python' },
-    { file: 'go.mod', type: 'go' },
-    { file: 'Cargo.toml', type: 'rust' },
-    { file: 'pom.xml', type: 'java' },
-    { file: 'build.gradle', type: 'java' },
-    { file: 'composer.json', type: 'php' },
-  ];
-
-  for (const { file, type } of typeMarkers) {
-    try {
-      await fs.access(path.join(projectRoot, file));
-      return type;
-    } catch {
-      // Continue checking
-    }
-  }
-  return 'unknown';
-}
-
-/**
  * Получить информацию о проекте
+ * Использует консолидированную функцию из projectDetection.ts
  */
 export async function getProjectInfo(): Promise<ProjectInfo> {
-  const root = await findProjectRoot();
-  const type = await detectProjectType(root);
-  const name = path.basename(root);
+  const { root, type, name } = await getProjectInfoFromDetection();
+  
+  if (!root) {
+    // Fallback если корень не найден
+    const fallbackRoot = process.cwd();
+    return {
+      id: Buffer.from(fallbackRoot)
+        .toString('base64')
+        .replace(/[+/=]/g, '')
+        .substring(0, 16),
+      name: path.basename(fallbackRoot),
+      root: fallbackRoot,
+      type: 'unknown',
+    };
+  }
 
   // Генерируем ID на основе пути (хеш)
   const id = Buffer.from(root)
@@ -245,8 +171,7 @@ export async function getProjectInfo(): Promise<ProjectInfo> {
  * Очистить кэш корня проекта
  */
 export function clearProjectRootCache(): void {
-  cachedProjectRoot = null;
-  projectRootCacheTime = 0;
+  clearProjectRootCacheFromDetection();
   debugLogger.info('[StorageTool] Project root cache cleared');
 }
 
@@ -716,7 +641,7 @@ async function getStorageDir(
   if (scope === 'global') {
     return path.join(getOllamaDir(), STORAGE_DIR);
   }
-  const projectRoot = await findProjectRoot();
+  const projectRoot = await findProjectRootOrFallback();
   // getProjectStorageDir already returns path with /storage suffix
   return getProjectStorageDir(projectRoot);
 }
@@ -935,7 +860,7 @@ export async function cleanupExpiredEntries(): Promise<{
   // Очистка persistent storage - сканируем файлы сессий
   try {
     const globalStorageDir = path.join(getOllamaDir(), STORAGE_DIR);
-    const projectRoot = await findProjectRoot();
+    const projectRoot = await findProjectRootOrFallback();
     const projectStorageDir = getProjectStorageDir(projectRoot);
 
     for (const storageDir of [globalStorageDir, projectStorageDir]) {
@@ -2107,7 +2032,7 @@ async function initializeStorageMetrics(): Promise<void> {
 
     // Scan project storage
     try {
-      const projectRoot = await findProjectRoot();
+      const projectRoot = await findProjectRootOrFallback();
       const projectStorageDir = path.join(
         projectRoot,
         '.ollama-code',

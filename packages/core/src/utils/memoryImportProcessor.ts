@@ -9,6 +9,7 @@ import * as path from 'node:path';
 import { isSubpath } from './paths.js';
 import { marked, type Token } from 'marked';
 import { createDebugLogger } from './debugLogger.js';
+import { findProjectRootOrFallback } from './projectDetection.js';
 
 const logger = createDebugLogger('IMPORT_PROCESSOR');
 
@@ -36,30 +37,6 @@ export interface MemoryFile {
 export interface ProcessImportsResult {
   content: string;
   importTree: MemoryFile;
-}
-
-// Helper to find the project root (looks for .git directory)
-async function findProjectRoot(startDir: string): Promise<string> {
-  let currentDir = path.resolve(startDir);
-  while (true) {
-    const gitPath = path.join(currentDir, '.git');
-    try {
-      const stats = await fs.lstat(gitPath);
-      if (stats.isDirectory()) {
-        return currentDir;
-      }
-    } catch {
-      // .git not found, continue to parent
-    }
-    const parentDir = path.dirname(currentDir);
-    if (parentDir === currentDir) {
-      // Reached filesystem root
-      break;
-    }
-    currentDir = parentDir;
-  }
-  // Fallback to startDir if .git not found
-  return path.resolve(startDir);
 }
 
 // Add a type guard for error objects
@@ -209,7 +186,7 @@ export async function processImports(
   importFormat: 'flat' | 'tree' = 'tree',
 ): Promise<ProcessImportsResult> {
   if (!projectRoot) {
-    projectRoot = await findProjectRoot(basePath);
+    projectRoot = await findProjectRootOrFallback(basePath);
   }
 
   if (importState.currentDepth >= importState.maxDepth) {
