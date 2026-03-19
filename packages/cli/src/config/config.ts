@@ -592,7 +592,11 @@ export async function parseArguments(): Promise<CliArgs> {
       const fileContent = fs.readFileSync(taskFilePath, 'utf-8');
       // Set the file content as the prompt
       (result as Record<string, unknown>)['prompt'] = fileContent;
-      writeStderrLine(`📄 Loaded task file: ${taskFilePath}`);
+      // Only print if we're in the final process (not the parent that will relaunch)
+      // OLLAMA_CODE_NO_RELAUNCH is set for the child process that will actually run
+      if (process.env['OLLAMA_CODE_NO_RELAUNCH']) {
+        writeStderrLine(`📄 Loaded task file: ${taskFilePath}`);
+      }
       debugLogger.info(
         `Loaded task file: ${taskFilePath} (${fileContent.length} chars)`,
       );

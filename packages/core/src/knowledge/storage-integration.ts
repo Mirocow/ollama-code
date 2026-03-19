@@ -32,7 +32,10 @@ async function getKnowledgeBase() {
         await kb.initialize();
         return kb;
       } catch (error) {
-        debugLogger.error('[KnowledgeIntegration] Failed to initialize knowledge base:', error);
+        debugLogger.error(
+          '[KnowledgeIntegration] Failed to initialize knowledge base:',
+          error,
+        );
         return null;
       }
     })();
@@ -76,7 +79,7 @@ export async function performSearch(params: {
 
   try {
     const kb = await getKnowledgeBase();
-    
+
     if (!kb || mode === 'keyword') {
       // Fallback to simple keyword search in JSON storage
       return performKeywordSearchFallback(query, namespaces, limit);
@@ -106,16 +109,21 @@ export async function performSearch(params: {
       namespace: r.namespace,
       key: r.key,
       score: r.score?.toFixed(3),
-      content: r.content?.length > 300 ? r.content.slice(0, 300) + '...' : r.content,
+      content:
+        r.content?.length > 300 ? r.content.slice(0, 300) + '...' : r.content,
     }));
 
     const llmContent = `## Search Results for "${query}"
 
 Found ${results.length} results (mode: ${mode}, threshold: ${threshold}):
 
-${formattedResults.map((r: any) => `### ${r.rank}. [${r.namespace}] ${r.key || r.id}
+${formattedResults
+  .map(
+    (r: any) => `### ${r.rank}. [${r.namespace}] ${r.key || r.id}
 **Score:** ${r.score}
-${r.content}`).join('\n\n')}
+${r.content}`,
+  )
+  .join('\n\n')}
 
 ---
 *Use "operation": "get", "namespace": "${formattedResults[0]?.namespace}", "key": "${formattedResults[0]?.key}" to retrieve full content*`;
@@ -145,7 +153,7 @@ async function performKeywordSearchFallback(
 
   const storageDir = path.join(getOllamaDir(), 'storage');
   const queryLower = query.toLowerCase();
-  const queryTerms = queryLower.split(/\s+/).filter(t => t.length > 2);
+  const queryTerms = queryLower.split(/\s+/).filter((t) => t.length > 2);
 
   const results: Array<{
     namespace: string;
@@ -169,7 +177,9 @@ async function performKeywordSearchFallback(
         const content = await fs.readFile(filePath, 'utf-8');
         const data = JSON.parse(content);
 
-        for (const [key, entry] of Object.entries(data as Record<string, any>)) {
+        for (const [key, entry] of Object.entries(
+          data as Record<string, any>,
+        )) {
           const entryContent = JSON.stringify(entry.value || entry);
           const entryLower = entryContent.toLowerCase();
 
@@ -207,9 +217,13 @@ async function performKeywordSearchFallback(
 
 Found ${limited.length} results:
 
-${limited.map((r, i) => `### ${i + 1}. [${r.namespace}] ${r.key}
+${limited
+  .map(
+    (r, i) => `### ${i + 1}. [${r.namespace}] ${r.key}
 **Relevance:** ${(r.score * 100).toFixed(0)}%
-${r.content}${r.content.length >= 300 ? '...' : ''}`).join('\n\n')}`;
+${r.content}${r.content.length >= 300 ? '...' : ''}`,
+  )
+  .join('\n\n')}`;
 
     return {
       llmContent,
@@ -234,11 +248,18 @@ export async function performFindSimilar(params: {
   threshold?: number;
   sameNamespace?: boolean;
 }): Promise<ToolResult> {
-  const { namespace, key, limit = 5, threshold = 0.8, sameNamespace = false } = params;
+  const {
+    namespace,
+    key,
+    limit = 5,
+    threshold = 0.8,
+    sameNamespace = false,
+  } = params;
 
   if (!key) {
     return {
-      llmContent: 'Error: "key" parameter is required for findSimilar operation',
+      llmContent:
+        'Error: "key" parameter is required for findSimilar operation',
       returnDisplay: 'Error: key required',
     };
   }
@@ -250,7 +271,8 @@ export async function performFindSimilar(params: {
 
     if (!kb) {
       return {
-        llmContent: 'Knowledge base not available. Semantic similarity requires Ollama embeddings.',
+        llmContent:
+          'Knowledge base not available. Semantic similarity requires Ollama embeddings.',
         returnDisplay: 'Knowledge base unavailable',
       };
     }
@@ -282,9 +304,13 @@ export async function performFindSimilar(params: {
 
 Found ${results.length} similar entries:
 
-${results.map((r: any, i: number) => `### ${i + 1}. [${r.namespace}] ${r.key || r.id}
+${results
+  .map(
+    (r: any, i: number) => `### ${i + 1}. [${r.namespace}] ${r.key || r.id}
 **Similarity:** ${(r.score * 100).toFixed(1)}%
-${r.content?.slice(0, 200)}${r.content?.length > 200 ? '...' : ''}`).join('\n\n')}`;
+${r.content?.slice(0, 200)}${r.content?.length > 200 ? '...' : ''}`,
+  )
+  .join('\n\n')}`;
 
     return {
       llmContent,
@@ -318,14 +344,16 @@ export async function performAddWithEmbedding(
 
   if (!key) {
     return {
-      llmContent: 'Error: "key" parameter is required for addWithEmbedding operation',
+      llmContent:
+        'Error: "key" parameter is required for addWithEmbedding operation',
       returnDisplay: 'Error: key required',
     };
   }
 
   if (value === undefined) {
     return {
-      llmContent: 'Error: "value" parameter is required for addWithEmbedding operation',
+      llmContent:
+        'Error: "value" parameter is required for addWithEmbedding operation',
       returnDisplay: 'Error: value required',
     };
   }
@@ -333,7 +361,7 @@ export async function performAddWithEmbedding(
   debugLogger.info(`[AddWithEmbedding] Adding ${namespace}:${key}`);
 
   try {
-    // First, perform normal set operation
+    // First, perform normal set operation - this always succeeds
     await performSet({
       operation: 'set',
       namespace,
@@ -342,33 +370,42 @@ export async function performAddWithEmbedding(
       tags,
     });
 
-    // Then try to add to knowledge base for semantic search
-    const kb = await getKnowledgeBase();
+    // Then try to add to knowledge base for semantic search (optional)
+    let embeddingStatus = '(embedding skipped)';
+    try {
+      const kb = await getKnowledgeBase();
 
-    if (kb) {
-      const content = typeof value === 'string'
-        ? value
-        : JSON.stringify(value, null, 2);
+      if (kb) {
+        const content =
+          typeof value === 'string' ? value : JSON.stringify(value, null, 2);
 
-      await kb.add(content, namespace, {
-        key,
-        tags,
-      });
-
-      let entityInfo = '';
-      if (autoExtractEntities) {
-        entityInfo = '\n\n*Entity extraction can be done via search operation.*';
+        await kb.add(content, namespace, {
+          key,
+          tags,
+        });
+        embeddingStatus = '(with embedding for semantic search)';
       }
+    } catch (embeddingError) {
+      // Embedding failed, but data is still stored
+      const errorMsg =
+        embeddingError instanceof Error
+          ? embeddingError.message
+          : String(embeddingError);
+      debugLogger.warn(
+        '[AddWithEmbedding] Embedding generation failed, data stored without semantic search:',
+        errorMsg,
+      );
+      embeddingStatus = `(embedding failed: ${errorMsg.includes('fetch') ? 'Ollama not running?' : errorMsg.slice(0, 50)})`;
+    }
 
-      return {
-        llmContent: `Added "${key}" to "${namespace}" with embedding for semantic search.${entityInfo}`,
-        returnDisplay: `Added with embedding: ${key}`,
-      };
+    let entityInfo = '';
+    if (autoExtractEntities) {
+      entityInfo = '\n\n*Entity extraction can be done via search operation.*';
     }
 
     return {
-      llmContent: `Added "${key}" to "${namespace}" (knowledge base unavailable, embedding not generated)`,
-      returnDisplay: `Added (no embedding): ${key}`,
+      llmContent: `Added "${key}" to "${namespace}" ${embeddingStatus}.${entityInfo}`,
+      returnDisplay: `Added: ${key}`,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -422,9 +459,11 @@ export async function performKnowledgeStats(): Promise<ToolResult> {
 **Total Entries:** ${totalKeys}
 
 ### Entries by Namespace
-${Object.entries(namespaceStats)
-  .map(([ns, count]) => `- **${ns}:** ${count} entries`)
-  .join('\n') || '*No namespaces found*'}
+${
+  Object.entries(namespaceStats)
+    .map(([ns, count]) => `- **${ns}:** ${count} entries`)
+    .join('\n') || '*No namespaces found*'
+}
 
 *Knowledge base with semantic search requires Ollama with embedding model (e.g., nomic-embed-text).*`;
 
@@ -443,9 +482,11 @@ ${Object.entries(namespaceStats)
 **Total Size:** ${(stats.totalSize / 1024).toFixed(2)} KB
 
 ### Entries by Namespace
-${Object.entries(stats.entriesByNamespace)
-  .map(([ns, count]) => `- **${ns}:** ${count} entries`)
-  .join('\n') || '*No entries yet*'}
+${
+  Object.entries(stats.entriesByNamespace)
+    .map(([ns, count]) => `- **${ns}:** ${count} entries`)
+    .join('\n') || '*No entries yet*'
+}
 
 ### Capabilities
 - ✅ Semantic Search (embeddings)
