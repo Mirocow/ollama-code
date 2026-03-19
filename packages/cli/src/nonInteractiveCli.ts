@@ -272,6 +272,13 @@ export async function runNonInteractive(
           writeStderrLine(
             `\n🔄 Turn ${turnCount}: Waiting for model response...`,
           );
+
+          // Log available tools for debugging
+          const toolRegistry = config.getToolRegistry();
+          const availableTools = toolRegistry?.getAllToolNames() || [];
+          writeStderrLine(
+            `   📦 ${availableTools.length} tools available: ${availableTools.slice(0, 5).join(', ')}${availableTools.length > 5 ? '...' : ''}`,
+          );
         }
 
         const responseStream = geminiClient.sendMessageStream(
