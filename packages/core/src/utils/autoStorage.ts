@@ -19,6 +19,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createDebugLogger } from './debugLogger.js';
 import type { Storage } from '../config/storage.js';
+import { STREAMING_THRESHOLD_BYTES, streamFileLines } from './fileUtils.js';
 
 const debugLogger = createDebugLogger('AUTO_STORAGE');
 
@@ -84,13 +85,35 @@ export class StorageAdapter implements StorageService {
 
   async setItem(namespace: string, key: string, value: unknown): Promise<void> {
     const filePath = this.getFilePath(namespace, key);
-    await fs.promises.writeFile(filePath, JSON.stringify(value, null, 2), 'utf-8');
+    await fs.promises.writeFile(
+      filePath,
+      JSON.stringify(value, null, 2),
+      'utf-8',
+    );
   }
 
   async getItem(namespace: string, key: string): Promise<unknown> {
     const filePath = this.getFilePath(namespace, key);
     try {
       if (fs.existsSync(filePath)) {
+        // Check file size for streaming decision
+        const stats = await fs.promises.stat(filePath);
+
+        if (stats.size > STREAMING_THRESHOLD_BYTES) {
+          debugLogger.info(
+            `Using streaming for large storage file: ${filePath} (${(stats.size / (1024 * 1024)).toFixed(2)}MB)`,
+          );
+          // For JSON files, we still need to read the entire content
+          // but we can use streaming to avoid blocking the event loop
+          const chunks: string[] = [];
+          await streamFileLines(filePath, (line) => {
+            chunks.push(line);
+            return true;
+          });
+          const content = chunks.join('\n');
+          return JSON.parse(content);
+        }
+
         const content = await fs.promises.readFile(filePath, 'utf-8');
         return JSON.parse(content);
       }
@@ -100,14 +123,35 @@ export class StorageAdapter implements StorageService {
     }
   }
 
-  async appendItem(namespace: string, key: string, value: unknown): Promise<void> {
+  async appendItem(
+    namespace: string,
+    key: string,
+    value: unknown,
+  ): Promise<void> {
     const filePath = this.getFilePath(namespace, key);
     let items: unknown[] = [];
 
     try {
       if (fs.existsSync(filePath)) {
-        const content = await fs.promises.readFile(filePath, 'utf-8');
-        items = JSON.parse(content);
+        const stats = await fs.promises.stat(filePath);
+
+        if (stats.size > STREAMING_THRESHOLD_BYTES) {
+          debugLogger.info(
+            `Using streaming for large storage file (append): ${filePath}`,
+          );
+          // Use streaming for large files
+          const chunks: string[] = [];
+          await streamFileLines(filePath, (line) => {
+            chunks.push(line);
+            return true;
+          });
+          const content = chunks.join('\n');
+          items = JSON.parse(content);
+        } else {
+          const content = await fs.promises.readFile(filePath, 'utf-8');
+          items = JSON.parse(content);
+        }
+
         if (!Array.isArray(items)) {
           items = [];
         }
@@ -117,7 +161,11 @@ export class StorageAdapter implements StorageService {
     }
 
     items.push(value);
-    await fs.promises.writeFile(filePath, JSON.stringify(items, null, 2), 'utf-8');
+    await fs.promises.writeFile(
+      filePath,
+      JSON.stringify(items, null, 2),
+      'utf-8',
+    );
   }
 }
 
@@ -305,7 +353,7 @@ export async function autoSaveConversationContext(
 
   // Build tags array, always including importance
   const importance = metadata?.importance || 'medium';
-  const tags = metadata?.tags 
+  const tags = metadata?.tags
     ? [...metadata.tags, importance]
     : ['context', importance];
 
@@ -372,11 +420,7 @@ export async function clearAutoSavedEntries(
   }
 
   try {
-    await globalStorageService.setItem(
-      AUTO_STORAGE_NAMESPACE,
-      type,
-      [],
-    );
+    await globalStorageService.setItem(AUTO_STORAGE_NAMESPACE, type, []);
     debugLogger.info(`Cleared auto-saved entries for ${type}`);
     return true;
   } catch (error) {

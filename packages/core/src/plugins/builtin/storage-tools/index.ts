@@ -60,7 +60,10 @@ import {
 } from '../../../knowledge/storage-integration.js';
 
 // Streaming imports
-import { STREAMING_THRESHOLD_BYTES } from '../../../utils/fileUtils.js';
+import {
+  STREAMING_THRESHOLD_BYTES,
+  streamFileLines,
+} from '../../../utils/fileUtils.js';
 
 const debugLogger = createDebugLogger('STORAGE_TOOL');
 
@@ -479,7 +482,8 @@ FEATURES:
       mode: {
         type: 'string',
         enum: ['semantic', 'keyword', 'hybrid'],
-        description: 'Search mode: semantic (embeddings), keyword (text match), or hybrid',
+        description:
+          'Search mode: semantic (embeddings), keyword (text match), or hybrid',
       },
       limit: {
         type: 'number',
@@ -487,7 +491,8 @@ FEATURES:
       },
       threshold: {
         type: 'number',
-        description: 'Similarity threshold for semantic search (0-1, default: 0.7)',
+        description:
+          'Similarity threshold for semantic search (0-1, default: 0.7)',
       },
       sameNamespace: {
         type: 'boolean',
@@ -495,12 +500,14 @@ FEATURES:
       },
       autoExtractEntities: {
         type: 'boolean',
-        description: 'Automatically extract entities when adding with embedding',
+        description:
+          'Automatically extract entities when adding with embedding',
       },
       // Streaming parameters
       streamLines: {
         type: 'boolean',
-        description: 'For get operation: return content line by line for large string values',
+        description:
+          'For get operation: return content line by line for large string values',
       },
       startLine: {
         type: 'number',
@@ -791,12 +798,31 @@ function getSessionEntries(namespace: string): Map<string, StorageEntry> {
 
 /**
  * Read the entire session file
+ * Uses streaming for large files (>1MB)
  */
 async function readSessionFile(
   scope: 'global' | 'project',
 ): Promise<SessionFileData> {
   const filePath = await getSessionFilePath(scope);
   try {
+    // Check file size for streaming decision
+    const stats = await fs.stat(filePath);
+
+    if (stats.size > STREAMING_THRESHOLD_BYTES) {
+      debugLogger.info(
+        `Using streaming for large session file: ${filePath} (${(stats.size / (1024 * 1024)).toFixed(2)}MB)`,
+      );
+      // For JSON files, we still need to read the entire content
+      // but we can use streaming to avoid blocking the event loop
+      const chunks: string[] = [];
+      await streamFileLines(filePath, (line) => {
+        chunks.push(line);
+        return true;
+      });
+      const content = chunks.join('\n');
+      return JSON.parse(content);
+    }
+
     const content = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(content);
   } catch (err) {
@@ -1087,10 +1113,10 @@ async function performSet(params: StorageParams): Promise<ToolResult> {
 }
 
 async function performGet(params: StorageParams): Promise<ToolResult> {
-  const { 
-    namespace, 
-    key, 
-    scope = 'global', 
+  const {
+    namespace,
+    key,
+    scope = 'global',
     includeMetadata = false,
     streamLines = false,
     startLine = 0,
@@ -1130,14 +1156,14 @@ async function performGet(params: StorageParams): Promise<ToolResult> {
     const totalLines = lines.length;
     const endLine = Math.min(startLine + maxLines, totalLines);
     const selectedLines = lines.slice(startLine, endLine);
-    
+
     const isTruncated = endLine < totalLines || startLine > 0;
-    
+
     let returnDisplay = `Retrieved lines ${startLine + 1}-${endLine} of ${totalLines}`;
     if (isTruncated) {
       returnDisplay += ' (streamed)';
     }
-    
+
     return {
       llmContent: selectedLines.join('\n'),
       returnDisplay,
@@ -1145,19 +1171,22 @@ async function performGet(params: StorageParams): Promise<ToolResult> {
   }
 
   // Handle large JSON values with streaming-like behavior
-  const valueStr = typeof entry.value === 'string' 
-    ? entry.value 
-    : JSON.stringify(entry.value, null, 2);
-  
+  const valueStr =
+    typeof entry.value === 'string'
+      ? entry.value
+      : JSON.stringify(entry.value, null, 2);
+
   // Check if value is large and should be truncated
   if (valueStr.length > STREAMING_THRESHOLD_BYTES && !streamLines) {
     const lines = valueStr.split('\n');
     const totalLines = lines.length;
     const endLine = Math.min(maxLines, totalLines);
     const selectedLines = lines.slice(0, endLine);
-    
+
     return {
-      llmContent: selectedLines.join('\n') + `\n\n... [truncated, use streamLines=true with startLine/maxLines to read more]`,
+      llmContent:
+        selectedLines.join('\n') +
+        `\n\n... [truncated, use streamLines=true with startLine/maxLines to read more]`,
       returnDisplay: `Retrieved: ${key} (truncated, ${totalLines} lines total)`,
     };
   }
@@ -1174,7 +1203,10 @@ async function performGet(params: StorageParams): Promise<ToolResult> {
   }
 
   return {
-    llmContent: typeof entry.value === 'string' ? entry.value : JSON.stringify(entry.value, null, 2),
+    llmContent:
+      typeof entry.value === 'string'
+        ? entry.value
+        : JSON.stringify(entry.value, null, 2),
     returnDisplay: `Retrieved: ${key}`,
   };
 }
@@ -1990,9 +2022,16 @@ export class StorageTool extends BaseDeclarativeTool<
 
     // Key is required for most operations
     if (
-      ['set', 'get', 'delete', 'append', 'merge', 'exists', 'findSimilar', 'addWithEmbedding'].includes(
-        operation,
-      ) &&
+      [
+        'set',
+        'get',
+        'delete',
+        'append',
+        'merge',
+        'exists',
+        'findSimilar',
+        'addWithEmbedding',
+      ].includes(operation) &&
       !params.key
     ) {
       return `Parameter "key" is required for ${operation} operation.`;
@@ -2238,13 +2277,19 @@ const storageToolsPlugin: PluginDefinition = {
 
       // Start storage watcher for MD files
       try {
-        const { startStorageWatcher } = await import('../../../services/storageWatcher.js');
+        const { startStorageWatcher } = await import(
+          '../../../services/storageWatcher.js'
+        );
         const watcher = await startStorageWatcher({ enabled: true });
-        
+
         watcher.on('change', (event) => {
-          debugLogger.info('[StorageTool] Storage changed:', event.type, event.path);
+          debugLogger.info(
+            '[StorageTool] Storage changed:',
+            event.type,
+            event.path,
+          );
         });
-        
+
         debugLogger.info('[StorageTool] Storage watcher started');
       } catch (err) {
         debugLogger.warn('[StorageTool] Failed to start storage watcher:', err);
@@ -2252,7 +2297,9 @@ const storageToolsPlugin: PluginDefinition = {
 
       // Start storage hints service
       try {
-        const { startStorageHints } = await import('../../../services/storageHints.js');
+        const { startStorageHints } = await import(
+          '../../../services/storageHints.js'
+        );
         startStorageHints({ enabled: true });
         debugLogger.info('[StorageTool] Storage hints service started');
       } catch (err) {
